@@ -59,20 +59,6 @@ import { TopXPageView, type TopXPageData, type TopXTool } from '@/components/top
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const CATEGORIES = [
-  { value: 'seo', label: 'SEO & Content' },
-  { value: 'analytics', label: 'Analytics' },
-  { value: 'developer', label: 'Developer Tools' },
-  { value: 'marketing', label: 'Marketing' },
-  { value: 'security', label: 'Security' },
-  { value: 'design', label: 'Design' },
-  { value: 'infrastructure', label: 'Infrastructure' },
-];
-
-const CATEGORY_LABELS: Record<string, string> = Object.fromEntries(
-  CATEGORIES.map((c) => [c.value, c.label])
-);
-
 const BEST_FOR_SEGMENTS = [
   { segment: 'beginners', label: 'Best for Beginners' },
   { segment: 'free', label: 'Best Free Option' },
@@ -89,6 +75,11 @@ const TABS = [
 type TabId = typeof TABS[number]['id'];
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+interface CategoryOption {
+  value: string;
+  label: string;
+}
 
 interface ToolOption {
   id: string;
@@ -478,6 +469,17 @@ export default function TopXCreateV2Page() {
   const [activeTab, setActiveTab] = useState<TabId>('content');
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [categories, setCategories] = useState<CategoryOption[]>([]);
+
+  useEffect(() => {
+    supabase
+      .from('categories')
+      .select('slug, name')
+      .order('sort_order')
+      .then(({ data }) => {
+        if (data) setCategories(data.map((c) => ({ value: c.slug, label: c.name })));
+      });
+  }, []);
 
   const selectedTools = selectedIds
     .map((id) => tools.find((t) => t.id === id))
@@ -711,7 +713,7 @@ export default function TopXCreateV2Page() {
     pricing: t.pricing,
   }));
 
-  const catLabel = CATEGORIES.find((c) => c.value === category)?.label || '';
+  const catLabel = categories.find((c) => c.value === category)?.label || '';
   const canGenerate = selectedIds.length >= 3 && selectedIds.length <= 10;
   const hasContent = draft.name || draft.intro;
 
@@ -865,7 +867,7 @@ export default function TopXCreateV2Page() {
                         <SelectValue placeholder="Choose a category…" />
                       </SelectTrigger>
                       <SelectContent>
-                        {CATEGORIES.map((c) => (
+                        {categories.map((c) => (
                           <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                         ))}
                       </SelectContent>
