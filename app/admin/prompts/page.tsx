@@ -67,9 +67,17 @@ const PROMPT_KEYS = [
   },
   {
     key: 'top_x_content_system_prompt',
-    label: 'Top X — Full Content Generation',
+    label: 'Top X — Full Content Generation (V1)',
     description:
       'System prompt used by the generate-top-x function (content mode) to generate the complete comparison page: entries, comparison table, best-for segments, FAQs, intro, outro, and SEO metadata.',
+    icon: Sparkles,
+    usedBy: 'generate-top-x',
+  },
+  {
+    key: 'top_x_content_system_prompt_v2',
+    label: 'Top X 2.0 — Full Content Generation (V2, A/B Test)',
+    description:
+      'System prompt used by the generate-top-x function when "Top X 2.0 Page" is selected in Create Page. Same JSON schema as V1 — edit to A/B test a different content generation style.',
     icon: Sparkles,
     usedBy: 'generate-top-x',
   },

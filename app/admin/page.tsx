@@ -811,6 +811,10 @@ function CreatePageDropdown({ router }: { router: ReturnType<typeof useRouter> }
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left border-t border-slate-100">
               <Trophy className="w-4 h-4 text-amber-500 shrink-0" /> Top X Page
             </button>
+            <button onClick={() => { setOpen(false); router.push('/admin/top-x-create-v2'); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left border-t border-slate-100">
+              <Trophy className="w-4 h-4 text-sky-500 shrink-0" /> Top X 2.0 Page
+            </button>
             <button onClick={() => { setOpen(false); router.push('/admin/comparison-create'); }}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left border-t border-slate-100">
               <GitCompare className="w-4 h-4 text-teal-500 shrink-0" /> Tool Comparison

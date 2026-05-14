@@ -25,6 +25,7 @@ interface GenerateRequest {
   tools: Tool[];
   category: string;
   mode: "slug" | "content";
+  version?: "v1" | "v2";
 }
 
 const DEFAULT_SLUG_SYSTEM = `You generate SEO-friendly metadata for "Top X" comparison pages. Output ONLY valid JSON, no markdown.`;
@@ -50,7 +51,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: GenerateRequest = await req.json();
-    const { tools, category, mode } = body;
+    const { tools, category, mode, version = "v1" } = body;
 
     if (!tools || tools.length < 3 || tools.length > 10) {
       return new Response(JSON.stringify({ error: "Must provide 3–10 tools" }), {
@@ -59,11 +60,15 @@ Deno.serve(async (req: Request) => {
       });
     }
 
-    // Load prompts from admin_settings with fallback to defaults
+    const contentPromptKey = version === "v2"
+      ? "top_x_content_system_prompt_v2"
+      : "top_x_content_system_prompt";
+
+    // Load prompts from admin_settings — no fallback for v2 content prompt
     const { data: settingsRows } = await supabase
       .from("admin_settings")
       .select("key, value")
-      .in("key", ["top_x_slug_system_prompt", "top_x_content_system_prompt"]);
+      .in("key", ["top_x_slug_system_prompt", "top_x_content_system_prompt", "top_x_content_system_prompt_v2"]);
 
     const settings: Record<string, string> = {};
     for (const row of (settingsRows || []) as { key: string; value: string }[]) {
@@ -99,6 +104,7 @@ Deno.serve(async (req: Request) => {
 
     if (mode === "slug") {
       systemPrompt = settings["top_x_slug_system_prompt"] || DEFAULT_SLUG_SYSTEM;
+
       userPrompt = `Generate metadata for a Top X comparison page for these ${categoryLabel} tools:
 
 ${toolSummaries}
@@ -113,7 +119,14 @@ Return JSON:
 
 Slug rules: lowercase, hyphens only, 3-6 words, SEO-optimized (e.g. "best-seo-tools-2026")`;
     } else {
-      systemPrompt = settings["top_x_content_system_prompt"] || DEFAULT_CONTENT_SYSTEM;
+      const contentPromptValue = settings[contentPromptKey];
+      if (!contentPromptValue) {
+        return new Response(JSON.stringify({ error: `Prompt "${contentPromptKey}" not found in AI Prompts settings. Please add it before generating content.` }), {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      systemPrompt = contentPromptValue;
 
       userPrompt = `Create a complete Top X comparison page for these ${n} ${categoryLabel} tools:
 
