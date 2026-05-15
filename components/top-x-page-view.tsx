@@ -15,7 +15,8 @@ import {
   Flame,
 } from 'lucide-react';
 import { FaqSection } from '@/components/faq-accordion';
-import { AuthorBlock, AUTHOR_SCHEMA, buildArticleSchema } from '@/components/author-block';
+import { AuthorBlock } from '@/components/author-block';
+import { AUTHOR_SCHEMA, buildArticleSchema } from '@/lib/author-schema';
 import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
 
 // ── Types ────────────────────────────────────────────────────────────────────
