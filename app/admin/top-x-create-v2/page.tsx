@@ -37,6 +37,8 @@ import {
   Shield,
   RefreshCw,
   ChevronRight as ChevronRightIcon,
+  Copy,
+  ClipboardCheck,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -470,6 +472,7 @@ export default function TopXCreateV2Page() {
   const [leftCollapsed, setLeftCollapsed] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
   const [categories, setCategories] = useState<CategoryOption[]>([]);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     supabase
@@ -717,6 +720,18 @@ export default function TopXCreateV2Page() {
   const canGenerate = selectedIds.length >= 3 && selectedIds.length <= 10;
   const hasContent = draft.name || draft.intro;
 
+  const handleCopyJson = async () => {
+    const payload = {
+      ...draft,
+      category,
+      tool_ids: selectedIds,
+      faqs: draft.faqs.filter((f) => f.q || f.a),
+    };
+    await navigator.clipboard.writeText(JSON.stringify(payload, null, 2));
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
   // ── Render ─────────────────────────────────────────────────────────────────
 
   return (
@@ -760,6 +775,20 @@ export default function TopXCreateV2Page() {
                   </Button>
                 ) : (
                   <>
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 text-xs"
+                          onClick={handleCopyJson}
+                        >
+                          {copied ? <ClipboardCheck className="w-3.5 h-3.5 mr-1.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 mr-1.5" />}
+                          {copied ? 'Copied!' : 'Copy JSON'}
+                        </Button>
+                      </TooltipTrigger>
+                      <TooltipContent>Copy page content as JSON</TooltipContent>
+                    </Tooltip>
                     <Button
                       size="sm"
                       variant="outline"
