@@ -5,13 +5,39 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Loader as Loader2, Search, Image as ImageIcon, Globe, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, Copy, Check, ExternalLink, RefreshCw, Info } from 'lucide-react';
+import {
+  ArrowLeft,
+  Loader as Loader2,
+  Search,
+  Image as ImageIcon,
+  Globe,
+  CircleAlert as AlertCircle,
+  CircleCheck as CheckCircle2,
+  Copy,
+  Check,
+  ExternalLink,
+  RefreshCw,
+  Info,
+  ChevronDown,
+  ChevronUp,
+  X,
+} from 'lucide-react';
 
-// ─── Types matching the edge function response ────────────────────────────────
+// ─── Types ────────────────────────────────────────────────────────────────────
+
+type LogoSource =
+  | 'schema-org'
+  | 'meta-itemprop'
+  | 'header-nav-img'
+  | 'header-nav-svg'
+  | 'apple-touch-icon'
+  | 'favicon'
+  | 'clearbit'
+  | 'og:image';
 
 interface LogoResult {
   url: string;
-  source: 'og:image' | 'schema-org' | 'meta-itemprop' | 'apple-touch-icon' | 'favicon' | 'clearbit';
+  source: LogoSource;
 }
 
 interface ScreenshotResult {
@@ -19,6 +45,7 @@ interface ScreenshotResult {
   label: string;
   width: number;
   height: number;
+  provider: 'microlink' | 'microlink-fallback';
 }
 
 interface SiteMeta {
@@ -27,23 +54,46 @@ interface SiteMeta {
   canonical: string;
 }
 
+interface AttemptRecord {
+  strategy: string;
+  success: boolean;
+  url?: string;
+  reason?: string;
+}
+
+interface ExtractionDebug {
+  logo_attempts: AttemptRecord[];
+  screenshot_attempts: AttemptRecord[];
+  html_fetched: boolean;
+  fetch_error?: string;
+}
+
 interface ExtractionResult {
   logo: LogoResult | null;
   screenshots: ScreenshotResult[];
   meta: SiteMeta;
-  errors: string[];
+  debug: ExtractionDebug;
 }
 
-// ─── Source badge ─────────────────────────────────────────────────────────────
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const SOURCE_LABELS: Record<string, string> = {
-  'og:image': 'OG Image',
   'schema-org': 'Schema.org',
-  'meta-itemprop': 'Meta itemprop',
+  'meta-itemprop': 'itemprop="logo"',
+  'header-nav-img': 'Header/Nav img',
+  'header-nav-svg': 'Header/Nav SVG',
   'apple-touch-icon': 'Apple Touch Icon',
   'favicon': 'Favicon',
   'clearbit': 'Clearbit API',
+  'og:image': 'OG Image',
 };
+
+const PROVIDER_LABELS: Record<string, string> = {
+  'microlink': 'Microlink (networkIdle)',
+  'microlink-fallback': 'Microlink fallback (DOMContentLoaded)',
+};
+
+// ─── Small components ─────────────────────────────────────────────────────────
 
 function SourceBadge({ source }: { source: string }) {
   return (
@@ -53,7 +103,14 @@ function SourceBadge({ source }: { source: string }) {
   );
 }
 
-// ─── Copy button ──────────────────────────────────────────────────────────────
+function ProviderBadge({ provider }: { provider: string }) {
+  const isFallback = provider === 'microlink-fallback';
+  return (
+    <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold border ${isFallback ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-emerald-50 text-emerald-700 border-emerald-200'}`}>
+      {PROVIDER_LABELS[provider] ?? provider}
+    </span>
+  );
+}
 
 function CopyButton({ value }: { value: string }) {
   const [copied, setCopied] = useState(false);
@@ -65,6 +122,98 @@ function CopyButton({ value }: { value: string }) {
     >
       {copied ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
     </button>
+  );
+}
+
+// ─── Debug panel ──────────────────────────────────────────────────────────────
+
+function AttemptRow({ attempt }: { attempt: AttemptRecord }) {
+  return (
+    <div className={`flex items-start gap-2.5 py-2 border-b border-slate-50 last:border-0 ${attempt.success ? '' : 'opacity-60'}`}>
+      <div className={`w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 ${attempt.success ? 'bg-emerald-100' : 'bg-slate-100'}`}>
+        {attempt.success
+          ? <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+          : <X className="w-3 h-3 text-slate-400" />}
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-[12px] font-semibold text-slate-700">{attempt.strategy}</p>
+        {attempt.success && attempt.url && (
+          <p className="text-[11px] text-slate-400 font-mono truncate mt-0.5">{attempt.url}</p>
+        )}
+        {!attempt.success && attempt.reason && (
+          <p className="text-[11px] text-slate-400 mt-0.5">{attempt.reason}</p>
+        )}
+      </div>
+      {attempt.success && (
+        <span className="shrink-0 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full">
+          used
+        </span>
+      )}
+    </div>
+  );
+}
+
+function DebugPanel({ debug }: { debug: ExtractionDebug }) {
+  const [open, setOpen] = useState(false);
+
+  const totalLogoAttempts = debug.logo_attempts.length;
+  const logoWinner = debug.logo_attempts.find((a) => a.success);
+  const ssWinner = debug.screenshot_attempts.find((a) => a.success);
+
+  return (
+    <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
+      <button
+        onClick={() => setOpen(!open)}
+        className="w-full flex items-center justify-between px-4 py-3 hover:bg-slate-50 transition-colors"
+      >
+        <div className="flex items-center gap-2.5">
+          <Info className="w-3.5 h-3.5 text-slate-400" />
+          <span className="text-[12px] font-semibold text-slate-600">Extraction debug</span>
+          <span className="text-[10px] text-slate-400">
+            {debug.html_fetched ? 'HTML fetched' : 'HTML fetch failed'}
+            {logoWinner ? ` · logo via ${logoWinner.strategy}` : ' · no logo'}
+            {ssWinner ? ` · screenshot via ${ssWinner.strategy}` : ' · no screenshot'}
+          </span>
+        </div>
+        {open ? <ChevronUp className="w-3.5 h-3.5 text-slate-400" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-400" />}
+      </button>
+
+      {open && (
+        <div className="border-t border-slate-100 divide-y divide-slate-100">
+
+          {/* HTML fetch status */}
+          <div className="px-4 py-3">
+            <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">HTML Fetch</p>
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${debug.html_fetched ? 'bg-emerald-500' : 'bg-red-400'}`} />
+              <span className="text-[12px] text-slate-600">
+                {debug.html_fetched ? 'Success — homepage HTML loaded' : `Failed — ${debug.fetch_error ?? 'unknown error'}`}
+              </span>
+            </div>
+          </div>
+
+          {/* Logo attempts */}
+          {debug.logo_attempts.length > 0 && (
+            <div className="px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                Logo strategies — {totalLogoAttempts} tried
+              </p>
+              {debug.logo_attempts.map((a, i) => <AttemptRow key={i} attempt={a} />)}
+            </div>
+          )}
+
+          {/* Screenshot attempts */}
+          {debug.screenshot_attempts.length > 0 && (
+            <div className="px-4 py-3">
+              <p className="text-[10px] font-semibold uppercase tracking-wider text-slate-400 mb-2">
+                Screenshot strategies — {debug.screenshot_attempts.length} tried
+              </p>
+              {debug.screenshot_attempts.map((a, i) => <AttemptRow key={i} attempt={a} />)}
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -81,21 +230,18 @@ function ImageCard({
   badge?: React.ReactNode;
   aspect: 'square' | 'video';
 }) {
-  const [error, setError] = useState(false);
+  const [imgError, setImgError] = useState(false);
   const [loaded, setLoaded] = useState(false);
 
   return (
     <div className="rounded-xl border border-slate-200 bg-white overflow-hidden flex flex-col">
-      {/* Image area */}
-      <div
-        className={`relative bg-slate-50 overflow-hidden ${aspect === 'square' ? 'aspect-square' : 'aspect-video'}`}
-      >
-        {!loaded && !error && (
+      <div className={`relative bg-slate-50 overflow-hidden ${aspect === 'square' ? 'aspect-square' : 'aspect-video'}`}>
+        {!loaded && !imgError && (
           <div className="absolute inset-0 flex items-center justify-center">
             <Loader2 className="w-5 h-5 text-slate-300 animate-spin" />
           </div>
         )}
-        {error ? (
+        {imgError ? (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-slate-300">
             <ImageIcon className="w-8 h-8" />
             <p className="text-[11px]">Failed to load</p>
@@ -105,13 +251,11 @@ function ImageCard({
             src={url}
             alt={label}
             onLoad={() => setLoaded(true)}
-            onError={() => setError(true)}
+            onError={() => setImgError(true)}
             className={`w-full h-full transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'} ${aspect === 'square' ? 'object-contain p-4' : 'object-cover'}`}
           />
         )}
       </div>
-
-      {/* Footer */}
       <div className="px-3.5 py-2.5 flex items-start justify-between gap-2">
         <div className="min-w-0">
           <p className="text-[12px] font-medium text-slate-700 leading-snug">{label}</p>
@@ -184,6 +328,7 @@ export default function MediaExtractPage() {
 
   return (
     <div className="min-h-screen bg-slate-50 flex flex-col">
+
       {/* Header */}
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shrink-0">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -206,14 +351,14 @@ export default function MediaExtractPage() {
         </div>
       </header>
 
-      <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8">
+      <div className="flex-1 max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 space-y-6">
 
         {/* Input card */}
-        <div className="bg-white rounded-xl border border-slate-200 p-6 mb-6">
+        <div className="bg-white rounded-xl border border-slate-200 p-6">
           <div className="mb-5">
             <h1 className="text-[15px] font-bold text-slate-900">Website Media Extractor</h1>
             <p className="text-[13px] text-slate-500 mt-1">
-              Extracts the logo and up to 4 real-browser screenshots from any website. Screenshots are captured via Microlink (headless Chromium, JS rendered).
+              Extracts the brand logo and one homepage screenshot (1600×900) from any website.
             </p>
           </div>
 
@@ -242,19 +387,19 @@ export default function MediaExtractPage() {
             </Button>
           </form>
 
-          {/* Info note */}
+          {/* Strategy legend */}
           <div className="mt-4 flex items-start gap-2 rounded-lg bg-slate-50 border border-slate-200 px-3.5 py-3">
             <Info className="w-3.5 h-3.5 text-slate-400 shrink-0 mt-0.5" />
             <p className="text-[11px] text-slate-500 leading-relaxed">
-              <strong className="text-slate-600">Logo:</strong> extracted from OG image → Schema.org → Apple touch icon → Clearbit API fallback.{' '}
-              <strong className="text-slate-600">Screenshots:</strong> captured at 1600×900 via Microlink (real Chromium, network-idle, no API key required for low volume). Some sites may block headless browsers.
+              <strong className="text-slate-600">Logo priority:</strong> Schema.org → itemprop → header/nav img → header/nav SVG → apple-touch-icon → favicon → Clearbit → og:image.{' '}
+              <strong className="text-slate-600">Screenshot:</strong> Microlink headless Chromium at 1600×900, networkIdle with 5s timeout, DOMContentLoaded fallback at 8s.
             </p>
           </div>
         </div>
 
         {/* Error */}
         {error && (
-          <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 px-4 py-3.5 mb-6">
+          <div className="flex items-start gap-2.5 rounded-xl bg-red-50 border border-red-200 px-4 py-3.5">
             <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
             <div>
               <p className="text-sm font-semibold text-red-700">Extraction failed</p>
@@ -265,22 +410,27 @@ export default function MediaExtractPage() {
 
         {/* Loading skeleton */}
         {loading && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-xl border border-slate-200 p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
-                <p className="text-sm text-slate-500">Fetching homepage, extracting logo, capturing screenshots…</p>
+          <div className="bg-white rounded-xl border border-slate-200 p-5">
+            <div className="flex items-center gap-2 mb-5">
+              <Loader2 className="w-4 h-4 animate-spin text-slate-400" />
+              <p className="text-sm text-slate-500">Fetching HTML, extracting logo, capturing screenshot via Microlink…</p>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              {/* logo skeleton */}
+              <div className="rounded-xl border border-slate-100 overflow-hidden">
+                <div className="aspect-square bg-slate-100 animate-pulse" />
+                <div className="p-3 space-y-1.5">
+                  <div className="h-3 bg-slate-100 rounded animate-pulse w-1/2" />
+                  <div className="h-2.5 bg-slate-100 rounded animate-pulse w-3/4" />
+                </div>
               </div>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {[...Array(4)].map((_, i) => (
-                  <div key={i} className="rounded-xl border border-slate-100 overflow-hidden">
-                    <div className="aspect-video bg-slate-100 animate-pulse" />
-                    <div className="p-3 space-y-1.5">
-                      <div className="h-3 bg-slate-100 rounded animate-pulse w-3/4" />
-                      <div className="h-2.5 bg-slate-100 rounded animate-pulse w-full" />
-                    </div>
-                  </div>
-                ))}
+              {/* screenshot skeleton */}
+              <div className="rounded-xl border border-slate-100 overflow-hidden col-span-1 sm:col-span-2">
+                <div className="aspect-video bg-slate-100 animate-pulse" />
+                <div className="p-3 space-y-1.5">
+                  <div className="h-3 bg-slate-100 rounded animate-pulse w-1/3" />
+                  <div className="h-2.5 bg-slate-100 rounded animate-pulse w-full" />
+                </div>
               </div>
             </div>
           </div>
@@ -288,9 +438,8 @@ export default function MediaExtractPage() {
 
         {/* Results */}
         {result && !loading && (
-          <div className="space-y-6">
-
-            {/* Site meta + summary bar */}
+          <>
+            {/* Site meta summary */}
             <div className="bg-white rounded-xl border border-slate-200 p-5">
               <div className="flex items-start justify-between gap-4 flex-wrap">
                 <div className="min-w-0">
@@ -304,39 +453,17 @@ export default function MediaExtractPage() {
                     {result.meta.canonical}
                   </a>
                 </div>
-                <div className="flex items-center gap-3 shrink-0 flex-wrap">
+                <div className="flex items-center gap-3 shrink-0">
                   <div className="text-center">
                     <p className="text-lg font-bold text-slate-900 leading-none">{totalAssets}</p>
                     <p className="text-[10px] text-slate-400 mt-0.5">assets</p>
                   </div>
-                  <div className="text-center">
-                    <p className="text-lg font-bold text-slate-900 leading-none">{result.screenshots.length}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">screenshots</p>
-                  </div>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="h-8 text-xs"
-                    onClick={() => { setResult(null); }}
-                  >
+                  <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => setResult(null)}>
                     <RefreshCw className="w-3.5 h-3.5 mr-1.5" />
                     Clear
                   </Button>
                 </div>
               </div>
-
-              {/* Extraction warnings */}
-              {result.errors.length > 0 && (
-                <div className="mt-4 space-y-1.5">
-                  {result.errors.map((e, i) => (
-                    <div key={i} className="flex items-start gap-2 text-[12px] text-amber-700 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
-                      <AlertCircle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
-                      {e}
-                    </div>
-                  ))}
-                </div>
-              )}
-
               {totalAssets > 0 && (
                 <div className="mt-3 flex items-center gap-1.5">
                   <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
@@ -345,37 +472,27 @@ export default function MediaExtractPage() {
               )}
             </div>
 
-            {/* Logo */}
-            {result.logo && (
-              <div>
-                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">Logo</h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+            {/* Assets grid */}
+            {totalAssets > 0 && (
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {result.logo && (
                   <ImageCard
                     url={result.logo.url}
                     label="Brand logo"
                     badge={<SourceBadge source={result.logo.source} />}
                     aspect="square"
                   />
-                </div>
-              </div>
-            )}
-
-            {/* Screenshots */}
-            {result.screenshots.length > 0 && (
-              <div>
-                <h2 className="text-[11px] font-semibold uppercase tracking-wider text-slate-400 mb-3">
-                  Screenshots — {result.screenshots[0]?.width ?? 1600}×{result.screenshots[0]?.height ?? 900}
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  {result.screenshots.map((s, i) => (
+                )}
+                {result.screenshots.map((s, i) => (
+                  <div key={i} className="sm:col-span-2">
                     <ImageCard
-                      key={i}
                       url={s.url}
                       label={s.label}
+                      badge={<ProviderBadge provider={s.provider} />}
                       aspect="video"
                     />
-                  ))}
-                </div>
+                  </div>
+                ))}
               </div>
             )}
 
@@ -387,7 +504,10 @@ export default function MediaExtractPage() {
                 <p className="text-[13px] text-slate-400 mt-1">The site may be blocking automated access or all requests failed.</p>
               </div>
             )}
-          </div>
+
+            {/* Debug panel */}
+            <DebugPanel debug={result.debug} />
+          </>
         )}
       </div>
     </div>
