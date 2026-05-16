@@ -15,7 +15,7 @@ import {
   Flame,
 } from 'lucide-react';
 import { FaqSection } from '@/components/faq-accordion';
-import { AuthorBlock } from '@/components/author-block';
+import { AuthorBlock, FALLBACK } from '@/components/author-block';
 import { AUTHOR_SCHEMA, buildArticleSchema } from '@/lib/author-schema';
 import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
 
@@ -613,7 +613,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
 
         {/* ── AUTHOR ── */}
         <div className="bg-white border border-slate-200 rounded-2xl px-6">
-          <AuthorBlock />
+          <AuthorBlock author={FALLBACK} />
         </div>
 
         {/* ── BACK LINK ── */}

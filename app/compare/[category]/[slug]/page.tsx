@@ -3,7 +3,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { supabaseServer } from '@/lib/supabase-server';
 import { FaqSection } from '@/components/faq-accordion';
-import { AuthorBlock } from '@/components/author-block';
+import { AuthorBlock, FALLBACK } from '@/components/author-block';
 import { AUTHOR_SCHEMA, buildArticleSchema } from '@/lib/author-schema';
 import { InnerHeader } from '@/components/site-header';
 import {
@@ -631,7 +631,7 @@ export default async function ComparisonPage({
         </section>
 
         {/* Author */}
-        <AuthorBlock reviewedOn={reviewedDate ? `Reviewed on ${reviewedDate}` : undefined} />
+        <AuthorBlock author={FALLBACK} reviewedOn={reviewedDate ? `Reviewed on ${reviewedDate}` : undefined} />
       </main>
     </>
   );

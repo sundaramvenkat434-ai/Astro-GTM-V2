@@ -6,8 +6,14 @@ import { FaqSection } from '@/components/faq-accordion';
 import { ToolSidebarNav, type SidebarSection } from '@/components/tool-sidebar-nav';
 import { PageViewTracker } from '@/components/page-view-tracker';
 import { TopXPageView, type TopXPageData, type TopXTool } from '@/components/top-x-page-view';
-import { AuthorBlock } from '@/components/author-block';
-import { AUTHOR_SCHEMA, buildArticleSchema } from '@/lib/author-schema';
+import { AuthorBlock, FALLBACK, type Author } from '@/components/author-block';
+import {
+  AUTHOR_SCHEMA,
+  ORGANIZATION_SCHEMA,
+  buildArticleSchema,
+  buildPersonSchema,
+  buildReviewSchema,
+} from '@/lib/author-schema';
 import { SiteFooter } from '@/components/site-footer';
 import {
   Star,
@@ -34,7 +40,7 @@ import { ClaimListingButton } from '@/components/claim-listing-button';
 export const revalidate = 3600;
 export const dynamicParams = true;
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://astrogtm.com';
 
 interface ToolPage {
   id: string;
@@ -178,6 +184,16 @@ async function getSimilarTools(category: string, excludeId: string): Promise<Sim
   return (data as SimilarTool[]) ?? [];
 }
 
+async function getAuthor(reviewerId: string | null | undefined): Promise<Author> {
+  if (!reviewerId) return FALLBACK;
+  const { data } = await supabaseServer
+    .from('authors')
+    .select('id, slug, name, title, bio, avatar_initials, avatar_color, linkedin_url, categories, stats')
+    .eq('id', reviewerId)
+    .maybeSingle();
+  return (data as Author | null) ?? FALLBACK;
+}
+
 async function getTopXTools(toolIds: string[]): Promise<TopXTool[]> {
   if (!toolIds.length) return [];
   const { data } = await supabaseServer
@@ -209,7 +225,7 @@ function parsePrice(price: string): string | null {
   return num || null;
 }
 
-function buildToolJsonLd(tool: ToolPage) {
+function buildToolJsonLd(tool: ToolPage, author: Author) {
   const pageUrl = `${SITE_URL}/category/${tool.category}/${tool.slug}`;
   const reviewCount = parseReviewCount(tool.rating_count);
   const categoryLabel = CATEGORY_LABELS[tool.category] || tool.category;
@@ -231,10 +247,12 @@ function buildToolJsonLd(tool: ToolPage) {
   const softwareApp: Record<string, unknown> = {
     '@context': 'https://schema.org',
     '@type': 'SoftwareApplication',
+    '@id': `${pageUrl}#software`,
     name: tool.name,
     description: tool.meta_description || tool.description,
     url: pageUrl,
     applicationCategory: CATEGORY_SCHEMA[tool.category] || 'WebApplication',
+    publisher: { '@id': `${SITE_URL}/#organization` },
     ...(tool.official_website ? { sameAs: tool.official_website } : {}),
     ...(tool.logo_url ? { image: { '@type': 'ImageObject', url: tool.logo_url, description: tool.logo_alt || `${tool.name} logo` } } : {}),
   };
@@ -255,10 +273,15 @@ function buildToolJsonLd(tool: ToolPage) {
   const webPage = {
     '@context': 'https://schema.org',
     '@type': 'WebPage',
+    '@id': pageUrl,
     name: tool.meta_title || tool.name,
     description: tool.meta_description || tool.description,
     url: pageUrl,
-    isPartOf: { '@type': 'WebSite', name: 'ToolKit', url: SITE_URL },
+    author: {
+      '@type': 'Person',
+      '@id': `${SITE_URL}/author/${author.slug}`,
+    },
+    isPartOf: { '@type': 'WebSite', '@id': `${SITE_URL}/#website`, name: 'AstroGTM', url: SITE_URL },
     breadcrumb: {
       '@type': 'BreadcrumbList',
       itemListElement: [
@@ -267,9 +290,16 @@ function buildToolJsonLd(tool: ToolPage) {
         { '@type': 'ListItem', position: 3, name: tool.name, item: pageUrl },
       ],
     },
+    ...(tool.published_date ? { datePublished: tool.published_date } : {}),
+    ...(tool.updated_date ? { dateModified: tool.updated_date } : {}),
   };
 
-  const items: object[] = [softwareApp, webPage];
+  const items: object[] = [
+    ORGANIZATION_SCHEMA,
+    buildPersonSchema({ slug: author.slug, name: author.name, title: author.title, linkedin_url: author.linkedin_url }),
+    softwareApp,
+    webPage,
+  ];
 
   if (tool.faqs.length > 0) {
     items.push({
@@ -284,8 +314,23 @@ function buildToolJsonLd(tool: ToolPage) {
   }
 
   items.push(
-    buildArticleSchema({ headline: tool.meta_title || tool.name, pageUrl, datePublished: tool.published_date, dateModified: tool.updated_date }),
-    AUTHOR_SCHEMA,
+    buildArticleSchema({
+      headline: tool.meta_title || tool.name,
+      pageUrl,
+      datePublished: tool.published_date,
+      dateModified: tool.updated_date,
+      authorSlug: author.slug,
+      authorName: author.name,
+    }),
+    buildReviewSchema({
+      toolName: tool.name,
+      pageUrl,
+      rating: tool.rating,
+      authorSlug: author.slug,
+      authorName: author.name,
+      datePublished: tool.published_date,
+      dateModified: tool.updated_date,
+    }),
   );
 
   return items;
@@ -303,11 +348,13 @@ export async function generateMetadata({
     const pageUrl = `${SITE_URL}/category/${tool.category}/${tool.slug}`;
     const title = tool.meta_title || tool.name;
     const description = tool.meta_description || tool.description;
+    const author = await getAuthor(tool.reviewer_id);
     return {
       title,
       description,
+      authors: [{ name: author.name, url: `${SITE_URL}/author/${author.slug}` }],
       robots: { index: !tool.noindex, follow: true },
-      openGraph: { title, description, url: pageUrl, type: 'website', siteName: 'ToolKit', images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: title }] },
+      openGraph: { title, description, url: pageUrl, type: 'article', siteName: 'AstroGTM', images: [{ url: `${SITE_URL}/og-default.png`, width: 1200, height: 630, alt: title }] },
       twitter: { card: 'summary_large_image', title, description, images: [`${SITE_URL}/og-default.png`] },
       alternates: { canonical: pageUrl },
     };
@@ -417,10 +464,11 @@ export default async function SlugPage({
 
   const tool = await getTool(params.slug, params.category);
   if (tool) {
-    const [jsonLdItems, similarTools] = await Promise.all([
-      Promise.resolve(buildToolJsonLd(tool)),
+    const [author, similarTools] = await Promise.all([
+      getAuthor(tool.reviewer_id),
       getSimilarTools(tool.category, tool.id).then((r) => r.slice(0, Math.floor(r.length / 2) * 2 || 0)),
     ]);
+    const jsonLdItems = buildToolJsonLd(tool, author);
 
     const navSections: SidebarSection[] = [
       { id: 'overview', label: 'Overview' },
@@ -911,7 +959,7 @@ export default async function SlugPage({
 
               {/* ── Author block ── */}
               <AuthorBlock
-                reviewerId={tool.reviewer_id ?? null}
+                author={author}
                 reviewedOn={
                   tool.published_date
                     ? `Published ${new Date(tool.published_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}${tool.updated_date ? ` · Updated ${new Date(tool.updated_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` : ''}`

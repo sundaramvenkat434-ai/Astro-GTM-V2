@@ -1,9 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import Link from 'next/link';
 import { Linkedin, ExternalLink, BookOpen, Star } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 
 export interface Author {
   id: string;
@@ -18,13 +17,8 @@ export interface Author {
   stats: { value: string; label: string }[];
 }
 
-interface Props {
-  reviewerId?: string | null;
-  reviewedOn?: string;
-}
-
 // Fallback static author when no reviewer is assigned
-const FALLBACK: Author = {
+export const FALLBACK: Author = {
   id: '',
   slug: 'venkat-sundaram',
   name: 'Venkat Sundaram',
@@ -41,25 +35,37 @@ const FALLBACK: Author = {
   ],
 };
 
-export function AuthorBlock({ reviewerId, reviewedOn }: Props) {
-  const [author, setAuthor] = useState<Author | null>(null);
+// ── Thin client shell — only handles the bio expand/collapse toggle ──────────
+
+interface AuthorBioToggleProps {
+  bio: string;
+}
+
+function AuthorBioToggle({ bio }: AuthorBioToggleProps) {
   const [expanded, setExpanded] = useState(false);
+  return (
+    <div className="mt-4 pt-4 border-t border-slate-100">
+      <p className={`text-[13px] text-slate-600 leading-relaxed ${!expanded ? 'line-clamp-2' : ''}`}>
+        {bio}
+      </p>
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="mt-1.5 text-[12px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
+      >
+        {expanded ? 'Show less' : 'Read more'}
+      </button>
+    </div>
+  );
+}
 
-  useEffect(() => {
-    if (!reviewerId) {
-      setAuthor(FALLBACK);
-      return;
-    }
-    supabase
-      .from('authors')
-      .select('id, slug, name, title, bio, avatar_initials, avatar_color, linkedin_url, categories, stats')
-      .eq('id', reviewerId)
-      .maybeSingle()
-      .then(({ data }) => setAuthor(data ?? FALLBACK));
-  }, [reviewerId]);
+// ── AuthorBlock — accepts pre-fetched author data for full SSR ───────────────
 
-  if (!author) return null;
+interface AuthorBlockProps {
+  author: Author;
+  reviewedOn?: string;
+}
 
+export function AuthorBlock({ author, reviewedOn }: AuthorBlockProps) {
   const profileUrl = `/author/${author.slug}`;
 
   return (
@@ -79,8 +85,8 @@ export function AuthorBlock({ reviewerId, reviewedOn }: Props) {
       {/* Author card */}
       <div className="p-5">
         <div className="flex items-start gap-4">
-          {/* Avatar */}
-          <Link href={profileUrl} className="shrink-0 group">
+          {/* Avatar — rel="author" for EEAT signal */}
+          <Link href={profileUrl} rel="author" className="shrink-0 group">
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:opacity-90 transition-opacity"
               style={{ background: author.avatar_color }}
@@ -93,7 +99,7 @@ export function AuthorBlock({ reviewerId, reviewedOn }: Props) {
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 flex-wrap">
               <div>
-                <Link href={profileUrl} className="text-[15px] font-bold text-slate-900 hover:text-sky-700 transition-colors leading-tight block">
+                <Link href={profileUrl} rel="author" className="text-[15px] font-bold text-slate-900 hover:text-sky-700 transition-colors leading-tight block">
                   {author.name}
                 </Link>
                 <p className="text-[12px] text-slate-500 mt-0.5">{author.title}</p>
@@ -103,24 +109,25 @@ export function AuthorBlock({ reviewerId, reviewedOn }: Props) {
                   <a
                     href={author.linkedin_url}
                     target="_blank"
-                    rel="noopener noreferrer"
+                    rel="noopener noreferrer author"
                     className="w-7 h-7 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center hover:bg-sky-100 transition-colors"
-                    aria-label="LinkedIn profile"
+                    aria-label={`${author.name} on LinkedIn`}
                   >
                     <Linkedin className="w-3.5 h-3.5 text-sky-600" />
                   </a>
                 )}
                 <Link
                   href={profileUrl}
+                  rel="author"
                   className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors"
-                  aria-label="Author profile"
+                  aria-label={`${author.name} author profile`}
                 >
                   <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
                 </Link>
               </div>
             </div>
 
-            {/* Stats row */}
+            {/* Stats row — SSR-rendered, visible in page source */}
             {author.stats.length > 0 && (
               <div className="flex gap-4 mt-3 flex-wrap">
                 {author.stats.map((s) => (
@@ -134,18 +141,8 @@ export function AuthorBlock({ reviewerId, reviewedOn }: Props) {
           </div>
         </div>
 
-        {/* Bio — truncated with expand */}
-        <div className="mt-4 pt-4 border-t border-slate-100">
-          <p className={`text-[13px] text-slate-600 leading-relaxed ${!expanded ? 'line-clamp-2' : ''}`}>
-            {author.bio}
-          </p>
-          <button
-            onClick={() => setExpanded(!expanded)}
-            className="mt-1.5 text-[12px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
-          >
-            {expanded ? 'Show less' : 'Read more'}
-          </button>
-        </div>
+        {/* Bio — client-side expand toggle only, text itself is SSR */}
+        <AuthorBioToggle bio={author.bio} />
 
         {/* AstroGTM editorial badge */}
         <div className="mt-3 flex items-center gap-1.5">
