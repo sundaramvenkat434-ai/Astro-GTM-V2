@@ -632,7 +632,7 @@ export default async function ComparisonPage({
         </section>
 
         {/* Author */}
-        <AuthorBlock author={FALLBACK} reviewedOn={reviewedDate ? `Reviewed on ${reviewedDate}` : undefined} />
+        <AuthorBlock author={FALLBACK} publishedDate={comp.published_at ?? null} />
       </main>
     </>
   );

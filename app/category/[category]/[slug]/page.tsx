@@ -87,6 +87,7 @@ interface ToolPage {
   upvotes?: number;
   reviewer_id?: string | null;
   website_url?: string | null;
+  sources?: { name: string; url: string }[] | null;
   is_claimed?: boolean;
   claimed_founded_by?: string | null;
   claimed_founder_names?: string | null;
@@ -962,11 +963,9 @@ export default async function SlugPage({
               {/* ── Author block ── */}
               <AuthorBlock
                 author={author}
-                reviewedOn={
-                  tool.published_date
-                    ? `Published ${new Date(tool.published_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}${tool.updated_date ? ` · Updated ${new Date(tool.updated_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}` : ''}`
-                    : undefined
-                }
+                publishedDate={tool.published_date ?? null}
+                updatedDate={tool.updated_date ?? null}
+                sources={(tool.sources ?? []).filter(s => s.name && s.url)}
               />
             </main>
           </div>

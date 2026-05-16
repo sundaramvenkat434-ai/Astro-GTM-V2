@@ -64,6 +64,8 @@ interface ToolPage {
   latest_news: { title: string; url: string }[];
   published_date: string | null;
   updated_date: string | null;
+  // Sources
+  sources: { name: string; url: string }[];
   // Reviewer
   reviewer_id: string | null;
   // Website & claim
@@ -409,6 +411,7 @@ export default function EditToolPage() {
         founder_name: tool.founder_name || null,
         founder_linkedin: tool.founder_linkedin || null,
         latest_news: tool.latest_news || [],
+        sources: tool.sources || [],
         published_date: tool.published_date || null,
         updated_date: tool.updated_date || null,
         website_url: tool.website_url || null,
@@ -1064,6 +1067,49 @@ export default function EditToolPage() {
                         />
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* Sources */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <SectionHeader
+                    icon={<Link2 className="w-3.5 h-3.5" />}
+                    label="Sources"
+                    count={tool.sources?.length}
+                    action={
+                      <button onClick={() => update({ sources: [...(tool.sources || []), { name: '', url: '' }] })} className="text-[11px] text-sky-600 hover:text-sky-800 flex items-center gap-0.5">
+                        <Plus className="w-3 h-3" /> Add
+                      </button>
+                    }
+                  />
+                  <p className="text-[11px] text-slate-400 mb-3">Editor-managed only — not AI-generated. Shown below the reviewer block on the published page.</p>
+                  <div className="space-y-2">
+                    {(tool.sources || []).map((src, i) => (
+                      <div key={i} className="rounded-lg border border-slate-200 p-3 space-y-1.5">
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            value={src.name}
+                            onChange={(e) => { const next = [...(tool.sources || [])]; next[i] = { ...next[i], name: e.target.value }; update({ sources: next }); }}
+                            placeholder="Source name (e.g. G2 Reviews)"
+                            className="flex-1 text-xs text-slate-700 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-400"
+                          />
+                          <button onClick={() => update({ sources: (tool.sources || []).filter((_, j) => j !== i) })} className="text-slate-300 hover:text-red-500">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <input
+                          type="url"
+                          value={src.url}
+                          onChange={(e) => { const next = [...(tool.sources || [])]; next[i] = { ...next[i], url: e.target.value }; update({ sources: next }); }}
+                          placeholder="https://..."
+                          className="w-full text-xs text-slate-500 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-400"
+                        />
+                      </div>
+                    ))}
+                    {(tool.sources || []).length === 0 && (
+                      <p className="text-xs text-slate-300 text-center py-3">No sources yet.</p>
+                    )}
                   </div>
                 </div>
               </div>
