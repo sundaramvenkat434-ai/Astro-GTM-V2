@@ -445,7 +445,7 @@ export default function HomePage() {
 
           {/* Headline */}
           <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.75rem] font-extrabold text-white leading-[1.08] tracking-[-0.03em] mb-5">
-           The MVP Is Easy.
+           MVP Is Easy.
             <br />
             <span className="bg-clip-text text-transparent"
               style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 40%, #2dd4bf 80%, #34d399 100%)' }}>
