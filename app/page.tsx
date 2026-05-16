@@ -445,17 +445,17 @@ export default function HomePage() {
 
           {/* Headline */}
           <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.75rem] font-extrabold text-white leading-[1.08] tracking-[-0.03em] mb-5">
-            Don&apos;t Just Build.
+            Built it?.
             <br />
             <span className="bg-clip-text text-transparent"
               style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 40%, #2dd4bf 80%, #34d399 100%)' }}>
-              Accelerate Growth.
+              Now Grow It.
             </span>
           </h1>
 
           {/* Sub-headline */}
           <p className="text-[15px] sm:text-[16px] font-normal text-slate-400 leading-[1.65] max-w-xl mx-auto mb-9 tracking-[0.01em]">
-            Find trending, expert-reviewed <span className="text-white font-medium">AI GTM and growth tools</span> across SEO, social media, sales, and marketing, with exclusive{' '}
+            Find trending, expert-reviewed <span className="text-white font-medium">AI GTM and growth tools</span> across SEO, social media, sales, marketing, and more, with exclusive{' '}
             <span className="text-emerald-400 font-medium">FREE Plans</span>.
           </p>
 
