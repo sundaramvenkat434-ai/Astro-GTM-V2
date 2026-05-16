@@ -53,7 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, Eye, Trash2, LogOut, Globe, Loader as Loader2, LayoutDashboard, Sparkles, Zap, Map, MessageSquareCode, Settings2, RefreshCw, Shield, EyeOff, CircleAlert as AlertCircle, TrendingUp, Users as Users2, Pencil, Trophy, Search, ChevronDown, ChevronUp, ChevronsUpDown, ArrowUpDown, FileText, CircleCheck as CheckCircle2, X, ExternalLink, GitCompare, BadgeCheck, MousePointerClick } from 'lucide-react';
+import { Plus, Eye, Trash2, LogOut, Globe, Loader as Loader2, LayoutDashboard, Sparkles, Zap, Map, MessageSquareCode, Settings2, RefreshCw, Shield, EyeOff, CircleAlert as AlertCircle, TrendingUp, Users as Users2, Pencil, Trophy, Search, ChevronDown, ChevronUp, ChevronsUpDown, ArrowUpDown, FileText, CircleCheck as CheckCircle2, X, ExternalLink, GitCompare, BadgeCheck, MousePointerClick, Image as ImageIcon } from 'lucide-react';
 import { format } from 'date-fns';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -818,6 +818,10 @@ function CreatePageDropdown({ router }: { router: ReturnType<typeof useRouter> }
             <button onClick={() => { setOpen(false); router.push('/admin/comparison-create'); }}
               className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left border-t border-slate-100">
               <GitCompare className="w-4 h-4 text-teal-500 shrink-0" /> Tool Comparison
+            </button>
+            <button onClick={() => { setOpen(false); router.push('/admin/media-extract'); }}
+              className="w-full flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-700 hover:bg-slate-50 transition-colors text-left border-t border-slate-100">
+              <ImageIcon className="w-4 h-4 text-slate-500 shrink-0" /> Media Extractor
             </button>
           </div>
         </>
