@@ -3,7 +3,8 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { supabaseServer } from '@/lib/supabase-server';
 import { FaqSection } from '@/components/faq-accordion';
-import { AuthorBlock, FALLBACK } from '@/components/author-block';
+import { AuthorBlock } from '@/components/author-block';
+import { FALLBACK } from '@/lib/author-schema';
 import { AUTHOR_SCHEMA, buildArticleSchema } from '@/lib/author-schema';
 import { InnerHeader } from '@/components/site-header';
 import {

@@ -1,6 +1,36 @@
 export const FALLBACK_AUTHOR_SLUG = 'venkat-sundaram';
 export const FALLBACK_AUTHOR_NAME = 'Venkat Sundaram';
 export const FALLBACK_AUTHOR_LINKEDIN = 'https://linkedin.com/in/srvenkat94';
+
+export interface Author {
+  id: string;
+  slug: string;
+  name: string;
+  title: string;
+  bio: string;
+  avatar_initials: string;
+  avatar_color: string;
+  linkedin_url: string | null;
+  categories: string[];
+  stats: { value: string; label: string }[];
+}
+
+export const FALLBACK: Author = {
+  id: '',
+  slug: FALLBACK_AUTHOR_SLUG,
+  name: FALLBACK_AUTHOR_NAME,
+  title: 'Lead Reviewer — SEO & Content Tools',
+  bio: 'Venkat Sundaram is the lead editor at AstroGTM with 6+ years in AI, SaaS, and go-to-market strategy. Every tool is tested hands-on against real use cases.',
+  avatar_initials: 'VS',
+  avatar_color: '#0369a1',
+  linkedin_url: FALLBACK_AUTHOR_LINKEDIN,
+  categories: ['seo-content', 'lead-generation'],
+  stats: [
+    { value: '6+', label: 'Years in AI & SaaS' },
+    { value: '200+', label: 'Tools reviewed' },
+    { value: '40k+', label: 'Monthly readers' },
+  ],
+};
 export const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://astrogtm.com';
 
 export const ORGANIZATION_SCHEMA = {

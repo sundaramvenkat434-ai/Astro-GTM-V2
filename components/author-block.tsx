@@ -3,37 +3,10 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { Linkedin, ExternalLink, BookOpen, Star } from 'lucide-react';
+import type { Author } from '@/lib/author-schema';
 
-export interface Author {
-  id: string;
-  slug: string;
-  name: string;
-  title: string;
-  bio: string;
-  avatar_initials: string;
-  avatar_color: string;
-  linkedin_url: string | null;
-  categories: string[];
-  stats: { value: string; label: string }[];
-}
-
-// Fallback static author when no reviewer is assigned
-export const FALLBACK: Author = {
-  id: '',
-  slug: 'venkat-sundaram',
-  name: 'Venkat Sundaram',
-  title: 'Lead Reviewer — SEO & Content Tools',
-  bio: 'Venkat Sundaram is the lead editor at AstroGTM with 6+ years in AI, SaaS, and go-to-market strategy. Every tool is tested hands-on against real use cases.',
-  avatar_initials: 'VS',
-  avatar_color: '#0369a1',
-  linkedin_url: 'https://linkedin.com/in/srvenkat94',
-  categories: ['seo-content', 'lead-generation'],
-  stats: [
-    { value: '6+', label: 'Years in AI & SaaS' },
-    { value: '200+', label: 'Tools reviewed' },
-    { value: '40k+', label: 'Monthly readers' },
-  ],
-};
+export type { Author };
+export { FALLBACK } from '@/lib/author-schema';
 
 // ── Thin client shell — only handles the bio expand/collapse toggle ──────────
 

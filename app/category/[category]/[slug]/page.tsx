@@ -6,13 +6,15 @@ import { FaqSection } from '@/components/faq-accordion';
 import { ToolSidebarNav, type SidebarSection } from '@/components/tool-sidebar-nav';
 import { PageViewTracker } from '@/components/page-view-tracker';
 import { TopXPageView, type TopXPageData, type TopXTool } from '@/components/top-x-page-view';
-import { AuthorBlock, FALLBACK, type Author } from '@/components/author-block';
+import { AuthorBlock } from '@/components/author-block';
 import {
   AUTHOR_SCHEMA,
   ORGANIZATION_SCHEMA,
   buildArticleSchema,
   buildPersonSchema,
   buildReviewSchema,
+  FALLBACK,
+  type Author,
 } from '@/lib/author-schema';
 import { SiteFooter } from '@/components/site-footer';
 import {
