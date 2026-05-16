@@ -449,7 +449,7 @@ export default function HomePage() {
             <br />
             <span className="bg-clip-text text-transparent"
               style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 40%, #2dd4bf 80%, #34d399 100%)' }}>
-              Growth Momentum Is Hard.
+             Momentum Is Hard.
             </span>
           </h1>
 
