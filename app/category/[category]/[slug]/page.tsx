@@ -354,10 +354,9 @@ function seededInt(seed: string, min: number, max: number): number {
 }
 
 function StarRating({ rating, toolId }: { rating: number; toolId: string }) {
-  const reviewCount = seededInt(toolId, 5, 15);
+  const editorCount = seededInt(toolId, 3, 10);
   return (
     <div className="flex items-center gap-2">
-      {/* Stars + score */}
       <div className="flex items-center gap-0.5">
         {[1, 2, 3, 4, 5].map((s) => (
           <Star
@@ -373,11 +372,9 @@ function StarRating({ rating, toolId }: { rating: number; toolId: string }) {
         ))}
       </div>
       <span className="text-sm font-semibold text-slate-800">{rating}</span>
-      {/* AstroGTM Reviews badge */}
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-[11px] font-semibold text-sky-700">
-        AstroGTM Reviews
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-medium text-slate-500">
+        {editorCount} Editor Reviews
       </span>
-      <span className="text-[11px] text-slate-400">{reviewCount} interval reviewers</span>
     </div>
   );
 }
@@ -505,7 +502,7 @@ export default async function SlugPage({
                           <span className="w-px h-4 bg-slate-200" />
                           <Link
                             href={`/category/${tool.category}`}
-                            className="text-[11px] font-medium text-slate-500 bg-slate-100 hover:bg-slate-200 px-2.5 py-1 rounded-full capitalize transition-colors"
+                            className="text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1 rounded-full capitalize transition-colors"
                           >
                             {categoryLabel}
                           </Link>
@@ -536,27 +533,22 @@ export default async function SlugPage({
                       </div>
                     </div>
 
-                    {/* Tags */}
-                    {tool.tags.length > 0 && (
-                      <div className="flex flex-wrap gap-1.5 mt-5 pt-5 border-t border-sky-100/60">
-                        {tool.tags.map((tag: string) => (
-                          <span key={tag} className="text-[11px] text-slate-500 bg-white border border-slate-200 px-2.5 py-1 rounded-full">{tag}</span>
-                        ))}
+                    {/* Common Use Cases */}
+                    {tool.use_cases.length > 0 && (
+                      <div className="mt-5 pt-5 border-t border-sky-100/60">
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2.5">Common Use Cases</p>
+                        <div className="flex flex-wrap gap-1.5">
+                          {tool.use_cases.map((uc: string) => (
+                            <span key={uc} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 px-3 py-1 rounded-lg transition-colors">
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                              {uc}
+                            </span>
+                          ))}
+                        </div>
                       </div>
                     )}
                   </div>
 
-                  {/* Stats strip */}
-                  {tool.stats.length > 0 && (
-                    <div className={`grid border-t border-slate-100 divide-x divide-slate-100 bg-slate-50 ${tool.stats.length === 2 ? 'grid-cols-2' : tool.stats.length >= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                      {tool.stats.map((stat: { label: string; value: string }) => (
-                        <div key={stat.label} className="px-6 py-5 text-center">
-                          <p className="text-2xl font-bold text-slate-900 tabular-nums leading-none">{stat.value}</p>
-                          <p className="text-[11px] text-slate-500 mt-1.5 font-medium">{stat.label}</p>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* About */}
@@ -564,15 +556,15 @@ export default async function SlugPage({
                   <h2 className="text-sm font-semibold text-slate-900 mb-3">About {tool.name}</h2>
                   <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
 
-                  {tool.use_cases.length > 0 && (
+                  {/* Stats — compact, inside About card */}
+                  {tool.stats.length > 0 && (
                     <div className="mt-5 pt-5 border-t border-slate-100">
-                      <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Common use cases</p>
-                      <div className="flex flex-wrap gap-2">
-                        {tool.use_cases.map((uc: string) => (
-                          <span key={uc} className="inline-flex items-center gap-1.5 text-[12px] text-slate-700 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-full hover:bg-slate-100 transition-colors">
-                            <Check className="w-3 h-3 text-emerald-500 shrink-0" />
-                            {uc}
-                          </span>
+                      <div className={`grid gap-3 ${tool.stats.length === 2 ? 'grid-cols-2' : tool.stats.length >= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
+                        {tool.stats.map((stat: { label: string; value: string }) => (
+                          <div key={stat.label} className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-center">
+                            <p className="text-base font-bold text-slate-800 tabular-nums leading-none">{stat.value}</p>
+                            <p className="text-[11px] text-slate-400 mt-1 font-medium">{stat.label}</p>
+                          </div>
                         ))}
                       </div>
                     </div>

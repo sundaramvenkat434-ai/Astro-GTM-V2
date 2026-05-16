@@ -1,6 +1,6 @@
 'use client';
 
-import { ExternalLink } from 'lucide-react';
+import { ArrowUpRight } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 interface Props {
@@ -31,10 +31,10 @@ export function VisitWebsiteButton({ toolId, websiteUrl }: Props) {
   return (
     <button
       onClick={handleClick}
-      className="flex-1 sm:flex-none inline-flex items-center justify-center gap-2 bg-sky-600 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:bg-sky-500 active:scale-[0.97] transition-all shadow-sm shadow-sky-200"
+      className="group inline-flex items-center gap-2 bg-slate-900 hover:bg-slate-800 active:scale-[0.97] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-all shadow-sm"
     >
-      <ExternalLink className="w-4 h-4" />
       Visit Website
+      <ArrowUpRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
     </button>
   );
 }
