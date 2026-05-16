@@ -1,54 +1,13 @@
-'use client';
+// Server component — no 'use client'. All visible text (dates, sources, author
+// name, stats) renders in raw HTML and is crawler-visible without JavaScript.
 
-import { useState } from 'react';
 import Link from 'next/link';
-import { Linkedin, ExternalLink, BookOpen, Star, CalendarDays, RefreshCw, Link as LinkOut } from 'lucide-react';
+import { Linkedin, ExternalLink, BookOpen, Star, CalendarDays, Link as LinkOut } from 'lucide-react';
 import type { Author } from '@/lib/author-schema';
+import { AuthorBioToggle, UpdatedDateTooltip } from './author-block-interactive';
 
 export type { Author };
 export { FALLBACK } from '@/lib/author-schema';
-
-// ── Bio expand/collapse — the only client-interactive piece ─────────────────
-
-function AuthorBioToggle({ bio }: { bio: string }) {
-  const [expanded, setExpanded] = useState(false);
-  return (
-    <div className="mt-4 pt-4 border-t border-slate-100">
-      <p className={`text-[13px] text-slate-600 leading-relaxed ${!expanded ? 'line-clamp-2' : ''}`}>
-        {bio}
-      </p>
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="mt-1.5 text-[12px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
-      >
-        {expanded ? 'Show less' : 'Read more'}
-      </button>
-    </div>
-  );
-}
-
-// ── Updated-date with tooltip on hover ──────────────────────────────────────
-
-function UpdatedTooltip({ short, exact }: { short: string; exact: string }) {
-  const [show, setShow] = useState(false);
-  return (
-    <span
-      className="relative inline-flex items-center gap-1 cursor-default"
-      onMouseEnter={() => setShow(true)}
-      onMouseLeave={() => setShow(false)}
-    >
-      <RefreshCw className="w-3 h-3 text-slate-400" />
-      <span className="text-[11px] text-slate-500">Updated {short}</span>
-      {show && (
-        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1.5 whitespace-nowrap rounded-md bg-slate-800 text-white text-[11px] px-2.5 py-1 shadow-lg pointer-events-none z-10">
-          {exact}
-        </span>
-      )}
-    </span>
-  );
-}
-
-// ── AuthorBlock — all static content is SSR-rendered ───────────────────────
 
 export interface Source {
   name: string;
@@ -80,33 +39,36 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
 
   return (
     <div className="mt-2 rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
-      {/* Top label bar with dates */}
+
+      {/* ── Top label bar — fully SSR ──────────────────────────────────────── */}
       <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
         <div className="flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+          <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
           <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Reviewed by</span>
         </div>
 
         {(publishedDate || updatedDate) && (
-          <span className="text-slate-200 text-[11px] hidden sm:inline">·</span>
+          <span className="text-slate-200 text-[11px] hidden sm:inline" aria-hidden="true">·</span>
         )}
 
+        {/* Published date — plain SSR text, no interactivity needed */}
         {publishedDate && (
           <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-            <CalendarDays className="w-3 h-3 text-slate-400" />
+            <CalendarDays className="w-3 h-3 text-slate-400" aria-hidden="true" />
             Published {fmtShort(publishedDate)}
           </span>
         )}
 
+        {/* Updated date — text is SSR-rendered inside UpdatedDateTooltip; the
+            client layer only adds the hover tooltip, not the visible text. */}
         {updatedDate && (
-          <UpdatedTooltip short={fmtShort(updatedDate)} exact={fmtExact(updatedDate)} />
+          <UpdatedDateTooltip short={fmtShort(updatedDate)} exact={fmtExact(updatedDate)} />
         )}
       </div>
 
-      {/* Author card */}
+      {/* ── Author card — fully SSR ───────────────────────────────────────── */}
       <div className="p-5">
         <div className="flex items-start gap-4">
-          {/* Avatar */}
           <Link href={profileUrl} rel="author" className="shrink-0 group">
             <div
               className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:opacity-90 transition-opacity"
@@ -116,7 +78,6 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
             </div>
           </Link>
 
-          {/* Name + title + stats */}
           <div className="flex-1 min-w-0">
             <div className="flex items-start justify-between gap-2 flex-wrap">
               <div>
@@ -148,7 +109,7 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
               </div>
             </div>
 
-            {/* Stats row — SSR-visible */}
+            {/* Stats — SSR-visible credentials */}
             {author.stats.length > 0 && (
               <div className="flex gap-4 mt-3 flex-wrap">
                 {author.stats.map((s) => (
@@ -162,10 +123,9 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
           </div>
         </div>
 
-        {/* Bio with client expand toggle */}
+        {/* Bio — text is SSR; the expand/collapse button is the only client piece */}
         <AuthorBioToggle bio={author.bio} />
 
-        {/* AstroGTM editorial badge */}
         <div className="mt-3 flex items-center gap-1.5">
           <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-[11px] font-semibold text-sky-700">
             <Star className="w-3 h-3 fill-sky-500 text-sky-500" />
@@ -175,7 +135,7 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
         </div>
       </div>
 
-      {/* Sources — SSR-rendered, shown only when present */}
+      {/* ── Sources — fully SSR, rel="nofollow noopener noreferrer" ──────── */}
       {hasSources && (
         <div className="border-t border-slate-100 px-5 py-4">
           <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2.5">Sources</p>
@@ -185,10 +145,10 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
                 <a
                   href={src.url}
                   target="_blank"
-                  rel="noopener noreferrer nofollow"
+                  rel="nofollow noopener noreferrer"
                   className="inline-flex items-center gap-1.5 text-[12px] text-slate-600 hover:text-sky-700 transition-colors group"
                 >
-                  <LinkOut className="w-3 h-3 text-slate-300 group-hover:text-sky-500 shrink-0" />
+                  <LinkOut className="w-3 h-3 text-slate-300 group-hover:text-sky-500 shrink-0" aria-hidden="true" />
                   {src.name}
                 </a>
               </li>
