@@ -84,6 +84,8 @@ interface ToolPage {
   latest_news?: { title: string; url: string }[] | null;
   published_date?: string | null;
   updated_date?: string | null;
+  created_at: string;
+  updated_at: string;
   upvotes?: number;
   reviewer_id?: string | null;
   website_url?: string | null;
@@ -293,8 +295,8 @@ function buildToolJsonLd(tool: ToolPage, author: Author) {
         { '@type': 'ListItem', position: 3, name: tool.name, item: pageUrl },
       ],
     },
-    ...(tool.published_date ? { datePublished: tool.published_date } : {}),
-    ...(tool.updated_date ? { dateModified: tool.updated_date } : {}),
+    datePublished: tool.published_date ?? tool.created_at,
+    dateModified: tool.updated_date ?? tool.updated_at,
   };
 
   const items: object[] = [
@@ -320,8 +322,8 @@ function buildToolJsonLd(tool: ToolPage, author: Author) {
     buildArticleSchema({
       headline: tool.meta_title || tool.name,
       pageUrl,
-      datePublished: tool.published_date,
-      dateModified: tool.updated_date,
+      datePublished: tool.published_date ?? tool.created_at,
+      dateModified: tool.updated_date ?? tool.updated_at,
       authorSlug: author.slug,
       authorName: author.name,
     }),
@@ -331,8 +333,8 @@ function buildToolJsonLd(tool: ToolPage, author: Author) {
       rating: tool.rating,
       authorSlug: author.slug,
       authorName: author.name,
-      datePublished: tool.published_date,
-      dateModified: tool.updated_date,
+      datePublished: tool.published_date ?? tool.created_at,
+      dateModified: tool.updated_date ?? tool.updated_at,
     }),
   );
 
@@ -560,17 +562,19 @@ export default async function SlugPage({
                           <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
                         </div>
 
-                        {(tool.published_date || tool.updated_date) && (
-                          <p className="text-[11px] text-slate-400 mt-2.5 flex items-center gap-1.5">
-                            <CalendarDays className="w-3 h-3 shrink-0" />
-                            {tool.published_date && (
-                              <span>Published {new Date(tool.published_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                            )}
-                            {tool.updated_date && (
-                              <span>· Updated {new Date(tool.updated_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}</span>
-                            )}
-                          </p>
-                        )}
+                        {(() => {
+                          const pub = tool.published_date ?? tool.created_at;
+                          const upd = tool.updated_date ?? tool.updated_at;
+                          return (
+                            <p className="text-[11px] text-slate-400 mt-2.5 flex items-center gap-1.5">
+                              <CalendarDays className="w-3 h-3 shrink-0" />
+                              <span>Published {new Date(pub).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
+                              {upd !== pub && (
+                                <span>· Updated {new Date(upd).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
+                              )}
+                            </p>
+                          );
+                        })()}
                       </div>
 
                       {/* CTA */}
@@ -963,8 +967,8 @@ export default async function SlugPage({
               {/* ── Author block ── */}
               <AuthorBlock
                 author={author}
-                publishedDate={tool.published_date ?? null}
-                updatedDate={tool.updated_date ?? null}
+                publishedDate={tool.published_date ?? tool.created_at}
+                updatedDate={tool.updated_date ?? tool.updated_at}
                 sources={(tool.sources ?? []).filter(s => s.name && s.url)}
               />
             </main>
