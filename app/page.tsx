@@ -96,26 +96,26 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
           : 'transparent',
         borderBottom: `1px solid ${accent}18`,
       }}>
-        {/* Avatar + name + badge */}
-        <div className="flex items-center gap-3 mb-2">
+        {/* Avatar + name + badge inline, category pill below */}
+        <div className="flex items-center gap-3 mb-2.5">
           <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
             style={{ background: accent }}>
             {tool.name.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
-            <span className="block text-[14px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight">
-              {tool.name}
-            </span>
-            {tool.badge && (
-              <span className={`inline-flex items-center mt-0.5 px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                {tool.badge}
+            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+              <span className="text-[14px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight">
+                {tool.name}
               </span>
-            )}
+              {tool.badge && (
+                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                  {tool.badge}
+                </span>
+              )}
+            </div>
+            <CategoryPill category={tool.category} />
           </div>
         </div>
-
-        {/* Category pill — always on its own line below name */}
-        <CategoryPill category={tool.category} />
       </div>
 
       {/* Body — description always fully visible, no clamp */}
