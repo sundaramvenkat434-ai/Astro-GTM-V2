@@ -7,7 +7,7 @@ import { SiteHeader } from '@/components/site-header';
 import { UpvoteButton } from '@/components/upvote-button';
 import { SiteFooter } from '@/components/site-footer';
 import {
-  Search, TrendingUp, Users, Megaphone, Star, ArrowRight, Sparkles,
+  Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
   LayoutGrid, Gift, Check, ExternalLink,
   Zap, Share2, ChevronRight, ChevronLeft,
 } from 'lucide-react';
@@ -63,53 +63,70 @@ function CategoryPill({ category, linked = false }: { category: string; linked?:
   return pill;
 }
 
+/* ─── category gradient colors ───────────────────────────────── */
+const CARD_GRADIENTS: Record<string, { from: string; via: string }> = {
+  'lead-generation': { from: 'rgba(14,165,233,0.07)',  via: 'rgba(14,165,233,0.02)' },
+  'sales-outreach':  { from: 'rgba(20,184,166,0.07)',  via: 'rgba(20,184,166,0.02)' },
+  'seo-content':     { from: 'rgba(245,158,11,0.07)',  via: 'rgba(245,158,11,0.02)' },
+  'social-media':    { from: 'rgba(16,185,129,0.07)',  via: 'rgba(16,185,129,0.02)' },
+};
+const CARD_ACCENT: Record<string, string> = {
+  'lead-generation': '#0ea5e9',
+  'sales-outreach':  '#14b8a6',
+  'seo-content':     '#f59e0b',
+  'social-media':    '#10b981',
+};
+
 /* ─── top picks card ─────────────────────────────────────────── */
 function TopPickCard({ tool }: { tool: ToolPage }) {
-  const cc = CATEGORY_COLORS[tool.category];
+  const grad = CARD_GRADIENTS[tool.category];
+  const accent = CARD_ACCENT[tool.category] ?? '#94a3b8';
+
   return (
     <Link
       href={`/category/${tool.category}/${tool.slug}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="group shrink-0 w-64 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
+      className="group shrink-0 w-72 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
     >
-      {/* Thin category accent line */}
-      <div className="h-[3px] w-full shrink-0" style={{
-        background: tool.category === 'lead-generation' ? 'linear-gradient(90deg,#0ea5e9 0%,transparent 100%)' :
-                    tool.category === 'sales-outreach'  ? 'linear-gradient(90deg,#14b8a6 0%,transparent 100%)' :
-                    tool.category === 'seo-content'     ? 'linear-gradient(90deg,#f59e0b 0%,transparent 100%)' :
-                    tool.category === 'social-media'    ? 'linear-gradient(90deg,#10b981 0%,transparent 100%)' :
-                                                          'linear-gradient(90deg,#94a3b8 0%,transparent 100%)',
-      }} />
-
-      <div className="px-4 pt-4 pb-3 flex-1 flex flex-col">
-        {/* Header row */}
-        <div className="flex items-start justify-between gap-2 mb-3">
-          <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm bg-slate-900 shadow-sm">
-              {tool.name.charAt(0)}
-            </div>
-            <div className="min-w-0">
-              <span className="block text-[13px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight truncate">
-                {tool.name}
-              </span>
-              {tool.badge && (
-                <span className={`inline-flex items-center mt-0.5 px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                  {tool.badge}
-                </span>
-              )}
-            </div>
+      {/* Header section — light gradient wash */}
+      <div className="px-5 pt-5 pb-4" style={{
+        background: grad
+          ? `linear-gradient(160deg, ${grad.from} 0%, ${grad.via} 60%, transparent 100%)`
+          : 'transparent',
+        borderBottom: `1px solid ${accent}18`,
+      }}>
+        {/* Avatar + name + badge */}
+        <div className="flex items-center gap-3 mb-2">
+          <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+            style={{ background: accent }}>
+            {tool.name.charAt(0)}
           </div>
-          <CategoryPill category={tool.category} />
+          <div className="min-w-0 flex-1">
+            <span className="block text-[14px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight">
+              {tool.name}
+            </span>
+            {tool.badge && (
+              <span className={`inline-flex items-center mt-0.5 px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                {tool.badge}
+              </span>
+            )}
+          </div>
         </div>
 
-        <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-3">
+        {/* Category pill — always on its own line below name */}
+        <CategoryPill category={tool.category} />
+      </div>
+
+      {/* Body — description always fully visible, no clamp */}
+      <div className="px-5 pt-4 pb-3 flex-1 flex flex-col gap-3">
+        <p className="text-[12.5px] text-slate-500 leading-[1.65]">
           {tool.tagline || tool.description}
         </p>
 
         {/* Tags */}
         {(tool.tags as string[])?.length > 0 && (
-          <div className="flex flex-wrap gap-1 mb-auto">
+          <div className="flex flex-wrap gap-1 mt-auto">
             {(tool.tags as string[]).slice(0, 3).map((tag) => (
               <span key={tag} className="text-[10px] bg-slate-50 text-slate-400 border border-slate-100 px-2 py-0.5 rounded-full">{tag}</span>
             ))}
@@ -118,11 +135,11 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-slate-50 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
-          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-          <span className="text-slate-800 font-bold">{tool.rating}</span>
-          <span className="text-slate-400 font-normal">/ 5</span>
+      <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1.5 text-[11px]">
+          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+          <span className="font-bold text-slate-800">{tool.rating}</span>
+          <span className="text-slate-400">/ 5</span>
         </span>
         <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
       </div>
@@ -134,7 +151,7 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
 function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: ToolPage[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   function scroll(dir: 'left' | 'right') {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 320 : -320, behavior: 'smooth' });
+    scrollRef.current?.scrollBy({ left: dir === 'right' ? 340 : -340, behavior: 'smooth' });
   }
   return (
     <div className="relative -mx-1">
@@ -144,41 +161,6 @@ function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: To
       </button>
 
       <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-none px-3 py-3 scroll-smooth">
-        {/* Sponsor card */}
-        <a href="mailto:hello@astrogtm.com?subject=Feature my tool"
-          className="group shrink-0 w-56 flex flex-col rounded-2xl overflow-hidden relative hover:shadow-xl hover:shadow-sky-950/30 transition-all duration-300"
-          style={{ background: 'linear-gradient(145deg, #060f23 0%, #0a1f40 50%, #0b3060 100%)' }}>
-          {/* Shimmer top line */}
-          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(56,189,248,0.7) 50%, transparent)' }} />
-          {/* Hover glow */}
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
-            style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(56,189,248,0.1) 0%, transparent 65%)' }} />
-
-          <div className="relative flex-1 px-5 pt-5 pb-5 flex flex-col gap-3">
-            <div className="flex items-center justify-between">
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
-                style={{ background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.25)' }}>
-                <Megaphone className="w-4 h-4 text-sky-400" />
-              </div>
-              <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-sky-500/80">Sponsor</span>
-            </div>
-
-            <div className="flex-1">
-              <p className="text-[14px] font-bold text-white leading-snug mb-1.5">Promote Your Tool</p>
-              <p className="text-[11px] leading-[1.6]" style={{ color: 'rgba(148,210,252,0.55)' }}>
-                Reach <span className="text-sky-300 font-semibold">30K+</span> GTM &amp; growth visitors/mo.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-sky-400 group-hover:text-sky-300 transition-colors">
-              <Sparkles className="w-3 h-3 shrink-0" />
-              Get featured
-              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-            </div>
-          </div>
-        </a>
-
-        {/* Pick cards */}
         {topPicks.map((tool) => (
           <TopPickCard key={tool.id} tool={tool} />
         ))}
