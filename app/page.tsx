@@ -455,7 +455,7 @@ export default function HomePage() {
 
           {/* Sub-headline */}
           <p className="text-[15px] sm:text-[16px] font-normal text-slate-400 leading-[1.65] max-w-xl mx-auto mb-9 tracking-[0.01em]">
-            Discover highly-curated <span className="text-white font-medium">AI GTM and Growth Tools</span> across SEO, Lead Gen, Outreach, Social Media, and more, with {' '}
+            Discover highly-curated <span className="text-white font-medium">AI GTM and Growth Tools</span> across SEO, Lead Gen, Sales Outreach, Social Media, and more, with {' '}
             <span className="text-emerald-400 font-medium">FREE Plans</span>.
           </p>
 
