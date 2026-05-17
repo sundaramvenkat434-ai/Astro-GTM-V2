@@ -194,7 +194,7 @@ const NEWSLETTER_OPTIONS = [
   },
   {
     label: 'Founder Playbooks',
-    desc: 'Real-world AI growth experiments',
+    desc: 'Proven AI growth experiments',
     icon: <BookOpen className="w-3.5 h-3.5" />,
     accent: '#0d9488',
   },
