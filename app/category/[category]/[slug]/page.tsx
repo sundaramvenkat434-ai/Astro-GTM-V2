@@ -112,26 +112,10 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 /* Category-matched hero gradients — mirrors home page card system */
-const CATEGORY_HERO_GRADIENT: Record<string, string> = {
-  'lead-generation': 'linear-gradient(160deg, rgba(14,165,233,0.10) 0%, rgba(14,165,233,0.03) 40%, rgba(255,255,255,1) 75%)',
-  'sales-outreach':  'linear-gradient(160deg, rgba(20,184,166,0.10) 0%, rgba(20,184,166,0.03) 40%, rgba(255,255,255,1) 75%)',
-  'seo-content':     'linear-gradient(160deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.03) 40%, rgba(255,255,255,1) 75%)',
-  'social-media':    'linear-gradient(160deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.03) 40%, rgba(255,255,255,1) 75%)',
-};
-
-const CATEGORY_HERO_BORDER: Record<string, string> = {
-  'lead-generation': 'rgba(14,165,233,0.15)',
-  'sales-outreach':  'rgba(20,184,166,0.15)',
-  'seo-content':     'rgba(245,158,11,0.15)',
-  'social-media':    'rgba(16,185,129,0.15)',
-};
-
-const CATEGORY_BTN_GRADIENT: Record<string, string> = {
-  'lead-generation': 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
-  'sales-outreach':  'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)',
-  'seo-content':     'linear-gradient(135deg, #b45309 0%, #d97706 60%, #f59e0b 100%)',
-  'social-media':    'linear-gradient(135deg, #047857 0%, #059669 60%, #10b981 100%)',
-};
+const TOOL_HERO_GRADIENT = 'linear-gradient(160deg, #B0E4FF44 0%, #ddf1ff22 40%, rgba(255,255,255,1) 75%)';
+const TOOL_HERO_BORDER   = 'rgba(14,165,233,0.15)';
+const TOOL_AVATAR_BG     = 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)';
+const TOOL_AVATAR_COLOR  = '#0369a1';
 
 const CATEGORY_SCHEMA: Record<string, string> = {
   seo: 'WebApplication',
@@ -536,8 +520,8 @@ export default async function SlugPage({
                   <div
                     className="px-6 sm:px-8 pt-6 sm:pt-8 pb-5"
                     style={{
-                      background: CATEGORY_HERO_GRADIENT[tool.category] ?? 'linear-gradient(160deg, #f0f7ff 0%, #ffffff 55%)',
-                      borderBottom: `1px solid ${CATEGORY_HERO_BORDER[tool.category] ?? 'rgba(14,165,233,0.1)'}`,
+                      background: TOOL_HERO_GRADIENT,
+                      borderBottom: `1px solid ${TOOL_HERO_BORDER}`,
                     }}
                   >
                     <div className="flex flex-col sm:flex-row sm:items-start gap-5">
@@ -555,10 +539,10 @@ export default async function SlugPage({
                         </div>
                       ) : (
                         <div
-                          className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-sm"
-                          style={{ background: CATEGORY_BTN_GRADIENT[tool.category] ?? 'linear-gradient(135deg, #475569 0%, #64748b 100%)' }}
+                          className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 font-bold text-2xl border border-sky-200 shadow-sm"
+                          style={{ background: TOOL_AVATAR_BG, color: TOOL_AVATAR_COLOR }}
                         >
-                          <Zap className="w-7 h-7" />
+                          {tool.name.charAt(0)}
                         </div>
                       )}
 

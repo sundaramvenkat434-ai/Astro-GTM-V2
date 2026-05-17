@@ -124,9 +124,13 @@ export default async function CategoryPage({ params }: { params: { category: str
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {items.map((tool) => (
                 <Link key={tool.id} href={`/category/${params.category}/${tool.slug}`}
-                  className="group flex items-start gap-4 p-5 rounded-2xl bg-white border border-slate-200 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-100/60 transition-all duration-200">
-                  <div className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center bg-sky-50 border border-sky-100">
-                    <Zap className="w-5 h-5 text-sky-500" />
+                  className="group flex items-start gap-4 p-5 rounded-2xl border border-slate-200 hover:border-sky-200 hover:shadow-lg hover:shadow-sky-100/60 transition-all duration-200"
+                  style={{ background: 'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)' }}>
+                  <div
+                    className="shrink-0 w-11 h-11 rounded-xl flex items-center justify-center font-bold text-[15px] border border-sky-200"
+                    style={{ background: 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)', color: '#0369a1' }}
+                  >
+                    {tool.name.charAt(0)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
