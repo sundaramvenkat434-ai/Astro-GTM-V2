@@ -38,34 +38,57 @@ const SECTION_LABELS: Record<string, string> = {
  * Paid Marketing     #DB04B7
  * Analytics          #04C9DB
  */
+/*
+ * Brand palette — soft pastel fills per category
+ * lead-generation  #D1FBFF (sky)
+ * sales-outreach   #E4FFD1 (lime)
+ * seo-content      #D7FFD1 (green)
+ * social-media     #D1EAFF (blue)
+ * (extras: #D1FFFF, #D9F2FF available for future categories)
+ */
+const CATEGORY_PASTEL: Record<string, string> = {
+  'lead-generation': '#D1FBFF',
+  'sales-outreach':  '#E4FFD1',
+  'seo-content':     '#D7FFD1',
+  'social-media':    '#D1EAFF',
+};
+
+/* Darker shade of each pastel for text/dot/border */
+const CATEGORY_PASTEL_DARK: Record<string, string> = {
+  'lead-generation': '#0e9aad',
+  'sales-outreach':  '#4a8a1a',
+  'seo-content':     '#1a8a3a',
+  'social-media':    '#1a5fab',
+};
+
 const CATEGORY_ACCENT: Record<string, string> = {
-  'lead-generation': '#044CDB',
-  'sales-outreach':  '#B0DB04',
-  'seo-content':     '#04DB48',
-  'social-media':    '#7E04DB',
+  'lead-generation': '#0e9aad',
+  'sales-outreach':  '#4a8a1a',
+  'seo-content':     '#1a8a3a',
+  'social-media':    '#1a5fab',
 };
 
 const CARD_GRADIENTS: Record<string, string> = {
-  'lead-generation': 'linear-gradient(145deg, rgba(4,76,219,0.08) 0%, rgba(255,255,255,1) 55%)',
-  'sales-outreach':  'linear-gradient(145deg, rgba(176,219,4,0.09) 0%, rgba(255,255,255,1) 55%)',
-  'seo-content':     'linear-gradient(145deg, rgba(4,219,72,0.08) 0%, rgba(255,255,255,1) 55%)',
-  'social-media':    'linear-gradient(145deg, rgba(126,4,219,0.08) 0%, rgba(255,255,255,1) 55%)',
+  'lead-generation': 'linear-gradient(145deg, #D1FBFF55 0%, rgba(255,255,255,1) 55%)',
+  'sales-outreach':  'linear-gradient(145deg, #E4FFD155 0%, rgba(255,255,255,1) 55%)',
+  'seo-content':     'linear-gradient(145deg, #D7FFD155 0%, rgba(255,255,255,1) 55%)',
+  'social-media':    'linear-gradient(145deg, #D1EAFF55 0%, rgba(255,255,255,1) 55%)',
 };
 
-/* Avatar gradient derived from brand accent */
+/* Avatar — kept neutral grey/black as requested */
 const CARD_BTN_GRADIENT: Record<string, string> = {
-  'lead-generation': 'linear-gradient(135deg, #022ea3 0%, #044CDB 60%, #3b6ef5 100%)',
-  'sales-outreach':  'linear-gradient(135deg, #6b8402 0%, #95b503 60%, #B0DB04 100%)',
-  'seo-content':     'linear-gradient(135deg, #028a2e 0%, #04b83d 60%, #04DB48 100%)',
-  'social-media':    'linear-gradient(135deg, #4e0289 0%, #6a03ba 60%, #7E04DB 100%)',
+  'lead-generation': 'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'sales-outreach':  'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'seo-content':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'social-media':    'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
 };
 
-/* Category pill colors — updated to match brand */
+/* Category pill colors — inline style driven by pastel tokens */
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  'lead-generation': { bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200',   dot: 'bg-blue-500' },
-  'sales-outreach':  { bg: 'bg-lime-50',   text: 'text-lime-700',   border: 'border-lime-200',   dot: 'bg-lime-500' },
-  'seo-content':     { bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500' },
-  'social-media':    { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', dot: 'bg-violet-500' },
+  'lead-generation': { bg: '', text: '', border: '', dot: '' },
+  'sales-outreach':  { bg: '', text: '', border: '', dot: '' },
+  'seo-content':     { bg: '', text: '', border: '', dot: '' },
+  'social-media':    { bg: '', text: '', border: '', dot: '' },
 };
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -85,14 +108,16 @@ const BADGE_STYLES: Record<string, string> = {
 
 /* ─── category pill ─────────────────────────────────────────── */
 function CategoryPill({ category }: { category: string }) {
-  const c = CATEGORY_COLORS[category];
-  if (!c) return null;
+  const bg   = CATEGORY_PASTEL[category];
+  const dark = CATEGORY_PASTEL_DARK[category];
+  if (!bg) return null;
   return (
     <Link
       href={`/category/${category}`}
-      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-opacity hover:opacity-75 shrink-0 ${c.bg} ${c.text} ${c.border}`}
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-opacity hover:opacity-75 shrink-0"
+      style={{ backgroundColor: bg, color: dark, borderColor: dark + '40' }}
     >
-      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
+      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dark }} />
       {SECTION_LABELS[category] ?? category}
     </Link>
   );
@@ -543,7 +568,7 @@ export default function HomePage() {
                     <nav className="p-2 space-y-0.5">
                       {categories.map(cat => {
                         const active = activeCategory === cat.id;
-                        const cc = CATEGORY_COLORS[cat.id];
+                        const dotColor = CATEGORY_PASTEL_DARK[cat.id];
                         return (
                           <button
                             key={cat.id}
@@ -553,7 +578,10 @@ export default function HomePage() {
                             }`}
                           >
                             <span className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${active ? 'bg-white/60' : (cc?.dot ?? 'bg-slate-400')}`} />
+                              <span
+                                className="w-2 h-2 rounded-full shrink-0"
+                                style={{ backgroundColor: active ? 'rgba(255,255,255,0.6)' : (dotColor ?? '#94a3b8') }}
+                              />
                               {cat.label}
                             </span>
                             <span className={`text-[11px] tabular-nums px-1.5 py-0.5 rounded-full ${
@@ -586,19 +614,27 @@ export default function HomePage() {
                 {categories.length > 1 && (
                   <div className="flex lg:hidden gap-2 overflow-x-auto pb-3 mb-5 scrollbar-hide">
                     {categories.map(cat => {
-                      const cc = CATEGORY_COLORS[cat.id];
                       const active = activeCategory === cat.id;
+                      const pastel = CATEGORY_PASTEL[cat.id];
+                      const dark   = CATEGORY_PASTEL_DARK[cat.id];
                       return (
                         <button
                           key={cat.id}
                           onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
-                          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all ${
-                            active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
-                          }`}
+                          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all"
+                          style={active
+                            ? { background: '#0f172a', color: '#fff', borderColor: '#0f172a' }
+                            : { background: pastel ?? '#fff', color: dark ?? '#475569', borderColor: dark ? dark + '40' : '#e2e8f0' }
+                          }
                         >
-                          {cc && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${active ? 'bg-white' : cc.dot}`} />}
+                          {pastel && (
+                            <span
+                              className="w-1.5 h-1.5 rounded-full shrink-0"
+                              style={{ backgroundColor: active ? 'rgba(255,255,255,0.7)' : (dark ?? '#94a3b8') }}
+                            />
+                          )}
                           {cat.label}
-                          <span className={`text-[10px] ${active ? 'text-slate-300' : 'text-slate-400'}`}>{cat.count}</span>
+                          <span style={{ fontSize: 10, opacity: 0.65 }}>{cat.count}</span>
                         </button>
                       );
                     })}
@@ -624,7 +660,12 @@ export default function HomePage() {
                         <section key={cat} id={`section-${cat}`}>
                           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-200">
                             <span
-                              className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cc?.bg ?? 'bg-slate-100'} ${cc?.text ?? 'text-slate-600'} ${cc?.border ?? 'border-slate-200'}`}
+                              className="w-8 h-8 rounded-lg flex items-center justify-center border"
+                              style={{
+                                backgroundColor: CATEGORY_PASTEL[cat] ?? '#f1f5f9',
+                                color: CATEGORY_PASTEL_DARK[cat] ?? '#475569',
+                                borderColor: CATEGORY_PASTEL_DARK[cat] ? CATEGORY_PASTEL_DARK[cat] + '40' : '#e2e8f0',
+                              }}
                             >
                               {CATEGORY_ICONS[cat]}
                             </span>
