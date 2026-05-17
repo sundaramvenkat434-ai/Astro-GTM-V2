@@ -111,6 +111,28 @@ const CATEGORY_LABELS: Record<string, string> = {
   infrastructure: 'Infrastructure',
 };
 
+/* Category-matched hero gradients — mirrors home page card system */
+const CATEGORY_HERO_GRADIENT: Record<string, string> = {
+  'lead-generation': 'linear-gradient(160deg, rgba(14,165,233,0.10) 0%, rgba(14,165,233,0.03) 40%, rgba(255,255,255,1) 75%)',
+  'sales-outreach':  'linear-gradient(160deg, rgba(20,184,166,0.10) 0%, rgba(20,184,166,0.03) 40%, rgba(255,255,255,1) 75%)',
+  'seo-content':     'linear-gradient(160deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.03) 40%, rgba(255,255,255,1) 75%)',
+  'social-media':    'linear-gradient(160deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.03) 40%, rgba(255,255,255,1) 75%)',
+};
+
+const CATEGORY_HERO_BORDER: Record<string, string> = {
+  'lead-generation': 'rgba(14,165,233,0.15)',
+  'sales-outreach':  'rgba(20,184,166,0.15)',
+  'seo-content':     'rgba(245,158,11,0.15)',
+  'social-media':    'rgba(16,185,129,0.15)',
+};
+
+const CATEGORY_BTN_GRADIENT: Record<string, string> = {
+  'lead-generation': 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
+  'sales-outreach':  'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)',
+  'seo-content':     'linear-gradient(135deg, #b45309 0%, #d97706 60%, #f59e0b 100%)',
+  'social-media':    'linear-gradient(135deg, #047857 0%, #059669 60%, #10b981 100%)',
+};
+
 const CATEGORY_SCHEMA: Record<string, string> = {
   seo: 'WebApplication',
   analytics: 'WebApplication',
@@ -510,12 +532,18 @@ export default async function SlugPage({
               {/* ── Hero card ── */}
               <section id="section-overview">
                 <div className="rounded-2xl border border-slate-200 shadow-md overflow-hidden">
-                  {/* Top bar with subtle blue gradient */}
-                  <div className="px-6 sm:px-8 pt-6 sm:pt-8 pb-5" style={{ background: 'linear-gradient(160deg, #f0f7ff 0%, #ffffff 55%)' }}>
+                  {/* Category-matched gradient header */}
+                  <div
+                    className="px-6 sm:px-8 pt-6 sm:pt-8 pb-5"
+                    style={{
+                      background: CATEGORY_HERO_GRADIENT[tool.category] ?? 'linear-gradient(160deg, #f0f7ff 0%, #ffffff 55%)',
+                      borderBottom: `1px solid ${CATEGORY_HERO_BORDER[tool.category] ?? 'rgba(14,165,233,0.1)'}`,
+                    }}
+                  >
                     <div className="flex flex-col sm:flex-row sm:items-start gap-5">
                       {/* Logo */}
                       {tool.logo_url ? (
-                        <div className="w-16 h-16 rounded-2xl overflow-hidden border border-slate-100 bg-white shrink-0 flex items-center justify-center shadow-sm">
+                        <div className="w-16 h-16 rounded-2xl overflow-hidden border border-white/80 bg-white shrink-0 flex items-center justify-center shadow-sm">
                           <img
                             src={tool.logo_url}
                             alt={tool.logo_alt || `${tool.name} logo`}
@@ -526,7 +554,10 @@ export default async function SlugPage({
                           />
                         </div>
                       ) : (
-                        <div className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 bg-slate-100 text-slate-500 shadow-sm">
+                        <div
+                          className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-sm"
+                          style={{ background: CATEGORY_BTN_GRADIENT[tool.category] ?? 'linear-gradient(135deg, #475569 0%, #64748b 100%)' }}
+                        >
                           <Zap className="w-7 h-7" />
                         </div>
                       )}
@@ -590,12 +621,21 @@ export default async function SlugPage({
 
                     {/* Common Use Cases */}
                     {tool.use_cases.length > 0 && (
-                      <div className="mt-5 pt-5 border-t border-sky-100/60">
+                      <div className="mt-5 pt-5 border-t border-slate-200/60">
                         <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2.5">Common Use Cases</p>
                         <div className="flex flex-wrap gap-1.5">
                           {tool.use_cases.map((uc: string) => (
-                            <span key={uc} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-white border border-slate-200 hover:border-slate-300 hover:bg-slate-50 px-3 py-1 rounded-lg transition-colors">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0" />
+                            <span key={uc} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-white/80 border border-slate-200 hover:border-slate-300 hover:bg-white px-3 py-1 rounded-lg transition-colors shadow-sm">
+                              <span
+                                className="w-1.5 h-1.5 rounded-full shrink-0"
+                                style={{
+                                  background:
+                                    tool.category === 'lead-generation' ? '#0ea5e9' :
+                                    tool.category === 'sales-outreach'  ? '#14b8a6' :
+                                    tool.category === 'seo-content'     ? '#f59e0b' :
+                                    tool.category === 'social-media'    ? '#10b981' : '#94a3b8',
+                                }}
+                              />
                               {uc}
                             </span>
                           ))}

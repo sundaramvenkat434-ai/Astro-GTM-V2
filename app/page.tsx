@@ -9,7 +9,7 @@ import { SiteFooter } from '@/components/site-footer';
 import {
   Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
   LayoutGrid, Gift, Check, ExternalLink,
-  Zap, Share2, ChevronRight, ChevronLeft, Globe,
+  Zap, Share2, ChevronRight,
 } from 'lucide-react';
 
 /* ─── types ─────────────────────────────────────────────────── */
@@ -24,23 +24,27 @@ interface ToolPage {
 const SECTION_ORDER = ['lead-generation', 'sales-outreach', 'seo-content', 'social-media'];
 const SECTION_LABELS: Record<string, string> = {
   'lead-generation': 'Lead Generation',
-  'sales-outreach': 'Sales Outreach',
-  'seo-content': 'SEO & Content',
-  'social-media': 'Social Media',
+  'sales-outreach':  'Sales Outreach',
+  'seo-content':     'SEO & Content',
+  'social-media':    'Social Media',
 };
+
+/* Category color system */
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
   'lead-generation': { bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200',     dot: 'bg-sky-500' },
   'sales-outreach':  { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',    dot: 'bg-teal-500' },
   'seo-content':     { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   dot: 'bg-amber-500' },
   'social-media':    { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
 };
+
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  all: <LayoutGrid className="w-4 h-4" />,
+  all:               <LayoutGrid className="w-4 h-4" />,
   'lead-generation': <Users className="w-4 h-4" />,
-  'sales-outreach': <Megaphone className="w-4 h-4" />,
-  'seo-content': <TrendingUp className="w-4 h-4" />,
-  'social-media': <Share2 className="w-4 h-4" />,
+  'sales-outreach':  <Megaphone className="w-4 h-4" />,
+  'seo-content':     <TrendingUp className="w-4 h-4" />,
+  'social-media':    <Share2 className="w-4 h-4" />,
 };
+
 const BADGE_STYLES: Record<string, string> = {
   new:     'bg-sky-50 text-sky-700 border-sky-200',
   popular: 'bg-amber-50 text-amber-700 border-amber-200',
@@ -48,15 +52,15 @@ const BADGE_STYLES: Record<string, string> = {
   hot:     'bg-rose-50 text-rose-700 border-rose-200',
 };
 
-/* ─── gradient / accent per category ───────────────────────── */
-const CARD_GRADIENTS: Record<string, { from: string; via: string }> = {
-  'lead-generation': { from: 'rgba(14,165,233,0.18)',  via: 'rgba(14,165,233,0.06)' },
-  'sales-outreach':  { from: 'rgba(20,184,166,0.18)',  via: 'rgba(20,184,166,0.06)' },
-  'seo-content':     { from: 'rgba(245,158,11,0.18)',  via: 'rgba(245,158,11,0.06)' },
-  'social-media':    { from: 'rgba(16,185,129,0.18)',  via: 'rgba(16,185,129,0.06)' },
+/* Card gradient background per category — matches tool page hero */
+const CARD_GRADIENTS: Record<string, string> = {
+  'lead-generation': 'linear-gradient(160deg, rgba(14,165,233,0.07) 0%, rgba(255,255,255,1) 50%)',
+  'sales-outreach':  'linear-gradient(160deg, rgba(20,184,166,0.07) 0%, rgba(255,255,255,1) 50%)',
+  'seo-content':     'linear-gradient(160deg, rgba(245,158,11,0.07) 0%, rgba(255,255,255,1) 50%)',
+  'social-media':    'linear-gradient(160deg, rgba(16,185,129,0.07) 0%, rgba(255,255,255,1) 50%)',
 };
 
-/* gradient stop values used for the View Tool button to mirror the card header */
+/* Avatar / button gradient per category */
 const CARD_BTN_GRADIENT: Record<string, string> = {
   'lead-generation': 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
   'sales-outreach':  'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)',
@@ -85,63 +89,70 @@ function CategoryPill({ category, linked = false }: { category: string; linked?:
   return pill;
 }
 
-/* shared pill style for the three fixed info tags */
-const INFO_TAG_BASE = 'text-[10px] font-medium border px-2 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-500 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200';
-
-/* ─── top picks card ─────────────────────────────────────────── */
-function TopPickCard({ tool }: { tool: ToolPage }) {
-  const grad = CARD_GRADIENTS[tool.category];
-  const accent = CARD_ACCENT[tool.category] ?? '#94a3b8';
-  const btnGrad = CARD_BTN_GRADIENT[tool.category] ?? `linear-gradient(135deg, #475569 0%, #64748b 100%)`;
+/* ─── tool card ─────────────────────────────────────────────── */
+function ToolCard({ tool }: { tool: ToolPage }) {
+  const btnGrad = CARD_BTN_GRADIENT[tool.category] ?? 'linear-gradient(135deg, #475569 0%, #64748b 100%)';
+  const bgGrad  = CARD_GRADIENTS[tool.category];
 
   return (
-    <div className="group shrink-0 w-64 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
+    <div
+      className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-200"
+      style={bgGrad ? { background: bgGrad } : undefined}
+    >
+      <div className="flex gap-3.5 p-4 flex-1">
+        {/* Avatar */}
+        <div
+          className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm mt-0.5"
+          style={{ background: btnGrad }}
+        >
+          {tool.name.charAt(0)}
+        </div>
 
-      {/* Header — gradient wash matching accent */}
-      <div className="px-4 pt-4 pb-3" style={{
-        background: grad ? `linear-gradient(160deg, ${grad.from} 0%, ${grad.via} 60%, transparent 100%)` : 'transparent',
-        borderBottom: `1px solid ${accent}30`,
-      }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
-            style={{ background: btnGrad }}>
-            {tool.name.charAt(0)}
-          </div>
-          <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
-              <Link
-                href={`/category/${tool.category}/${tool.slug}`}
-                className="text-[13.5px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-snug"
-              >
+        {/* Content */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
+            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+              <span className="font-semibold text-slate-900 text-[14px] leading-snug group-hover:text-sky-700 transition-colors">
                 {tool.name}
-              </Link>
+              </span>
               {tool.badge && (
                 <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {tool.badge}
                 </span>
               )}
             </div>
+            <p className="text-[12.5px] text-slate-500 leading-relaxed line-clamp-2 mb-2.5">
+              {tool.tagline || tool.description}
+            </p>
+          </Link>
+
+          {/* Category pill + info tags */}
+          <div className="flex items-center gap-1.5 flex-wrap mt-auto">
             <CategoryPill category={tool.category} />
+            <Link
+              href={`/category/${tool.category}/${tool.slug}#use-cases`}
+              className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full border bg-white/80 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 hover:bg-sky-50 transition-colors"
+            >
+              Use Cases
+            </Link>
+            <Link
+              href={`/category/${tool.category}/${tool.slug}#features`}
+              className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full border bg-white/80 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 hover:bg-sky-50 transition-colors"
+            >
+              Features
+            </Link>
+            <Link
+              href={`/category/${tool.category}/${tool.slug}#pricing`}
+              className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full border bg-white/80 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 hover:bg-sky-50 transition-colors"
+            >
+              Pricing
+            </Link>
           </div>
         </div>
       </div>
 
-      {/* Body */}
-      <div className="px-4 pt-3 pb-3 flex-1 flex flex-col gap-2.5">
-        <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2">
-          {tool.tagline || tool.description}
-        </p>
-
-        {/* Fixed info tags: Use Cases · Features · Pricing */}
-        <div className="flex flex-wrap gap-1 mt-auto">
-          <Link href={`/category/${tool.category}/${tool.slug}#use-cases`} className={INFO_TAG_BASE}>Use Cases</Link>
-          <Link href={`/category/${tool.category}/${tool.slug}#features`}  className={INFO_TAG_BASE}>Features</Link>
-          <Link href={`/category/${tool.category}/${tool.slug}#pricing`}   className={INFO_TAG_BASE}>Pricing</Link>
-        </div>
-      </div>
-
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+      <div className="px-4 py-3 border-t border-slate-100/80 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1">
             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
@@ -151,7 +162,7 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
         </div>
         <Link
           href={`/category/${tool.category}/${tool.slug}`}
-          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] shadow-sm"
+          className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-white px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] shadow-sm"
           style={{ background: btnGrad }}
         >
           View Tool <ExternalLink className="w-2.5 h-2.5" />
@@ -161,101 +172,21 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
   );
 }
 
-/* ─── top picks carousel ─────────────────────────────────────── */
-function TopPicksCarousel({ topPicks }: { topPicks: ToolPage[] }) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  function scroll(dir: 'left' | 'right') {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 300 : -300, behavior: 'smooth' });
-  }
-  return (
-    <div className="relative -mx-1">
-      <button onClick={() => scroll('left')} aria-label="Scroll left"
-        className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:border-sky-300 hover:shadow-sky-100 transition-all">
-        <ChevronLeft className="w-4 h-4 text-slate-500" />
-      </button>
-
-      <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-none px-3 py-3 scroll-smooth">
-        {topPicks.map((tool) => (
-          <TopPickCard key={tool.id} tool={tool} />
-        ))}
-      </div>
-
-      <button onClick={() => scroll('right')} aria-label="Scroll right"
-        className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:border-sky-300 hover:shadow-sky-100 transition-all">
-        <ChevronRight className="w-4 h-4 text-slate-500" />
-      </button>
-    </div>
-  );
-}
-
-/* ─── directory tool card ────────────────────────────────────── */
-function ToolCard({ tool }: { tool: ToolPage }) {
-  const accent = CARD_ACCENT[tool.category];
-  const grad = CARD_GRADIENTS[tool.category];
-  const btnGrad = CARD_BTN_GRADIENT[tool.category] ?? `linear-gradient(135deg, #475569 0%, #64748b 100%)`;
-
-  return (
-    <div
-      className="group flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/60 transition-all duration-200"
-      style={grad ? { background: `linear-gradient(160deg, ${grad.from.replace('0.18', '0.06')} 0%, white 45%)` } : undefined}
-    >
-      <div className="flex gap-3 p-4">
-        {/* Avatar */}
-        <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm"
-          style={{ background: btnGrad }}>
-          {tool.name.charAt(0)}
-        </div>
-
-        {/* Content */}
-        <div className="flex-1 min-w-0">
-          <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
-            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-              <span className="font-semibold text-slate-900 text-[13.5px] leading-snug group-hover:text-sky-700 transition-colors">{tool.name}</span>
-              {tool.badge && (
-                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                  {tool.badge}
-                </span>
-              )}
-            </div>
-            <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-2">{tool.tagline || tool.description}</p>
-          </Link>
-
-          {/* Category pill + fixed info tags */}
-          <div className="flex items-center gap-1.5 flex-wrap">
-            <CategoryPill category={tool.category} />
-            <Link href={`/category/${tool.category}/${tool.slug}#use-cases`} className="text-[9.5px] font-medium border px-1.5 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-400 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200">Use Cases</Link>
-            <Link href={`/category/${tool.category}/${tool.slug}#features`}  className="text-[9.5px] font-medium border px-1.5 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-400 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200">Features</Link>
-            <Link href={`/category/${tool.category}/${tool.slug}#pricing`}   className="text-[9.5px] font-medium border px-1.5 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-400 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200">Pricing</Link>
-          </div>
-        </div>
-
-        {/* Right: rating + upvote */}
-        <div className="shrink-0 flex flex-col items-end justify-between gap-2">
-          <div className="flex items-center gap-1">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span className="text-[11px] font-bold text-slate-700">{tool.rating}</span>
-          </div>
-          <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 /* ─── page ───────────────────────────────────────────────────── */
 export default function HomePage() {
-  const [tools, setTools] = useState<ToolPage[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [tools, setTools]               = useState<ToolPage[]>([]);
+  const [loading, setLoading]           = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
-  const [query, setQuery] = useState('');
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [heroVisible, setHeroVisible] = useState(false);
+  const [query, setQuery]               = useState('');
+  const canvasRef                       = useRef<HTMLCanvasElement>(null);
+  const [heroVisible, setHeroVisible]   = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => setHeroVisible(true), 80);
-    return () => clearTimeout(timer);
+    const t = setTimeout(() => setHeroVisible(true), 80);
+    return () => clearTimeout(t);
   }, []);
 
+  /* ── canvas animation ── */
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -277,10 +208,10 @@ export default function HomePage() {
     }));
 
     const ORBS = [
-      { x: 0.75, y: 0.22, r: 0.34, color: '56,189,248', vx: 0.00010, vy: 0.00007 },
-      { x: 0.15, y: 0.58, r: 0.28, color: '20,184,166', vx: -0.00008, vy: -0.00005 },
-      { x: 0.50, y: 0.88, r: 0.24, color: '125,211,252', vx: 0.00006, vy: 0.00009 },
-      { x: 0.92, y: 0.70, r: 0.20, color: '56,189,248', vx: -0.00010, vy: 0.00004 },
+      { x: 0.75, y: 0.22, r: 0.34, color: '56,189,248',  vx:  0.00010, vy:  0.00007 },
+      { x: 0.15, y: 0.58, r: 0.28, color: '20,184,166',  vx: -0.00008, vy: -0.00005 },
+      { x: 0.50, y: 0.88, r: 0.24, color: '125,211,252', vx:  0.00006, vy:  0.00009 },
+      { x: 0.92, y: 0.70, r: 0.20, color: '56,189,248',  vx: -0.00010, vy:  0.00004 },
     ];
 
     const DUST = Array.from({ length: 50 }, () => ({
@@ -304,7 +235,7 @@ export default function HomePage() {
     setTimeout(() => spawnShooter(SHOOTERS[1]), 1800);
 
     const RINGS = [
-      { cx: 0.85, cy: 0.15, rx: 0.09, ry: 0.035, angle: 0, speed: 0.003, opacity: 0.12 },
+      { cx: 0.85, cy: 0.15, rx: 0.09, ry: 0.035, angle: 0,   speed:  0.003, opacity: 0.12 },
       { cx: 0.12, cy: 0.2,  rx: 0.07, ry: 0.025, angle: 1.2, speed: -0.002, opacity: 0.09 },
     ];
 
@@ -318,17 +249,17 @@ export default function HomePage() {
         o.x += o.vx; o.y += o.vy;
         if (o.x < -0.1) o.x = 1.1; if (o.x > 1.1) o.x = -0.1;
         if (o.y < -0.1) o.y = 1.1; if (o.y > 1.1) o.y = -0.1;
-        const grad = ctx.createRadialGradient(o.x * W, o.y * H, 0, o.x * W, o.y * H, o.r * W);
-        grad.addColorStop(0, `rgba(${o.color},0.18)`);
-        grad.addColorStop(0.5, `rgba(${o.color},0.07)`);
-        grad.addColorStop(1, `rgba(${o.color},0)`);
-        ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+        const g = ctx.createRadialGradient(o.x*W, o.y*H, 0, o.x*W, o.y*H, o.r*W);
+        g.addColorStop(0, `rgba(${o.color},0.18)`);
+        g.addColorStop(0.5, `rgba(${o.color},0.07)`);
+        g.addColorStop(1, `rgba(${o.color},0)`);
+        ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       }
 
       for (const s of STARS) {
         const flicker = Math.sin(t * s.twinkleSpeed + s.twinkleOffset) * 0.45 + 0.55;
         ctx.globalAlpha = s.baseOpacity * flicker;
-        ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(s.x*W, s.y*H, s.r, 0, Math.PI*2);
         ctx.fillStyle = `rgb(${s.hue})`; ctx.fill();
       }
       ctx.globalAlpha = 1;
@@ -338,25 +269,22 @@ export default function HomePage() {
         if (d.y < -0.02) { d.y = 1.02; d.x = Math.random(); }
         if (d.x < 0) d.x = 1; if (d.x > 1) d.x = 0;
         ctx.globalAlpha = d.opacity;
-        const dg = ctx.createRadialGradient(d.x * W, d.y * H, 0, d.x * W, d.y * H, d.r);
-        dg.addColorStop(0, 'rgba(14,165,233,0.9)');
-        dg.addColorStop(1, 'rgba(14,165,233,0)');
-        ctx.fillStyle = dg; ctx.beginPath(); ctx.arc(d.x * W, d.y * H, d.r, 0, Math.PI * 2); ctx.fill();
+        const dg = ctx.createRadialGradient(d.x*W, d.y*H, 0, d.x*W, d.y*H, d.r);
+        dg.addColorStop(0, 'rgba(14,165,233,0.9)'); dg.addColorStop(1, 'rgba(14,165,233,0)');
+        ctx.fillStyle = dg; ctx.beginPath(); ctx.arc(d.x*W, d.y*H, d.r, 0, Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha = 1;
 
       for (const ring of RINGS) {
         ring.angle += ring.speed;
         ctx.save();
-        ctx.translate(ring.cx * W, ring.cy * H);
+        ctx.translate(ring.cx*W, ring.cy*H);
         ctx.rotate(ring.angle);
         ctx.scale(1, ring.ry / ring.rx);
-        ctx.beginPath();
-        ctx.arc(0, 0, ring.rx * W, 0, Math.PI * 2);
+        ctx.beginPath(); ctx.arc(0, 0, ring.rx*W, 0, Math.PI*2);
         ctx.restore();
         ctx.strokeStyle = `rgba(14,165,233,${ring.opacity})`;
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        ctx.lineWidth = 1; ctx.stroke();
       }
 
       if (t % 90 === 0) {
@@ -370,22 +298,18 @@ export default function HomePage() {
         const prog = s.life / s.maxLife;
         const alpha = prog < 0.15 ? prog / 0.15 : prog > 0.75 ? (1 - prog) / 0.25 : 1;
         const tailLen = 100 + prog * 60;
-        const nx = s.vx / Math.sqrt(s.vx * s.vx + s.vy * s.vy);
-        const ny = s.vy / Math.sqrt(s.vx * s.vx + s.vy * s.vy);
-        const grd = ctx.createLinearGradient(
-          s.x * W - nx * tailLen, s.y * H - ny * tailLen,
-          s.x * W, s.y * H
-        );
+        const nx = s.vx / Math.sqrt(s.vx*s.vx + s.vy*s.vy);
+        const ny = s.vy / Math.sqrt(s.vx*s.vx + s.vy*s.vy);
+        const grd = ctx.createLinearGradient(s.x*W - nx*tailLen, s.y*H - ny*tailLen, s.x*W, s.y*H);
         grd.addColorStop(0, 'rgba(14,165,233,0)');
-        grd.addColorStop(0.7, `rgba(56,189,248,${alpha * 0.5})`);
-        grd.addColorStop(1, `rgba(255,255,255,${alpha * 0.95})`);
+        grd.addColorStop(0.7, `rgba(56,189,248,${alpha*0.5})`);
+        grd.addColorStop(1, `rgba(255,255,255,${alpha*0.95})`);
         ctx.strokeStyle = grd; ctx.lineWidth = 1.8;
         ctx.beginPath();
-        ctx.moveTo(s.x * W - nx * tailLen, s.y * H - ny * tailLen);
-        ctx.lineTo(s.x * W, s.y * H);
-        ctx.stroke();
-        ctx.beginPath(); ctx.arc(s.x * W, s.y * H, 2, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha * 0.9})`; ctx.fill();
+        ctx.moveTo(s.x*W - nx*tailLen, s.y*H - ny*tailLen);
+        ctx.lineTo(s.x*W, s.y*H); ctx.stroke();
+        ctx.beginPath(); ctx.arc(s.x*W, s.y*H, 2, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha*0.9})`; ctx.fill();
       }
 
       raf = requestAnimationFrame(draw);
@@ -405,7 +329,9 @@ export default function HomePage() {
   const filtered = tools.filter(t => {
     const matchCat = activeCategory === 'all' || t.category === activeCategory;
     const q = query.toLowerCase();
-    const matchQ = !q || t.name.toLowerCase().includes(q) || (t.tagline || t.description).toLowerCase().includes(q) ||
+    const matchQ = !q ||
+      t.name.toLowerCase().includes(q) ||
+      (t.tagline || t.description).toLowerCase().includes(q) ||
       (t.tags as string[])?.some(tag => tag.toLowerCase().includes(q)) ||
       (t.use_cases as string[])?.some(uc => uc.toLowerCase().includes(q));
     return matchCat && matchQ;
@@ -424,20 +350,6 @@ export default function HomePage() {
     ? SECTION_ORDER.filter(c => filtered.some(t => t.category === c))
     : [activeCategory];
 
-  const topPicks = (() => {
-    const seen = new Set<string>();
-    const picks: ToolPage[] = [];
-    for (const cat of SECTION_ORDER) {
-      const t = tools.find(x => x.category === cat && !seen.has(x.id));
-      if (t) { picks.push(t); seen.add(t.id); }
-    }
-    for (const t of tools) {
-      if (picks.length >= 5) break;
-      if (!seen.has(t.id)) { picks.push(t); seen.add(t.id); }
-    }
-    return picks.slice(0, 5);
-  })();
-
   return (
     <div className="min-h-screen bg-[#f8f9fb] flex flex-col">
       <SiteHeader />
@@ -448,37 +360,45 @@ export default function HomePage() {
         style={{ background: 'linear-gradient(160deg, #060d1f 0%, #0a1628 45%, #071820 75%, #040d18 100%)' }}
       >
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" aria-hidden />
+
+        {/* Top line glow */}
         <div className="absolute left-0 right-0 top-0 h-px pointer-events-none"
           style={{ background: 'linear-gradient(90deg, transparent 10%, rgba(14,165,233,0.5) 40%, rgba(20,184,166,0.5) 60%, transparent 90%)' }} />
+        {/* Top radial */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 0%, rgba(14,165,233,0.13) 0%, transparent 70%)' }} />
+        {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(4,13,24,0.9) 0%, transparent 100%)' }} />
 
         <div className={`relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-16 sm:pt-24 sm:pb-24 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
 
-          {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 mb-7 px-4 py-1.5 rounded-full border border-white/8 bg-white/5">
+          {/* Eyebrow pill */}
+          <div className="inline-flex items-center gap-2 mb-7 px-4 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.04]">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 leading-none">20+ New Tools Reviewed</span>
+            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 leading-none">
+              20+ New Tools Reviewed
+            </span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-[2.6rem] sm:text-[3.4rem] lg:text-[3.9rem] font-extrabold text-white leading-[1.06] tracking-[-0.035em] mb-6">
+          <h1 className="text-[2.6rem] sm:text-[3.4rem] lg:text-[3.9rem] font-extrabold text-white leading-[1.06] tracking-[-0.035em] mb-5">
             Stop Shipping Features.
             <br />
-            <span className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 35%, #2dd4bf 70%, #34d399 100%)' }}>
+            <span
+              className="bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 35%, #2dd4bf 70%, #34d399 100%)' }}
+            >
               Start Creating Demand.
             </span>
           </h1>
 
           {/* Sub-headline */}
-          <p className="text-[15.5px] sm:text-[17px] font-normal text-slate-400 leading-[1.7] max-w-[520px] mx-auto mb-9 tracking-[0.005em]">
-            Discover curated{' '}
+          <p className="text-base sm:text-[17px] font-normal text-slate-400 leading-[1.75] max-w-[520px] mx-auto mb-9 tracking-[0.005em]">
+            Discover highly-curated{' '}
             <span className="text-white font-medium">AI GTM and Growth Tools</span>{' '}
             across SEO, Lead Gen, Sales Outreach, Social Media, and more — with{' '}
             <span className="text-emerald-400 font-semibold">FREE Plans</span>.
@@ -489,7 +409,10 @@ export default function HomePage() {
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
               className="group relative overflow-hidden inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[14.5px] text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)', boxShadow: '0 0 0 1px rgba(56,189,248,0.25), 0 8px 28px rgba(14,165,233,0.35)' }}
+              style={{
+                background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
+                boxShadow: '0 0 0 1px rgba(56,189,248,0.25), 0 8px 28px rgba(14,165,233,0.35)',
+              }}
             >
               <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
               <Zap className="w-3.5 h-3.5 shrink-0 relative" />
@@ -502,7 +425,7 @@ export default function HomePage() {
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.78)' }}
             >
               <Gift className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              FREE <span className="text-amber-400 font-bold ml-1">$50 Credits</span>
+              FREE <span className="text-amber-400 font-semibold ml-1">$50 Credits</span>
             </button>
           </div>
 
@@ -521,50 +444,19 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* ── Editor's Top Picks ── */}
-      {!loading && topPicks.length > 0 && (
-        <section className="bg-white border-b border-slate-100">
-          <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(14,165,233,0.3) 30%, rgba(20,184,166,0.25) 70%, transparent 100%)' }} />
-
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
-
-            <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-3.5">
-                <div className="hidden sm:flex w-10 h-10 rounded-xl items-center justify-center shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)', border: '1px solid #7dd3fc' }}>
-                  <Globe className="text-sky-600" style={{ width: 18, height: 18 }} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-sky-600">Editor&apos;s Top Picks</span>
-                    <span className="text-[10px] text-slate-300">·</span>
-                    <span className="text-[11px] text-slate-400 font-medium">May 2026</span>
-                  </div>
-                  <h2 className="text-xl sm:text-[1.4rem] font-bold text-slate-900 tracking-tight leading-none">Curated AI Tools</h2>
-                </div>
-              </div>
-              <button
-                onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="group hidden sm:inline-flex items-center gap-1 text-[13px] font-medium text-slate-400 hover:text-slate-700 transition-colors"
-              >
-                View all <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
-              </button>
-            </div>
-
-            <TopPicksCarousel topPicks={topPicks} />
-          </div>
-        </section>
-      )}
-
       {/* ── All Tools Directory ── */}
       <section id="tools-section" className="bg-[#f8f9fb] flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+
+          {/* Section header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <p className="text-[10.5px] font-bold text-sky-600 uppercase tracking-[0.14em] mb-1.5">Directory</p>
-              <h2 className="text-xl sm:text-[1.4rem] font-bold text-slate-900 tracking-tight">All Tools</h2>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">All Tools</h2>
               <p className="text-[13px] text-slate-500 mt-1 font-medium">
-                {loading ? 'Loading…' : `${filtered.length} tool${filtered.length !== 1 ? 's' : ''}${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
+                {loading
+                  ? 'Loading…'
+                  : `${filtered.length} tool${filtered.length !== 1 ? 's' : ''}${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
               </p>
             </div>
             <div className="relative w-full sm:w-72">
@@ -597,6 +489,7 @@ export default function HomePage() {
                       {categories.map(cat => {
                         const active = activeCategory === cat.id;
                         const cc = CATEGORY_COLORS[cat.id];
+                        const dotCls = active ? 'bg-white/60' : (cc?.dot ?? 'bg-slate-400');
                         return (
                           <button
                             key={cat.id}
@@ -606,7 +499,7 @@ export default function HomePage() {
                             }`}
                           >
                             <span className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${active ? 'bg-white/60' : (cc?.dot ?? 'bg-slate-400')}`} />
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls}`} />
                               {cat.label}
                             </span>
                             <span className={`text-[11px] tabular-nums px-1.5 py-0.5 rounded-full ${
@@ -618,12 +511,13 @@ export default function HomePage() {
                     </nav>
                   </div>
 
+                  {/* Quick stats */}
                   <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
                     {[
                       { label: 'Total Tools', value: tools.length },
-                      { label: 'Categories', value: SECTION_ORDER.filter(c => categoryCounts[c]).length },
-                      { label: 'Free Tiers', value: tools.filter(t => t.badge === 'free').length },
+                      { label: 'Categories',  value: SECTION_ORDER.filter(c => categoryCounts[c]).length },
+                      { label: 'Free Tiers',  value: tools.filter(t => t.badge === 'free').length },
                     ].map(s => (
                       <div key={s.label} className="flex items-center justify-between">
                         <span className="text-[12.5px] text-slate-500">{s.label}</span>
@@ -646,7 +540,9 @@ export default function HomePage() {
                           key={cat.id}
                           onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
                           className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all ${
-                            active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                            active
+                              ? 'bg-slate-900 text-white border-slate-900'
+                              : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                           }`}
                         >
                           {cc && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${active ? 'bg-white' : cc.dot}`} />}
@@ -667,21 +563,27 @@ export default function HomePage() {
                     <p className="text-slate-400 text-[13px]">Try a different search or category.</p>
                   </div>
                 ) : (
-                  <div className="space-y-8">
+                  <div className="space-y-10">
                     {sections.map(cat => {
                       const sectionTools = filtered.filter(t => t.category === cat);
                       if (!sectionTools.length) return null;
                       const cc = CATEGORY_COLORS[cat];
+                      const accent = CARD_ACCENT[cat];
                       return (
                         <section key={cat} id={`section-${cat}`}>
-                          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200">
-                            <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${cc?.bg ?? 'bg-slate-100'} ${cc?.text ?? 'text-slate-600'} border ${cc?.border ?? 'border-slate-200'}`}>
+                          {/* Section header */}
+                          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-200">
+                            <span
+                              className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cc?.bg ?? 'bg-slate-100'} ${cc?.text ?? 'text-slate-600'} ${cc?.border ?? 'border-slate-200'}`}
+                            >
                               {CATEGORY_ICONS[cat]}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-[14px] font-bold text-slate-900 leading-snug">{SECTION_LABELS[cat]}</h3>
-                              <p className="text-[11.5px] text-slate-400 font-medium">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
+                              <h3 className="text-[15px] font-bold text-slate-900 leading-snug">{SECTION_LABELS[cat]}</h3>
+                              <p className="text-[11.5px] font-medium text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
                             </div>
+                            {/* Accent bar */}
+                            <div className="hidden sm:block h-1 w-16 rounded-full opacity-30" style={{ background: accent }} />
                             <Link
                               href={`/category/${cat}`}
                               className="hidden sm:inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors"
@@ -689,8 +591,12 @@ export default function HomePage() {
                               Browse all <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            {sectionTools.map(tool => <ToolCard key={tool.id} tool={tool} />)}
+
+                          {/* Uniform-height card grid */}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-fr gap-3">
+                            {sectionTools.map(tool => (
+                              <ToolCard key={tool.id} tool={tool} />
+                            ))}
                           </div>
                         </section>
                       );
