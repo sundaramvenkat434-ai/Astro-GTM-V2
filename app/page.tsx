@@ -436,7 +436,7 @@ export default function HomePage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">15+ New Tools Added</span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">20+ Tools Added Today</span>
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
