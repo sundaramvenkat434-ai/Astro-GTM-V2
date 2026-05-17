@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import {
   Mail, Check, MailCheck, ArrowRight, Sparkles, Users, Zap,
   ChevronDown, CirclePlus as PlusCircle, FileSearch, Megaphone,
-  Newspaper, Bell, BookOpen,
+  Bell, BookOpen,
 } from 'lucide-react';
 
 /* ── AstroGTM logo ──────────────────────────────────────────── */
@@ -290,28 +290,18 @@ export function SiteHeader() {
                 items={SUBMIT_OPTIONS}
               />
 
-              {/* Newsletters dropdown */}
+              {/* Newsletters — highlighted pill trigger */}
               <NavDropdown
-                trigger={<><Sparkles className="w-3.5 h-3.5 text-sky-500 shrink-0" /><span className="hidden sm:inline">Newsletters</span></>}
+                trigger={
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12.5px] font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)', color: '#0369a1', border: '1px solid #7dd3fc' }}>
+                    <Sparkles className="w-3 h-3 shrink-0" />
+                    <span className="hidden sm:inline">Newsletters</span>
+                  </span>
+                }
                 items={NEWSLETTER_OPTIONS}
                 onItemClick={() => setNewsletterOpen(true)}
               />
-
-              {/* Divider */}
-              <span className="w-px h-4 bg-slate-200 mx-1.5" />
-
-              {/* CTA */}
-              <button
-                onClick={() => setNewsletterOpen(true)}
-                className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-3.5 py-1.5 rounded-lg text-white transition-all duration-150 hover:opacity-90 active:scale-95"
-                style={{
-                  background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
-                  boxShadow: '0 1px 8px rgba(14,165,233,0.3)',
-                }}
-              >
-                <Mail className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline">Subscribe</span>
-              </button>
             </nav>
           </div>
         </div>
@@ -352,22 +342,16 @@ export function InnerHeader({ crumbs }: { crumbs: BreadcrumbItem[] }) {
                 items={SUBMIT_OPTIONS}
               />
               <NavDropdown
-                trigger={<><Sparkles className="w-3.5 h-3.5 text-sky-500 shrink-0" /><span className="hidden sm:inline">Newsletters</span></>}
+                trigger={
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12.5px] font-semibold"
+                    style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)', color: '#0369a1', border: '1px solid #7dd3fc' }}>
+                    <Sparkles className="w-3 h-3 shrink-0" />
+                    <span className="hidden sm:inline">Newsletters</span>
+                  </span>
+                }
                 items={NEWSLETTER_OPTIONS}
                 onItemClick={() => setNewsletterOpen(true)}
               />
-              <span className="w-px h-4 bg-slate-200 mx-1.5" />
-              <button
-                onClick={() => setNewsletterOpen(true)}
-                className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-3.5 py-1.5 rounded-lg text-white transition-all duration-150 hover:opacity-90 active:scale-95"
-                style={{
-                  background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
-                  boxShadow: '0 1px 8px rgba(14,165,233,0.3)',
-                }}
-              >
-                <Mail className="w-3.5 h-3.5 shrink-0" />
-                <span className="hidden sm:inline">Subscribe</span>
-              </button>
             </nav>
           </div>
         </div>
