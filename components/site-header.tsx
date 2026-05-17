@@ -74,6 +74,10 @@ const DROPDOWN_STYLE = `
     from { opacity: 0; transform: translateY(-4px); }
     to   { opacity: 1; transform: translateY(0);    }
   }
+  @keyframes shimmer {
+    from { background-position: -200% center; }
+    to   { background-position: 200% center; }
+  }
 `;
 
 /* ── Newsletter modal ───────────────────────────────────────── */
@@ -212,6 +216,7 @@ function NavDropdown({
   highlight?: boolean;
 }) {
   const [open, setOpen] = useState(false);
+  const [hovered, setHovered] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -223,20 +228,63 @@ function NavDropdown({
   }, []);
 
   const baseBtn = highlight
-    ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-all duration-150 ${
+    ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-all duration-200 ${
         open
           ? 'bg-sky-100 border-sky-300 text-sky-800'
-          : 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 hover:border-sky-300'
+          : 'bg-sky-50 border-sky-200 text-sky-700'
       }`
-    : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-all duration-150 ${
-        open ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+    : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-all duration-200 ${
+        open ? 'text-slate-900 bg-slate-100' : 'text-slate-600'
       }`;
 
   return (
     <div ref={ref} className="relative">
-      <button onClick={() => setOpen(v => !v)} className={baseBtn}>
-        {trigger}
-        <ChevronDown className={`w-3 h-3 transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`} />
+      <style>{DROPDOWN_STYLE}</style>
+      <button
+        onClick={() => setOpen(v => !v)}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={() => setHovered(false)}
+        className={baseBtn}
+        style={
+          highlight
+            ? {
+                boxShadow: hovered || open
+                  ? '0 0 0 3px rgba(14,165,233,0.15), 0 1px 4px rgba(14,165,233,0.12)'
+                  : '0 0 0 0px rgba(14,165,233,0)',
+                background: hovered || open
+                  ? 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #e0f2fe 100%)'
+                  : '#f0f9ff',
+                backgroundSize: '200% auto',
+                animation: hovered ? 'shimmer 1.4s linear infinite' : undefined,
+                transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
+              }
+            : {
+                background: hovered || open ? '#f1f5f9' : 'transparent',
+                transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
+                boxShadow: hovered
+                  ? '0 2px 8px rgba(15,23,42,0.08)'
+                  : '0 0 0px rgba(15,23,42,0)',
+              }
+        }
+      >
+        <span
+          style={{
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 'inherit',
+            transition: 'transform 0.2s ease',
+            transform: hovered ? 'scale(1.08)' : 'scale(1)',
+          }}
+        >
+          {trigger}
+        </span>
+        <ChevronDown
+          className="w-3 h-3 shrink-0"
+          style={{
+            transition: 'transform 0.2s ease',
+            transform: open ? 'rotate(180deg)' : hovered ? 'rotate(0deg) translateY(1px)' : 'rotate(0deg) translateY(0)',
+          }}
+        />
       </button>
 
       {open && (
@@ -248,7 +296,6 @@ function NavDropdown({
             animation: 'dropdownIn 0.12s ease-out',
           }}
         >
-          <style>{DROPDOWN_STYLE}</style>
           {items.map((opt, idx) => {
             const row = (
               <button
