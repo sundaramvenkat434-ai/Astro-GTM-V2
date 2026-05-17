@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
+import { SiteFooter } from '@/components/site-footer';
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000';
 
@@ -102,6 +103,8 @@ export default function PrivacyPolicyPage() {
           </Section>
         </div>
       </main>
+
+      <SiteFooter />
     </div>
   );
 }
