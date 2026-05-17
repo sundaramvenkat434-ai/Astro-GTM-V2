@@ -68,13 +68,14 @@ const CARD_GRADIENTS: Record<string, string> = {
   'analytics-insights': 'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
 };
 
+/* Avatar — kept neutral grey/black as requested */
 const CARD_BTN_GRADIENT: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'lead-generation':    'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'sales-outreach':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'social-media':       'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'paid-marketing':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'analytics-insights': 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'seo-content':        'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'lead-generation':    'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'sales-outreach':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'social-media':       'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'paid-marketing':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'analytics-insights': 'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
 };
 
 /* Category pill colors — inline style driven by pastel tokens */
@@ -154,8 +155,8 @@ function ToolCard({ tool }: { tool: ToolPage }) {
       <div className="flex gap-3 p-3.5 flex-1">
         {/* Gradient avatar */}
         <div
-          className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-[14px] shadow-sm mt-0.5 border border-sky-200"
-          style={{ background: btnGrad, color: '#0369a1' }}
+          className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-[14px] shadow-sm mt-0.5"
+          style={{ background: btnGrad }}
         >
           {tool.name.charAt(0)}
         </div>
@@ -236,6 +237,7 @@ export default function HomePage() {
   const [query, setQuery]               = useState('');
   const canvasRef                       = useRef<HTMLCanvasElement>(null);
   const [heroVisible, setHeroVisible]   = useState(false);
+  const [creditsHover, setCreditsHover] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);
@@ -459,13 +461,13 @@ export default function HomePage() {
             {/* Browse Top Tools */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-xl font-semibold text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative overflow-hidden inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[15px] sm:text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                background: 'linear-gradient(135deg, #024f7a 0%, #0264a0 50%, #0284c7 100%)',
-                boxShadow: '0 0 0 1px rgba(2,100,160,0.6), 0 6px 22px rgba(2,100,160,0.45), inset 0 1px 0 rgba(255,255,255,0.12)',
+                background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
+                boxShadow: '0 0 0 1px rgba(56,189,248,0.3), 0 8px 28px rgba(14,165,233,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
               }}
             >
-              <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+              <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
               <Zap className="w-4 h-4 shrink-0 relative" />
               <span className="relative">Browse Top Tools</span>
               <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200 shrink-0 relative" />
@@ -474,17 +476,36 @@ export default function HomePage() {
             {/* FREE $50 Credits */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="relative inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-xl font-semibold text-[14.5px] text-white/85 transition-colors duration-150 hover:text-white hover:bg-white/10 active:scale-[0.97]"
+              onMouseEnter={() => setCreditsHover(true)}
+              onMouseLeave={() => setCreditsHover(false)}
+              className="relative inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[15px] sm:text-[14.5px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                background: 'rgba(255,255,255,0.06)',
-                border: '1px solid rgba(255,255,255,0.16)',
+                background: creditsHover ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.05)',
+                border: creditsHover ? '1px solid rgba(251,191,36,0.45)' : '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.85)',
+                boxShadow: creditsHover ? '0 0 20px rgba(251,191,36,0.15)' : 'none',
+                transition: 'all 0.3s ease',
               }}
             >
-              <Gift className="w-4 h-4 shrink-0 text-amber-400" />
+              <Gift
+                className="w-4 h-4 shrink-0 transition-all duration-300"
+                style={{
+                  color: creditsHover ? '#fbbf24' : '#f59e0b',
+                  transform: creditsHover ? 'rotate(-12deg) scale(1.2)' : 'none',
+                }}
+              />
               <span>
                 FREE{' '}
-                <span className="font-bold text-amber-400">$50 Credits</span>
+                <span
+                  className="font-bold transition-all duration-300"
+                  style={{ color: creditsHover ? '#fde68a' : '#fbbf24' }}
+                >
+                  $50 Credits
+                </span>
               </span>
+              {creditsHover && (
+                <span className="absolute inset-0 translate-x-[-100%] animate-[shimmer_0.8s_ease_forwards] bg-gradient-to-r from-transparent via-amber-300/10 to-transparent pointer-events-none" />
+              )}
             </button>
           </div>
 
