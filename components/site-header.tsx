@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
 import {
   Mail, Check, MailCheck, ArrowRight, Sparkles, Users, Zap,
-  ChevronDown, CirclePlus as PlusCircle, FileSearch, Megaphone,
+  ChevronDown, Rocket, FileSearch, Megaphone,
   Bell, BookOpen,
 } from 'lucide-react';
 
@@ -71,8 +71,8 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
 /* ── shared dropdown animation style ───────────────────────── */
 const DROPDOWN_STYLE = `
   @keyframes dropdownIn {
-    from { opacity: 0; transform: translateY(-5px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0);    }
   }
 `;
 
@@ -159,22 +159,22 @@ const SUBMIT_OPTIONS = [
     label: 'Product Launch',
     desc: 'Get loyal early adopters',
     href: '/contact',
-    icon: <PlusCircle className="w-3.5 h-3.5" />,
-    color: 'text-blue-600 bg-blue-50 group-hover:bg-blue-100',
+    icon: <Rocket className="w-3.5 h-3.5" />,
+    accent: '#0369a1',
   },
   {
     label: 'Expert Review',
     desc: 'Detailed user experience report',
     href: '/contact',
     icon: <FileSearch className="w-3.5 h-3.5" />,
-    color: 'text-emerald-600 bg-emerald-50 group-hover:bg-emerald-100',
+    accent: '#0d9488',
   },
   {
     label: 'Advertise',
     desc: 'Boost traffic and sign-ups',
     href: '/contact',
     icon: <Megaphone className="w-3.5 h-3.5" />,
-    color: 'text-amber-600 bg-amber-50 group-hover:bg-amber-100',
+    accent: '#b45309',
   },
 ];
 
@@ -184,19 +184,19 @@ const NEWSLETTER_OPTIONS = [
     label: 'Weekly Top 3',
     desc: 'In your preferred categories',
     icon: <Sparkles className="w-3.5 h-3.5" />,
-    color: 'text-sky-600 bg-sky-50 group-hover:bg-sky-100',
+    accent: '#0369a1',
   },
   {
     label: 'Competitor Pulse',
     desc: 'Track new similar tools',
     icon: <Bell className="w-3.5 h-3.5" />,
-    color: 'text-violet-600 bg-violet-50 group-hover:bg-violet-100',
+    accent: '#6d28d9',
   },
   {
     label: 'GTM Workflows',
     desc: 'DIY AI implementation guide',
     icon: <BookOpen className="w-3.5 h-3.5" />,
-    color: 'text-teal-600 bg-teal-50 group-hover:bg-teal-100',
+    accent: '#0d9488',
   },
 ];
 
@@ -204,10 +204,12 @@ function NavDropdown({
   trigger,
   items,
   onItemClick,
+  highlight = false,
 }: {
   trigger: React.ReactNode;
-  items: { label: string; desc: string; href?: string; icon: React.ReactNode; color: string }[];
+  items: { label: string; desc: string; href?: string; icon: React.ReactNode; accent: string }[];
   onItemClick?: (label: string) => void;
+  highlight?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -220,50 +222,59 @@ function NavDropdown({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
+  const baseBtn = highlight
+    ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-all duration-150 ${
+        open
+          ? 'bg-sky-100 border-sky-300 text-sky-800'
+          : 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 hover:border-sky-300'
+      }`
+    : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-all duration-150 ${
+        open ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+      }`;
+
   return (
     <div ref={ref} className="relative">
-      <button
-        onClick={() => setOpen(v => !v)}
-        className={`inline-flex items-center gap-1 text-[13px] font-medium px-3 py-1.5 rounded-lg transition-all duration-150 ${
-          open
-            ? 'bg-slate-100 text-slate-900'
-            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-        }`}
-      >
+      <button onClick={() => setOpen(v => !v)} className={baseBtn}>
         {trigger}
-        <ChevronDown className={`w-3 h-3 ml-0.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        <ChevronDown className={`w-3 h-3 transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200/80 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden z-50"
-          style={{ animation: 'dropdownIn 0.12s ease-out' }}
+          className="absolute right-0 top-full mt-1 w-60 bg-white rounded-lg z-50 overflow-hidden"
+          style={{
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 4px 12px rgba(15,23,42,0.10), 0 1px 3px rgba(15,23,42,0.06)',
+            animation: 'dropdownIn 0.12s ease-out',
+          }}
         >
           <style>{DROPDOWN_STYLE}</style>
-          <div className="p-1">
-            {items.map(opt => {
-              const inner = (
+          {items.map((opt, idx) => {
+            const row = (
+              <button
+                key={opt.label}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group"
+                style={{ borderTop: idx > 0 ? '1px solid #f1f5f9' : undefined }}
+                onClick={() => { setOpen(false); onItemClick?.(opt.label); }}
+              >
                 <span
-                  key={opt.label}
-                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-50 group transition-colors cursor-pointer"
-                  onClick={() => { setOpen(false); onItemClick?.(opt.label); }}
+                  className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                  style={{ background: opt.accent + '15', color: opt.accent }}
                 >
-                  <span className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${opt.color}`}>
-                    {opt.icon}
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-[12.5px] font-semibold text-slate-800 leading-none mb-0.5">{opt.label}</span>
-                    <span className="block text-[11px] text-slate-400 leading-tight">{opt.desc}</span>
-                  </span>
+                  {opt.icon}
                 </span>
-              );
-              return opt.href ? (
-                <Link key={opt.label} href={opt.href} onClick={() => setOpen(false)}>
-                  {inner}
-                </Link>
-              ) : inner;
-            })}
-          </div>
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold text-slate-800 leading-snug">{opt.label}</span>
+                  <span className="block text-[11px] text-slate-400 leading-snug">{opt.desc}</span>
+                </span>
+              </button>
+            );
+            return opt.href ? (
+              <Link key={opt.label} href={opt.href} onClick={() => setOpen(false)}>
+                {row}
+              </Link>
+            ) : row;
+          })}
         </div>
       )}
     </div>
@@ -286,21 +297,21 @@ export function SiteHeader() {
             <nav className="flex items-center gap-0.5">
               {/* Submit Tool dropdown */}
               <NavDropdown
-                trigger={<><span className="hidden sm:inline">Submit Tool</span><span className="sm:hidden">Submit</span></>}
+                trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
                 items={SUBMIT_OPTIONS}
               />
 
               {/* Newsletters — highlighted pill trigger */}
               <NavDropdown
                 trigger={
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12.5px] font-semibold"
-                    style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)', color: '#0369a1', border: '1px solid #7dd3fc' }}>
-                    <Sparkles className="w-3 h-3 shrink-0" />
-                    <span className="hidden sm:inline">Newsletters</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 shrink-0" style={{ color: '#0284c7' }} />
+                    <span className="hidden sm:inline font-semibold" style={{ color: '#0369a1' }}>Newsletters</span>
                   </span>
                 }
                 items={NEWSLETTER_OPTIONS}
                 onItemClick={() => setNewsletterOpen(true)}
+                highlight
               />
             </nav>
           </div>
@@ -338,19 +349,19 @@ export function InnerHeader({ crumbs }: { crumbs: BreadcrumbItem[] }) {
             </nav>
             <nav className="flex items-center gap-0.5 shrink-0">
               <NavDropdown
-                trigger={<><span className="hidden sm:inline">Submit Tool</span></>}
+                trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
                 items={SUBMIT_OPTIONS}
               />
               <NavDropdown
                 trigger={
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[12.5px] font-semibold"
-                    style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)', color: '#0369a1', border: '1px solid #7dd3fc' }}>
-                    <Sparkles className="w-3 h-3 shrink-0" />
-                    <span className="hidden sm:inline">Newsletters</span>
+                  <span className="inline-flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 shrink-0" style={{ color: '#0284c7' }} />
+                    <span className="hidden sm:inline font-semibold" style={{ color: '#0369a1' }}>Newsletters</span>
                   </span>
                 }
                 items={NEWSLETTER_OPTIONS}
                 onItemClick={() => setNewsletterOpen(true)}
+                highlight
               />
             </nav>
           </div>
