@@ -71,56 +71,8 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
 /* ── shared dropdown animation style ───────────────────────── */
 const DROPDOWN_STYLE = `
   @keyframes dropdownIn {
-    from { opacity: 0; transform: translateY(-6px) scale(0.98); }
-    to   { opacity: 1; transform: translateY(0) scale(1); }
-  }
-  @keyframes iconPop {
-    0%   { transform: scale(1); }
-    40%  { transform: scale(1.18) rotate(-6deg); }
-    100% { transform: scale(1.08) rotate(0deg); }
-  }
-  .nav-row {
-    position: relative;
-    overflow: hidden;
-    transition: background 0.16s ease;
-  }
-  .nav-row::before {
-    content: '';
-    position: absolute;
-    inset: 0;
-    background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.03) 100%);
-    opacity: 0;
-    transition: opacity 0.16s ease;
-  }
-  .nav-row:hover::before { opacity: 1; }
-  .nav-row-bar {
-    position: absolute;
-    left: 0; top: 0; bottom: 0;
-    width: 2.5px;
-    border-radius: 0 2px 2px 0;
-    transform: scaleY(0);
-    transition: transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
-    transform-origin: center;
-  }
-  .nav-row:hover .nav-row-bar { transform: scaleY(1); }
-  .nav-row-icon {
-    transition: transform 0.22s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.18s ease;
-  }
-  .nav-row:hover .nav-row-icon {
-    transform: scale(1.12) rotate(-4deg);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.12);
-  }
-  .nav-row-arrow {
-    opacity: 0;
-    transform: translateX(-4px);
-    transition: opacity 0.16s ease, transform 0.18s cubic-bezier(0.34,1.56,0.64,1);
-  }
-  .nav-row:hover .nav-row-arrow {
-    opacity: 1;
-    transform: translateX(0);
-  }
-  .nav-row-label {
-    transition: color 0.14s ease;
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0);    }
   }
 `;
 
@@ -260,7 +212,6 @@ function NavDropdown({
   highlight?: boolean;
 }) {
   const [open, setOpen] = useState(false);
-  const [hovered, setHovered] = useState<number | null>(null);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -272,18 +223,17 @@ function NavDropdown({
   }, []);
 
   const baseBtn = highlight
-    ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-all duration-200 ${
+    ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-all duration-150 ${
         open
-          ? 'bg-sky-100 border-sky-300 text-sky-800 shadow-sm'
-          : 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 hover:border-sky-300 hover:shadow-sm hover:scale-[1.02]'
+          ? 'bg-sky-100 border-sky-300 text-sky-800'
+          : 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 hover:border-sky-300'
       }`
-    : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-all duration-200 ${
-        open ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 hover:scale-[1.02]'
+    : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-all duration-150 ${
+        open ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
       }`;
 
   return (
     <div ref={ref} className="relative">
-      <style>{DROPDOWN_STYLE}</style>
       <button onClick={() => setOpen(v => !v)} className={baseBtn}>
         {trigger}
         <ChevronDown className={`w-3 h-3 transition-transform duration-200 shrink-0 ${open ? 'rotate-180' : ''}`} />
@@ -291,64 +241,40 @@ function NavDropdown({
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1.5 w-64 bg-white rounded-xl z-50 overflow-hidden"
+          className="absolute right-0 top-full mt-1 w-60 bg-white rounded-lg z-50 overflow-hidden"
           style={{
             border: '1px solid #e2e8f0',
-            boxShadow: '0 8px 24px rgba(15,23,42,0.12), 0 2px 6px rgba(15,23,42,0.06)',
-            animation: 'dropdownIn 0.16s cubic-bezier(0.16,1,0.3,1)',
+            boxShadow: '0 4px 12px rgba(15,23,42,0.10), 0 1px 3px rgba(15,23,42,0.06)',
+            animation: 'dropdownIn 0.12s ease-out',
           }}
         >
-          <div className="p-1.5 space-y-0.5">
-            {items.map((opt, idx) => {
-              const isHov = hovered === idx;
-              const row = (
-                <button
-                  key={opt.label}
-                  className="nav-row w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-left"
-                  style={{ background: isHov ? opt.accent + '0d' : 'transparent' }}
-                  onMouseEnter={() => setHovered(idx)}
-                  onMouseLeave={() => setHovered(null)}
-                  onClick={() => { setOpen(false); setHovered(null); onItemClick?.(opt.label); }}
+          <style>{DROPDOWN_STYLE}</style>
+          {items.map((opt, idx) => {
+            const row = (
+              <button
+                key={opt.label}
+                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group"
+                style={{ borderTop: idx > 0 ? '1px solid #f1f5f9' : undefined }}
+                onClick={() => { setOpen(false); onItemClick?.(opt.label); }}
+              >
+                <span
+                  className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                  style={{ background: opt.accent + '15', color: opt.accent }}
                 >
-                  {/* accent left bar */}
-                  <span className="nav-row-bar" style={{ background: opt.accent }} />
-
-                  {/* icon */}
-                  <span
-                    className="nav-row-icon w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
-                    style={{
-                      background: isHov ? opt.accent + '22' : opt.accent + '14',
-                      color: opt.accent,
-                    }}
-                  >
-                    {opt.icon}
-                  </span>
-
-                  {/* text */}
-                  <span className="flex-1 min-w-0">
-                    <span
-                      className="nav-row-label block text-[13px] font-semibold leading-snug"
-                      style={{ color: isHov ? opt.accent : '#1e293b' }}
-                    >
-                      {opt.label}
-                    </span>
-                    <span className="block text-[11px] text-slate-400 leading-snug mt-0.5">{opt.desc}</span>
-                  </span>
-
-                  {/* arrow */}
-                  <ArrowRight
-                    className="nav-row-arrow w-3.5 h-3.5 shrink-0"
-                    style={{ color: opt.accent }}
-                  />
-                </button>
-              );
-              return opt.href ? (
-                <Link key={opt.label} href={opt.href} onClick={() => { setOpen(false); setHovered(null); }}>
-                  {row}
-                </Link>
-              ) : row;
-            })}
-          </div>
+                  {opt.icon}
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-[13px] font-semibold text-slate-800 leading-snug">{opt.label}</span>
+                  <span className="block text-[11px] text-slate-400 leading-snug">{opt.desc}</span>
+                </span>
+              </button>
+            );
+            return opt.href ? (
+              <Link key={opt.label} href={opt.href} onClick={() => setOpen(false)}>
+                {row}
+              </Link>
+            ) : row;
+          })}
         </div>
       )}
     </div>
