@@ -227,16 +227,6 @@ function NavDropdown({
     return () => document.removeEventListener('mousedown', handler);
   }, []);
 
-  const baseBtn = highlight
-    ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-all duration-200 ${
-        open
-          ? 'bg-sky-100 border-sky-300 text-sky-800'
-          : 'bg-sky-50 border-sky-200 text-sky-700'
-      }`
-    : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-all duration-200 ${
-        open ? 'text-slate-900 bg-slate-100' : 'text-slate-600'
-      }`;
-
   return (
     <div ref={ref} className="relative">
       <style>{DROPDOWN_STYLE}</style>
@@ -244,36 +234,54 @@ function NavDropdown({
         onClick={() => setOpen(v => !v)}
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
-        className={baseBtn}
+        className={[
+          'inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md relative overflow-hidden',
+          highlight
+            ? `font-semibold px-3 border ${open ? 'bg-sky-100 border-sky-300 text-sky-800' : 'bg-sky-50 border-sky-200 text-sky-700'}`
+            : `${open ? 'text-slate-900 bg-slate-100' : 'text-slate-600 hover:text-slate-900'}`,
+        ].join(' ')}
         style={
           highlight
             ? {
-                boxShadow: hovered || open
-                  ? '0 0 0 3px rgba(14,165,233,0.15), 0 1px 4px rgba(14,165,233,0.12)'
-                  : '0 0 0 0px rgba(14,165,233,0)',
-                background: hovered || open
-                  ? 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #e0f2fe 100%)'
-                  : '#f0f9ff',
-                backgroundSize: '200% auto',
-                animation: hovered ? 'shimmer 1.4s linear infinite' : undefined,
-                transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
+                transition: 'border-color 0.2s ease, box-shadow 0.2s ease, color 0.2s ease',
+                borderColor: hovered || open ? '#38bdf8' : '#bae6fd',
+                boxShadow: hovered || open ? '0 0 0 3px rgba(14,165,233,0.18), inset 0 1px 0 rgba(255,255,255,0.6)' : 'inset 0 1px 0 rgba(255,255,255,0.6)',
+                color: hovered || open ? '#0369a1' : '#0369a1',
               }
             : {
+                transition: 'background 0.2s ease, color 0.2s ease',
                 background: hovered || open ? '#f1f5f9' : 'transparent',
-                transform: hovered ? 'translateY(-1px)' : 'translateY(0)',
-                boxShadow: hovered
-                  ? '0 2px 8px rgba(15,23,42,0.08)'
-                  : '0 0 0px rgba(15,23,42,0)',
               }
         }
       >
+        {/* sliding highlight strip for Submit Tool */}
+        {!highlight && (
+          <span
+            aria-hidden
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'linear-gradient(90deg, transparent 0%, rgba(14,165,233,0.07) 50%, transparent 100%)',
+              backgroundSize: '200% 100%',
+              backgroundPosition: hovered ? '0% 0%' : '100% 0%',
+              transition: 'background-position 0.35s ease',
+              borderRadius: 'inherit',
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+        {/* icon wrapper — color shift for Submit Tool, glow for Newsletters */}
         <span
           style={{
             display: 'inline-flex',
             alignItems: 'center',
-            gap: 'inherit',
-            transition: 'transform 0.2s ease',
-            transform: hovered ? 'scale(1.08)' : 'scale(1)',
+            transition: 'color 0.2s ease, filter 0.2s ease',
+            color: highlight
+              ? hovered ? '#0ea5e9' : '#0284c7'
+              : hovered ? '#0ea5e9' : undefined,
+            filter: highlight && hovered
+              ? 'drop-shadow(0 0 4px rgba(14,165,233,0.55))'
+              : 'none',
           }}
         >
           {trigger}
@@ -281,8 +289,9 @@ function NavDropdown({
         <ChevronDown
           className="w-3 h-3 shrink-0"
           style={{
-            transition: 'transform 0.2s ease',
-            transform: open ? 'rotate(180deg)' : hovered ? 'rotate(0deg) translateY(1px)' : 'rotate(0deg) translateY(0)',
+            transition: 'transform 0.2s ease, color 0.2s ease',
+            transform: open ? 'rotate(180deg)' : 'rotate(0deg)',
+            color: hovered ? '#0ea5e9' : undefined,
           }}
         />
       </button>
