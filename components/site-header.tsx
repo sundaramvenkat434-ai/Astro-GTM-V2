@@ -181,7 +181,7 @@ const SUBMIT_OPTIONS = [
 /* ── Newsletter dropdown ─────────────────────────────────────── */
 const NEWSLETTER_OPTIONS = [
   {
-    label: 'Top 3 Tools',
+    label: 'Weekly Top Tools',
     desc: 'Best reviewed in each category',
     icon: <Sparkles className="w-3.5 h-3.5" />,
     accent: '#0369a1',
