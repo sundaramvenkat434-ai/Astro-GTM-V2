@@ -31,51 +31,50 @@ const SECTION_LABELS: Record<string, string> = {
   'analytics-insights': 'Analytics & Insights',
 };
 
-/* Pastel fill per category — used for card tint, pill bg, icon bg */
 const CATEGORY_PASTEL: Record<string, string> = {
-  'seo-content':        '#dbeafe', // blue-100
-  'lead-generation':    '#dcfce7', // green-100
-  'sales-outreach':     '#fef9c3', // yellow-100
-  'social-media':       '#fce7f3', // pink-100
-  'paid-marketing':     '#ffedd5', // orange-100
-  'analytics-insights': '#ede9fe', // violet-100 — only violet use in this file
+  'seo-content':        '#B0E4FF',
+  'lead-generation':    '#B0E4FF',
+  'sales-outreach':     '#B0E4FF',
+  'social-media':       '#B0E4FF',
+  'paid-marketing':     '#B0E4FF',
+  'analytics-insights': '#B0E4FF',
 };
 
-/* Dot / icon / border accent per category */
+/* Darker shade for text/dot/border */
 const CATEGORY_PASTEL_DARK: Record<string, string> = {
-  'seo-content':        '#2563eb', // blue-600
-  'lead-generation':    '#16a34a', // green-600
-  'sales-outreach':     '#ca8a04', // yellow-600
-  'social-media':       '#db2777', // pink-600
-  'paid-marketing':     '#ea580c', // orange-600
-  'analytics-insights': '#7c3aed', // violet-600
+  'seo-content':        '#0369a1',
+  'lead-generation':    '#0369a1',
+  'sales-outreach':     '#0369a1',
+  'social-media':       '#0369a1',
+  'paid-marketing':     '#0369a1',
+  'analytics-insights': '#0369a1',
 };
 
 const CATEGORY_ACCENT: Record<string, string> = {
-  'seo-content':        '#2563eb',
-  'lead-generation':    '#16a34a',
-  'sales-outreach':     '#ca8a04',
-  'social-media':       '#db2777',
-  'paid-marketing':     '#ea580c',
-  'analytics-insights': '#7c3aed',
+  'seo-content':        '#0369a1',
+  'lead-generation':    '#0369a1',
+  'sales-outreach':     '#0369a1',
+  'social-media':       '#0369a1',
+  'paid-marketing':     '#0369a1',
+  'analytics-insights': '#0369a1',
 };
 
 const CARD_GRADIENTS: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #dbeafe30 0%, rgba(255,255,255,1) 50%)',
-  'lead-generation':    'linear-gradient(145deg, #dcfce730 0%, rgba(255,255,255,1) 50%)',
-  'sales-outreach':     'linear-gradient(145deg, #fef9c330 0%, rgba(255,255,255,1) 50%)',
-  'social-media':       'linear-gradient(145deg, #fce7f330 0%, rgba(255,255,255,1) 50%)',
-  'paid-marketing':     'linear-gradient(145deg, #ffedd530 0%, rgba(255,255,255,1) 50%)',
-  'analytics-insights': 'linear-gradient(145deg, #ede9fe30 0%, rgba(255,255,255,1) 50%)',
+  'seo-content':        'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'lead-generation':    'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'sales-outreach':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'social-media':       'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'paid-marketing':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'analytics-insights': 'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
 };
 
 const CARD_BTN_GRADIENT: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #dbeafe 0%, #bfdbfe 100%)',
-  'lead-generation':    'linear-gradient(145deg, #dcfce7 0%, #bbf7d0 100%)',
-  'sales-outreach':     'linear-gradient(145deg, #fef9c3 0%, #fef08a 100%)',
-  'social-media':       'linear-gradient(145deg, #fce7f3 0%, #fbcfe8 100%)',
-  'paid-marketing':     'linear-gradient(145deg, #ffedd5 0%, #fed7aa 100%)',
-  'analytics-insights': 'linear-gradient(145deg, #ede9fe 0%, #ddd6fe 100%)',
+  'seo-content':        'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'lead-generation':    'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'sales-outreach':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'social-media':       'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'paid-marketing':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'analytics-insights': 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
 };
 
 /* Category pill colors — inline style driven by pastel tokens */
@@ -552,7 +551,7 @@ export default function HomePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="search"
-                placeholder="Search by name, use-case or description…"
+                placeholder="Search by name, use case, tag…"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 text-[13.5px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
@@ -583,13 +582,13 @@ export default function HomePage() {
                             key={cat.id}
                             onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
                             className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                              active ? 'bg-slate-900 text-white' : 'text-slate-900 hover:bg-slate-50'
+                              active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
                             }`}
                           >
                             <span className="flex items-center gap-2">
                               <span
                                 className="w-2 h-2 rounded-full shrink-0"
-                                style={{ backgroundColor: active ? 'rgba(255,255,255,0.7)' : (dotColor ?? '#2563eb') }}
+                                style={{ backgroundColor: active ? 'rgba(255,255,255,0.6)' : (dotColor ?? '#94a3b8') }}
                               />
                               {cat.label}
                             </span>
@@ -633,13 +632,13 @@ export default function HomePage() {
                           className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all"
                           style={active
                             ? { background: '#0f172a', color: '#fff', borderColor: '#0f172a' }
-                            : { background: '#fff', color: '#0f172a', borderColor: '#e2e8f0' }
+                            : { background: '#fff', color: dark ?? '#475569', borderColor: '#e2e8f0' }
                           }
                         >
                           {pastel && (
                             <span
                               className="w-1.5 h-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: active ? 'rgba(255,255,255,0.7)' : (dark ?? '#2563eb') }}
+                              style={{ backgroundColor: active ? 'rgba(255,255,255,0.7)' : (dark ?? '#94a3b8') }}
                             />
                           )}
                           {cat.label}

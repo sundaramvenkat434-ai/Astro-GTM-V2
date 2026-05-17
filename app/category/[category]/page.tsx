@@ -44,23 +44,7 @@ const BADGE_STYLES: Record<string, string> = {
   free: 'bg-emerald-100 text-emerald-700 border-emerald-200',
 };
 
-const CATEGORY_HERO_GRADIENTS: Record<string, string> = {
-  'seo-content':        'radial-gradient(ellipse 120% 100% at 50% 0%, #dbeafe 0%, #eff6ff 40%, #f8fafc 100%)',
-  'lead-generation':    'radial-gradient(ellipse 120% 100% at 50% 0%, #dcfce7 0%, #f0fdf4 40%, #f8fafc 100%)',
-  'sales-outreach':     'radial-gradient(ellipse 120% 100% at 50% 0%, #fef9c3 0%, #fefce8 40%, #f8fafc 100%)',
-  'social-media':       'radial-gradient(ellipse 120% 100% at 50% 0%, #fce7f3 0%, #fdf2f8 40%, #f8fafc 100%)',
-  'paid-marketing':     'radial-gradient(ellipse 120% 100% at 50% 0%, #ffedd5 0%, #fff7ed 40%, #f8fafc 100%)',
-  'analytics-insights': 'radial-gradient(ellipse 120% 100% at 50% 0%, #ede9fe 0%, #f5f3ff 40%, #f8fafc 100%)',
-};
-
-const CATEGORY_BORDER_COLORS: Record<string, string> = {
-  'seo-content':        'border-blue-100',
-  'lead-generation':    'border-green-100',
-  'sales-outreach':     'border-yellow-100',
-  'social-media':       'border-pink-100',
-  'paid-marketing':     'border-orange-100',
-  'analytics-insights': 'border-violet-100',
-};
+const CATEGORY_HERO_GRADIENT = 'radial-gradient(ellipse 120% 100% at 50% 0%, #B0E4FF 0%, #ddf1ff 40%, #f8fafc 100%)';
 
 export default async function CategoryPage({ params }: { params: { category: string } }) {
   const [{ data: catRow }, { data: tools }] = await Promise.all([
@@ -104,13 +88,10 @@ export default async function CategoryPage({ params }: { params: { category: str
       <PageBreadcrumb crumbs={[{ label: cat.name }]} />
 
       {/* Hero */}
-      <section
-        className={`relative overflow-hidden border-b ${CATEGORY_BORDER_COLORS[params.category] ?? 'border-slate-100'}`}
-        style={{ background: CATEGORY_HERO_GRADIENTS[params.category] ?? CATEGORY_HERO_GRADIENTS['seo-content'] }}
-      >
-        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 50% 45% at 80% 20%, rgba(0,0,0,0.03) 0%, transparent 70%)' }} />
+      <section className="relative overflow-hidden border-b border-sky-100" style={{ background: CATEGORY_HERO_GRADIENT }}>
+        <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse 50% 45% at 80% 20%, rgba(56,189,248,0.10) 0%, transparent 70%)' }} />
         <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20 text-center">
-          <div className="inline-flex items-center gap-2 bg-white/70 border border-slate-200 text-slate-700 text-xs font-bold px-3 py-1.5 rounded-full mb-5">
+          <div className="inline-flex items-center gap-2 bg-sky-100 border border-sky-200 text-sky-700 text-xs font-bold px-3 py-1.5 rounded-full mb-5">
             <Zap className="w-3 h-3" />{items.length} {items.length === 1 ? 'Tool' : 'Tools'}
           </div>
           <h1 className="font-display text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4">
