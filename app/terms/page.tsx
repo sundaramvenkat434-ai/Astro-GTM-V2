@@ -14,8 +14,8 @@ export const metadata: Metadata = {
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="mb-8 last:mb-0">
-      <h2 className="text-base font-bold text-slate-900 mb-2">{title}</h2>
-      <div className="text-sm text-slate-600 leading-relaxed space-y-2">{children}</div>
+      <h2 className="font-display text-[15px] font-bold text-slate-900 mb-2 tracking-tight">{title}</h2>
+      <div className="type-body space-y-2">{children}</div>
     </div>
   );
 }
@@ -26,8 +26,8 @@ export default function TermsPage() {
       <SiteHeader />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-14">
-        <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">Legal</span>
-        <h1 className="text-3xl font-bold text-slate-900 mt-2 mb-1">Terms of Service</h1>
+        <span className="type-eyebrow">Legal</span>
+        <h1 className="type-h1 mt-2 mb-1">Terms of Service</h1>
         <p className="text-sm text-slate-400 mb-10">Last updated: May 2026</p>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-8">

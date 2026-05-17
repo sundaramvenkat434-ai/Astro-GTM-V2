@@ -94,10 +94,10 @@ export default async function CategoryPage({ params }: { params: { category: str
           <div className="inline-flex items-center gap-2 bg-sky-100 border border-sky-200 text-sky-700 text-xs font-bold px-3 py-1.5 rounded-full mb-5">
             <Zap className="w-3 h-3" />{items.length} {items.length === 1 ? 'Tool' : 'Tools'}
           </div>
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4">
+          <h1 className="font-display text-4xl sm:text-5xl font-extrabold text-slate-900 leading-tight tracking-tight mb-4">
             {cat.hero_headline || `Best ${cat.name} Tools`}
           </h1>
-          <p className="text-base sm:text-lg text-slate-500 leading-relaxed max-w-2xl mx-auto mb-8">
+          <p className="type-body-lg max-w-2xl mx-auto mb-8">
             {cat.hero_subtext || cat.description}
           </p>
           <Link href="#tools"

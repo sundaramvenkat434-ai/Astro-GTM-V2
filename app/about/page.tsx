@@ -24,11 +24,11 @@ export default function AboutPage() {
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16">
         <div className="mb-10">
-          <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">About</span>
-          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 mt-2 mb-4 tracking-tight">
+          <span className="type-eyebrow">About</span>
+          <h1 className="type-h1 mt-2 mb-4">
             Honest reviews. No affiliate spin.
           </h1>
-          <p className="text-lg text-slate-600 leading-relaxed">
+          <p className="type-body-lg">
             AstroGTM is an independent publication covering AI tools, SaaS products, and developer software for GTM, SEO, and growth teams. Every review is based on hands-on testing — not vendor pitches.
           </p>
         </div>
@@ -50,7 +50,7 @@ export default function AboutPage() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-8 mb-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Meet the Editor</h2>
+          <h2 className="type-h2 mb-4">Meet the Editor</h2>
           <div className="flex items-start gap-5">
             <div className="w-14 h-14 rounded-2xl bg-slate-900 flex items-center justify-center shrink-0 text-white text-xl font-bold">
               V
@@ -66,7 +66,7 @@ export default function AboutPage() {
         </div>
 
         <div className="bg-white border border-slate-200 rounded-2xl p-8">
-          <h2 className="text-xl font-bold text-slate-900 mb-4">Our Review Standards</h2>
+          <h2 className="type-h2 mb-4">Our Review Standards</h2>
           <ul className="space-y-3">
             {[
               'Every tool is tested by our team before publishing — no copy-paste spec sheets.',

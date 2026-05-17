@@ -164,7 +164,7 @@ function ToolCard({ tool }: { tool: ToolPage }) {
         <div className="flex-1 min-w-0 flex flex-col">
           <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
             <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-              <span className="font-semibold text-slate-900 text-[13px] leading-snug group-hover:text-sky-700 transition-colors">
+              <span className="type-card-title group-hover:text-sky-700 transition-colors">
                 {tool.name}
               </span>
               {tool.badge && (
@@ -173,7 +173,7 @@ function ToolCard({ tool }: { tool: ToolPage }) {
                 </span>
               )}
             </div>
-            <p className="text-[11.5px] text-slate-500 leading-relaxed line-clamp-2 mb-2">
+            <p className="type-card-body line-clamp-2 mb-2">
               {tool.tagline || tool.description}
             </p>
           </Link>
@@ -438,13 +438,13 @@ export default function HomePage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
-            <span className="text-[11px] sm:text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 leading-none">
+            <span className="type-eyebrow leading-none">
               20+ New Tools Added
             </span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-[2.1rem] sm:text-[3.2rem] lg:text-[3.8rem] font-extrabold text-white leading-[1.1] tracking-[-0.02em] mb-4 sm:mb-5">
+          <h1 className="font-display text-[2rem] sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-[-0.02em] mb-4 sm:mb-5">
             Stop Shipping Features.
             <br />
             <span className="bg-clip-text text-transparent"
@@ -454,7 +454,7 @@ export default function HomePage() {
           </h1>
 
           {/* Sub-headline */}
-          <p className="text-[15px] sm:text-[17px] font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-7 sm:mb-9 tracking-[0.005em]">
+          <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-7 sm:mb-9 tracking-[0.005em]">
             Discover top, tested{' '}
             <span className="text-white font-medium">AI Growth Tools</span>{' '}
             across SEO, Lead Gen, Sales Outreach, Social Media, and more, with{' '}
@@ -642,7 +642,7 @@ export default function HomePage() {
                             />
                           )}
                           {cat.label}
-                          <span style={{ fontSize: 10, opacity: 0.65 }}>{cat.count}</span>
+                          <span className="text-[10px] opacity-65">{cat.count}</span>
                         </button>
                       );
                     })}
@@ -678,8 +678,8 @@ export default function HomePage() {
                               {CATEGORY_ICONS[cat]}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-[15px] font-bold text-slate-900 leading-snug">{SECTION_LABELS[cat]}</h3>
-                              <p className="text-[11.5px] font-medium text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
+                              <h3 className="font-display text-[15px] font-bold text-slate-900 leading-snug tracking-tight">{SECTION_LABELS[cat]}</h3>
+                              <p className="type-card-body font-medium text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
                             </div>
                             <div className="hidden sm:block h-1 w-12 rounded-full opacity-40" style={{ background: accent }} />
                             <Link href={`/category/${cat}`} className="hidden sm:inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">

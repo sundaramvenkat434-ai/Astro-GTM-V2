@@ -86,6 +86,49 @@
   100% { transform: translateX(300%); }
 }
 
+/* ── Shared typography scale ──────────────────────────────── */
+@layer components {
+  /* Eyebrow / label above headings */
+  .type-eyebrow {
+    @apply text-[11px] font-semibold uppercase tracking-widest text-slate-400;
+  }
+
+  /* Page-level H1 — inner pages (about, contact, legal) */
+  .type-h1 {
+    @apply font-display text-3xl sm:text-4xl font-bold text-slate-900 tracking-tight leading-tight;
+  }
+
+  /* Section H2 */
+  .type-h2 {
+    @apply font-display text-xl font-bold text-slate-900 tracking-tight;
+  }
+
+  /* Large body / intro paragraph */
+  .type-body-lg {
+    @apply text-base sm:text-lg text-slate-600 leading-relaxed;
+  }
+
+  /* Standard body */
+  .type-body {
+    @apply text-sm text-slate-600 leading-relaxed;
+  }
+
+  /* Card title */
+  .type-card-title {
+    @apply font-sans text-[13px] font-semibold text-slate-900 leading-snug tracking-tight;
+  }
+
+  /* Card sub / tagline */
+  .type-card-body {
+    @apply text-[11.5px] text-slate-500 leading-relaxed;
+  }
+
+  /* Micro label — badges, pills, captions */
+  .type-micro {
+    @apply text-[10px] font-semibold tracking-wide;
+  }
+}
+
 .scrollbar-none {
   scrollbar-width: none;
 }

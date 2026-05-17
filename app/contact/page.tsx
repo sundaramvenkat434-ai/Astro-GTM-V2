@@ -17,9 +17,9 @@ export default function ContactPage() {
       <SiteHeader />
 
       <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-16">
-        <span className="text-xs font-semibold uppercase tracking-widest text-slate-400">Get in touch</span>
-        <h1 className="text-3xl font-bold text-slate-900 mt-2 mb-4 tracking-tight">Contact Us</h1>
-        <p className="text-base text-slate-600 mb-10">
+        <span className="type-eyebrow">Get in touch</span>
+        <h1 className="type-h1 mt-2 mb-4">Contact Us</h1>
+        <p className="type-body mb-10">
           We welcome corrections, review requests, and partnership inquiries. We read every message but may not be able to reply to all.
         </p>
 

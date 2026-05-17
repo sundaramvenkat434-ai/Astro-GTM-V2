@@ -565,7 +565,7 @@ export default async function SlugPage({
                       {/* Title + meta */}
                       <div className="flex-1 min-w-0">
                         <div className="flex flex-wrap items-center gap-2 mb-1">
-                          <h1 className="text-2xl sm:text-3xl font-bold text-slate-900 leading-tight tracking-tight">{tool.name}</h1>
+                          <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900 leading-tight tracking-tight">{tool.name}</h1>
                           {tool.badge && (
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
                               {tool.badge}

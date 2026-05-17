@@ -343,8 +343,8 @@ export default async function ComparisonPage({
               <ChevronRight className="w-3 h-3" />
               <span>Comparison</span>
             </div>
-            <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight">{comp.name}</h1>
-            {comp.tagline && <p className="text-lg text-slate-500 max-w-2xl mx-auto">{comp.tagline}</p>}
+            <h1 className="type-h1">{comp.name}</h1>
+            {comp.tagline && <p className="type-body-lg max-w-2xl mx-auto">{comp.tagline}</p>}
           </div>
 
           {/* Tool vs. cards */}
