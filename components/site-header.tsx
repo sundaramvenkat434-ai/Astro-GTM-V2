@@ -163,8 +163,8 @@ const SUBMIT_OPTIONS = [
     accent: '#0369a1',
   },
   {
-    label: 'Expert Review',
-    desc: 'Get honest feedback from PMs',
+    label: 'Expert Tool Review',
+    desc: 'Get detailed feedback from PMs',
     href: '/contact',
     icon: <FileSearch className="w-3.5 h-3.5" />,
     accent: '#0d9488',
