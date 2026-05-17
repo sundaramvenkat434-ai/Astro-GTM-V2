@@ -181,14 +181,14 @@ const SUBMIT_OPTIONS = [
 /* ── Newsletter dropdown ─────────────────────────────────────── */
 const NEWSLETTER_OPTIONS = [
   {
-    label: 'Weekly Top 3 Tools',
+    label: 'Top 3 Tools',
     desc: 'Best reviewed in each category',
     icon: <Sparkles className="w-3.5 h-3.5" />,
     accent: '#0369a1',
   },
   {
-    label: 'Competitor Updates',
-    desc: 'Track new, similar tools online',
+    label: 'Competitor Analysis',
+    desc: 'Stay updated on similar tools',
     icon: <Bell className="w-3.5 h-3.5" />,
     accent: '#6d28d9',
   },
