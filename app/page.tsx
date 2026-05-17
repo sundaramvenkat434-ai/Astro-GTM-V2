@@ -460,10 +460,11 @@ export default function HomePage() {
             {/* Browse Top Tools */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[15px] sm:text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative overflow-hidden inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
-                boxShadow: '0 0 0 1px rgba(56,189,248,0.3), 0 8px 28px rgba(14,165,233,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
+                background: 'linear-gradient(135deg, #01497c 0%, #0264a0 50%, #0277bd 100%)',
+                boxShadow: '0 0 0 1.5px rgba(2,100,160,0.9), 0 6px 20px rgba(1,73,124,0.55), inset 0 1px 0 rgba(255,255,255,0.12)',
+                letterSpacing: '-0.01em',
               }}
             >
               <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
@@ -477,12 +478,13 @@ export default function HomePage() {
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
               onMouseEnter={() => setCreditsHover(true)}
               onMouseLeave={() => setCreditsHover(false)}
-              className="relative inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[15px] sm:text-[14.5px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
+              className="relative inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                background: creditsHover ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.05)',
-                border: creditsHover ? '1px solid rgba(251,191,36,0.45)' : '1px solid rgba(255,255,255,0.12)',
-                color: 'rgba(255,255,255,0.85)',
-                boxShadow: creditsHover ? '0 0 20px rgba(251,191,36,0.15)' : 'none',
+                background: creditsHover ? 'rgba(255,255,255,0.09)' : 'rgba(15,23,42,0.85)',
+                border: creditsHover ? '1.5px solid rgba(251,191,36,0.55)' : '1.5px solid rgba(255,255,255,0.14)',
+                color: 'rgba(255,255,255,0.9)',
+                boxShadow: creditsHover ? '0 0 0 1.5px rgba(251,191,36,0.2), 0 6px 20px rgba(251,191,36,0.12)' : '0 0 0 1.5px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)',
+                letterSpacing: '-0.01em',
                 transition: 'all 0.3s ease',
               }}
             >
@@ -493,14 +495,12 @@ export default function HomePage() {
                   transform: creditsHover ? 'rotate(-12deg) scale(1.2)' : 'none',
                 }}
               />
-              <span>
-                FREE{' '}
-                <span
-                  className="font-bold transition-all duration-300"
-                  style={{ color: creditsHover ? '#fde68a' : '#fbbf24' }}
-                >
-                  $50 Credits
-                </span>
+              <span className="text-white font-bold">FREE</span>
+              <span
+                className="font-bold transition-all duration-300"
+                style={{ color: creditsHover ? '#fde68a' : '#fbbf24' }}
+              >
+                $50 Credits
               </span>
               {creditsHover && (
                 <span className="absolute inset-0 translate-x-[-100%] animate-[shimmer_0.8s_ease_forwards] bg-gradient-to-r from-transparent via-amber-300/10 to-transparent pointer-events-none" />
