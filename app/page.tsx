@@ -60,22 +60,21 @@ const CATEGORY_ACCENT: Record<string, string> = {
 };
 
 const CARD_GRADIENTS: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
-  'lead-generation':    'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
-  'sales-outreach':     'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
-  'social-media':       'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
-  'paid-marketing':     'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
-  'analytics-insights': 'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
+  'seo-content':        'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'lead-generation':    'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'sales-outreach':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'social-media':       'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'paid-marketing':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'analytics-insights': 'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
 };
 
-/* Avatar — kept neutral grey/black as requested */
 const CARD_BTN_GRADIENT: Record<string, string> = {
-  'seo-content':        'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'lead-generation':    'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'sales-outreach':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'social-media':       'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'paid-marketing':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'analytics-insights': 'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'seo-content':        'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'lead-generation':    'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'sales-outreach':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'social-media':       'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'paid-marketing':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'analytics-insights': 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
 };
 
 /* Category pill colors — inline style driven by pastel tokens */
@@ -155,8 +154,8 @@ function ToolCard({ tool }: { tool: ToolPage }) {
       <div className="flex gap-3 p-3.5 flex-1">
         {/* Gradient avatar */}
         <div
-          className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-[14px] shadow-sm mt-0.5"
-          style={{ background: btnGrad }}
+          className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-[14px] shadow-sm mt-0.5 border border-sky-200"
+          style={{ background: btnGrad, color: '#0369a1' }}
         >
           {tool.name.charAt(0)}
         </div>
@@ -623,7 +622,7 @@ export default function HomePage() {
                           className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all"
                           style={active
                             ? { background: '#0f172a', color: '#fff', borderColor: '#0f172a' }
-                            : { background: pastel ?? '#fff', color: dark ?? '#475569', borderColor: dark ? dark + '40' : '#e2e8f0' }
+                            : { background: '#fff', color: dark ?? '#475569', borderColor: '#e2e8f0' }
                           }
                         >
                           {pastel && (
