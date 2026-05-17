@@ -181,20 +181,20 @@ const SUBMIT_OPTIONS = [
 /* ── Newsletter dropdown ─────────────────────────────────────── */
 const NEWSLETTER_OPTIONS = [
   {
-    label: 'Weekly Top 3',
-    desc: 'In your preferred categories',
+    label: 'Weekly Top 3 Tools',
+    desc: 'Best reviewed in each category',
     icon: <Sparkles className="w-3.5 h-3.5" />,
     accent: '#0369a1',
   },
   {
-    label: 'Competitor Pulse',
-    desc: 'Track new similar tools',
+    label: 'Competitor Updates',
+    desc: 'Track new, similar tools online',
     icon: <Bell className="w-3.5 h-3.5" />,
     accent: '#6d28d9',
   },
   {
-    label: 'GTM Workflows',
-    desc: 'DIY AI implementation guide',
+    label: 'Founder Playbooks',
+    desc: 'Real-world AI growth experiments',
     icon: <BookOpen className="w-3.5 h-3.5" />,
     accent: '#0d9488',
   },
