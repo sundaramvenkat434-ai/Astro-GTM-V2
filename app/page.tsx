@@ -21,82 +21,81 @@ interface ToolPage {
 }
 
 /* ─── tokens ─────────────────────────────────────────────────── */
-const SECTION_ORDER = ['lead-generation', 'sales-outreach', 'seo-content', 'social-media'];
+const SECTION_ORDER = ['seo-content', 'lead-generation', 'sales-outreach', 'social-media', 'paid-marketing', 'analytics-insights'];
 const SECTION_LABELS: Record<string, string> = {
-  'lead-generation': 'Lead Generation',
-  'sales-outreach':  'Sales Outreach',
-  'seo-content':     'SEO & Content',
-  'social-media':    'Social Media',
+  'seo-content':        'Content & SEO',
+  'lead-generation':    'Lead Generation',
+  'sales-outreach':     'Sales Outreach',
+  'social-media':       'Social Media',
+  'paid-marketing':     'Paid Marketing',
+  'analytics-insights': 'Analytics & Insights',
 };
 
-/*
- * New brand gradient palette per category:
- * Content & SEO      #04DB48
- * Lead Generation    #044CDB
- * Sales Outreach     #B0DB04
- * Social Media       #7E04DB
- * Paid Marketing     #DB04B7
- * Analytics          #04C9DB
- */
-/*
- * Brand palette — soft pastel fills per category
- * lead-generation  #D1FBFF (sky)
- * sales-outreach   #E4FFD1 (lime)
- * seo-content      #D7FFD1 (green)
- * social-media     #D1EAFF (blue)
- * (extras: #D1FFFF, #D9F2FF available for future categories)
- */
 const CATEGORY_PASTEL: Record<string, string> = {
-  'lead-generation': '#D1FBFF',
-  'sales-outreach':  '#E4FFD1',
-  'seo-content':     '#D7FFD1',
-  'social-media':    '#D1EAFF',
+  'seo-content':        '#B0E4FF',
+  'lead-generation':    '#BFE8FF',
+  'sales-outreach':     '#C7EBFF',
+  'social-media':       '#D6F1FF',
+  'paid-marketing':     '#E0F5FF',
+  'analytics-insights': '#F0FBFF',
 };
 
 /* Darker shade of each pastel for text/dot/border */
 const CATEGORY_PASTEL_DARK: Record<string, string> = {
-  'lead-generation': '#0e9aad',
-  'sales-outreach':  '#4a8a1a',
-  'seo-content':     '#1a8a3a',
-  'social-media':    '#1a5fab',
+  'seo-content':        '#0369a1',
+  'lead-generation':    '#0369a1',
+  'sales-outreach':     '#0369a1',
+  'social-media':       '#0369a1',
+  'paid-marketing':     '#0369a1',
+  'analytics-insights': '#0369a1',
 };
 
 const CATEGORY_ACCENT: Record<string, string> = {
-  'lead-generation': '#0e9aad',
-  'sales-outreach':  '#4a8a1a',
-  'seo-content':     '#1a8a3a',
-  'social-media':    '#1a5fab',
+  'seo-content':        '#0369a1',
+  'lead-generation':    '#0369a1',
+  'sales-outreach':     '#0369a1',
+  'social-media':       '#0369a1',
+  'paid-marketing':     '#0369a1',
+  'analytics-insights': '#0369a1',
 };
 
 const CARD_GRADIENTS: Record<string, string> = {
-  'lead-generation': 'linear-gradient(145deg, #D1FBFF55 0%, rgba(255,255,255,1) 55%)',
-  'sales-outreach':  'linear-gradient(145deg, #E4FFD155 0%, rgba(255,255,255,1) 55%)',
-  'seo-content':     'linear-gradient(145deg, #D7FFD155 0%, rgba(255,255,255,1) 55%)',
-  'social-media':    'linear-gradient(145deg, #D1EAFF55 0%, rgba(255,255,255,1) 55%)',
+  'seo-content':        'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
+  'lead-generation':    'linear-gradient(145deg, #BFE8FF55 0%, rgba(255,255,255,1) 55%)',
+  'sales-outreach':     'linear-gradient(145deg, #C7EBFF55 0%, rgba(255,255,255,1) 55%)',
+  'social-media':       'linear-gradient(145deg, #D6F1FF55 0%, rgba(255,255,255,1) 55%)',
+  'paid-marketing':     'linear-gradient(145deg, #E0F5FF55 0%, rgba(255,255,255,1) 55%)',
+  'analytics-insights': 'linear-gradient(145deg, #F0FBFF55 0%, rgba(255,255,255,1) 55%)',
 };
 
 /* Avatar — kept neutral grey/black as requested */
 const CARD_BTN_GRADIENT: Record<string, string> = {
-  'lead-generation': 'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'sales-outreach':  'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'seo-content':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
-  'social-media':    'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'seo-content':        'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'lead-generation':    'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'sales-outreach':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'social-media':       'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'paid-marketing':     'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
+  'analytics-insights': 'linear-gradient(135deg, #374151 0%, #4b5563 60%, #6b7280 100%)',
 };
 
 /* Category pill colors — inline style driven by pastel tokens */
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  'lead-generation': { bg: '', text: '', border: '', dot: '' },
-  'sales-outreach':  { bg: '', text: '', border: '', dot: '' },
-  'seo-content':     { bg: '', text: '', border: '', dot: '' },
-  'social-media':    { bg: '', text: '', border: '', dot: '' },
+  'seo-content':        { bg: '', text: '', border: '', dot: '' },
+  'lead-generation':    { bg: '', text: '', border: '', dot: '' },
+  'sales-outreach':     { bg: '', text: '', border: '', dot: '' },
+  'social-media':       { bg: '', text: '', border: '', dot: '' },
+  'paid-marketing':     { bg: '', text: '', border: '', dot: '' },
+  'analytics-insights': { bg: '', text: '', border: '', dot: '' },
 };
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
-  all:               <LayoutGrid className="w-4 h-4" />,
-  'lead-generation': <Users className="w-4 h-4" />,
-  'sales-outreach':  <Megaphone className="w-4 h-4" />,
-  'seo-content':     <TrendingUp className="w-4 h-4" />,
-  'social-media':    <Share2 className="w-4 h-4" />,
+  all:                  <LayoutGrid className="w-4 h-4" />,
+  'seo-content':        <TrendingUp className="w-4 h-4" />,
+  'lead-generation':    <Users className="w-4 h-4" />,
+  'sales-outreach':     <Megaphone className="w-4 h-4" />,
+  'social-media':       <Share2 className="w-4 h-4" />,
+  'paid-marketing':     <Zap className="w-4 h-4" />,
+  'analytics-insights': <Star className="w-4 h-4" />,
 };
 
 const BADGE_STYLES: Record<string, string> = {

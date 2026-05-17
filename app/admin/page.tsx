@@ -186,23 +186,21 @@ interface UnifiedRow {
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const CATEGORY_LABELS: Record<string, string> = {
-  seo: 'SEO & Content',
-  analytics: 'Analytics',
-  developer: 'Developer',
-  marketing: 'Marketing',
-  security: 'Security',
-  design: 'Design',
-  infrastructure: 'Infrastructure',
+  'seo-content':        'Content & SEO',
+  'lead-generation':    'Lead Generation',
+  'sales-outreach':     'Sales Outreach',
+  'social-media':       'Social Media',
+  'paid-marketing':     'Paid Marketing',
+  'analytics-insights': 'Analytics & Insights',
 };
 
-const CATEGORY_COLORS: Record<string, string> = {
-  seo: 'bg-teal-50 text-teal-700 border-teal-200',
-  analytics: 'bg-sky-50 text-sky-700 border-sky-200',
-  developer: 'bg-slate-100 text-slate-700 border-slate-200',
-  marketing: 'bg-rose-50 text-rose-700 border-rose-200',
-  security: 'bg-amber-50 text-amber-700 border-amber-200',
-  design: 'bg-pink-50 text-pink-700 border-pink-200',
-  infrastructure: 'bg-cyan-50 text-cyan-700 border-cyan-200',
+const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
+  'seo-content':        { bg: '#B0E4FF', text: '#0369a1', border: '#7dd3fc' },
+  'lead-generation':    { bg: '#BFE8FF', text: '#0369a1', border: '#7dd3fc' },
+  'sales-outreach':     { bg: '#C7EBFF', text: '#0369a1', border: '#7dd3fc' },
+  'social-media':       { bg: '#D6F1FF', text: '#0369a1', border: '#7dd3fc' },
+  'paid-marketing':     { bg: '#E0F5FF', text: '#0369a1', border: '#7dd3fc' },
+  'analytics-insights': { bg: '#F0FBFF', text: '#0369a1', border: '#7dd3fc' },
 };
 
 // ── Score helpers ─────────────────────────────────────────────────────────────
@@ -1316,7 +1314,12 @@ export default function AdminDashboard() {
 
                           {/* Category */}
                           <TableCell className="py-3">
-                            <span className={`text-[10px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap ${CATEGORY_COLORS[row.category] || 'bg-slate-50 text-slate-600 border-slate-200'}`}>
+                            <span
+                              className="text-[10px] font-medium px-2 py-0.5 rounded-full border whitespace-nowrap"
+                              style={CATEGORY_COLORS[row.category]
+                                ? { backgroundColor: CATEGORY_COLORS[row.category].bg, color: CATEGORY_COLORS[row.category].text, borderColor: CATEGORY_COLORS[row.category].border }
+                                : { backgroundColor: '#f8fafc', color: '#475569', borderColor: '#e2e8f0' }}
+                            >
                               {CATEGORY_LABELS[row.category] || row.category}
                             </span>
                           </TableCell>
