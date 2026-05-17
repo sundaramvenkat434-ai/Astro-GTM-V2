@@ -33,14 +33,14 @@ const SECTION_LABELS: Record<string, string> = {
 
 const CATEGORY_PASTEL: Record<string, string> = {
   'seo-content':        '#B0E4FF',
-  'lead-generation':    '#BFE8FF',
-  'sales-outreach':     '#C7EBFF',
-  'social-media':       '#D6F1FF',
-  'paid-marketing':     '#E0F5FF',
-  'analytics-insights': '#F0FBFF',
+  'lead-generation':    '#B0E4FF',
+  'sales-outreach':     '#B0E4FF',
+  'social-media':       '#B0E4FF',
+  'paid-marketing':     '#B0E4FF',
+  'analytics-insights': '#B0E4FF',
 };
 
-/* Darker shade of each pastel for text/dot/border */
+/* Darker shade for text/dot/border */
 const CATEGORY_PASTEL_DARK: Record<string, string> = {
   'seo-content':        '#0369a1',
   'lead-generation':    '#0369a1',
@@ -61,11 +61,11 @@ const CATEGORY_ACCENT: Record<string, string> = {
 
 const CARD_GRADIENTS: Record<string, string> = {
   'seo-content':        'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
-  'lead-generation':    'linear-gradient(145deg, #BFE8FF55 0%, rgba(255,255,255,1) 55%)',
-  'sales-outreach':     'linear-gradient(145deg, #C7EBFF55 0%, rgba(255,255,255,1) 55%)',
-  'social-media':       'linear-gradient(145deg, #D6F1FF55 0%, rgba(255,255,255,1) 55%)',
-  'paid-marketing':     'linear-gradient(145deg, #E0F5FF55 0%, rgba(255,255,255,1) 55%)',
-  'analytics-insights': 'linear-gradient(145deg, #F0FBFF55 0%, rgba(255,255,255,1) 55%)',
+  'lead-generation':    'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
+  'sales-outreach':     'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
+  'social-media':       'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
+  'paid-marketing':     'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
+  'analytics-insights': 'linear-gradient(145deg, #B0E4FF55 0%, rgba(255,255,255,1) 55%)',
 };
 
 /* Avatar — kept neutral grey/black as requested */

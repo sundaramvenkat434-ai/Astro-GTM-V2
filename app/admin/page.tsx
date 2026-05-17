@@ -196,11 +196,11 @@ const CATEGORY_LABELS: Record<string, string> = {
 
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string }> = {
   'seo-content':        { bg: '#B0E4FF', text: '#0369a1', border: '#7dd3fc' },
-  'lead-generation':    { bg: '#BFE8FF', text: '#0369a1', border: '#7dd3fc' },
-  'sales-outreach':     { bg: '#C7EBFF', text: '#0369a1', border: '#7dd3fc' },
-  'social-media':       { bg: '#D6F1FF', text: '#0369a1', border: '#7dd3fc' },
-  'paid-marketing':     { bg: '#E0F5FF', text: '#0369a1', border: '#7dd3fc' },
-  'analytics-insights': { bg: '#F0FBFF', text: '#0369a1', border: '#7dd3fc' },
+  'lead-generation':    { bg: '#B0E4FF', text: '#0369a1', border: '#7dd3fc' },
+  'sales-outreach':     { bg: '#B0E4FF', text: '#0369a1', border: '#7dd3fc' },
+  'social-media':       { bg: '#B0E4FF', text: '#0369a1', border: '#7dd3fc' },
+  'paid-marketing':     { bg: '#B0E4FF', text: '#0369a1', border: '#7dd3fc' },
+  'analytics-insights': { bg: '#B0E4FF', text: '#0369a1', border: '#7dd3fc' },
 };
 
 // ── Score helpers ─────────────────────────────────────────────────────────────
