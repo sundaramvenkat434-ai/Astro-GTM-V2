@@ -1,8 +1,9 @@
 import './globals.css';
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, DM_Sans } from 'next/font/google';
 import Script from 'next/script';
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans', weight: ['400', '500', '600', '700'] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000'),
@@ -49,7 +50,7 @@ export default function RootLayout({
         gtag('js', new Date());
         gtag('config', 'G-S7J68DJQKE');
       ` }} />
-      <body className={`${inter.className} flex flex-col min-h-screen`}>
+      <body className={`${inter.variable} ${dmSans.variable} ${dmSans.className} flex flex-col min-h-screen`}>
         {children}
       </body>
     </html>

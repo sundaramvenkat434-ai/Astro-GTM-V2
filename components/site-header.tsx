@@ -7,55 +7,55 @@ import { Mail, Send, Check, MailCheck, ArrowRight, Sparkles, Users, Zap } from '
 /* ── AstroGTM logo ──────────────────────────────────────────── */
 export function AstroGTMLogo({ size = 32 }: { size?: number }) {
   const h = size;
-  const w = Math.round(size * 3.9);
+  const w = Math.round(size * 3.4);
+  // Mark is a 3×3 dot grid with top-right corner accent — clean, scalable
+  const m = h * 0.72; // mark size
+  const gap = m * 0.28;
+  const dot = (m - gap * 2) / 3;
+  const r = dot * 0.38;
+
+  // dot positions on a 3×3 grid
+  const dots: [number, number, number][] = []; // x, y, opacity
+  for (let row = 0; row < 3; row++) {
+    for (let col = 0; col < 3; col++) {
+      // skip top-right corner — becomes accent
+      if (row === 0 && col === 2) continue;
+      const x = col * (dot + gap) + dot / 2;
+      const y = row * (dot + gap) + dot / 2 + (h - m) / 2;
+      const fade = row === 2 || col === 0 ? 0.25 : row === 1 && col === 1 ? 0.55 : 1;
+      dots.push([x, y, fade]);
+    }
+  }
+
+  // accent dot top-right — slightly larger, sky blue
+  const ax = 2 * (dot + gap) + dot / 2;
+  const ay = 0 * (dot + gap) + dot / 2 + (h - m) / 2;
+
+  const textX = m + gap * 2.5;
+  const textY = h * 0.69;
+  const fontSize = h * 0.52;
+
   return (
-    <svg width={w} height={h} viewBox="0 0 125 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="agtm-pg" x1="0" y1="0" x2="1" y2="1">
-          <stop offset="0%" stopColor="#1e6fa8" />
-          <stop offset="100%" stopColor="#0c4a7a" />
-        </linearGradient>
-        <linearGradient id="agtm-og" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#0ea5e9" stopOpacity="0" />
-          <stop offset="45%" stopColor="#38bdf8" stopOpacity="0.9" />
-          <stop offset="100%" stopColor="#0ea5e9" stopOpacity="0" />
-        </linearGradient>
-        <radialGradient id="agtm-shine" cx="35%" cy="30%" r="50%">
-          <stop offset="0%" stopColor="white" stopOpacity="0.35" />
-          <stop offset="100%" stopColor="white" stopOpacity="0" />
-        </radialGradient>
-      </defs>
+    <svg width={w} height={h} viewBox={`0 0 ${w} ${h}`} fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* 3×3 dot grid mark */}
+      {dots.map(([x, y, op], i) => (
+        <circle key={i} cx={x} cy={y} r={r} fill="#0f172a" fillOpacity={op} />
+      ))}
+      {/* Accent dot — sky */}
+      <circle cx={ax} cy={ay} r={r * 1.15} fill="#0ea5e9" />
 
-      {/* Planet body */}
-      <circle cx="16" cy="16" r="11" fill="url(#agtm-pg)" />
-      {/* Surface bands */}
-      <ellipse cx="16" cy="19" rx="11" ry="3.5" fill="#0b3d63" fillOpacity="0.4" />
-      <ellipse cx="16" cy="12" rx="9" ry="2.5" fill="#1a5a8a" fillOpacity="0.3" />
-      {/* Shine */}
-      <circle cx="16" cy="16" r="11" fill="url(#agtm-shine)" />
-      {/* Pole highlight */}
-      <circle cx="11" cy="11" r="2.5" fill="white" fillOpacity="0.18" />
-
-      {/* Orbit ring */}
-      <ellipse cx="16" cy="16" rx="16" ry="6" stroke="url(#agtm-og)" strokeWidth="1.5" fill="none" />
-
-      {/* Orbiting moon */}
-      <circle cx="32" cy="13" r="2.6" fill="#bae6fd" />
-      <circle cx="31.2" cy="12.2" r="0.9" fill="white" fillOpacity="0.6" />
-
-      {/* Growth arc above */}
-      <path d="M4 8.5 Q16 0.5 28 8.5" stroke="#38bdf8" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeOpacity="0.55" />
-      <path d="M25.5 6 L28 8.5 L25.3 9" stroke="#38bdf8" strokeWidth="1.3" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeOpacity="0.7" />
-
-      {/* Wordmark: AstroGTM as one word, Astro near-black, GTM dark blue */}
+      {/* Wordmark */}
       <text
-        x="38" y="22"
-        fontFamily="'Inter', 'Helvetica Neue', Arial, sans-serif"
-        fontWeight="800"
-        fontSize="18"
+        x={textX}
+        y={textY}
+        fontFamily="'DM Sans', 'Inter', system-ui, sans-serif"
+        fontWeight="700"
+        fontSize={fontSize}
+        letterSpacing="-0.03em"
         fill="#0f172a"
-        letterSpacing="-0.6"
-      ><tspan fill="#0f172a">Astro</tspan><tspan fill="#0369a1" fontWeight="900">GTM</tspan></text>
+      >
+        Astro<tspan fill="#0ea5e9" fontWeight="800">GTM</tspan>
+      </text>
     </svg>
   );
 }
