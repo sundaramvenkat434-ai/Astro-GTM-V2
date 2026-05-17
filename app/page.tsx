@@ -6,7 +6,11 @@ import { supabase } from '@/lib/supabase';
 import { SiteHeader } from '@/components/site-header';
 import { UpvoteButton } from '@/components/upvote-button';
 import { SiteFooter } from '@/components/site-footer';
-import { Search, TrendingUp, Users, Megaphone, Star, ArrowRight, LayoutGrid, Gift, Check, ExternalLink, Zap, Share2, ChevronRight, ChevronLeft, Globe as Globe2 } from 'lucide-react';
+import {
+  Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
+  LayoutGrid, Gift, Check, ExternalLink,
+  Zap, Share2, ChevronRight, ChevronLeft, Globe,
+} from 'lucide-react';
 
 /* ─── types ─────────────────────────────────────────────────── */
 interface ToolPage {
@@ -25,9 +29,9 @@ const SECTION_LABELS: Record<string, string> = {
   'social-media': 'Social Media',
 };
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  'lead-generation': { bg: 'bg-sky-50', text: 'text-sky-700', border: 'border-sky-200', dot: 'bg-sky-500' },
-  'sales-outreach':  { bg: 'bg-teal-50', text: 'text-teal-700', border: 'border-teal-200', dot: 'bg-teal-500' },
-  'seo-content':     { bg: 'bg-amber-50', text: 'text-amber-700', border: 'border-amber-200', dot: 'bg-amber-500' },
+  'lead-generation': { bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200',     dot: 'bg-sky-500' },
+  'sales-outreach':  { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',    dot: 'bg-teal-500' },
+  'seo-content':     { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   dot: 'bg-amber-500' },
   'social-media':    { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
 };
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -43,29 +47,23 @@ const BADGE_STYLES: Record<string, string> = {
   free:    'bg-emerald-50 text-emerald-700 border-emerald-200',
   hot:     'bg-rose-50 text-rose-700 border-rose-200',
 };
-const CARD_COLORS = ['#0284c7', '#0d9488', '#f59e0b', '#ef4444', '#10b981', '#0ea5e9', '#8b5cf6', '#f97316'];
 
-/* ─── category pill ─────────────────────────────────────────── */
-function CategoryPill({ category, linked = false }: { category: string; linked?: boolean }) {
-  const c = CATEGORY_COLORS[category];
-  if (!c) return null;
-  const pill = (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-opacity ${c.bg} ${c.text} ${c.border} ${linked ? 'hover:opacity-75' : ''}`}>
-      <span className={`w-1.5 h-1.5 rounded-full ${c.dot}`} />
-      {SECTION_LABELS[category] ?? category}
-    </span>
-  );
-  if (linked) return <Link href={`/category/${category}`}>{pill}</Link>;
-  return pill;
-}
-
-/* ─── category gradient colors ───────────────────────────────── */
+/* ─── gradient / accent per category ───────────────────────── */
 const CARD_GRADIENTS: Record<string, { from: string; via: string }> = {
   'lead-generation': { from: 'rgba(14,165,233,0.18)',  via: 'rgba(14,165,233,0.06)' },
   'sales-outreach':  { from: 'rgba(20,184,166,0.18)',  via: 'rgba(20,184,166,0.06)' },
   'seo-content':     { from: 'rgba(245,158,11,0.18)',  via: 'rgba(245,158,11,0.06)' },
   'social-media':    { from: 'rgba(16,185,129,0.18)',  via: 'rgba(16,185,129,0.06)' },
 };
+
+/* gradient stop values used for the View Tool button to mirror the card header */
+const CARD_BTN_GRADIENT: Record<string, string> = {
+  'lead-generation': 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
+  'sales-outreach':  'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)',
+  'seo-content':     'linear-gradient(135deg, #b45309 0%, #d97706 60%, #f59e0b 100%)',
+  'social-media':    'linear-gradient(135deg, #047857 0%, #059669 60%, #10b981 100%)',
+};
+
 const CARD_ACCENT: Record<string, string> = {
   'lead-generation': '#0ea5e9',
   'sales-outreach':  '#14b8a6',
@@ -73,37 +71,52 @@ const CARD_ACCENT: Record<string, string> = {
   'social-media':    '#10b981',
 };
 
+/* ─── category pill ─────────────────────────────────────────── */
+function CategoryPill({ category, linked = false }: { category: string; linked?: boolean }) {
+  const c = CATEGORY_COLORS[category];
+  if (!c) return null;
+  const pill = (
+    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${c.bg} ${c.text} ${c.border} ${linked ? 'transition-opacity hover:opacity-75' : ''}`}>
+      <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
+      {SECTION_LABELS[category] ?? category}
+    </span>
+  );
+  if (linked) return <Link href={`/category/${category}`}>{pill}</Link>;
+  return pill;
+}
+
+/* shared pill style for the three fixed info tags */
+const INFO_TAG_BASE = 'text-[10px] font-medium border px-2 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-500 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200';
+
 /* ─── top picks card ─────────────────────────────────────────── */
 function TopPickCard({ tool }: { tool: ToolPage }) {
   const grad = CARD_GRADIENTS[tool.category];
   const accent = CARD_ACCENT[tool.category] ?? '#94a3b8';
-
-  const useCases = (tool.use_cases as string[]) ?? [];
+  const btnGrad = CARD_BTN_GRADIENT[tool.category] ?? `linear-gradient(135deg, #475569 0%, #64748b 100%)`;
 
   return (
-    <div className="group shrink-0 w-64 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300">
-      {/* Header — darker gradient wash */}
+    <div className="group shrink-0 w-64 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300">
+
+      {/* Header — gradient wash matching accent */}
       <div className="px-4 pt-4 pb-3" style={{
-        background: grad
-          ? `linear-gradient(160deg, ${grad.from} 0%, ${grad.via} 60%, transparent 100%)`
-          : 'transparent',
+        background: grad ? `linear-gradient(160deg, ${grad.from} 0%, ${grad.via} 60%, transparent 100%)` : 'transparent',
         borderBottom: `1px solid ${accent}30`,
       }}>
-        <div className="flex items-center gap-2.5 mb-2">
-          <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
-            style={{ background: accent }}>
+        <div className="flex items-center gap-2.5">
+          <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+            style={{ background: btnGrad }}>
             {tool.name.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
               <Link
                 href={`/category/${tool.category}/${tool.slug}`}
-                className="text-[13px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight"
+                className="text-[13.5px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-snug"
               >
                 {tool.name}
               </Link>
               {tool.badge && (
-                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {tool.badge}
                 </span>
               )}
@@ -114,50 +127,32 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
       </div>
 
       {/* Body */}
-      <div className="px-4 pt-3 pb-2 flex-1 flex flex-col gap-2">
-        <p className="text-[11.5px] text-slate-500 leading-[1.6] line-clamp-2">
+      <div className="px-4 pt-3 pb-3 flex-1 flex flex-col gap-2.5">
+        <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2">
           {tool.tagline || tool.description}
         </p>
 
-        {/* Use Cases / Features / Pricing as small hyperlinks */}
+        {/* Fixed info tags: Use Cases · Features · Pricing */}
         <div className="flex flex-wrap gap-1 mt-auto">
-          {useCases.slice(0, 2).map((uc) => (
-            <Link
-              key={uc}
-              href={`/category/${tool.category}/${tool.slug}#use-cases`}
-              className="text-[10px] bg-slate-50 text-slate-500 border border-slate-100 px-2 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
-            >
-              {uc}
-            </Link>
-          ))}
-          <Link
-            href={`/category/${tool.category}/${tool.slug}#features`}
-            className="text-[10px] bg-slate-50 text-slate-500 border border-slate-100 px-2 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
-          >
-            Features
-          </Link>
-          <Link
-            href={`/category/${tool.category}/${tool.slug}#pricing`}
-            className="text-[10px] bg-slate-50 text-slate-500 border border-slate-100 px-2 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
-          >
-            Pricing
-          </Link>
+          <Link href={`/category/${tool.category}/${tool.slug}#use-cases`} className={INFO_TAG_BASE}>Use Cases</Link>
+          <Link href={`/category/${tool.category}/${tool.slug}#features`}  className={INFO_TAG_BASE}>Features</Link>
+          <Link href={`/category/${tool.category}/${tool.slug}#pricing`}   className={INFO_TAG_BASE}>Pricing</Link>
         </div>
       </div>
 
       {/* Footer */}
       <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1 text-[11px]">
+          <span className="inline-flex items-center gap-1">
             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span className="font-bold text-slate-800">{tool.rating}</span>
+            <span className="text-[12px] font-bold text-slate-800">{tool.rating}</span>
           </span>
           <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
         </div>
         <Link
           href={`/category/${tool.category}/${tool.slug}`}
-          className="inline-flex items-center gap-1 text-[11px] font-semibold text-white px-2.5 py-1 rounded-lg transition-all hover:opacity-90"
-          style={{ background: accent }}
+          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-white px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] shadow-sm"
+          style={{ background: btnGrad }}
         >
           View Tool <ExternalLink className="w-2.5 h-2.5" />
         </Link>
@@ -167,10 +162,10 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
 }
 
 /* ─── top picks carousel ─────────────────────────────────────── */
-function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: ToolPage[] }) {
+function TopPicksCarousel({ topPicks }: { topPicks: ToolPage[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   function scroll(dir: 'left' | 'right') {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 340 : -340, behavior: 'smooth' });
+    scrollRef.current?.scrollBy({ left: dir === 'right' ? 300 : -300, behavior: 'smooth' });
   }
   return (
     <div className="relative -mx-1">
@@ -197,17 +192,17 @@ function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: To
 function ToolCard({ tool }: { tool: ToolPage }) {
   const accent = CARD_ACCENT[tool.category];
   const grad = CARD_GRADIENTS[tool.category];
-  const useCases = (tool.use_cases as string[]) ?? [];
+  const btnGrad = CARD_BTN_GRADIENT[tool.category] ?? `linear-gradient(135deg, #475569 0%, #64748b 100%)`;
 
   return (
     <div
       className="group flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/60 transition-all duration-200"
-      style={grad ? { background: `linear-gradient(160deg, ${grad.from.replace('0.18', '0.07')} 0%, white 50%)` } : undefined}
+      style={grad ? { background: `linear-gradient(160deg, ${grad.from.replace('0.18', '0.06')} 0%, white 45%)` } : undefined}
     >
-      <div className="flex gap-3 p-3.5">
+      <div className="flex gap-3 p-4">
         {/* Avatar */}
-        <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm"
-          style={{ background: accent ?? '#475569' }}>
+        <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm"
+          style={{ background: btnGrad }}>
           {tool.name.charAt(0)}
         </div>
 
@@ -215,40 +210,22 @@ function ToolCard({ tool }: { tool: ToolPage }) {
         <div className="flex-1 min-w-0">
           <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
             <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-              <span className="font-semibold text-slate-900 text-[13px] leading-tight hover:text-sky-700 transition-colors">{tool.name}</span>
+              <span className="font-semibold text-slate-900 text-[13.5px] leading-snug group-hover:text-sky-700 transition-colors">{tool.name}</span>
               {tool.badge && (
-                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {tool.badge}
                 </span>
               )}
             </div>
-            <p className="text-[11.5px] text-slate-500 leading-relaxed line-clamp-2 mb-2">{tool.tagline || tool.description}</p>
+            <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-2">{tool.tagline || tool.description}</p>
           </Link>
 
-          {/* Category pill + small use-case / features / pricing links */}
+          {/* Category pill + fixed info tags */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <CategoryPill category={tool.category} />
-            {useCases.slice(0, 1).map((uc) => (
-              <Link
-                key={uc}
-                href={`/category/${tool.category}/${tool.slug}#use-cases`}
-                className="text-[9.5px] bg-slate-50 text-slate-400 border border-slate-100 px-1.5 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
-              >
-                {uc}
-              </Link>
-            ))}
-            <Link
-              href={`/category/${tool.category}/${tool.slug}#features`}
-              className="text-[9.5px] bg-slate-50 text-slate-400 border border-slate-100 px-1.5 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href={`/category/${tool.category}/${tool.slug}#pricing`}
-              className="text-[9.5px] bg-slate-50 text-slate-400 border border-slate-100 px-1.5 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
-            >
-              Pricing
-            </Link>
+            <Link href={`/category/${tool.category}/${tool.slug}#use-cases`} className="text-[9.5px] font-medium border px-1.5 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-400 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200">Use Cases</Link>
+            <Link href={`/category/${tool.category}/${tool.slug}#features`}  className="text-[9.5px] font-medium border px-1.5 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-400 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200">Features</Link>
+            <Link href={`/category/${tool.category}/${tool.slug}#pricing`}   className="text-[9.5px] font-medium border px-1.5 py-0.5 rounded-full transition-colors bg-slate-50 text-slate-400 border-slate-200 hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200">Pricing</Link>
           </div>
         </div>
 
@@ -447,16 +424,13 @@ export default function HomePage() {
     ? SECTION_ORDER.filter(c => filtered.some(t => t.category === c))
     : [activeCategory];
 
-  // Top picks: up to 5 highest-upvoted, one per category if possible
   const topPicks = (() => {
     const seen = new Set<string>();
     const picks: ToolPage[] = [];
-    // First pass: one from each category
     for (const cat of SECTION_ORDER) {
       const t = tools.find(x => x.category === cat && !seen.has(x.id));
       if (t) { picks.push(t); seen.add(t.id); }
     }
-    // Fill to 5 from remaining
     for (const t of tools) {
       if (picks.length >= 5) break;
       if (!seen.has(t.id)) { picks.push(t); seen.add(t.id); }
@@ -484,40 +458,38 @@ export default function HomePage() {
         <div className={`relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-16 sm:pt-24 sm:pb-24 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
 
           {/* Eyebrow */}
-          <div className="inline-flex items-center gap-2 mb-6">
+          <div className="inline-flex items-center gap-2 mb-7 px-4 py-1.5 rounded-full border border-white/8 bg-white/5">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">20+ New Tools Reviewed</span>
-            <span className="relative flex h-1.5 w-1.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
-            </span>
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 leading-none">20+ New Tools Reviewed</span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-[2.5rem] sm:text-[3.25rem] lg:text-[3.75rem] font-extrabold text-white leading-[1.08] tracking-[-0.03em] mb-5">
-          Stop Shipping Features.
+          <h1 className="text-[2.6rem] sm:text-[3.4rem] lg:text-[3.9rem] font-extrabold text-white leading-[1.06] tracking-[-0.035em] mb-6">
+            Stop Shipping Features.
             <br />
             <span className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 40%, #2dd4bf 80%, #34d399 100%)' }}>
-             Start Creating Demand.
+              style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 35%, #2dd4bf 70%, #34d399 100%)' }}>
+              Start Creating Demand.
             </span>
           </h1>
 
           {/* Sub-headline */}
-          <p className="text-[15px] sm:text-[16px] font-normal text-slate-400 leading-[1.65] max-w-xl mx-auto mb-9 tracking-[0.01em]">
-            Discover highly-curated <span className="text-white font-medium">AI GTM and Growth Tools</span> across SEO, Lead Gen, Sales Outreach, Social Media, and more, with {' '}
-            <span className="text-emerald-400 font-medium">FREE Plans</span>.
+          <p className="text-[15.5px] sm:text-[17px] font-normal text-slate-400 leading-[1.7] max-w-[520px] mx-auto mb-9 tracking-[0.005em]">
+            Discover highly-curated{' '}
+            <span className="text-white font-medium">AI GTM and Growth Tools</span>{' '}
+            across SEO, Lead Gen, Sales Outreach, Social Media, and more — with{' '}
+            <span className="text-emerald-400 font-semibold">FREE Plans</span>.
           </p>
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-9">
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-[14px] text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)', boxShadow: '0 0 0 1px rgba(56,189,248,0.25), 0 6px 24px rgba(14,165,233,0.3)' }}
+              className="group relative overflow-hidden inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[14.5px] text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              style={{ background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)', boxShadow: '0 0 0 1px rgba(56,189,248,0.25), 0 8px 28px rgba(14,165,233,0.35)' }}
             >
               <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
               <Zap className="w-3.5 h-3.5 shrink-0 relative" />
@@ -526,8 +498,8 @@ export default function HomePage() {
             </button>
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-[14px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.75)' }}
+              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[14.5px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.78)' }}
             >
               <Gift className="w-3.5 h-3.5 text-amber-400 shrink-0" />
               FREE <span className="text-amber-400 font-bold ml-1">$50 Credits</span>
@@ -535,43 +507,40 @@ export default function HomePage() {
           </div>
 
           {/* Trust strip */}
-          <div className="flex items-center justify-center gap-4 sm:gap-6 flex-wrap">
+          <div className="flex items-center justify-center gap-5 sm:gap-7 flex-wrap">
             {['No login required', 'Zero ads', 'Weekly updates'].map((item, i, arr) => (
               <span key={item} className="flex items-center gap-1.5">
-                <span className="flex items-center gap-1.5 text-[12px] text-slate-500">
-                  <Check className="w-3 h-3 text-emerald-500/80 shrink-0" />
+                <span className="flex items-center gap-1.5 text-[12.5px] text-slate-500 tracking-[0.01em]">
+                  <Check className="w-3.5 h-3.5 text-emerald-500/80 shrink-0" />
                   {item}
                 </span>
-                {i < arr.length - 1 && <span className="w-px h-3 bg-slate-700/80 ml-4 sm:ml-6" />}
+                {i < arr.length - 1 && <span className="w-px h-3.5 bg-slate-700/80 ml-5 sm:ml-7" />}
               </span>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Monthly Top Picks ── */}
+      {/* ── Editor's Top Picks ── */}
       {!loading && topPicks.length > 0 && (
         <section className="bg-white border-b border-slate-100">
-          {/* Subtle top accent */}
-          <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(14,165,233,0.25) 30%, rgba(20,184,166,0.2) 70%, transparent 100%)' }} />
+          <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(14,165,233,0.3) 30%, rgba(20,184,166,0.25) 70%, transparent 100%)' }} />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
 
-            {/* Section header */}
             <div className="flex items-center justify-between mb-8">
-              <div className="flex items-center gap-4">
-                {/* Icon mark */}
+              <div className="flex items-center gap-3.5">
                 <div className="hidden sm:flex w-10 h-10 rounded-xl items-center justify-center shrink-0"
                   style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)', border: '1px solid #7dd3fc' }}>
-                  <Globe2 className="text-sky-600" style={{ width: 18, height: 18 }} />
+                  <Globe className="text-sky-600" style={{ width: 18, height: 18 }} />
                 </div>
                 <div>
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-sky-600">Editor&apos;s Top Picks</span>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10.5px] font-bold uppercase tracking-[0.14em] text-sky-600">Editor&apos;s Top Picks</span>
                     <span className="text-[10px] text-slate-300">·</span>
-                    <span className="text-[10px] text-slate-400">May 2026</span>
+                    <span className="text-[11px] text-slate-400 font-medium">May 2026</span>
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">Curated AI Tools</h2>
+                  <h2 className="text-xl sm:text-[1.4rem] font-bold text-slate-900 tracking-tight leading-none">Curated AI Tools</h2>
                 </div>
               </div>
               <button
@@ -582,9 +551,7 @@ export default function HomePage() {
               </button>
             </div>
 
-            {/* Horizontal scroll carousel */}
-            <TopPicksCarousel tools={tools} topPicks={topPicks} />
-
+            <TopPicksCarousel topPicks={topPicks} />
           </div>
         </section>
       )}
@@ -594,9 +561,9 @@ export default function HomePage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              <p className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-1">Directory</p>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">All Tools</h2>
-              <p className="text-sm text-slate-500 mt-1">
+              <p className="text-[10.5px] font-bold text-sky-600 uppercase tracking-[0.14em] mb-1.5">Directory</p>
+              <h2 className="text-xl sm:text-[1.4rem] font-bold text-slate-900 tracking-tight">All Tools</h2>
+              <p className="text-[13px] text-slate-500 mt-1 font-medium">
                 {loading ? 'Loading…' : `${filtered.length} tool${filtered.length !== 1 ? 's' : ''}${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
               </p>
             </div>
@@ -607,7 +574,7 @@ export default function HomePage() {
                 placeholder="Search by name, use case, tag…"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
+                className="w-full pl-9 pr-4 py-2.5 text-[13.5px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
               />
             </div>
           </div>
@@ -639,12 +606,7 @@ export default function HomePage() {
                             }`}
                           >
                             <span className="flex items-center gap-2">
-                              {cc && !active && (
-                                <span className={`w-2 h-2 rounded-full shrink-0 ${cc.dot}`} />
-                              )}
-                              {(!cc || active) && (
-                                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
-                              )}
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${active ? 'bg-white/60' : (cc?.dot ?? 'bg-slate-400')}`} />
                               {cat.label}
                             </span>
                             <span className={`text-[11px] tabular-nums px-1.5 py-0.5 rounded-full ${
@@ -656,7 +618,6 @@ export default function HomePage() {
                     </nav>
                   </div>
 
-                  {/* Quick stats */}
                   <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
                     {[
@@ -665,8 +626,8 @@ export default function HomePage() {
                       { label: 'Free Tiers', value: tools.filter(t => t.badge === 'free').length },
                     ].map(s => (
                       <div key={s.label} className="flex items-center justify-between">
-                        <span className="text-[12px] text-slate-500">{s.label}</span>
-                        <span className="text-[13px] font-bold text-slate-800">{s.value}</span>
+                        <span className="text-[12.5px] text-slate-500">{s.label}</span>
+                        <span className="text-[13.5px] font-bold text-slate-800">{s.value}</span>
                       </div>
                     ))}
                   </div>
@@ -684,7 +645,7 @@ export default function HomePage() {
                         <button
                           key={cat.id}
                           onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
-                          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all ${
                             active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                           }`}
                         >
@@ -703,7 +664,7 @@ export default function HomePage() {
                       <Search className="w-6 h-6 text-slate-400" />
                     </div>
                     <p className="text-slate-700 font-semibold mb-1">No tools found</p>
-                    <p className="text-slate-400 text-sm">Try a different search or category.</p>
+                    <p className="text-slate-400 text-[13px]">Try a different search or category.</p>
                   </div>
                 ) : (
                   <div className="space-y-8">
@@ -713,18 +674,17 @@ export default function HomePage() {
                       const cc = CATEGORY_COLORS[cat];
                       return (
                         <section key={cat} id={`section-${cat}`}>
-                          {/* Section header */}
                           <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200">
                             <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${cc?.bg ?? 'bg-slate-100'} ${cc?.text ?? 'text-slate-600'} border ${cc?.border ?? 'border-slate-200'}`}>
                               {CATEGORY_ICONS[cat]}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-[14px] font-bold text-slate-900">{SECTION_LABELS[cat]}</h3>
-                              <p className="text-[11px] text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
+                              <h3 className="text-[14px] font-bold text-slate-900 leading-snug">{SECTION_LABELS[cat]}</h3>
+                              <p className="text-[11.5px] text-slate-400 font-medium">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
                             </div>
                             <Link
                               href={`/category/${cat}`}
-                              className="hidden sm:inline-flex items-center gap-1 text-[12px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
+                              className="hidden sm:inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors"
                             >
                               Browse all <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
