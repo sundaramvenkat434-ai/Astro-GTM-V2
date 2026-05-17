@@ -456,9 +456,9 @@ export default function HomePage() {
           {/* Sub-headline */}
           <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-7 sm:mb-9 tracking-[0.005em]">
             Discover top, tested{' '}
-            <span className="text-white font-medium">AI Growth Tools</span>{' '}
-            across SEO, Lead Gen, Sales Outreach, Social Media, and more, with{' '}
-            <span className="text-emerald-400 font-semibold">FREE Plans</span>.
+            <span className="text-white font-medium">AI growth tools</span>{' '}
+            across SEO, lead gen, sales outreach, social media, and more, with{' '}
+            <span className="text-emerald-400 font-semibold">FREE plans</span>.
           </p>
 
           {/* CTAs */}
