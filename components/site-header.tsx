@@ -156,7 +156,7 @@ function NewsletterModal({ onClose }: { onClose: () => void }) {
 /* ── Submit Tool dropdown ────────────────────────────────────── */
 const SUBMIT_OPTIONS = [
   {
-    label: 'Launch With Us',
+    label: 'Launch Here',
     desc: 'Get high ICP early adopters',
     href: '/contact',
     icon: <Rocket className="w-3.5 h-3.5" />,
