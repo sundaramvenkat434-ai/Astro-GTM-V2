@@ -135,10 +135,10 @@ export function UpvoteButton({
           ? `relative group flex items-center gap-1 transition-all duration-150 overflow-visible ${
               voted ? 'text-sky-600' : 'text-slate-400 hover:text-sky-600'
             } ${loading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`
-          : `relative group flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-150 overflow-visible ${
+          : `relative group flex items-center gap-1 px-2 py-1 rounded-lg border transition-all duration-150 overflow-visible ${
               voted
-                ? 'border-sky-300 bg-sky-50 text-sky-600 shadow-sm shadow-sky-100'
-                : 'border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/60 text-slate-500 hover:text-sky-600 hover:shadow-sm'
+                ? 'border-sky-300 bg-sky-50 text-sky-600 shadow-sm shadow-sky-100 scale-[1.02]'
+                : 'border-slate-200 bg-white hover:border-sky-400 hover:bg-sky-50 text-slate-500 hover:text-sky-600 hover:shadow-sm hover:scale-[1.04]'
             } ${loading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`
         }
       >
@@ -173,8 +173,8 @@ export function UpvoteButton({
 
         {/* Arrow icon */}
         <ChevronUp
-          strokeWidth={voted ? 3 : 2}
-          className={`w-3.5 h-3.5 shrink-0 transition-all duration-200 ${
+          strokeWidth={voted ? 2.5 : 2}
+          className={`w-4 h-4 shrink-0 transition-all duration-200 ${
             burst ? 'scale-125' : voted ? '' : 'group-hover:-translate-y-0.5'
           } ${voted ? 'text-sky-500' : ''}`}
           style={burst ? { animation: 'upvote-burst 0.55s ease-out forwards' } : undefined}
@@ -182,7 +182,7 @@ export function UpvoteButton({
 
         {/* Count */}
         <span
-          className="text-[11px] font-bold tabular-nums leading-none"
+          className="text-[11.5px] font-bold tabular-nums leading-none"
           style={burst ? { animation: 'upvote-count-pop 0.4s ease-out forwards' } : undefined}
         >
           {fmt(count)}

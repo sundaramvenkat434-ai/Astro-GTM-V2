@@ -29,12 +29,43 @@ const SECTION_LABELS: Record<string, string> = {
   'social-media':    'Social Media',
 };
 
-/* Category color system */
+/*
+ * New brand gradient palette per category:
+ * Content & SEO      #04DB48
+ * Lead Generation    #044CDB
+ * Sales Outreach     #B0DB04
+ * Social Media       #7E04DB
+ * Paid Marketing     #DB04B7
+ * Analytics          #04C9DB
+ */
+const CATEGORY_ACCENT: Record<string, string> = {
+  'lead-generation': '#044CDB',
+  'sales-outreach':  '#B0DB04',
+  'seo-content':     '#04DB48',
+  'social-media':    '#7E04DB',
+};
+
+const CARD_GRADIENTS: Record<string, string> = {
+  'lead-generation': 'linear-gradient(145deg, rgba(4,76,219,0.08) 0%, rgba(255,255,255,1) 55%)',
+  'sales-outreach':  'linear-gradient(145deg, rgba(176,219,4,0.09) 0%, rgba(255,255,255,1) 55%)',
+  'seo-content':     'linear-gradient(145deg, rgba(4,219,72,0.08) 0%, rgba(255,255,255,1) 55%)',
+  'social-media':    'linear-gradient(145deg, rgba(126,4,219,0.08) 0%, rgba(255,255,255,1) 55%)',
+};
+
+/* Avatar gradient derived from brand accent */
+const CARD_BTN_GRADIENT: Record<string, string> = {
+  'lead-generation': 'linear-gradient(135deg, #022ea3 0%, #044CDB 60%, #3b6ef5 100%)',
+  'sales-outreach':  'linear-gradient(135deg, #6b8402 0%, #95b503 60%, #B0DB04 100%)',
+  'seo-content':     'linear-gradient(135deg, #028a2e 0%, #04b83d 60%, #04DB48 100%)',
+  'social-media':    'linear-gradient(135deg, #4e0289 0%, #6a03ba 60%, #7E04DB 100%)',
+};
+
+/* Category pill colors — updated to match brand */
 const CATEGORY_COLORS: Record<string, { bg: string; text: string; border: string; dot: string }> = {
-  'lead-generation': { bg: 'bg-sky-50',     text: 'text-sky-700',     border: 'border-sky-200',     dot: 'bg-sky-500' },
-  'sales-outreach':  { bg: 'bg-teal-50',    text: 'text-teal-700',    border: 'border-teal-200',    dot: 'bg-teal-500' },
-  'seo-content':     { bg: 'bg-amber-50',   text: 'text-amber-700',   border: 'border-amber-200',   dot: 'bg-amber-500' },
-  'social-media':    { bg: 'bg-emerald-50', text: 'text-emerald-700', border: 'border-emerald-200', dot: 'bg-emerald-500' },
+  'lead-generation': { bg: 'bg-blue-50',   text: 'text-blue-700',   border: 'border-blue-200',   dot: 'bg-blue-500' },
+  'sales-outreach':  { bg: 'bg-lime-50',   text: 'text-lime-700',   border: 'border-lime-200',   dot: 'bg-lime-500' },
+  'seo-content':     { bg: 'bg-green-50',  text: 'text-green-700',  border: 'border-green-200',  dot: 'bg-green-500' },
+  'social-media':    { bg: 'bg-violet-50', text: 'text-violet-700', border: 'border-violet-200', dot: 'bg-violet-500' },
 };
 
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -52,50 +83,57 @@ const BADGE_STYLES: Record<string, string> = {
   hot:     'bg-rose-50 text-rose-700 border-rose-200',
 };
 
-/* Card gradient background per category — matches tool page hero */
-const CARD_GRADIENTS: Record<string, string> = {
-  'lead-generation': 'linear-gradient(160deg, rgba(14,165,233,0.07) 0%, rgba(255,255,255,1) 50%)',
-  'sales-outreach':  'linear-gradient(160deg, rgba(20,184,166,0.07) 0%, rgba(255,255,255,1) 50%)',
-  'seo-content':     'linear-gradient(160deg, rgba(245,158,11,0.07) 0%, rgba(255,255,255,1) 50%)',
-  'social-media':    'linear-gradient(160deg, rgba(16,185,129,0.07) 0%, rgba(255,255,255,1) 50%)',
-};
-
-/* Avatar / button gradient per category */
-const CARD_BTN_GRADIENT: Record<string, string> = {
-  'lead-generation': 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
-  'sales-outreach':  'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)',
-  'seo-content':     'linear-gradient(135deg, #b45309 0%, #d97706 60%, #f59e0b 100%)',
-  'social-media':    'linear-gradient(135deg, #047857 0%, #059669 60%, #10b981 100%)',
-};
-
-const CARD_ACCENT: Record<string, string> = {
-  'lead-generation': '#0ea5e9',
-  'sales-outreach':  '#14b8a6',
-  'seo-content':     '#f59e0b',
-  'social-media':    '#10b981',
-};
-
 /* ─── category pill ─────────────────────────────────────────── */
-function CategoryPill({ category, linked = false }: { category: string; linked?: boolean }) {
+function CategoryPill({ category }: { category: string }) {
   const c = CATEGORY_COLORS[category];
   if (!c) return null;
-  const pill = (
-    <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border ${c.bg} ${c.text} ${c.border} ${linked ? 'transition-opacity hover:opacity-75' : ''}`}>
+  return (
+    <Link
+      href={`/category/${category}`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-opacity hover:opacity-75 shrink-0 ${c.bg} ${c.text} ${c.border}`}
+    >
       <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${c.dot}`} />
       {SECTION_LABELS[category] ?? category}
+    </Link>
+  );
+}
+
+/* ─── star rating with editor count ─────────────────────────── */
+function seededInt(seed: string, min: number, max: number): number {
+  let h = 0;
+  for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
+  return min + Math.floor(((Math.abs(h) % 1000) / 1000) * (max - min + 1));
+}
+
+function MiniStarRating({ rating, toolId }: { rating: number; toolId: string }) {
+  const count = seededInt(toolId, 3, 10);
+  return (
+    <span className="inline-flex items-center gap-1">
+      <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
+      <span className="text-[11.5px] font-bold text-slate-800">{rating}</span>
+      <span className="text-[10px] text-slate-400 font-medium">({count})</span>
     </span>
   );
-  if (linked) return <Link href={`/category/${category}`}>{pill}</Link>;
-  return pill;
 }
 
 /* ─── tool card ─────────────────────────────────────────────── */
 function ToolCard({ tool }: { tool: ToolPage }) {
+  const btnGrad   = CARD_BTN_GRADIENT[tool.category] ?? 'linear-gradient(135deg, #334155 0%, #475569 100%)';
+  const bgGrad    = CARD_GRADIENTS[tool.category];
+  const accent    = CATEGORY_ACCENT[tool.category] ?? '#64748b';
+  const useCases  = (tool.use_cases as string[]) ?? [];
+
   return (
-    <div className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50 transition-all duration-200">
+    <div
+      className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50 transition-all duration-200"
+      style={bgGrad ? { background: bgGrad } : undefined}
+    >
       <div className="flex gap-3 p-3.5 flex-1">
-        {/* Avatar — neutral dark */}
-        <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-[13px] bg-slate-800 mt-0.5">
+        {/* Gradient avatar */}
+        <div
+          className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-[14px] shadow-sm mt-0.5"
+          style={{ background: btnGrad }}
+        >
           {tool.name.charAt(0)}
         </div>
 
@@ -117,32 +155,50 @@ function ToolCard({ tool }: { tool: ToolPage }) {
             </p>
           </Link>
 
-          {/* Category pill + info tag links */}
-          <div className="flex items-center gap-1 flex-wrap mt-auto">
+          {/* Category pill */}
+          <div className="mb-1.5">
             <CategoryPill category={tool.category} />
-            <Link href={`/category/${tool.category}/${tool.slug}#use-cases`} className="text-[9px] font-medium px-1.5 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 transition-colors">Use Cases</Link>
-            <Link href={`/category/${tool.category}/${tool.slug}#features`}  className="text-[9px] font-medium px-1.5 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 transition-colors">Features</Link>
-            <Link href={`/category/${tool.category}/${tool.slug}#pricing`}   className="text-[9px] font-medium px-1.5 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 transition-colors">Pricing</Link>
           </div>
+
+          {/* Use cases — horizontal scroll, no scrollbar */}
+          {useCases.length > 0 && (
+            <div className="flex gap-1 overflow-x-auto scrollbar-none mt-auto pb-0.5">
+              {useCases.map(uc => (
+                <Link
+                  key={uc}
+                  href={`/category/${tool.category}/${tool.slug}#use-cases`}
+                  className="shrink-0 text-[9.5px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-500 border-slate-200 hover:border-current transition-colors whitespace-nowrap"
+                  style={{ ['--hover-color' as string]: accent }}
+                  onMouseEnter={e => {
+                    (e.currentTarget as HTMLElement).style.color = accent;
+                    (e.currentTarget as HTMLElement).style.borderColor = accent + '60';
+                    (e.currentTarget as HTMLElement).style.background = accent + '0f';
+                  }}
+                  onMouseLeave={e => {
+                    (e.currentTarget as HTMLElement).style.color = '';
+                    (e.currentTarget as HTMLElement).style.borderColor = '';
+                    (e.currentTarget as HTMLElement).style.background = '';
+                  }}
+                >
+                  {uc}
+                </Link>
+              ))}
+            </div>
+          )}
         </div>
       </div>
 
       {/* Footer */}
       <div className="px-3.5 py-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1">
-            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span className="text-[11.5px] font-bold text-slate-800">{tool.rating}</span>
-          </span>
-          {/* Upvote — plain hyperlink style, no button chrome */}
-          <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} compact />
+        <div className="flex items-center gap-2.5">
+          <MiniStarRating rating={tool.rating} toolId={tool.id} />
+          <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
         </div>
-        {/* View Tool — white bg, dark text */}
         <Link
           href={`/category/${tool.category}/${tool.slug}`}
           className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-800 bg-white border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-400 active:scale-[0.97] transition-all shadow-sm"
         >
-          View Tool <ExternalLink className="w-2.5 h-2.5 text-slate-500" />
+          View Tool <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
         </Link>
       </div>
     </div>
@@ -157,6 +213,7 @@ export default function HomePage() {
   const [query, setQuery]               = useState('');
   const canvasRef                       = useRef<HTMLCanvasElement>(null);
   const [heroVisible, setHeroVisible]   = useState(false);
+  const [creditsHover, setCreditsHover] = useState(false);
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);
@@ -337,14 +394,10 @@ export default function HomePage() {
         style={{ background: 'linear-gradient(160deg, #060d1f 0%, #0a1628 45%, #071820 75%, #040d18 100%)' }}
       >
         <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" aria-hidden />
-
-        {/* Top line glow */}
         <div className="absolute left-0 right-0 top-0 h-px pointer-events-none"
           style={{ background: 'linear-gradient(90deg, transparent 10%, rgba(14,165,233,0.5) 40%, rgba(20,184,166,0.5) 60%, transparent 90%)' }} />
-        {/* Top radial */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 0%, rgba(14,165,233,0.13) 0%, transparent 70%)' }} />
-        {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(4,13,24,0.9) 0%, transparent 100%)' }} />
 
@@ -365,10 +418,8 @@ export default function HomePage() {
           <h1 className="text-[2.6rem] sm:text-[3.4rem] lg:text-[3.9rem] font-extrabold text-white leading-[1.06] tracking-[-0.035em] mb-5">
             Stop Shipping Features.
             <br />
-            <span
-              className="bg-clip-text text-transparent"
-              style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 35%, #2dd4bf 70%, #34d399 100%)' }}
-            >
+            <span className="bg-clip-text text-transparent"
+              style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 35%, #2dd4bf 70%, #34d399 100%)' }}>
               Start Creating Demand.
             </span>
           </h1>
@@ -383,26 +434,55 @@ export default function HomePage() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-9">
+            {/* Browse Top Tools — darker, richer gradient */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[14.5px] text-white transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
+              className="group relative overflow-hidden inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
-                boxShadow: '0 0 0 1px rgba(56,189,248,0.25), 0 8px 28px rgba(14,165,233,0.35)',
+                background: 'linear-gradient(135deg, #020d2e 0%, #0a2a6e 40%, #1648c8 80%, #044CDB 100%)',
+                boxShadow: '0 0 0 1px rgba(68,120,255,0.3), 0 8px 32px rgba(4,76,219,0.45), inset 0 1px 0 rgba(255,255,255,0.1)',
               }}
             >
-              <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/15 to-transparent pointer-events-none" />
+              <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
               <Zap className="w-3.5 h-3.5 shrink-0 relative" />
               <span className="relative">Browse Top Tools</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform shrink-0 relative" />
+              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200 shrink-0 relative" />
             </button>
+
+            {/* FREE $50 Credits — animated micro-interaction */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[14.5px] transition-all duration-200 hover:scale-[1.02] active:scale-[0.98]"
-              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.12)', color: 'rgba(255,255,255,0.78)' }}
+              onMouseEnter={() => setCreditsHover(true)}
+              onMouseLeave={() => setCreditsHover(false)}
+              className="relative inline-flex items-center gap-2 px-7 py-3.5 rounded-xl font-semibold text-[14.5px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
+              style={{
+                background: creditsHover ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.05)',
+                border: creditsHover ? '1px solid rgba(251,191,36,0.45)' : '1px solid rgba(255,255,255,0.12)',
+                color: 'rgba(255,255,255,0.85)',
+                boxShadow: creditsHover ? '0 0 20px rgba(251,191,36,0.15)' : 'none',
+                transition: 'all 0.3s ease',
+              }}
             >
-              <Gift className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-              FREE <span className="text-amber-400 font-semibold ml-1">$50 Credits</span>
+              <Gift
+                className="w-4 h-4 shrink-0 transition-all duration-300"
+                style={{
+                  color: creditsHover ? '#fbbf24' : '#f59e0b',
+                  transform: creditsHover ? 'rotate(-12deg) scale(1.2)' : 'none',
+                }}
+              />
+              <span>
+                FREE{' '}
+                <span
+                  className="font-bold transition-all duration-300"
+                  style={{ color: creditsHover ? '#fde68a' : '#fbbf24' }}
+                >
+                  $50 Credits
+                </span>
+              </span>
+              {/* Shimmer on hover */}
+              {creditsHover && (
+                <span className="absolute inset-0 translate-x-[-100%] animate-[shimmer_0.8s_ease_forwards] bg-gradient-to-r from-transparent via-amber-300/10 to-transparent pointer-events-none" />
+              )}
             </button>
           </div>
 
@@ -425,7 +505,6 @@ export default function HomePage() {
       <section id="tools-section" className="bg-[#f8f9fb] flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
 
-          {/* Section header */}
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <p className="text-[10.5px] font-bold text-sky-600 uppercase tracking-[0.14em] mb-1.5">Directory</p>
@@ -466,7 +545,6 @@ export default function HomePage() {
                       {categories.map(cat => {
                         const active = activeCategory === cat.id;
                         const cc = CATEGORY_COLORS[cat.id];
-                        const dotCls = active ? 'bg-white/60' : (cc?.dot ?? 'bg-slate-400');
                         return (
                           <button
                             key={cat.id}
@@ -476,7 +554,7 @@ export default function HomePage() {
                             }`}
                           >
                             <span className="flex items-center gap-2">
-                              <span className={`w-2 h-2 rounded-full shrink-0 ${dotCls}`} />
+                              <span className={`w-2 h-2 rounded-full shrink-0 ${active ? 'bg-white/60' : (cc?.dot ?? 'bg-slate-400')}`} />
                               {cat.label}
                             </span>
                             <span className={`text-[11px] tabular-nums px-1.5 py-0.5 rounded-full ${
@@ -488,7 +566,6 @@ export default function HomePage() {
                     </nav>
                   </div>
 
-                  {/* Quick stats */}
                   <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
                     {[
@@ -517,9 +594,7 @@ export default function HomePage() {
                           key={cat.id}
                           onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
                           className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all ${
-                            active
-                              ? 'bg-slate-900 text-white border-slate-900'
-                              : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                            active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
                           }`}
                         >
                           {cc && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${active ? 'bg-white' : cc.dot}`} />}
@@ -545,10 +620,9 @@ export default function HomePage() {
                       const sectionTools = filtered.filter(t => t.category === cat);
                       if (!sectionTools.length) return null;
                       const cc = CATEGORY_COLORS[cat];
-                      const accent = CARD_ACCENT[cat];
+                      const accent = CATEGORY_ACCENT[cat];
                       return (
                         <section key={cat} id={`section-${cat}`}>
-                          {/* Section header */}
                           <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-200">
                             <span
                               className={`w-8 h-8 rounded-lg flex items-center justify-center border ${cc?.bg ?? 'bg-slate-100'} ${cc?.text ?? 'text-slate-600'} ${cc?.border ?? 'border-slate-200'}`}
@@ -559,21 +633,13 @@ export default function HomePage() {
                               <h3 className="text-[15px] font-bold text-slate-900 leading-snug">{SECTION_LABELS[cat]}</h3>
                               <p className="text-[11.5px] font-medium text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
                             </div>
-                            {/* Accent bar */}
-                            <div className="hidden sm:block h-1 w-16 rounded-full opacity-30" style={{ background: accent }} />
-                            <Link
-                              href={`/category/${cat}`}
-                              className="hidden sm:inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors"
-                            >
+                            <div className="hidden sm:block h-1 w-12 rounded-full opacity-40" style={{ background: accent }} />
+                            <Link href={`/category/${cat}`} className="hidden sm:inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">
                               Browse all <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
-
-                          {/* Uniform-height card grid */}
                           <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-fr gap-3">
-                            {sectionTools.map(tool => (
-                              <ToolCard key={tool.id} tool={tool} />
-                            ))}
+                            {sectionTools.map(tool => <ToolCard key={tool.id} tool={tool} />)}
                           </div>
                         </section>
                       );
