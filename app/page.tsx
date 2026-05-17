@@ -415,9 +415,8 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="text-[2rem] sm:text-[3.2rem] lg:text-[3.8rem] font-extrabold text-white leading-[1.08] tracking-[-0.03em] mb-3 sm:mb-5">
-            Stop Shipping Features.
-            <br />
+          <h1 className="text-[1.75rem] sm:text-[3.2rem] lg:text-[3.8rem] font-extrabold text-white leading-[1.08] tracking-[-0.03em] mb-3 sm:mb-5 whitespace-nowrap">
+            Stop Shipping Features.{' '}
             <span className="bg-clip-text text-transparent"
               style={{ backgroundImage: 'linear-gradient(90deg, #93c5fd 0%, #38bdf8 35%, #2dd4bf 70%, #34d399 100%)' }}>
               Start Creating Demand.
@@ -425,10 +424,10 @@ export default function HomePage() {
           </h1>
 
           {/* Sub-headline */}
-          <p className="text-[14px] sm:text-[17px] font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-6 sm:mb-9 tracking-[0.005em]">
+          <p className="text-[13px] sm:text-[17px] font-normal text-slate-400 leading-[1.65] mx-auto mb-6 sm:mb-9 tracking-[0.005em] whitespace-nowrap">
             Discover top, tested{' '}
             <span className="text-white font-medium">AI Growth Tools</span>{' '}
-            across SEO, Lead Gen, Sales Outreach, Social Media, and more, with{' '}
+            — SEO, Lead Gen, Sales, Social &{' '}
             <span className="text-emerald-400 font-semibold">FREE Plans</span>.
           </p>
 
@@ -437,7 +436,7 @@ export default function HomePage() {
             {/* Browse Top Tools */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[13.5px] sm:text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative overflow-hidden inline-flex items-center gap-2 px-4 py-2.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[13px] sm:text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97] whitespace-nowrap"
               style={{
                 background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
                 boxShadow: '0 0 0 1px rgba(56,189,248,0.3), 0 8px 28px rgba(14,165,233,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -454,7 +453,7 @@ export default function HomePage() {
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
               onMouseEnter={() => setCreditsHover(true)}
               onMouseLeave={() => setCreditsHover(false)}
-              className="relative inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[13.5px] sm:text-[14.5px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
+              className="relative inline-flex items-center gap-2 px-4 py-2.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[13px] sm:text-[14.5px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97] whitespace-nowrap"
               style={{
                 background: creditsHover ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.05)',
                 border: creditsHover ? '1px solid rgba(251,191,36,0.45)' : '1px solid rgba(255,255,255,0.12)',
@@ -486,11 +485,11 @@ export default function HomePage() {
           </div>
 
           {/* Trust strip */}
-          <div className="flex items-center justify-center gap-3 sm:gap-7 flex-wrap">
+          <div className="flex items-center justify-center gap-3 sm:gap-7 flex-nowrap">
             {['No login required', 'Zero ads', 'Weekly updates'].map((item, i, arr) => (
-              <span key={item} className="flex items-center gap-1.5">
-                <span className="flex items-center gap-1.5 text-[11.5px] sm:text-[12.5px] text-slate-500 tracking-[0.01em]">
-                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500/80 shrink-0" />
+              <span key={item} className="flex items-center gap-1.5 whitespace-nowrap">
+                <span className="flex items-center gap-1.5 text-[11px] sm:text-[12.5px] text-slate-500 tracking-[0.01em]">
+                  <Check className="w-3 h-3 text-emerald-500/80 shrink-0" />
                   {item}
                 </span>
                 {i < arr.length - 1 && <span className="w-px h-3.5 bg-slate-700/80 ml-3 sm:ml-7" />}
