@@ -63,48 +63,66 @@ function CategoryPill({ category, linked = false }: { category: string; linked?:
   return pill;
 }
 
-/* ─── top picks card (compact horizontal) ───────────────────── */
+/* ─── top picks card ─────────────────────────────────────────── */
 function TopPickCard({ tool }: { tool: ToolPage }) {
+  const cc = CATEGORY_COLORS[tool.category];
   return (
     <Link
       href={`/category/${tool.category}/${tool.slug}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="group shrink-0 w-60 flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50 transition-all duration-200"
+      className="group shrink-0 w-64 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
     >
-      {/* Top: avatar + name + badge + category */}
-      <div className="px-3.5 pt-3.5 pb-3">
-        <div className="flex items-center gap-2 mb-2">
-          <div className="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center text-white font-bold text-xs bg-slate-800">{tool.name.charAt(0)}</div>
-          <div className="flex-1 min-w-0 flex items-center gap-1.5 flex-wrap">
-            <span className="text-[13px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight truncate">
-              {tool.name}
-            </span>
-            {tool.badge && (
-              <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                {tool.badge}
+      {/* Thin category accent line */}
+      <div className="h-[3px] w-full shrink-0" style={{
+        background: tool.category === 'lead-generation' ? 'linear-gradient(90deg,#0ea5e9 0%,transparent 100%)' :
+                    tool.category === 'sales-outreach'  ? 'linear-gradient(90deg,#14b8a6 0%,transparent 100%)' :
+                    tool.category === 'seo-content'     ? 'linear-gradient(90deg,#f59e0b 0%,transparent 100%)' :
+                    tool.category === 'social-media'    ? 'linear-gradient(90deg,#10b981 0%,transparent 100%)' :
+                                                          'linear-gradient(90deg,#94a3b8 0%,transparent 100%)',
+      }} />
+
+      <div className="px-4 pt-4 pb-3 flex-1 flex flex-col">
+        {/* Header row */}
+        <div className="flex items-start justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm bg-slate-900 shadow-sm">
+              {tool.name.charAt(0)}
+            </div>
+            <div className="min-w-0">
+              <span className="block text-[13px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight truncate">
+                {tool.name}
               </span>
-            )}
+              {tool.badge && (
+                <span className={`inline-flex items-center mt-0.5 px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                  {tool.badge}
+                </span>
+              )}
+            </div>
           </div>
+          <CategoryPill category={tool.category} />
         </div>
-        <CategoryPill category={tool.category} />
-        <p className="text-[11px] text-slate-500 leading-relaxed line-clamp-2 mt-2">{tool.tagline || tool.description}</p>
+
+        <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-3">
+          {tool.tagline || tool.description}
+        </p>
+
+        {/* Tags */}
+        {(tool.tags as string[])?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mb-auto">
+            {(tool.tags as string[]).slice(0, 3).map((tag) => (
+              <span key={tag} className="text-[10px] bg-slate-50 text-slate-400 border border-slate-100 px-2 py-0.5 rounded-full">{tag}</span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Tags */}
-      {(tool.tags as string[])?.length > 0 && (
-        <div className="px-3.5 pb-2.5 flex flex-wrap gap-1">
-          {(tool.tags as string[]).slice(0, 3).map((tag) => (
-            <span key={tag} className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">{tag}</span>
-          ))}
-        </div>
-      )}
-
       {/* Footer */}
-      <div className="px-3.5 py-2.5 mt-auto border-t border-slate-100 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-slate-600">
+      <div className="px-4 py-3 border-t border-slate-50 flex items-center justify-between">
+        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-slate-500">
           <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-          Our Rating · <span className="font-bold text-slate-800">{tool.rating}</span>
+          <span className="text-slate-800 font-bold">{tool.rating}</span>
+          <span className="text-slate-400 font-normal">/ 5</span>
         </span>
         <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
       </div>
@@ -116,39 +134,46 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
 function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: ToolPage[] }) {
   const scrollRef = useRef<HTMLDivElement>(null);
   function scroll(dir: 'left' | 'right') {
-    scrollRef.current?.scrollBy({ left: dir === 'right' ? 300 : -300, behavior: 'smooth' });
+    scrollRef.current?.scrollBy({ left: dir === 'right' ? 320 : -320, behavior: 'smooth' });
   }
   return (
-    <div className="relative">
+    <div className="relative -mx-1">
       <button onClick={() => scroll('left')} aria-label="Scroll left"
-        className="absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center hover:border-sky-300 hover:shadow-md transition-all">
-        <ChevronLeft className="w-4 h-4 text-slate-600" />
+        className="absolute -left-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:border-sky-300 hover:shadow-sky-100 transition-all">
+        <ChevronLeft className="w-4 h-4 text-slate-500" />
       </button>
-      <div ref={scrollRef} className="flex gap-3 overflow-x-auto scrollbar-none px-1 py-1 scroll-smooth">
-        {/* Promote card */}
-        <a href="mailto:hello@aiscout.dev?subject=Feature my tool"
-          className="group shrink-0 w-52 flex flex-col rounded-xl overflow-hidden relative hover:shadow-lg hover:shadow-sky-900/25 transition-all duration-200"
-          style={{ background: 'linear-gradient(160deg, #07142e 0%, #0b2a56 55%, #0c4a7a 100%)' }}>
-          <div className="absolute top-0 left-0 right-0 h-px" style={{ background: 'linear-gradient(90deg,transparent,rgba(56,189,248,0.5),transparent)' }} />
-          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
-            style={{ background: 'linear-gradient(135deg,rgba(56,189,248,0.07) 0%,transparent 60%)' }} />
-          <div className="relative flex-1 px-4 pt-4 pb-3 flex flex-col gap-2.5">
+
+      <div ref={scrollRef} className="flex gap-4 overflow-x-auto scrollbar-none px-3 py-3 scroll-smooth">
+        {/* Sponsor card */}
+        <a href="mailto:hello@astrogtm.com?subject=Feature my tool"
+          className="group shrink-0 w-56 flex flex-col rounded-2xl overflow-hidden relative hover:shadow-xl hover:shadow-sky-950/30 transition-all duration-300"
+          style={{ background: 'linear-gradient(145deg, #060f23 0%, #0a1f40 50%, #0b3060 100%)' }}>
+          {/* Shimmer top line */}
+          <div className="h-[3px]" style={{ background: 'linear-gradient(90deg, transparent, rgba(56,189,248,0.7) 50%, transparent)' }} />
+          {/* Hover glow */}
+          <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none rounded-2xl"
+            style={{ background: 'radial-gradient(ellipse at 30% 20%, rgba(56,189,248,0.1) 0%, transparent 65%)' }} />
+
+          <div className="relative flex-1 px-5 pt-5 pb-5 flex flex-col gap-3">
             <div className="flex items-center justify-between">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center"
-                style={{ background: 'rgba(56,189,248,0.15)', border: '1px solid rgba(56,189,248,0.3)' }}>
-                <Megaphone className="w-4 h-4 text-sky-300" />
+              <div className="w-9 h-9 rounded-xl flex items-center justify-center"
+                style={{ background: 'rgba(14,165,233,0.12)', border: '1px solid rgba(14,165,233,0.25)' }}>
+                <Megaphone className="w-4 h-4 text-sky-400" />
               </div>
-              <span className="text-[9px] font-black uppercase tracking-widest text-sky-400" style={{ letterSpacing: '0.1em' }}>Sponsor</span>
+              <span className="text-[9px] font-bold uppercase tracking-[0.12em] text-sky-500/80">Sponsor</span>
             </div>
-            <div>
-              <p className="text-[13px] font-bold text-white leading-snug mb-1">Promote Your Tool</p>
-              <p className="text-[11px] leading-relaxed" style={{ color: 'rgba(186,230,253,0.6)' }}>
-                Reach <strong className="text-sky-200">30K+</strong> GTM &amp; growth visitors/mo.
+
+            <div className="flex-1">
+              <p className="text-[14px] font-bold text-white leading-snug mb-1.5">Promote Your Tool</p>
+              <p className="text-[11px] leading-[1.6]" style={{ color: 'rgba(148,210,252,0.55)' }}>
+                Reach <span className="text-sky-300 font-semibold">30K+</span> GTM &amp; growth visitors/mo.
               </p>
             </div>
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-sky-300 group-hover:text-sky-200 transition-colors mt-auto">
+
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold text-sky-400 group-hover:text-sky-300 transition-colors">
               <Sparkles className="w-3 h-3 shrink-0" />
-              Get featured →
+              Get featured
+              <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
             </div>
           </div>
         </a>
@@ -158,9 +183,10 @@ function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: To
           <TopPickCard key={tool.id} tool={tool} />
         ))}
       </div>
+
       <button onClick={() => scroll('right')} aria-label="Scroll right"
-        className="absolute -right-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 rounded-full bg-white border border-slate-200 shadow-sm flex items-center justify-center hover:border-sky-300 hover:shadow-md transition-all">
-        <ChevronRight className="w-4 h-4 text-slate-600" />
+        className="absolute -right-3 top-1/2 -translate-y-1/2 z-10 w-9 h-9 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center hover:border-sky-300 hover:shadow-sky-100 transition-all">
+        <ChevronRight className="w-4 h-4 text-slate-500" />
       </button>
     </div>
   );
@@ -498,25 +524,32 @@ export default function HomePage() {
 
       {/* ── Monthly Top Picks ── */}
       {!loading && topPicks.length > 0 && (
-        <section className="bg-white border-b border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+        <section className="bg-white border-b border-slate-100">
+          {/* Subtle top accent */}
+          <div className="h-px w-full" style={{ background: 'linear-gradient(90deg, transparent 0%, rgba(14,165,233,0.25) 30%, rgba(20,184,166,0.2) 70%, transparent 100%)' }} />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-12">
 
             {/* Section header */}
-            <div className="flex items-end justify-between mb-8">
-              <div>
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="inline-flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-amber-700 bg-amber-50 border border-amber-200 px-2.5 py-1 rounded-full">
-                    <Star className="w-3 h-3 fill-amber-500 text-amber-500" />
-                    Editor&apos;s Top Picks
-                  </span>
-                  <span className="text-[11px] text-slate-400">May 2026</span>
+            <div className="flex items-center justify-between mb-8">
+              <div className="flex items-center gap-4">
+                {/* Icon mark */}
+                <div className="hidden sm:flex w-10 h-10 rounded-xl items-center justify-center shrink-0"
+                  style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', border: '1px solid #fcd34d' }}>
+                  <Star className="w-4.5 h-4.5 fill-amber-500 text-amber-500" style={{ width: 18, height: 18 }} />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">Curated AI Tools</h2>
-                <p className="text-sm text-slate-500 mt-1.5">Hand-picked tools our team tried and loved this month</p>
+                <div>
+                  <div className="flex items-center gap-2 mb-0.5">
+                    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">Editor&apos;s Top Picks</span>
+                    <span className="text-[10px] text-slate-300">·</span>
+                    <span className="text-[10px] text-slate-400">May 2026</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight leading-none">Curated AI Tools</h2>
+                </div>
               </div>
               <button
                 onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-                className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-slate-500 hover:text-slate-900 transition-colors group"
+                className="group hidden sm:inline-flex items-center gap-1 text-[13px] font-medium text-slate-400 hover:text-slate-700 transition-colors"
               >
                 View all <ChevronRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
               </button>
