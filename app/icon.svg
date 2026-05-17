@@ -1,0 +1,41 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <radialGradient id="f-planet" cx="38%" cy="32%" r="65%">
+      <stop offset="0%"  stop-color="#38bdf8"/>
+      <stop offset="40%" stop-color="#0369a1"/>
+      <stop offset="100%" stop-color="#0c2340"/>
+    </radialGradient>
+    <radialGradient id="f-atmos" cx="50%" cy="50%" r="50%">
+      <stop offset="72%"  stop-color="#0ea5e9" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#38bdf8" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="f-shine" cx="30%" cy="25%" r="45%">
+      <stop offset="0%"   stop-color="#ffffff" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="f-ring" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%"   stop-color="#7dd3fc" stop-opacity="0"/>
+      <stop offset="35%"  stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="65%"  stop-color="#38bdf8" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#7dd3fc" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Atmosphere glow -->
+  <circle cx="16" cy="16" r="14" fill="url(#f-atmos)"/>
+  <!-- Planet body -->
+  <circle cx="16" cy="16" r="11" fill="url(#f-planet)"/>
+  <!-- Equatorial band -->
+  <ellipse cx="16" cy="18.5" rx="11" ry="3" fill="#0c2340" fill-opacity="0.35"/>
+  <!-- Polar ice -->
+  <ellipse cx="14.5" cy="9.8" rx="4" ry="1.9" fill="#e0f2fe" fill-opacity="0.22"/>
+  <!-- Shine -->
+  <circle cx="16" cy="16" r="11" fill="url(#f-shine)"/>
+
+  <!-- Orbit ring -->
+  <ellipse cx="16" cy="16" rx="17" ry="5.5" stroke="url(#f-ring)" stroke-width="1.3" fill="none" transform="rotate(-18 16 16)"/>
+
+  <!-- Moon -->
+  <circle cx="30" cy="12.5" r="2" fill="#bae6fd"/>
+  <circle cx="29.4" cy="11.9" r="0.7" fill="white" fill-opacity="0.7"/>
+</svg>
