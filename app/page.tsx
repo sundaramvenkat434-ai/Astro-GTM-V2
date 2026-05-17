@@ -8,8 +8,8 @@ import { UpvoteButton } from '@/components/upvote-button';
 import { SiteFooter } from '@/components/site-footer';
 import {
   Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
-  LayoutGrid, Gift, Check, ExternalLink,
-  Zap, Share2, ChevronRight,
+  LayoutGrid, Gift, ExternalLink,
+  Zap, Share2, ChevronRight, LogIn, Scan, RefreshCw,
 } from 'lucide-react';
 
 /* ─── types ─────────────────────────────────────────────────── */
@@ -486,7 +486,7 @@ export default function HomePage() {
               onMouseLeave={() => setCreditsHover(false)}
               className="relative inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                background: creditsHover ? 'rgba(255,255,255,0.09)' : 'rgba(15,23,42,0.85)',
+                background: 'rgba(15,23,42,0.85)',
                 border: creditsHover ? '1.5px solid rgba(251,191,36,0.55)' : '1.5px solid rgba(255,255,255,0.14)',
                 color: 'rgba(255,255,255,0.9)',
                 boxShadow: creditsHover ? '0 0 0 1.5px rgba(251,191,36,0.2), 0 6px 20px rgba(251,191,36,0.12)' : '0 0 0 1.5px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)',
@@ -516,10 +516,14 @@ export default function HomePage() {
 
           {/* Trust strip */}
           <div className="flex items-center justify-center gap-4 sm:gap-7 flex-wrap">
-            {['No login required', 'Zero ads', 'Weekly updates'].map((item, i, arr) => (
+            {([
+              { label: 'No login required', Icon: LogIn },
+              { label: 'Zero ads',          Icon: Scan },
+              { label: 'Weekly updates',    Icon: RefreshCw },
+            ] as const).map(({ label: item, Icon }, i, arr) => (
               <span key={item} className="flex items-center gap-1.5">
                 <span className="flex items-center gap-1.5 text-[12.5px] sm:text-[12.5px] text-slate-500 tracking-[0.01em]">
-                  <Check className="w-3.5 h-3.5 sm:w-3.5 sm:h-3.5 text-emerald-500/80 shrink-0" />
+                  <Icon className="w-3 h-3 text-emerald-500/80 shrink-0" />
                   {item}
                 </span>
                 {i < arr.length - 1 && <span className="w-px h-3.5 bg-slate-700/80 ml-4 sm:ml-7" />}
