@@ -182,18 +182,18 @@ const SUBMIT_OPTIONS = [
 const NEWSLETTER_OPTIONS = [
   {
     label: 'Weekly Top Tools',
-    desc: 'Best reviewed in each category',
+    desc: 'Best reviewed in all categories',
     icon: <Sparkles className="w-3.5 h-3.5" />,
     accent: '#0369a1',
   },
   {
     label: 'Launch Radar',
-    desc: 'Track similar too launches',
+    desc: 'Similar product launch updates',
     icon: <Bell className="w-3.5 h-3.5" />,
     accent: '#6d28d9',
   },
   {
-    label: 'Founder Playbooks',
+    label: 'Founder Playbook',
     desc: 'Proven AI growth experiments',
     icon: <BookOpen className="w-3.5 h-3.5" />,
     accent: '#0d9488',
