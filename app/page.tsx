@@ -410,7 +410,7 @@ export default function HomePage() {
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
             <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 leading-none">
-              20+ New Tools Reviewed
+              20+ New Tools
             </span>
           </div>
 
