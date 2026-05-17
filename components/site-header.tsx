@@ -187,8 +187,8 @@ const NEWSLETTER_OPTIONS = [
     accent: '#0369a1',
   },
   {
-    label: 'Competitor Analysis',
-    desc: 'Stay updated on similar tools',
+    label: 'Launch Radar',
+    desc: 'Track similar too launches',
     icon: <Bell className="w-3.5 h-3.5" />,
     accent: '#6d28d9',
   },
