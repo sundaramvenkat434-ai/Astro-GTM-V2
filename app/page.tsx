@@ -87,28 +87,28 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
       href={`/category/${tool.category}/${tool.slug}`}
       target="_blank"
       rel="noopener noreferrer"
-      className="group shrink-0 w-68 flex flex-col rounded-2xl overflow-hidden border border-slate-800 hover:border-slate-600 hover:shadow-xl hover:shadow-black/20 transition-all duration-300"
-      style={{ background: 'linear-gradient(160deg, #0f172a 0%, #111827 100%)', width: 272 }}
+      className="group shrink-0 w-72 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
     >
-      {/* Header: gradient wash */}
-      <div className="px-4 pt-4 pb-3.5" style={{
+      {/* Header section — light gradient wash */}
+      <div className="px-5 pt-5 pb-4" style={{
         background: grad
-          ? `linear-gradient(160deg, ${grad.from.replace('0.07', '0.14')} 0%, ${grad.via.replace('0.02', '0.04')} 70%, transparent 100%)`
+          ? `linear-gradient(160deg, ${grad.from} 0%, ${grad.via} 60%, transparent 100%)`
           : 'transparent',
-        borderBottom: `1px solid ${accent}22`,
+        borderBottom: `1px solid ${accent}18`,
       }}>
-        <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-white font-bold text-[13px]"
-            style={{ background: `${accent}22`, border: `1px solid ${accent}44`, color: accent }}>
+        {/* Avatar + name + badge inline, category pill below */}
+        <div className="flex items-center gap-3 mb-2.5">
+          <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+            style={{ background: accent }}>
             {tool.name.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap leading-none mb-1">
-              <span className="text-[13px] font-bold text-white group-hover:text-sky-300 transition-colors leading-tight">
+            <div className="flex items-center gap-1.5 flex-wrap mb-1">
+              <span className="text-[14px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight">
                 {tool.name}
               </span>
               {tool.badge && (
-                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {tool.badge}
                 </span>
               )}
@@ -118,19 +118,28 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
         </div>
       </div>
 
-      {/* Body */}
-      <div className="px-4 pt-3 pb-4 flex-1">
-        <p className="text-[12px] leading-[1.65]" style={{ color: 'rgba(148,163,184,0.85)' }}>
+      {/* Body — description always fully visible, no clamp */}
+      <div className="px-5 pt-4 pb-3 flex-1 flex flex-col gap-3">
+        <p className="text-[12.5px] text-slate-500 leading-[1.65]">
           {tool.tagline || tool.description}
         </p>
+
+        {/* Tags */}
+        {(tool.tags as string[])?.length > 0 && (
+          <div className="flex flex-wrap gap-1 mt-auto">
+            {(tool.tags as string[]).slice(0, 3).map((tag) => (
+              <span key={tag} className="text-[10px] bg-slate-50 text-slate-400 border border-slate-100 px-2 py-0.5 rounded-full">{tag}</span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 flex items-center justify-between" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between">
         <span className="inline-flex items-center gap-1.5 text-[11px]">
-          <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-          <span className="font-bold text-slate-200">{tool.rating}</span>
-          <span className="text-slate-600">/ 5</span>
+          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
+          <span className="font-bold text-slate-800">{tool.rating}</span>
+          <span className="text-slate-400">/ 5</span>
         </span>
         <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
       </div>
@@ -167,46 +176,44 @@ function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: To
 
 /* ─── directory tool card ────────────────────────────────────── */
 function ToolCard({ tool }: { tool: ToolPage }) {
-  const accent = CARD_ACCENT[tool.category] ?? '#94a3b8';
-  const grad = CARD_GRADIENTS[tool.category];
   return (
-    <div className="group flex gap-3 rounded-xl overflow-hidden border border-slate-800 hover:border-slate-600 hover:shadow-lg hover:shadow-black/20 transition-all duration-200"
-      style={{ background: 'linear-gradient(160deg, #0f172a 0%, #111827 100%)' }}>
-      {/* Left accent bar */}
-      <div className="w-[3px] shrink-0 self-stretch" style={{ background: `linear-gradient(180deg, ${accent} 0%, transparent 100%)` }} />
+    <div className="group flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/60 transition-all duration-200">
+      <div className="flex gap-3.5 p-4">
+        {/* Avatar */}
+        <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm bg-slate-800">
+          {tool.name.charAt(0)}
+        </div>
 
-      <div className="flex-1 min-w-0 py-3 pr-3">
-        <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
-          {/* Header */}
-          <div className="flex items-center gap-2 mb-1" style={{
-            background: grad ? `linear-gradient(90deg, ${grad.from.replace('0.07','0.1')} 0%, transparent 100%)` : 'transparent',
-          }}>
-            <div className="w-6 h-6 rounded-md shrink-0 flex items-center justify-center text-[11px] font-bold"
-              style={{ background: `${accent}20`, border: `1px solid ${accent}33`, color: accent }}>
-              {tool.name.charAt(0)}
-            </div>
-            <div className="flex items-center gap-1.5 flex-wrap min-w-0 flex-1">
-              <span className="text-[13px] font-semibold text-white group-hover:text-sky-300 transition-colors leading-tight">{tool.name}</span>
+        {/* Content */}
+        <div className="flex-1 min-w-0">
+          <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
+            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+              <span className="font-semibold text-slate-900 text-[13px] leading-tight hover:text-sky-700 transition-colors">{tool.name}</span>
               {tool.badge && (
-                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-700 text-slate-300 border-slate-600'}`}>
+                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {tool.badge}
                 </span>
               )}
             </div>
+            <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-2">{tool.tagline || tool.description}</p>
+          </Link>
+
+          {/* Category + tags */}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <CategoryPill category={tool.category} />
+            {(tool.tags as string[])?.slice(0, 3).map((tag) => (
+              <span key={tag} className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">{tag}</span>
+            ))}
           </div>
-          <p className="text-[11.5px] leading-relaxed line-clamp-2 mb-2" style={{ color: 'rgba(148,163,184,0.8)' }}>
-            {tool.tagline || tool.description}
-          </p>
-        </Link>
-        <div className="flex items-center justify-between">
-          <CategoryPill category={tool.category} />
-          <div className="flex items-center gap-2">
-            <div className="flex items-center gap-1">
-              <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-              <span className="text-[11px] font-bold text-slate-300">{tool.rating}</span>
-            </div>
-            <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
+        </div>
+
+        {/* Right: rating + upvote */}
+        <div className="shrink-0 flex flex-col items-end justify-between gap-2">
+          <div className="flex items-center gap-1">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span className="text-[11px] font-bold text-slate-700">{tool.rating}</span>
           </div>
+          <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
         </div>
       </div>
     </div>
@@ -538,65 +545,66 @@ export default function HomePage() {
       )}
 
       {/* ── All Tools Directory ── */}
-      <section id="tools-section" className="flex-1" style={{ background: '#080e1a' }}>
+      <section id="tools-section" className="bg-[#f8f9fb] flex-1">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              <p className="text-[10px] font-bold text-sky-500 uppercase tracking-widest mb-1">Directory</p>
-              <h2 className="text-xl sm:text-2xl font-bold text-white">All Tools</h2>
+              <p className="text-[10px] font-bold text-sky-600 uppercase tracking-widest mb-1">Directory</p>
+              <h2 className="text-xl sm:text-2xl font-bold text-slate-900">All Tools</h2>
               <p className="text-sm text-slate-500 mt-1">
                 {loading ? 'Loading…' : `${filtered.length} tool${filtered.length !== 1 ? 's' : ''}${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
               </p>
             </div>
             <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="search"
-                placeholder="Search by name, use case…"
+                placeholder="Search by name, use case, tag…"
                 value={query}
                 onChange={e => setQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 text-sm rounded-xl placeholder-slate-600 transition"
-                style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.08)', color: '#e2e8f0', outline: 'none' }}
+                className="w-full pl-9 pr-4 py-2.5 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
               />
             </div>
           </div>
 
           {loading ? (
             <div className="flex flex-col items-center py-24 gap-3">
-              <div className="w-10 h-10 rounded-xl animate-pulse" style={{ background: '#1e293b' }} />
-              <p className="text-sm text-slate-600">Loading tools…</p>
+              <div className="w-10 h-10 rounded-xl bg-slate-200 animate-pulse" />
+              <p className="text-sm text-slate-400">Loading tools…</p>
             </div>
           ) : (
             <div className="flex gap-6 items-start">
               {/* Desktop sidebar */}
               {categories.length > 1 && (
-                <aside className="hidden lg:block w-48 shrink-0 self-start sticky top-20">
-                  <div className="rounded-xl overflow-hidden" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <div className="px-4 py-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Category</p>
+                <aside className="hidden lg:block w-52 shrink-0 self-start sticky top-20">
+                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
+                    <div className="px-4 py-3 border-b border-slate-100">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Filter by Category</p>
                     </div>
                     <nav className="p-2 space-y-0.5">
                       {categories.map(cat => {
                         const active = activeCategory === cat.id;
-                        const accent = CARD_ACCENT[cat.id];
+                        const cc = CATEGORY_COLORS[cat.id];
                         return (
                           <button
                             key={cat.id}
                             onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
-                            className="w-full flex items-center justify-between gap-2 px-3 py-2 rounded-lg text-[12.5px] font-medium transition-all"
-                            style={{
-                              background: active ? 'rgba(255,255,255,0.07)' : 'transparent',
-                              color: active ? '#f1f5f9' : '#64748b',
-                            }}
+                            className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
+                              active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                            }`}
                           >
                             <span className="flex items-center gap-2">
-                              <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: active && accent ? accent : '#334155' }} />
+                              {cc && !active && (
+                                <span className={`w-2 h-2 rounded-full shrink-0 ${cc.dot}`} />
+                              )}
+                              {(!cc || active) && (
+                                <span className="w-2 h-2 rounded-full bg-slate-400 shrink-0" />
+                              )}
                               {cat.label}
                             </span>
-                            <span className="text-[11px] tabular-nums px-1.5 py-0.5 rounded-full"
-                              style={{ background: 'rgba(255,255,255,0.06)', color: active ? '#94a3b8' : '#475569' }}>
-                              {cat.count}
-                            </span>
+                            <span className={`text-[11px] tabular-nums px-1.5 py-0.5 rounded-full ${
+                              active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                            }`}>{cat.count}</span>
                           </button>
                         );
                       })}
@@ -604,8 +612,8 @@ export default function HomePage() {
                   </div>
 
                   {/* Quick stats */}
-                  <div className="mt-3 rounded-xl p-4 space-y-3" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.07)' }}>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">Quick Stats</p>
+                  <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
                     {[
                       { label: 'Total Tools', value: tools.length },
                       { label: 'Categories', value: SECTION_ORDER.filter(c => categoryCounts[c]).length },
@@ -613,7 +621,7 @@ export default function HomePage() {
                     ].map(s => (
                       <div key={s.label} className="flex items-center justify-between">
                         <span className="text-[12px] text-slate-500">{s.label}</span>
-                        <span className="text-[13px] font-bold text-slate-300">{s.value}</span>
+                        <span className="text-[13px] font-bold text-slate-800">{s.value}</span>
                       </div>
                     ))}
                   </div>
@@ -625,22 +633,19 @@ export default function HomePage() {
                 {categories.length > 1 && (
                   <div className="flex lg:hidden gap-2 overflow-x-auto pb-3 mb-5 scrollbar-hide">
                     {categories.map(cat => {
+                      const cc = CATEGORY_COLORS[cat.id];
                       const active = activeCategory === cat.id;
-                      const accent = CARD_ACCENT[cat.id];
                       return (
                         <button
                           key={cat.id}
                           onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
-                          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all"
-                          style={{
-                            background: active ? 'rgba(255,255,255,0.08)' : 'rgba(255,255,255,0.04)',
-                            border: `1px solid ${active ? 'rgba(255,255,255,0.15)' : 'rgba(255,255,255,0.06)'}`,
-                            color: active ? '#f1f5f9' : '#64748b',
-                          }}
+                          className={`shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold border transition-all ${
+                            active ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300'
+                          }`}
                         >
-                          <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ background: active && accent ? accent : '#334155' }} />
+                          {cc && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${active ? 'bg-white' : cc.dot}`} />}
                           {cat.label}
-                          <span style={{ color: active ? '#94a3b8' : '#475569' }}>{cat.count}</span>
+                          <span className={`text-[10px] ${active ? 'text-slate-300' : 'text-slate-400'}`}>{cat.count}</span>
                         </button>
                       );
                     })}
@@ -649,11 +654,11 @@ export default function HomePage() {
 
                 {filtered.length === 0 ? (
                   <div className="flex flex-col items-center py-24 text-center">
-                    <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-4" style={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.07)' }}>
-                      <Search className="w-6 h-6 text-slate-600" />
+                    <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4">
+                      <Search className="w-6 h-6 text-slate-400" />
                     </div>
-                    <p className="text-slate-400 font-semibold mb-1">No tools found</p>
-                    <p className="text-slate-600 text-sm">Try a different search or category.</p>
+                    <p className="text-slate-700 font-semibold mb-1">No tools found</p>
+                    <p className="text-slate-400 text-sm">Try a different search or category.</p>
                   </div>
                 ) : (
                   <div className="space-y-8">
@@ -664,23 +669,22 @@ export default function HomePage() {
                       return (
                         <section key={cat} id={`section-${cat}`}>
                           {/* Section header */}
-                          <div className="flex items-center gap-3 mb-3 pb-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
-                            <span className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0"
-                              style={{ background: `${CARD_ACCENT[cat] ?? '#94a3b8'}18`, border: `1px solid ${CARD_ACCENT[cat] ?? '#94a3b8'}30`, color: CARD_ACCENT[cat] ?? '#94a3b8' }}>
+                          <div className="flex items-center gap-3 mb-4 pb-3 border-b border-slate-200">
+                            <span className={`w-8 h-8 rounded-lg flex items-center justify-center ${cc?.bg ?? 'bg-slate-100'} ${cc?.text ?? 'text-slate-600'} border ${cc?.border ?? 'border-slate-200'}`}>
                               {CATEGORY_ICONS[cat]}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <h3 className="text-[13px] font-bold text-slate-200">{SECTION_LABELS[cat]}</h3>
-                              <p className="text-[10px] text-slate-600">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
+                              <h3 className="text-[14px] font-bold text-slate-900">{SECTION_LABELS[cat]}</h3>
+                              <p className="text-[11px] text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
                             </div>
                             <Link
                               href={`/category/${cat}`}
-                              className="hidden sm:inline-flex items-center gap-1 text-[11.5px] font-medium text-slate-500 hover:text-sky-400 transition-colors"
+                              className="hidden sm:inline-flex items-center gap-1 text-[12px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
                             >
-                              Browse all <ChevronRight className="w-3 h-3" />
+                              Browse all <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                             {sectionTools.map(tool => <ToolCard key={tool.id} tool={tool} />)}
                           </div>
                         </section>
