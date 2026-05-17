@@ -59,9 +59,9 @@ function ensureStyles() {
 const SPARK_ANGLES = [0, 45, 90, 135, 180, 225, 270, 315];
 
 export function UpvoteButton({
-  toolId, initialCount, className = '',
+  toolId, initialCount, className = '', compact = false,
 }: {
-  toolId: string; initialCount: number; className?: string;
+  toolId: string; initialCount: number; className?: string; compact?: boolean;
 }) {
   const storageKey = `upvoted_${toolId}`;
   const [count, setCount] = useState(initialCount);
@@ -131,11 +131,16 @@ export function UpvoteButton({
         onClick={handleClick}
         disabled={loading}
         aria-label={voted ? 'Upvoted' : 'Upvote this tool'}
-        className={`relative group flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-150 overflow-visible ${
-          voted
-            ? 'border-sky-300 bg-sky-50 text-sky-600 shadow-sm shadow-sky-100'
-            : 'border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/60 text-slate-500 hover:text-sky-600 hover:shadow-sm'
-        } ${loading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`}
+        className={compact
+          ? `relative group flex items-center gap-1 transition-all duration-150 overflow-visible ${
+              voted ? 'text-sky-600' : 'text-slate-400 hover:text-sky-600'
+            } ${loading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`
+          : `relative group flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl border transition-all duration-150 overflow-visible ${
+              voted
+                ? 'border-sky-300 bg-sky-50 text-sky-600 shadow-sm shadow-sky-100'
+                : 'border-slate-200 bg-white hover:border-sky-300 hover:bg-sky-50/60 text-slate-500 hover:text-sky-600 hover:shadow-sm'
+            } ${loading ? 'opacity-70 cursor-wait' : 'cursor-pointer'}`
+        }
       >
         {/* Expand ring on burst */}
         {burst && (

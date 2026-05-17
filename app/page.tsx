@@ -91,28 +91,19 @@ function CategoryPill({ category, linked = false }: { category: string; linked?:
 
 /* ─── tool card ─────────────────────────────────────────────── */
 function ToolCard({ tool }: { tool: ToolPage }) {
-  const btnGrad = CARD_BTN_GRADIENT[tool.category] ?? 'linear-gradient(135deg, #475569 0%, #64748b 100%)';
-  const bgGrad  = CARD_GRADIENTS[tool.category];
-
   return (
-    <div
-      className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-lg hover:shadow-slate-200/60 transition-all duration-200"
-      style={bgGrad ? { background: bgGrad } : undefined}
-    >
-      <div className="flex gap-3.5 p-4 flex-1">
-        {/* Avatar */}
-        <div
-          className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-white font-bold text-sm shadow-sm mt-0.5"
-          style={{ background: btnGrad }}
-        >
+    <div className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50 transition-all duration-200">
+      <div className="flex gap-3 p-3.5 flex-1">
+        {/* Avatar — neutral dark */}
+        <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-[13px] bg-slate-800 mt-0.5">
           {tool.name.charAt(0)}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0 flex flex-col">
           <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
-            <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-              <span className="font-semibold text-slate-900 text-[14px] leading-snug group-hover:text-sky-700 transition-colors">
+            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+              <span className="font-semibold text-slate-900 text-[13px] leading-snug group-hover:text-sky-700 transition-colors">
                 {tool.name}
               </span>
               {tool.badge && (
@@ -121,51 +112,37 @@ function ToolCard({ tool }: { tool: ToolPage }) {
                 </span>
               )}
             </div>
-            <p className="text-[12.5px] text-slate-500 leading-relaxed line-clamp-2 mb-2.5">
+            <p className="text-[11.5px] text-slate-500 leading-relaxed line-clamp-2 mb-2">
               {tool.tagline || tool.description}
             </p>
           </Link>
 
-          {/* Category pill + info tags */}
-          <div className="flex items-center gap-1.5 flex-wrap mt-auto">
+          {/* Category pill + info tag links */}
+          <div className="flex items-center gap-1 flex-wrap mt-auto">
             <CategoryPill category={tool.category} />
-            <Link
-              href={`/category/${tool.category}/${tool.slug}#use-cases`}
-              className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full border bg-white/80 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 hover:bg-sky-50 transition-colors"
-            >
-              Use Cases
-            </Link>
-            <Link
-              href={`/category/${tool.category}/${tool.slug}#features`}
-              className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full border bg-white/80 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 hover:bg-sky-50 transition-colors"
-            >
-              Features
-            </Link>
-            <Link
-              href={`/category/${tool.category}/${tool.slug}#pricing`}
-              className="text-[9.5px] font-medium px-1.5 py-0.5 rounded-full border bg-white/80 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 hover:bg-sky-50 transition-colors"
-            >
-              Pricing
-            </Link>
+            <Link href={`/category/${tool.category}/${tool.slug}#use-cases`} className="text-[9px] font-medium px-1.5 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 transition-colors">Use Cases</Link>
+            <Link href={`/category/${tool.category}/${tool.slug}#features`}  className="text-[9px] font-medium px-1.5 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 transition-colors">Features</Link>
+            <Link href={`/category/${tool.category}/${tool.slug}#pricing`}   className="text-[9px] font-medium px-1.5 py-0.5 rounded-full border bg-slate-50 text-slate-400 border-slate-200 hover:text-sky-600 hover:border-sky-200 transition-colors">Pricing</Link>
           </div>
         </div>
       </div>
 
       {/* Footer */}
-      <div className="px-4 py-3 border-t border-slate-100/80 flex items-center justify-between gap-2">
+      <div className="px-3.5 py-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <span className="inline-flex items-center gap-1">
             <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-            <span className="text-[12px] font-bold text-slate-800">{tool.rating}</span>
+            <span className="text-[11.5px] font-bold text-slate-800">{tool.rating}</span>
           </span>
-          <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
+          {/* Upvote — plain hyperlink style, no button chrome */}
+          <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} compact />
         </div>
+        {/* View Tool — white bg, dark text */}
         <Link
           href={`/category/${tool.category}/${tool.slug}`}
-          className="inline-flex items-center gap-1.5 text-[11.5px] font-semibold text-white px-3 py-1.5 rounded-lg transition-all hover:opacity-90 active:scale-[0.97] shadow-sm"
-          style={{ background: btnGrad }}
+          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-800 bg-white border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-400 active:scale-[0.97] transition-all shadow-sm"
         >
-          View Tool <ExternalLink className="w-2.5 h-2.5" />
+          View Tool <ExternalLink className="w-2.5 h-2.5 text-slate-500" />
         </Link>
       </div>
     </div>
