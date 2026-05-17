@@ -401,21 +401,21 @@ export default function HomePage() {
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(4,13,24,0.9) 0%, transparent 100%)' }} />
 
-        <div className={`relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 pb-10 sm:pt-20 sm:pb-20 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
+        <div className={`relative max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 pt-7 pb-7 sm:pt-20 sm:pb-20 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
 
           {/* Eyebrow pill */}
-          <div className="inline-flex items-center gap-2 mb-4 sm:mb-6 px-3.5 py-1 rounded-full border border-white/[0.08] bg-white/[0.04]">
+          <div className="inline-flex items-center gap-2 mb-3 sm:mb-6 px-3 py-0.5 sm:px-3.5 sm:py-1 rounded-full border border-white/[0.08] bg-white/[0.04]">
             <span className="relative flex h-1.5 w-1.5">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-400" />
             </span>
-            <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 leading-none">
+            <span className="text-[9px] sm:text-[11px] font-semibold uppercase tracking-[0.12em] text-slate-400 leading-none">
               20+ New Tools Added
             </span>
           </div>
 
           {/* Headline */}
-          <h1 className="text-[2rem] sm:text-[3.2rem] lg:text-[3.8rem] font-extrabold text-white leading-[1.08] tracking-[-0.03em] mb-3 sm:mb-5">
+          <h1 className="text-[1.45rem] sm:text-[3.2rem] lg:text-[3.8rem] font-extrabold text-white leading-[1.08] tracking-[-0.03em] mb-2 sm:mb-5">
             Stop Shipping Features.
             <br />
             <span className="bg-clip-text text-transparent"
@@ -425,7 +425,7 @@ export default function HomePage() {
           </h1>
 
           {/* Sub-headline */}
-          <p className="text-[14px] sm:text-[17px] font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-6 sm:mb-9 tracking-[0.005em]">
+          <p className="text-[11px] sm:text-[17px] font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-4 sm:mb-9 tracking-[0.005em]">
             Discover top, tested{' '}
             <span className="text-white font-medium">AI Growth Tools</span>{' '}
             across SEO, Lead Gen, Sales Outreach, Social Media, and more, with{' '}
@@ -433,20 +433,20 @@ export default function HomePage() {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 mb-5 sm:mb-9">
+          <div className="flex flex-row items-center justify-center gap-2 sm:gap-3 mb-4 sm:mb-9">
             {/* Browse Top Tools */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[13.5px] sm:text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative overflow-hidden inline-flex items-center gap-1.5 px-4 py-2 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[11.5px] sm:text-[14.5px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
                 boxShadow: '0 0 0 1px rgba(56,189,248,0.3), 0 8px 28px rgba(14,165,233,0.4), inset 0 1px 0 rgba(255,255,255,0.15)',
               }}
             >
               <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-              <Zap className="w-3.5 h-3.5 shrink-0 relative" />
+              <Zap className="w-3 h-3 sm:w-3.5 sm:h-3.5 shrink-0 relative" />
               <span className="relative">Browse Top Tools</span>
-              <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform duration-200 shrink-0 relative" />
+              <ArrowRight className="w-3 h-3 sm:w-3.5 sm:h-3.5 group-hover:translate-x-1 transition-transform duration-200 shrink-0 relative" />
             </button>
 
             {/* FREE $50 Credits */}
@@ -454,7 +454,7 @@ export default function HomePage() {
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
               onMouseEnter={() => setCreditsHover(true)}
               onMouseLeave={() => setCreditsHover(false)}
-              className="relative inline-flex items-center gap-2 px-5 py-2.5 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[13.5px] sm:text-[14.5px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
+              className="relative inline-flex items-center gap-1.5 px-4 py-2 sm:px-7 sm:py-3.5 rounded-xl font-semibold text-[11.5px] sm:text-[14.5px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: creditsHover ? 'rgba(255,255,255,0.09)' : 'rgba(255,255,255,0.05)',
                 border: creditsHover ? '1px solid rgba(251,191,36,0.45)' : '1px solid rgba(255,255,255,0.12)',
@@ -464,7 +464,7 @@ export default function HomePage() {
               }}
             >
               <Gift
-                className="w-4 h-4 shrink-0 transition-all duration-300"
+                className="w-3 h-3 sm:w-4 sm:h-4 shrink-0 transition-all duration-300"
                 style={{
                   color: creditsHover ? '#fbbf24' : '#f59e0b',
                   transform: creditsHover ? 'rotate(-12deg) scale(1.2)' : 'none',
@@ -486,14 +486,14 @@ export default function HomePage() {
           </div>
 
           {/* Trust strip */}
-          <div className="flex items-center justify-center gap-3 sm:gap-7 flex-wrap">
+          <div className="flex items-center justify-center gap-2 sm:gap-7 flex-wrap">
             {['No login required', 'Zero ads', 'Weekly updates'].map((item, i, arr) => (
-              <span key={item} className="flex items-center gap-1.5">
-                <span className="flex items-center gap-1.5 text-[11.5px] sm:text-[12.5px] text-slate-500 tracking-[0.01em]">
-                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-500/80 shrink-0" />
+              <span key={item} className="flex items-center gap-1">
+                <span className="flex items-center gap-1 text-[9.5px] sm:text-[12.5px] text-slate-500 tracking-[0.01em]">
+                  <Check className="w-2.5 h-2.5 sm:w-3.5 sm:h-3.5 text-emerald-500/80 shrink-0" />
                   {item}
                 </span>
-                {i < arr.length - 1 && <span className="w-px h-3.5 bg-slate-700/80 ml-3 sm:ml-7" />}
+                {i < arr.length - 1 && <span className="w-px h-3 sm:h-3.5 bg-slate-700/80 ml-2 sm:ml-7" />}
               </span>
             ))}
           </div>
