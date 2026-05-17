@@ -2,7 +2,11 @@
 
 import Link from 'next/link';
 import { useState, useEffect, useRef } from 'react';
-import { Mail, Send, Check, MailCheck, ArrowRight, Sparkles, Users, Zap, ChevronDown, CirclePlus as PlusCircle, Layers, ArrowUpRight } from 'lucide-react';
+import {
+  Mail, Check, MailCheck, ArrowRight, Sparkles, Users, Zap,
+  ChevronDown, CirclePlus as PlusCircle, FileSearch, Megaphone,
+  Newspaper, Bell, BookOpen,
+} from 'lucide-react';
 
 /* ── AstroGTM logo ──────────────────────────────────────────── */
 export function AstroGTMLogo({ size = 32 }: { size?: number }) {
@@ -47,7 +51,6 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
         </linearGradient>
       </defs>
 
-      {/* Planet */}
       <circle cx={cx} cy={cy} r={pr + 3.5} fill="url(#lg-atmos)" />
       <circle cx={cx} cy={cy} r={pr} fill="url(#lg-planet)" />
       <ellipse cx={cx} cy={cy + 3} rx={pr} ry={pr * 0.28} fill="#0c2340" fillOpacity="0.35" />
@@ -57,23 +60,21 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
       <circle cx={cx + pr + 5.5} cy={cy - 3.5} r="2.4" fill="#bae6fd" />
       <circle cx={cx + pr + 4.8} cy={cy - 4.2} r="0.85" fill="white" fillOpacity="0.7" />
 
-      {/*
-        Wordmark — "Astro" + small gap + "GTM"
-        Gap achieved by placing GTM tspan at a slightly increased x offset.
-      */}
-      <text
-        x="40" y="25"
-        fontFamily="'DM Sans', 'Inter', system-ui, sans-serif"
-        fontSize="19.5"
-        letterSpacing="-0.04em"
-      >
+      <text x="40" y="25" fontFamily="'DM Sans', 'Inter', system-ui, sans-serif" fontSize="19.5" letterSpacing="-0.04em">
         <tspan fontWeight="700" fill="#0f172a">Astro</tspan>
-        {/* 2px deliberate gap before GTM */}
         <tspan fontWeight="800" fill="url(#lg-gtm)" dx="2">GTM</tspan>
       </text>
     </svg>
   );
 }
+
+/* ── shared dropdown animation style ───────────────────────── */
+const DROPDOWN_STYLE = `
+  @keyframes dropdownIn {
+    from { opacity: 0; transform: translateY(-5px) scale(0.98); }
+    to   { opacity: 1; transform: translateY(0)    scale(1);    }
+  }
+`;
 
 /* ── Newsletter modal ───────────────────────────────────────── */
 function NewsletterModal({ onClose }: { onClose: () => void }) {
@@ -116,7 +117,7 @@ function NewsletterModal({ onClose }: { onClose: () => void }) {
         ) : (
           <div className="px-6 pt-6 pb-7">
             <span className="inline-flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-wide text-sky-700 bg-sky-50 border border-sky-200 px-2.5 py-1 rounded-full mb-4">
-              <Sparkles className="w-3 h-3" /> Weekly Top #3
+              <Sparkles className="w-3 h-3" /> Newsletters
             </span>
             <h3 className="text-[18px] font-extrabold text-slate-900 leading-snug mb-1.5 tracking-tight">
               Find emerging AI tools first
@@ -140,7 +141,7 @@ function NewsletterModal({ onClose }: { onClose: () => void }) {
               </div>
               <button type="submit"
                 className="group w-full inline-flex items-center justify-center gap-2 bg-slate-900 hover:bg-slate-800 text-white font-semibold py-2.5 rounded-xl transition-colors text-sm">
-                Join the newsletter
+                Subscribe
                 <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
               </button>
             </form>
@@ -154,66 +155,114 @@ function NewsletterModal({ onClose }: { onClose: () => void }) {
 
 /* ── Submit Tool dropdown ────────────────────────────────────── */
 const SUBMIT_OPTIONS = [
-  { label: 'Submit a Tool', href: '/contact', icon: <PlusCircle className="w-4 h-4" />, desc: 'Add your product to the directory' },
-  { label: 'Claim Listing', href: '/contact', icon: <Layers className="w-4 h-4" />, desc: 'Verify and manage your listing' },
-  { label: 'Advertise', href: '/contact', icon: <ArrowUpRight className="w-4 h-4" />, desc: 'Reach our GTM audience' },
+  {
+    label: 'Product Launch',
+    desc: 'Get loyal early adopters',
+    href: '/contact',
+    icon: <PlusCircle className="w-3.5 h-3.5" />,
+    color: 'text-blue-600 bg-blue-50 group-hover:bg-blue-100',
+  },
+  {
+    label: 'Expert Review',
+    desc: 'Detailed user experience report',
+    href: '/contact',
+    icon: <FileSearch className="w-3.5 h-3.5" />,
+    color: 'text-emerald-600 bg-emerald-50 group-hover:bg-emerald-100',
+  },
+  {
+    label: 'Advertise',
+    desc: 'Boost traffic and sign-ups',
+    href: '/contact',
+    icon: <Megaphone className="w-3.5 h-3.5" />,
+    color: 'text-amber-600 bg-amber-50 group-hover:bg-amber-100',
+  },
 ];
 
-function SubmitDropdown() {
+/* ── Newsletter dropdown ─────────────────────────────────────── */
+const NEWSLETTER_OPTIONS = [
+  {
+    label: 'Weekly Top 3',
+    desc: 'In your preferred categories',
+    icon: <Sparkles className="w-3.5 h-3.5" />,
+    color: 'text-sky-600 bg-sky-50 group-hover:bg-sky-100',
+  },
+  {
+    label: 'Competitor Pulse',
+    desc: 'Track new similar tools',
+    icon: <Bell className="w-3.5 h-3.5" />,
+    color: 'text-violet-600 bg-violet-50 group-hover:bg-violet-100',
+  },
+  {
+    label: 'GTM Workflows',
+    desc: 'DIY AI implementation guide',
+    icon: <BookOpen className="w-3.5 h-3.5" />,
+    color: 'text-teal-600 bg-teal-50 group-hover:bg-teal-100',
+  },
+];
+
+function NavDropdown({
+  trigger,
+  items,
+  onItemClick,
+}: {
+  trigger: React.ReactNode;
+  items: { label: string; desc: string; href?: string; icon: React.ReactNode; color: string }[];
+  onItemClick?: (label: string) => void;
+}) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    function onClickOutside(e: MouseEvent) {
+    function handler(e: MouseEvent) {
       if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
     }
-    document.addEventListener('mousedown', onClickOutside);
-    return () => document.removeEventListener('mousedown', onClickOutside);
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
   }, []);
 
   return (
     <div ref={ref} className="relative">
       <button
         onClick={() => setOpen(v => !v)}
-        className={`inline-flex items-center gap-1.5 text-[13px] font-medium px-3.5 py-2 rounded-lg border transition-all duration-150 ${
+        className={`inline-flex items-center gap-1 text-[13px] font-medium px-3 py-1.5 rounded-lg transition-all duration-150 ${
           open
-            ? 'bg-slate-100 text-slate-900 border-slate-300'
-            : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:text-slate-900 hover:bg-slate-50'
+            ? 'bg-slate-100 text-slate-900'
+            : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
         }`}
       >
-        <Send className="w-3.5 h-3.5" />
-        <span className="hidden sm:inline">Submit Tool</span>
-        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+        {trigger}
+        <ChevronDown className={`w-3 h-3 ml-0.5 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
       </button>
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-2 w-64 bg-white border border-slate-200 rounded-xl shadow-xl shadow-slate-200/60 overflow-hidden z-50"
-          style={{ animation: 'dropdownIn 0.15s ease-out' }}
+          className="absolute right-0 top-full mt-1.5 w-56 bg-white border border-slate-200/80 rounded-xl shadow-lg shadow-slate-200/50 overflow-hidden z-50"
+          style={{ animation: 'dropdownIn 0.12s ease-out' }}
         >
-          <style>{`
-            @keyframes dropdownIn {
-              from { opacity: 0; transform: translateY(-6px) scale(0.97); }
-              to   { opacity: 1; transform: translateY(0)    scale(1);    }
-            }
-          `}</style>
-          <div className="p-1.5 space-y-0.5">
-            {SUBMIT_OPTIONS.map(opt => (
-              <Link
-                key={opt.label}
-                href={opt.href}
-                onClick={() => setOpen(false)}
-                className="flex items-center gap-3 px-3 py-2.5 rounded-lg hover:bg-slate-50 group transition-colors"
-              >
-                <span className="w-8 h-8 rounded-lg bg-slate-100 group-hover:bg-sky-50 flex items-center justify-center text-slate-500 group-hover:text-sky-600 transition-colors shrink-0">
-                  {opt.icon}
+          <style>{DROPDOWN_STYLE}</style>
+          <div className="p-1">
+            {items.map(opt => {
+              const inner = (
+                <span
+                  key={opt.label}
+                  className="flex items-center gap-2.5 px-2.5 py-2 rounded-lg hover:bg-slate-50 group transition-colors cursor-pointer"
+                  onClick={() => { setOpen(false); onItemClick?.(opt.label); }}
+                >
+                  <span className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 transition-colors ${opt.color}`}>
+                    {opt.icon}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block text-[12.5px] font-semibold text-slate-800 leading-none mb-0.5">{opt.label}</span>
+                    <span className="block text-[11px] text-slate-400 leading-tight">{opt.desc}</span>
+                  </span>
                 </span>
-                <div className="min-w-0">
-                  <p className="text-[13px] font-semibold text-slate-800 leading-none mb-0.5">{opt.label}</p>
-                  <p className="text-[11px] text-slate-400">{opt.desc}</p>
-                </div>
-              </Link>
-            ))}
+              );
+              return opt.href ? (
+                <Link key={opt.label} href={opt.href} onClick={() => setOpen(false)}>
+                  {inner}
+                </Link>
+              ) : inner;
+            })}
           </div>
         </div>
       )}
@@ -223,33 +272,51 @@ function SubmitDropdown() {
 
 /* ── Site header ────────────────────────────────────────────── */
 export function SiteHeader() {
-  const [open, setOpen] = useState(false);
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
+
   return (
     <>
       <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-15 py-3 gap-3">
+          <div className="flex items-center justify-between h-14 gap-3">
             <Link href="/" className="flex items-center group shrink-0">
-              <AstroGTMLogo size={36} />
+              <AstroGTMLogo size={34} />
             </Link>
 
-            <div className="flex items-center gap-2">
-              <SubmitDropdown />
+            <nav className="flex items-center gap-0.5">
+              {/* Submit Tool dropdown */}
+              <NavDropdown
+                trigger={<><span className="hidden sm:inline">Submit Tool</span><span className="sm:hidden">Submit</span></>}
+                items={SUBMIT_OPTIONS}
+              />
 
-              {/* Weekly Top #3 — clean, medium weight */}
+              {/* Newsletters dropdown */}
+              <NavDropdown
+                trigger={<><Sparkles className="w-3.5 h-3.5 text-sky-500 shrink-0" /><span className="hidden sm:inline">Newsletters</span></>}
+                items={NEWSLETTER_OPTIONS}
+                onItemClick={() => setNewsletterOpen(true)}
+              />
+
+              {/* Divider */}
+              <span className="w-px h-4 bg-slate-200 mx-1.5" />
+
+              {/* CTA */}
               <button
-                onClick={() => setOpen(true)}
-                className="inline-flex items-center gap-2 text-[13px] font-semibold px-3.5 py-2 rounded-lg border border-slate-800 bg-slate-900 text-white hover:bg-slate-800 active:scale-95 transition-all"
+                onClick={() => setNewsletterOpen(true)}
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-3.5 py-1.5 rounded-lg text-white transition-all duration-150 hover:opacity-90 active:scale-95"
+                style={{
+                  background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
+                  boxShadow: '0 1px 8px rgba(14,165,233,0.3)',
+                }}
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                <span className="hidden sm:inline">Weekly Top #3</span>
-                <span className="sm:hidden">Subscribe</span>
+                <Mail className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">Subscribe</span>
               </button>
-            </div>
+            </nav>
           </div>
         </div>
       </header>
-      {open && <NewsletterModal onClose={() => setOpen(false)} />}
+      {newsletterOpen && <NewsletterModal onClose={() => setNewsletterOpen(false)} />}
     </>
   );
 }
@@ -258,7 +325,7 @@ export function SiteHeader() {
 interface BreadcrumbItem { label: string; href?: string }
 
 export function InnerHeader({ crumbs }: { crumbs: BreadcrumbItem[] }) {
-  const [open, setOpen] = useState(false);
+  const [newsletterOpen, setNewsletterOpen] = useState(false);
   return (
     <>
       <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
@@ -279,20 +346,33 @@ export function InnerHeader({ crumbs }: { crumbs: BreadcrumbItem[] }) {
                 </span>
               ))}
             </nav>
-            <div className="flex items-center gap-2 shrink-0">
-              <SubmitDropdown />
+            <nav className="flex items-center gap-0.5 shrink-0">
+              <NavDropdown
+                trigger={<><span className="hidden sm:inline">Submit Tool</span></>}
+                items={SUBMIT_OPTIONS}
+              />
+              <NavDropdown
+                trigger={<><Sparkles className="w-3.5 h-3.5 text-sky-500 shrink-0" /><span className="hidden sm:inline">Newsletters</span></>}
+                items={NEWSLETTER_OPTIONS}
+                onItemClick={() => setNewsletterOpen(true)}
+              />
+              <span className="w-px h-4 bg-slate-200 mx-1.5" />
               <button
-                onClick={() => setOpen(true)}
-                className="hidden sm:inline-flex items-center gap-2 text-[13px] font-semibold px-3.5 py-2 rounded-lg border border-slate-800 bg-slate-900 text-white hover:bg-slate-800 transition-colors"
+                onClick={() => setNewsletterOpen(true)}
+                className="inline-flex items-center gap-1.5 text-[13px] font-semibold px-3.5 py-1.5 rounded-lg text-white transition-all duration-150 hover:opacity-90 active:scale-95"
+                style={{
+                  background: 'linear-gradient(135deg, #0369a1 0%, #0284c7 55%, #0ea5e9 100%)',
+                  boxShadow: '0 1px 8px rgba(14,165,233,0.3)',
+                }}
               >
-                <Sparkles className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                Weekly Top #3
+                <Mail className="w-3.5 h-3.5 shrink-0" />
+                <span className="hidden sm:inline">Subscribe</span>
               </button>
-            </div>
+            </nav>
           </div>
         </div>
       </header>
-      {open && <NewsletterModal onClose={() => setOpen(false)} />}
+      {newsletterOpen && <NewsletterModal onClose={() => setNewsletterOpen(false)} />}
     </>
   );
 }
