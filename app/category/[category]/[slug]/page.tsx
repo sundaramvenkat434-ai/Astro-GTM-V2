@@ -111,26 +111,26 @@ const CATEGORY_LABELS: Record<string, string> = {
   infrastructure: 'Infrastructure',
 };
 
-/* Category-matched hero gradients — mirrors home page card system */
+/* Unified blue gradient — matches home page tool card system */
 const CATEGORY_HERO_GRADIENT: Record<string, string> = {
-  'lead-generation': 'linear-gradient(160deg, rgba(14,165,233,0.10) 0%, rgba(14,165,233,0.03) 40%, rgba(255,255,255,1) 75%)',
-  'sales-outreach':  'linear-gradient(160deg, rgba(20,184,166,0.10) 0%, rgba(20,184,166,0.03) 40%, rgba(255,255,255,1) 75%)',
-  'seo-content':     'linear-gradient(160deg, rgba(245,158,11,0.10) 0%, rgba(245,158,11,0.03) 40%, rgba(255,255,255,1) 75%)',
-  'social-media':    'linear-gradient(160deg, rgba(16,185,129,0.10) 0%, rgba(16,185,129,0.03) 40%, rgba(255,255,255,1) 75%)',
+  'lead-generation': 'linear-gradient(145deg, rgba(176,228,255,0.12) 0%, rgba(255,255,255,1) 55%)',
+  'sales-outreach':  'linear-gradient(145deg, rgba(176,228,255,0.12) 0%, rgba(255,255,255,1) 55%)',
+  'seo-content':     'linear-gradient(145deg, rgba(176,228,255,0.12) 0%, rgba(255,255,255,1) 55%)',
+  'social-media':    'linear-gradient(145deg, rgba(176,228,255,0.12) 0%, rgba(255,255,255,1) 55%)',
 };
 
 const CATEGORY_HERO_BORDER: Record<string, string> = {
   'lead-generation': 'rgba(14,165,233,0.15)',
-  'sales-outreach':  'rgba(20,184,166,0.15)',
-  'seo-content':     'rgba(245,158,11,0.15)',
-  'social-media':    'rgba(16,185,129,0.15)',
+  'sales-outreach':  'rgba(14,165,233,0.15)',
+  'seo-content':     'rgba(14,165,233,0.15)',
+  'social-media':    'rgba(14,165,233,0.15)',
 };
 
 const CATEGORY_BTN_GRADIENT: Record<string, string> = {
-  'lead-generation': 'linear-gradient(135deg, #0369a1 0%, #0284c7 60%, #0ea5e9 100%)',
-  'sales-outreach':  'linear-gradient(135deg, #0f766e 0%, #0d9488 60%, #14b8a6 100%)',
-  'seo-content':     'linear-gradient(135deg, #b45309 0%, #d97706 60%, #f59e0b 100%)',
-  'social-media':    'linear-gradient(135deg, #047857 0%, #059669 60%, #10b981 100%)',
+  'lead-generation': 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'sales-outreach':  'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'seo-content':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'social-media':    'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
 };
 
 const CATEGORY_SCHEMA: Record<string, string> = {
@@ -555,10 +555,10 @@ export default async function SlugPage({
                         </div>
                       ) : (
                         <div
-                          className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 text-white shadow-sm"
-                          style={{ background: CATEGORY_BTN_GRADIENT[tool.category] ?? 'linear-gradient(135deg, #475569 0%, #64748b 100%)' }}
+                          className="w-16 h-16 rounded-2xl flex items-center justify-center shrink-0 shadow-sm"
+                          style={{ background: CATEGORY_BTN_GRADIENT[tool.category] ?? 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)' }}
                         >
-                          <Zap className="w-7 h-7" />
+                          <Zap className="w-7 h-7 text-sky-700" />
                         </div>
                       )}
 
@@ -628,13 +628,7 @@ export default async function SlugPage({
                             <span key={uc} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-white/80 border border-slate-200 hover:border-slate-300 hover:bg-white px-3 py-1 rounded-lg transition-colors shadow-sm">
                               <span
                                 className="w-1.5 h-1.5 rounded-full shrink-0"
-                                style={{
-                                  background:
-                                    tool.category === 'lead-generation' ? '#0ea5e9' :
-                                    tool.category === 'sales-outreach'  ? '#14b8a6' :
-                                    tool.category === 'seo-content'     ? '#f59e0b' :
-                                    tool.category === 'social-media'    ? '#10b981' : '#94a3b8',
-                                }}
+                                style={{ background: '#0369a1' }}
                               />
                               {uc}
                             </span>
