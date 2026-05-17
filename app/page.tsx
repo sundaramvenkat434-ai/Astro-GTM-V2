@@ -6,11 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { SiteHeader } from '@/components/site-header';
 import { UpvoteButton } from '@/components/upvote-button';
 import { SiteFooter } from '@/components/site-footer';
-import {
-  Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
-  LayoutGrid, Gift, Check, ExternalLink,
-  Zap, Share2, ChevronRight, ChevronLeft,
-} from 'lucide-react';
+import { Search, TrendingUp, Users, Megaphone, Star, ArrowRight, LayoutGrid, Gift, Check, ExternalLink, Zap, Share2, ChevronRight, ChevronLeft, Globe as Globe2 } from 'lucide-react';
 
 /* ─── types ─────────────────────────────────────────────────── */
 interface ToolPage {
@@ -65,10 +61,10 @@ function CategoryPill({ category, linked = false }: { category: string; linked?:
 
 /* ─── category gradient colors ───────────────────────────────── */
 const CARD_GRADIENTS: Record<string, { from: string; via: string }> = {
-  'lead-generation': { from: 'rgba(14,165,233,0.07)',  via: 'rgba(14,165,233,0.02)' },
-  'sales-outreach':  { from: 'rgba(20,184,166,0.07)',  via: 'rgba(20,184,166,0.02)' },
-  'seo-content':     { from: 'rgba(245,158,11,0.07)',  via: 'rgba(245,158,11,0.02)' },
-  'social-media':    { from: 'rgba(16,185,129,0.07)',  via: 'rgba(16,185,129,0.02)' },
+  'lead-generation': { from: 'rgba(14,165,233,0.18)',  via: 'rgba(14,165,233,0.06)' },
+  'sales-outreach':  { from: 'rgba(20,184,166,0.18)',  via: 'rgba(20,184,166,0.06)' },
+  'seo-content':     { from: 'rgba(245,158,11,0.18)',  via: 'rgba(245,158,11,0.06)' },
+  'social-media':    { from: 'rgba(16,185,129,0.18)',  via: 'rgba(16,185,129,0.06)' },
 };
 const CARD_ACCENT: Record<string, string> = {
   'lead-generation': '#0ea5e9',
@@ -82,31 +78,30 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
   const grad = CARD_GRADIENTS[tool.category];
   const accent = CARD_ACCENT[tool.category] ?? '#94a3b8';
 
+  const useCases = (tool.use_cases as string[]) ?? [];
+
   return (
-    <Link
-      href={`/category/${tool.category}/${tool.slug}`}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="group shrink-0 w-72 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300"
-    >
-      {/* Header section — light gradient wash */}
-      <div className="px-5 pt-5 pb-4" style={{
+    <div className="group shrink-0 w-64 flex flex-col bg-white border border-slate-100 rounded-2xl overflow-hidden hover:border-slate-200 hover:shadow-xl hover:shadow-slate-200/60 transition-all duration-300">
+      {/* Header — darker gradient wash */}
+      <div className="px-4 pt-4 pb-3" style={{
         background: grad
           ? `linear-gradient(160deg, ${grad.from} 0%, ${grad.via} 60%, transparent 100%)`
           : 'transparent',
-        borderBottom: `1px solid ${accent}18`,
+        borderBottom: `1px solid ${accent}30`,
       }}>
-        {/* Avatar + name + badge inline, category pill below */}
-        <div className="flex items-center gap-3 mb-2.5">
-          <div className="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
+        <div className="flex items-center gap-2.5 mb-2">
+          <div className="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center text-white font-bold text-sm shadow-sm"
             style={{ background: accent }}>
             {tool.name.charAt(0)}
           </div>
           <div className="min-w-0 flex-1">
-            <div className="flex items-center gap-1.5 flex-wrap mb-1">
-              <span className="text-[14px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight">
+            <div className="flex items-center gap-1.5 flex-wrap mb-0.5">
+              <Link
+                href={`/category/${tool.category}/${tool.slug}`}
+                className="text-[13px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors leading-tight"
+              >
                 {tool.name}
-              </span>
+              </Link>
               {tool.badge && (
                 <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {tool.badge}
@@ -118,32 +113,56 @@ function TopPickCard({ tool }: { tool: ToolPage }) {
         </div>
       </div>
 
-      {/* Body — description always fully visible, no clamp */}
-      <div className="px-5 pt-4 pb-3 flex-1 flex flex-col gap-3">
-        <p className="text-[12.5px] text-slate-500 leading-[1.65]">
+      {/* Body */}
+      <div className="px-4 pt-3 pb-2 flex-1 flex flex-col gap-2">
+        <p className="text-[11.5px] text-slate-500 leading-[1.6] line-clamp-2">
           {tool.tagline || tool.description}
         </p>
 
-        {/* Tags */}
-        {(tool.tags as string[])?.length > 0 && (
-          <div className="flex flex-wrap gap-1 mt-auto">
-            {(tool.tags as string[]).slice(0, 3).map((tag) => (
-              <span key={tag} className="text-[10px] bg-slate-50 text-slate-400 border border-slate-100 px-2 py-0.5 rounded-full">{tag}</span>
-            ))}
-          </div>
-        )}
+        {/* Use Cases / Features / Pricing as small hyperlinks */}
+        <div className="flex flex-wrap gap-1 mt-auto">
+          {useCases.slice(0, 2).map((uc) => (
+            <Link
+              key={uc}
+              href={`/category/${tool.category}/${tool.slug}#use-cases`}
+              className="text-[10px] bg-slate-50 text-slate-500 border border-slate-100 px-2 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+            >
+              {uc}
+            </Link>
+          ))}
+          <Link
+            href={`/category/${tool.category}/${tool.slug}#features`}
+            className="text-[10px] bg-slate-50 text-slate-500 border border-slate-100 px-2 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+          >
+            Features
+          </Link>
+          <Link
+            href={`/category/${tool.category}/${tool.slug}#pricing`}
+            className="text-[10px] bg-slate-50 text-slate-500 border border-slate-100 px-2 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+          >
+            Pricing
+          </Link>
+        </div>
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3.5 border-t border-slate-100 flex items-center justify-between">
-        <span className="inline-flex items-center gap-1.5 text-[11px]">
-          <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-          <span className="font-bold text-slate-800">{tool.rating}</span>
-          <span className="text-slate-400">/ 5</span>
-        </span>
-        <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
+      <div className="px-4 py-3 border-t border-slate-100 flex items-center justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center gap-1 text-[11px]">
+            <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+            <span className="font-bold text-slate-800">{tool.rating}</span>
+          </span>
+          <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
+        </div>
+        <Link
+          href={`/category/${tool.category}/${tool.slug}`}
+          className="inline-flex items-center gap-1 text-[11px] font-semibold text-white px-2.5 py-1 rounded-lg transition-all hover:opacity-90"
+          style={{ background: accent }}
+        >
+          View Tool <ExternalLink className="w-2.5 h-2.5" />
+        </Link>
       </div>
-    </Link>
+    </div>
   );
 }
 
@@ -176,34 +195,60 @@ function TopPicksCarousel({ tools, topPicks }: { tools: ToolPage[]; topPicks: To
 
 /* ─── directory tool card ────────────────────────────────────── */
 function ToolCard({ tool }: { tool: ToolPage }) {
+  const accent = CARD_ACCENT[tool.category];
+  const grad = CARD_GRADIENTS[tool.category];
+  const useCases = (tool.use_cases as string[]) ?? [];
+
   return (
-    <div className="group flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/60 transition-all duration-200">
-      <div className="flex gap-3.5 p-4">
+    <div
+      className="group flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/60 transition-all duration-200"
+      style={grad ? { background: `linear-gradient(160deg, ${grad.from.replace('0.18', '0.07')} 0%, white 50%)` } : undefined}
+    >
+      <div className="flex gap-3 p-3.5">
         {/* Avatar */}
-        <div className="shrink-0 w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold text-sm bg-slate-800">
+        <div className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center text-white font-bold text-sm shadow-sm"
+          style={{ background: accent ?? '#475569' }}>
           {tool.name.charAt(0)}
         </div>
 
         {/* Content */}
         <div className="flex-1 min-w-0">
           <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
-            <div className="flex items-center gap-2 mb-0.5 flex-wrap">
+            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
               <span className="font-semibold text-slate-900 text-[13px] leading-tight hover:text-sky-700 transition-colors">{tool.name}</span>
               {tool.badge && (
-                <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                   {tool.badge}
                 </span>
               )}
             </div>
-            <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2 mb-2">{tool.tagline || tool.description}</p>
+            <p className="text-[11.5px] text-slate-500 leading-relaxed line-clamp-2 mb-2">{tool.tagline || tool.description}</p>
           </Link>
 
-          {/* Category + tags */}
+          {/* Category pill + small use-case / features / pricing links */}
           <div className="flex items-center gap-1.5 flex-wrap">
             <CategoryPill category={tool.category} />
-            {(tool.tags as string[])?.slice(0, 3).map((tag) => (
-              <span key={tag} className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full">{tag}</span>
+            {useCases.slice(0, 1).map((uc) => (
+              <Link
+                key={uc}
+                href={`/category/${tool.category}/${tool.slug}#use-cases`}
+                className="text-[9.5px] bg-slate-50 text-slate-400 border border-slate-100 px-1.5 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+              >
+                {uc}
+              </Link>
             ))}
+            <Link
+              href={`/category/${tool.category}/${tool.slug}#features`}
+              className="text-[9.5px] bg-slate-50 text-slate-400 border border-slate-100 px-1.5 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+            >
+              Features
+            </Link>
+            <Link
+              href={`/category/${tool.category}/${tool.slug}#pricing`}
+              className="text-[9.5px] bg-slate-50 text-slate-400 border border-slate-100 px-1.5 py-0.5 rounded-full hover:bg-sky-50 hover:text-sky-600 hover:border-sky-200 transition-colors"
+            >
+              Pricing
+            </Link>
           </div>
         </div>
 
@@ -517,12 +562,12 @@ export default function HomePage() {
               <div className="flex items-center gap-4">
                 {/* Icon mark */}
                 <div className="hidden sm:flex w-10 h-10 rounded-xl items-center justify-center shrink-0"
-                  style={{ background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)', border: '1px solid #fcd34d' }}>
-                  <Star className="w-4.5 h-4.5 fill-amber-500 text-amber-500" style={{ width: 18, height: 18 }} />
+                  style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 100%)', border: '1px solid #7dd3fc' }}>
+                  <Globe2 className="text-sky-600" style={{ width: 18, height: 18 }} />
                 </div>
                 <div>
                   <div className="flex items-center gap-2 mb-0.5">
-                    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-amber-600">Editor&apos;s Top Picks</span>
+                    <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-sky-600">Editor&apos;s Top Picks</span>
                     <span className="text-[10px] text-slate-300">·</span>
                     <span className="text-[10px] text-slate-400">May 2026</span>
                   </div>
