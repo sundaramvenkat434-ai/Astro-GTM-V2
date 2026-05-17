@@ -7,11 +7,11 @@ import { Mail, Send, Check, MailCheck, ArrowRight, Sparkles, Users, Zap } from '
 /* ── AstroGTM logo ──────────────────────────────────────────── */
 export function AstroGTMLogo({ size = 32 }: { size?: number }) {
   // Fixed viewBox — scale via width/height only
-  const VW = 148;
+  const VW = 152;
   const VH = 36;
-  const cx = 18;   // planet centre x
-  const cy = 18;   // planet centre y
-  const pr = 13;   // planet radius
+  const cx = 18;
+  const cy = 18;
+  const pr = 13;
 
   return (
     <svg
@@ -22,7 +22,7 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
       xmlns="http://www.w3.org/2000/svg"
     >
       <defs>
-        {/* Planet body — deep ocean-to-space */}
+        {/* Planet body */}
         <radialGradient id="lg-planet" cx="38%" cy="32%" r="65%">
           <stop offset="0%"   stopColor="#38bdf8" />
           <stop offset="40%"  stopColor="#0369a1" />
@@ -35,13 +35,13 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
           <stop offset="100%" stopColor="#38bdf8" stopOpacity="0.55" />
         </radialGradient>
 
-        {/* Specular shine — top-left */}
+        {/* Specular shine */}
         <radialGradient id="lg-shine" cx="30%" cy="25%" r="45%">
           <stop offset="0%"   stopColor="#ffffff" stopOpacity="0.45" />
           <stop offset="100%" stopColor="#ffffff" stopOpacity="0" />
         </radialGradient>
 
-        {/* Orbit ring fade */}
+        {/* Orbit ring */}
         <linearGradient id="lg-ring" x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%"   stopColor="#7dd3fc" stopOpacity="0" />
           <stop offset="35%"  stopColor="#38bdf8" stopOpacity="0.9" />
@@ -49,30 +49,26 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
           <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0" />
         </linearGradient>
 
-        {/* GTM wordmark gradient — warm sky to cyan */}
-        <linearGradient id="lg-gtm" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%"   stopColor="#38bdf8" />
-          <stop offset="100%" stopColor="#06b6d4" />
+        {/* GTM gradient — deeper, richer range: mid-blue → dark teal */}
+        <linearGradient id="lg-gtm" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%"   stopColor="#0284c7" />
+          <stop offset="55%"  stopColor="#0369a1" />
+          <stop offset="100%" stopColor="#164e63" />
         </linearGradient>
       </defs>
 
-      {/* ── Planet ── */}
-      {/* Atmosphere glow (behind planet) */}
+      {/* Atmosphere glow */}
       <circle cx={cx} cy={cy} r={pr + 3.5} fill="url(#lg-atmos)" />
-
       {/* Planet body */}
       <circle cx={cx} cy={cy} r={pr} fill="url(#lg-planet)" />
-
-      {/* Surface band — subtle equatorial stripe */}
+      {/* Equatorial band */}
       <ellipse cx={cx} cy={cy + 3} rx={pr} ry={pr * 0.28} fill="#0c2340" fillOpacity="0.35" />
-
-      {/* Polar ice cap highlight */}
+      {/* Polar ice cap */}
       <ellipse cx={cx - 2} cy={cy - pr * 0.55} rx={pr * 0.38} ry={pr * 0.18} fill="#e0f2fe" fillOpacity="0.22" />
-
-      {/* Specular shine */}
+      {/* Shine */}
       <circle cx={cx} cy={cy} r={pr} fill="url(#lg-shine)" />
 
-      {/* ── Orbit ring — tilted ellipse ── */}
+      {/* Orbit ring */}
       <ellipse
         cx={cx} cy={cy}
         rx={pr + 7} ry={(pr + 7) * 0.3}
@@ -82,30 +78,19 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
         transform={`rotate(-18 ${cx} ${cy})`}
       />
 
-      {/* Orbiting moon — sits on the ring */}
+      {/* Moon */}
       <circle cx={cx + pr + 5.5} cy={cy - 3.5} r="2.4" fill="#bae6fd" />
       <circle cx={cx + pr + 4.8} cy={cy - 4.2} r="0.85" fill="white" fillOpacity="0.7" />
 
-      {/* ── Wordmark ── */}
-      {/* "Astro" — near-black, tight tracking */}
+      {/* Wordmark — single <text> so "Astro" and "GTM" are flush with no gap */}
       <text
-        x="38" y="24.5"
+        x="40" y="25"
         fontFamily="'DM Sans', 'Inter', system-ui, sans-serif"
-        fontWeight="700"
-        fontSize="19"
+        fontSize="19.5"
         letterSpacing="-0.04em"
-        fill="#0f172a"
-      >Astro</text>
-
-      {/* "GTM" — gradient fill */}
-      <text
-        x="90" y="24.5"
-        fontFamily="'DM Sans', 'Inter', system-ui, sans-serif"
-        fontWeight="800"
-        fontSize="19"
-        letterSpacing="-0.04em"
-        fill="url(#lg-gtm)"
-      >GTM</text>
+      >
+        <tspan fontWeight="700" fill="#0f172a">Astro</tspan><tspan fontWeight="800" fill="url(#lg-gtm)">GTM</tspan>
+      </text>
     </svg>
   );
 }
