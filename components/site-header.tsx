@@ -157,21 +157,21 @@ function NewsletterModal({ onClose }: { onClose: () => void }) {
 const SUBMIT_OPTIONS = [
   {
     label: 'Product Launch',
-    desc: 'Get loyal early adopters',
+    desc: 'Get early adopters organically',
     href: '/contact',
     icon: <Rocket className="w-3.5 h-3.5" />,
     accent: '#0369a1',
   },
   {
     label: 'Expert Review',
-    desc: 'Detailed user experience report',
+    desc: 'Get honest feedback from PMs',
     href: '/contact',
     icon: <FileSearch className="w-3.5 h-3.5" />,
     accent: '#0d9488',
   },
   {
     label: 'Advertise',
-    desc: 'Boost traffic and sign-ups',
+    desc: 'Get 10x traffic and sign-ups',
     href: '/contact',
     icon: <Megaphone className="w-3.5 h-3.5" />,
     accent: '#b45309',
