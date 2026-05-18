@@ -97,19 +97,17 @@ const CATEGORY_LABELS: Record<string, string> = {
   infrastructure: 'Infrastructure',
 };
 
-const BADGE_STYLES: Record<string, string> = {
-  new:          'bg-sky-100 text-sky-700 border-sky-200',
-  trending:     'bg-amber-100 text-amber-700 border-amber-200',
-  'free-tier':  'bg-emerald-100 text-emerald-700 border-emerald-200',
-  hot:          'bg-rose-100 text-rose-700 border-rose-200',
-  'top-choice': 'bg-violet-100 text-violet-700 border-violet-200',
+const BADGE_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+  new:          { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0' },
+  trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' },
+  'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' },
+  'top-choice': { bg: '#F7FBFF', text: '#1d6fad', border: '#bae6fd' },
 };
 
 const BADGE_LABELS: Record<string, string> = {
   new:          'New',
   trending:     'Trending',
   'free-tier':  'Free Tier',
-  hot:          'Hot',
   'top-choice': 'Top Choice',
 };
 
@@ -323,7 +321,10 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                     <div className="flex items-center gap-2 mb-0.5">
                       <span className="font-semibold text-slate-900 text-sm">{tool.name}</span>
                       {tool.badge && (
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                        <span
+                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border"
+                          style={{ backgroundColor: BADGE_STYLES[tool.badge]?.bg ?? '#f1f5f9', color: BADGE_STYLES[tool.badge]?.text ?? '#475569', borderColor: BADGE_STYLES[tool.badge]?.border ?? '#e2e8f0' }}
+                        >
                           {BADGE_LABELS[tool.badge] ?? tool.badge}
                         </span>
                       )}

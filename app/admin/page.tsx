@@ -1271,20 +1271,24 @@ export default function AdminDashboard() {
                                   <p className="text-sm font-medium text-slate-900 truncate max-w-[200px] leading-snug">
                                     {row.name || 'Untitled'}
                                   </p>
-                                  {!isTopX && !isComparison && row.badge && (
-                                    <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border ${
-                                      row.badge === 'new'        ? 'bg-sky-50 text-sky-700 border-sky-200'
-                                      : row.badge === 'trending'   ? 'bg-amber-50 text-amber-700 border-amber-200'
-                                      : row.badge === 'free-tier'  ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                                      : row.badge === 'hot'        ? 'bg-rose-50 text-rose-700 border-rose-200'
-                                      : row.badge === 'top-choice' ? 'bg-violet-50 text-violet-700 border-violet-200'
-                                      : 'bg-slate-50 text-slate-700 border-slate-200'
-                                    }`}>
-                                      {row.badge === 'free-tier' ? 'Free Tier'
-                                        : row.badge === 'top-choice' ? 'Top Choice'
-                                        : row.badge}
-                                    </span>
-                                  )}
+                                  {!isTopX && !isComparison && row.badge && (() => {
+                                    const ADMIN_BADGE: Record<string, { bg: string; text: string; border: string; label: string }> = {
+                                      new:          { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0', label: 'New' },
+                                      trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe', label: 'Trending' },
+                                      'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0', label: 'Free Tier' },
+                                      'top-choice': { bg: '#F7FBFF', text: '#1d6fad', border: '#bae6fd', label: 'Top Choice' },
+                                    };
+                                    const s = ADMIN_BADGE[row.badge];
+                                    if (!s) return null;
+                                    return (
+                                      <span
+                                        className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border"
+                                        style={{ backgroundColor: s.bg, color: s.text, borderColor: s.border }}
+                                      >
+                                        {s.label}
+                                      </span>
+                                    );
+                                  })()}
                                   {(isTopX || isComparison) && row.tool_count && (
                                     <span className="text-[9px] text-slate-400 font-medium">{row.tool_count} tools</span>
                                   )}

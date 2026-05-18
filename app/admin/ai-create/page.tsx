@@ -157,7 +157,6 @@ const BADGES = [
   { value: 'new',        label: 'New' },
   { value: 'trending',   label: 'Trending' },
   { value: 'free-tier',  label: 'Free Tier' },
-  { value: 'hot',        label: 'Hot' },
   { value: 'top-choice', label: 'Top Choice' },
 ];
 
