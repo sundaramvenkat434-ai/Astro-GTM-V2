@@ -1273,10 +1273,10 @@ export default function AdminDashboard() {
                                   </p>
                                   {!isTopX && !isComparison && row.badge && (() => {
                                     const ADMIN_BADGE: Record<string, { bg: string; text: string; border: string; label: string }> = {
-                                      new:          { bg: '#FFF5FE', text: '#9d174d', border: '#fbcfe8', label: 'New' },
-                                      trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe', label: 'Trending' },
-                                      'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0', label: 'Free Tier' },
-                                      'top-choice': { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd', label: 'Top Choice' },
+                                      new:          { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc', label: 'New' },
+                                      trending:     { bg: '#FFFFF0', text: '#854d0e', border: '#fde68a', label: 'Trending' },
+                                      'free-tier':  { bg: '#F0FFF9', text: '#15803d', border: '#6ee7b7', label: 'Free Tier' },
+                                      'top-choice': { bg: '#F3F0FF', text: '#6d28d9', border: '#c4b5fd', label: 'Top Choice' },
                                     };
                                     const s = ADMIN_BADGE[row.badge];
                                     if (!s) return null;

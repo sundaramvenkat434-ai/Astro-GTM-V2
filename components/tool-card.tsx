@@ -47,19 +47,19 @@ export const CARD_GRADIENTS: Record<string, string> = {
 };
 
 export const CARD_BTN_GRADIENT_MAP: Record<string, string> = {
-  'seo-content':        '#E8E8E8',
-  'lead-generation':    '#E8E8E8',
-  'sales-outreach':     '#E8E8E8',
-  'social-media':       '#E8E8E8',
-  'paid-marketing':     '#E8E8E8',
-  'analytics-insights': '#E8E8E8',
+  'seo-content':        'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'lead-generation':    'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'sales-outreach':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'social-media':       'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'paid-marketing':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'analytics-insights': 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
 };
 
 export const BADGE_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  new:          { bg: '#FFF5FE', text: '#9d174d', border: '#fbcfe8' },
-  trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' },
-  'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' },
-  'top-choice': { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd' },
+  new:          { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc' },
+  trending:     { bg: '#FFFFF0', text: '#854d0e', border: '#fde68a' },
+  'free-tier':  { bg: '#F0FFF9', text: '#15803d', border: '#6ee7b7' },
+  'top-choice': { bg: '#F3F0FF', text: '#6d28d9', border: '#c4b5fd' },
 };
 
 export const BADGE_LABELS: Record<string, string> = {
@@ -122,8 +122,8 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
       <div className="flex gap-3 p-3 flex-1">
         {/* Avatar */}
         <div
-          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-[#d4d4d4]"
-          style={{ background: btnGrad, color: '#64748b' }}
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-200"
+          style={{ background: btnGrad, color: '#0369a1' }}
         >
           {tool.name.charAt(0)}
         </div>

@@ -482,10 +482,10 @@ export default function HomePage() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
                     {[
                       { label: 'All Tools', value: tools.length, style: null },
-                      { label: 'New',       value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#FFF5FE', text: '#9d174d', border: '#fbcfe8' } },
-                      { label: 'Free',      value: tools.filter(t => t.badge === 'free-tier').length,  style: { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' } },
-                      { label: 'Trending',  value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' } },
-                      { label: 'Popular',   value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd' } },
+                      { label: 'New',        value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc' } },
+                      { label: 'Trending',   value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FFFFF0', text: '#854d0e', border: '#fde68a' } },
+                      { label: 'Top Choice', value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#F3F0FF', text: '#6d28d9', border: '#c4b5fd' } },
+                      { label: 'Free Tier',  value: tools.filter(t => t.badge === 'free-tier').length,  style: { bg: '#F0FFF9', text: '#15803d', border: '#6ee7b7' } },
                     ].map(s => (
                       <div key={s.label} className="flex items-center justify-between">
                         {s.style ? (
