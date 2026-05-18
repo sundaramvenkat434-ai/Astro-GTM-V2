@@ -436,12 +436,23 @@ export default function HomePage() {
                   <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
                     {[
-                      { label: 'Total Tools', value: tools.length },
-                      { label: 'Categories',  value: SECTION_ORDER.filter(c => categoryCounts[c]).length },
-                      { label: 'Free Tiers',  value: tools.filter(t => t.badge === 'free').length },
+                      { label: 'All Tools', value: tools.length, style: null },
+                      { label: 'New',       value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0' } },
+                      { label: 'Free',      value: tools.filter(t => t.badge === 'free-tier').length,  style: { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' } },
+                      { label: 'Trending',  value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' } },
+                      { label: 'Popular',   value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#F7FBFF', text: '#1d6fad', border: '#bae6fd' } },
                     ].map(s => (
                       <div key={s.label} className="flex items-center justify-between">
-                        <span className="text-[12.5px] text-slate-500">{s.label}</span>
+                        {s.style ? (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border"
+                            style={{ backgroundColor: s.style.bg, color: s.style.text, borderColor: s.style.border }}
+                          >
+                            {s.label}
+                          </span>
+                        ) : (
+                          <span className="text-[12.5px] text-slate-500">{s.label}</span>
+                        )}
                         <span className="text-[13.5px] font-bold text-slate-800">{s.value}</span>
                       </div>
                     ))}
