@@ -98,7 +98,7 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const BADGE_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  new:          { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0' },
+  new:          { bg: '#FFF5FE', text: '#9d174d', border: '#fbcfe8' },
   trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' },
   'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' },
   'top-choice': { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd' },

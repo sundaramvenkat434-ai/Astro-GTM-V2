@@ -52,6 +52,7 @@ export default function HomePage() {
   const [loading, setLoading]           = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [query, setQuery]               = useState('');
+  const [dirView, setDirView]           = useState<'recent' | 'top'>('recent');
   const canvasRef                       = useRef<HTMLCanvasElement>(null);
   const [heroVisible, setHeroVisible]   = useState(false);
   const [creditsHover, setCreditsHover] = useState(false);
@@ -195,9 +196,9 @@ export default function HomePage() {
 
   useEffect(() => {
     supabase.from('tool_pages')
-      .select('id, slug, name, tagline, description, category, tags, badge, rating, rating_count, users, upvotes, use_cases')
+      .select('id, slug, name, tagline, description, category, tags, badge, rating, rating_count, users, upvotes, use_cases, updated_at')
       .eq('status', 'published')
-      .order('upvotes', { ascending: false })
+      .order('updated_at', { ascending: false })
       .then(({ data }) => {
         if (data) {
           setTools(data as ToolPage[]);
@@ -265,8 +266,14 @@ export default function HomePage() {
     ...SECTION_ORDER.filter(c => categoryCounts[c]).map(c => ({ id: c, label: SECTION_LABELS[c], count: categoryCounts[c] })),
   ];
 
+  const sortedFiltered = query
+    ? filtered
+    : dirView === 'top'
+      ? [...filtered].sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
+      : [...filtered].sort((a, b) => (b.updated_at ?? '').localeCompare(a.updated_at ?? ''));
+
   const sections = activeCategory === 'all'
-    ? SECTION_ORDER.filter(c => filtered.some(t => t.category === c))
+    ? SECTION_ORDER.filter(c => sortedFiltered.some(t => t.category === c))
     : [activeCategory];
 
   return (
@@ -396,18 +403,32 @@ export default function HomePage() {
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
               <p className="text-[10.5px] font-bold text-sky-600 uppercase tracking-[0.14em] mb-1.5">Directory</p>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight">All Tools</h2>
-              <p className="text-[13px] text-slate-500 mt-1 font-medium">
+              <div className="flex items-center gap-1 mb-1">
+                <button
+                  onClick={() => setDirView('recent')}
+                  className={`text-2xl font-bold tracking-tight transition-colors ${dirView === 'recent' ? 'text-slate-900' : 'text-slate-300 hover:text-slate-500'}`}
+                >
+                  Recently Updated
+                </button>
+                <span className="text-2xl font-bold text-slate-200 select-none">/</span>
+                <button
+                  onClick={() => setDirView('top')}
+                  className={`text-2xl font-bold tracking-tight transition-colors ${dirView === 'top' ? 'text-slate-900' : 'text-slate-300 hover:text-slate-500'}`}
+                >
+                  Top Tools
+                </button>
+              </div>
+              <p className="text-[13px] text-slate-500 font-medium">
                 {loading
                   ? 'Loading…'
-                  : `${filtered.length} tool${filtered.length !== 1 ? 's' : ''}${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
+                  : `${sortedFiltered.length} tool${sortedFiltered.length !== 1 ? 's' : ''}${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
               </p>
             </div>
             <div className="relative w-full sm:w-72">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="search"
-                placeholder="Search by name, use case, tag…"
+                placeholder="Search by name, use case, or more..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 text-[13.5px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
@@ -461,7 +482,7 @@ export default function HomePage() {
                     <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
                     {[
                       { label: 'All Tools', value: tools.length, style: null },
-                      { label: 'New',       value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0' } },
+                      { label: 'New',       value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#FFF5FE', text: '#9d174d', border: '#fbcfe8' } },
                       { label: 'Free',      value: tools.filter(t => t.badge === 'free-tier').length,  style: { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' } },
                       { label: 'Trending',  value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' } },
                       { label: 'Popular',   value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd' } },
@@ -516,7 +537,7 @@ export default function HomePage() {
                   </div>
                 )}
 
-                {filtered.length === 0 ? (
+                {sortedFiltered.length === 0 ? (
                   <div className="flex flex-col items-center py-24 text-center">
                     <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4">
                       <Search className="w-6 h-6 text-slate-400" />
@@ -527,7 +548,7 @@ export default function HomePage() {
                 ) : (
                   <div className="space-y-10">
                     {sections.map(cat => {
-                      const sectionTools = filtered.filter(t => t.category === cat);
+                      const sectionTools = sortedFiltered.filter(t => t.category === cat);
                       if (!sectionTools.length) return null;
                       const totalCount  = sectionTools.length;
                       const visibleTools = sectionTools.slice(0, 10);

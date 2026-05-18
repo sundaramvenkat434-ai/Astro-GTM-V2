@@ -20,43 +20,43 @@ export const SECTION_LABELS: Record<string, string> = {
 };
 
 export const CATEGORY_PASTEL: Record<string, string> = {
-  'seo-content':        '#B0E4FF',
-  'lead-generation':    '#B0E4FF',
-  'sales-outreach':     '#B0E4FF',
-  'social-media':       '#B0E4FF',
-  'paid-marketing':     '#B0E4FF',
-  'analytics-insights': '#B0E4FF',
+  'seo-content':        '#E8E8E8',
+  'lead-generation':    '#E8E8E8',
+  'sales-outreach':     '#E8E8E8',
+  'social-media':       '#E8E8E8',
+  'paid-marketing':     '#E8E8E8',
+  'analytics-insights': '#E8E8E8',
 };
 
 export const CATEGORY_PASTEL_DARK: Record<string, string> = {
-  'seo-content':        '#0369a1',
-  'lead-generation':    '#0369a1',
-  'sales-outreach':     '#0369a1',
-  'social-media':       '#0369a1',
-  'paid-marketing':     '#0369a1',
-  'analytics-insights': '#0369a1',
+  'seo-content':        '#64748b',
+  'lead-generation':    '#64748b',
+  'sales-outreach':     '#64748b',
+  'social-media':       '#64748b',
+  'paid-marketing':     '#64748b',
+  'analytics-insights': '#64748b',
 };
 
 export const CARD_GRADIENTS: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'lead-generation':    'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'sales-outreach':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'social-media':       'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'paid-marketing':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'analytics-insights': 'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
+  'seo-content':        'linear-gradient(145deg, #E8E8E818 0%, rgba(255,255,255,1) 45%)',
+  'lead-generation':    'linear-gradient(145deg, #E8E8E818 0%, rgba(255,255,255,1) 45%)',
+  'sales-outreach':     'linear-gradient(145deg, #E8E8E818 0%, rgba(255,255,255,1) 45%)',
+  'social-media':       'linear-gradient(145deg, #E8E8E818 0%, rgba(255,255,255,1) 45%)',
+  'paid-marketing':     'linear-gradient(145deg, #E8E8E818 0%, rgba(255,255,255,1) 45%)',
+  'analytics-insights': 'linear-gradient(145deg, #E8E8E818 0%, rgba(255,255,255,1) 45%)',
 };
 
 export const CARD_BTN_GRADIENT_MAP: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'lead-generation':    'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'sales-outreach':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'social-media':       'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'paid-marketing':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'analytics-insights': 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'seo-content':        '#E8E8E8',
+  'lead-generation':    '#E8E8E8',
+  'sales-outreach':     '#E8E8E8',
+  'social-media':       '#E8E8E8',
+  'paid-marketing':     '#E8E8E8',
+  'analytics-insights': '#E8E8E8',
 };
 
 export const BADGE_STYLES: Record<string, { bg: string; text: string; border: string }> = {
-  new:          { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0' },
+  new:          { bg: '#FFF5FE', text: '#9d174d', border: '#fbcfe8' },
   trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' },
   'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' },
   'top-choice': { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd' },
@@ -91,6 +91,7 @@ export interface ToolCardData {
   users?: string;
   upvotes: number;
   use_cases: string[];
+  updated_at?: string;
 }
 
 /* ─── MiniStarRating ──────────────────────────────────────────── */
@@ -121,8 +122,8 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
       <div className="flex gap-3 p-3 flex-1">
         {/* Avatar */}
         <div
-          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-200"
-          style={{ background: btnGrad, color: '#0369a1' }}
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-[#d4d4d4]"
+          style={{ background: btnGrad, color: '#64748b' }}
         >
           {tool.name.charAt(0)}
         </div>
