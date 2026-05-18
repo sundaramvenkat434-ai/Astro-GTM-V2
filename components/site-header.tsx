@@ -156,8 +156,8 @@ function NewsletterModal({ onClose }: { onClose: () => void }) {
 /* ── Submit Tool dropdown ────────────────────────────────────── */
 const SUBMIT_OPTIONS = [
   {
-    label: 'Launch Here',
-    desc: 'Get high ICP early adopters',
+    label: 'Product Launch',
+    desc: 'Get early adopters organically',
     href: '/contact',
     icon: <Rocket className="w-3.5 h-3.5" />,
     accent: '#0369a1',
@@ -170,7 +170,7 @@ const SUBMIT_OPTIONS = [
     accent: '#0d9488',
   },
   {
-    label: 'Advertise',
+    label: 'Promote',
     desc: 'Get 10x traffic and sign-ups',
     href: '/contact',
     icon: <Megaphone className="w-3.5 h-3.5" />,
@@ -181,8 +181,8 @@ const SUBMIT_OPTIONS = [
 /* ── Newsletter dropdown ─────────────────────────────────────── */
 const NEWSLETTER_OPTIONS = [
   {
-    label: 'Weekly Top Tools',
-    desc: 'Best reviewed in each category',
+    label: 'Top 3 Tools',
+    desc: 'Handpicked by experts weekly',
     icon: <Sparkles className="w-3.5 h-3.5" />,
     accent: '#0369a1',
   },
@@ -193,8 +193,8 @@ const NEWSLETTER_OPTIONS = [
     accent: '#6d28d9',
   },
   {
-    label: 'Founder Playbooks',
-    desc: 'Proven AI growth experiments',
+    label: 'Founder Stories',
+    desc: 'Real-world AI growth experiments',
     icon: <BookOpen className="w-3.5 h-3.5" />,
     accent: '#0d9488',
   },
