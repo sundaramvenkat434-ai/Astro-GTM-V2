@@ -2,10 +2,11 @@ import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import type { Metadata } from 'next';
 import { supabaseServer } from '@/lib/supabase-server';
-import { Zap, Star, ArrowRight, CircleCheck as CheckCircle2, ChevronDown, ExternalLink, Eye } from 'lucide-react';
+import { Zap, ArrowRight, CircleCheck as CheckCircle2, ChevronDown } from 'lucide-react';
 import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
-import { UpvoteButton } from '@/components/upvote-button';
+import { ToolCard } from '@/components/tool-card';
+import type { ToolCardData } from '@/components/tool-card';
 
 export const revalidate = 3600;
 export const dynamicParams = true;
@@ -21,12 +22,7 @@ interface CategoryRow {
   faqs: { q: string; a: string }[];
 }
 
-interface ToolSummary {
-  id: string; slug: string; name: string; tagline: string;
-  description: string; tags: string[]; badge: string | null;
-  rating: number; rating_count: string; users: string;
-  upvotes: number; use_cases: string[];
-}
+type ToolSummary = ToolCardData;
 
 export async function generateMetadata({ params }: { params: { category: string } }): Promise<Metadata> {
   const { data: cat } = await supabaseServer.from('categories').select('name,description').eq('slug', params.category).maybeSingle();
@@ -38,57 +34,6 @@ export async function generateMetadata({ params }: { params: { category: string 
     twitter: { card: 'summary_large_image', title, description: cat.description, images: [`${SITE_URL}/og-default.png`] },
     alternates: { canonical: `${SITE_URL}/category/${params.category}` },
   };
-}
-
-const BADGE_STYLES: Record<string, string> = {
-  new: 'bg-sky-50 text-sky-700 border-sky-200',
-  popular: 'bg-amber-50 text-amber-700 border-amber-200',
-  free: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  hot: 'bg-rose-50 text-rose-700 border-rose-200',
-};
-
-const CARD_GRADIENTS: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'lead-generation':    'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'sales-outreach':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'social-media':       'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'paid-marketing':     'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-  'analytics-insights': 'linear-gradient(145deg, #B0E4FF18 0%, rgba(255,255,255,1) 45%)',
-};
-
-const CARD_BTN_GRADIENT = 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)';
-
-const CATEGORY_PASTEL_DARK: Record<string, string> = {
-  'seo-content':        '#0369a1',
-  'lead-generation':    '#0369a1',
-  'sales-outreach':     '#0369a1',
-  'social-media':       '#0369a1',
-  'paid-marketing':     '#0369a1',
-  'analytics-insights': '#0369a1',
-};
-
-const CATEGORY_PASTEL: Record<string, string> = {
-  'seo-content':        '#B0E4FF',
-  'lead-generation':    '#B0E4FF',
-  'sales-outreach':     '#B0E4FF',
-  'social-media':       '#B0E4FF',
-  'paid-marketing':     '#B0E4FF',
-  'analytics-insights': '#B0E4FF',
-};
-
-const SECTION_LABELS: Record<string, string> = {
-  'seo-content':        'Content & SEO',
-  'lead-generation':    'Lead Generation',
-  'sales-outreach':     'Sales Outreach',
-  'social-media':       'Social Media',
-  'paid-marketing':     'Paid Marketing',
-  'analytics-insights': 'Analytics & Insights',
-};
-
-function seededInt(seed: string, min: number, max: number): number {
-  let h = 0;
-  for (let i = 0; i < seed.length; i++) h = (Math.imul(31, h) + seed.charCodeAt(i)) | 0;
-  return min + Math.floor(((Math.abs(h) % 1000) / 1000) * (max - min + 1));
 }
 
 const CATEGORY_HERO_GRADIENT = 'radial-gradient(ellipse 120% 100% at 50% 0%, #B0E4FF 0%, #ddf1ff 40%, #f8fafc 100%)';
@@ -182,93 +127,13 @@ export default async function CategoryPage({ params }: { params: { category: str
           <>
             <h2 className="text-xl font-bold text-slate-900 mb-6">{cat.name} Tools</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              {items.map((tool) => {
-                const bgGrad   = CARD_GRADIENTS[params.category];
-                const accent   = CATEGORY_PASTEL_DARK[params.category] ?? '#0369a1';
-                const useCases = (tool.use_cases as string[]) ?? [];
-                const editorCount = seededInt(tool.id, 3, 10);
-                const views = viewCounts[tool.id];
-                return (
-                  <div
-                    key={tool.id}
-                    className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50 transition-all duration-200"
-                    style={bgGrad ? { background: bgGrad } : undefined}
-                  >
-                    <div className="flex gap-3 p-3 flex-1">
-                      <div
-                        className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-200"
-                        style={{ background: CARD_BTN_GRADIENT, color: '#0369a1' }}
-                      >
-                        {tool.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0 flex flex-col">
-                        <Link href={`/category/${params.category}/${tool.slug}`} className="block">
-                          <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                            <span className="text-[13.5px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors">
-                              {tool.name}
-                            </span>
-                            {tool.badge && (
-                              <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                                {tool.badge}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-[12px] text-slate-600 leading-snug line-clamp-2 mb-2">
-                            {tool.tagline || tool.description}
-                          </p>
-                        </Link>
-                        {useCases.length > 0 && (
-                          <div className="flex gap-1 overflow-x-auto scrollbar-none mt-auto pb-0.5">
-                            {useCases.map((uc) => (
-                              <Link
-                                key={uc}
-                                href={`/category/${params.category}/${tool.slug}`}
-                                className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-600 border-slate-200 hover:text-sky-700 hover:border-sky-300 transition-colors whitespace-nowrap"
-                              >
-                                {uc}
-                              </Link>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="px-3 py-2 border-t border-slate-100 flex items-center justify-between gap-2">
-                      <div className="flex items-center gap-2.5">
-                        <span className="inline-flex items-center gap-1">
-                          <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
-                          <span className="text-[12px] font-bold text-slate-800">{tool.rating}</span>
-                          <span className="text-[10.5px] text-slate-500 font-medium">({editorCount})</span>
-                        </span>
-                        <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
-                        {views !== undefined && views > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
-                            <Eye className="w-3 h-3 shrink-0" />
-                            {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
-                          </span>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-2 ml-auto">
-                        <Link
-                          href={`/category/${params.category}`}
-                          className="hidden sm:inline text-[10px] font-medium px-1.5 py-0.5 rounded transition-all hover:brightness-90 hover:saturate-150"
-                          style={{
-                            color: accent,
-                            background: (CATEGORY_PASTEL[params.category] ?? '#B0E4FF') + '55',
-                          }}
-                        >
-                          {SECTION_LABELS[params.category] ?? params.category}
-                        </Link>
-                        <Link
-                          href={`/category/${params.category}/${tool.slug}`}
-                          className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-800 bg-white border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-400 active:scale-[0.97] transition-all shadow-sm"
-                        >
-                          View Tool <ExternalLink className="w-2.5 h-2.5 text-slate-400" />
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+              {items.map((tool) => (
+                <ToolCard
+                  key={tool.id}
+                  tool={{ ...tool, category: params.category }}
+                  views={viewCounts[tool.id]}
+                />
+              ))}
             </div>
           </>
         )}
