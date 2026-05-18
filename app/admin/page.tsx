@@ -1274,7 +1274,7 @@ export default function AdminDashboard() {
                                   {!isTopX && !isComparison && row.badge && (() => {
                                     const ADMIN_BADGE: Record<string, { bg: string; text: string; border: string; label: string }> = {
                                       new:          { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc', label: 'New' },
-                                      trending:     { bg: '#FFFFF0', text: '#854d0e', border: '#fde68a', label: 'Trending' },
+                                      trending:     { bg: '#FBFFEB', text: '#3f6212', border: '#d9f99d', label: 'Trending' },
                                       'free-tier':  { bg: '#F0FFF9', text: '#15803d', border: '#6ee7b7', label: 'Free Tier' },
                                       'top-choice': { bg: '#F3F0FF', text: '#6d28d9', border: '#c4b5fd', label: 'Top Choice' },
                                     };

@@ -47,17 +47,17 @@ export const CARD_GRADIENTS: Record<string, string> = {
 };
 
 export const CARD_BTN_GRADIENT_MAP: Record<string, string> = {
-  'seo-content':        'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'lead-generation':    'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'sales-outreach':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'social-media':       'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'paid-marketing':     'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
-  'analytics-insights': 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)',
+  'seo-content':        'linear-gradient(145deg, #60b8e8 0%, #3a9fd4 100%)',
+  'lead-generation':    'linear-gradient(145deg, #60b8e8 0%, #3a9fd4 100%)',
+  'sales-outreach':     'linear-gradient(145deg, #60b8e8 0%, #3a9fd4 100%)',
+  'social-media':       'linear-gradient(145deg, #60b8e8 0%, #3a9fd4 100%)',
+  'paid-marketing':     'linear-gradient(145deg, #60b8e8 0%, #3a9fd4 100%)',
+  'analytics-insights': 'linear-gradient(145deg, #60b8e8 0%, #3a9fd4 100%)',
 };
 
 export const BADGE_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   new:          { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc' },
-  trending:     { bg: '#FFFFF0', text: '#854d0e', border: '#fde68a' },
+  trending:     { bg: '#FBFFEB', text: '#3f6212', border: '#d9f99d' },
   'free-tier':  { bg: '#F0FFF9', text: '#15803d', border: '#6ee7b7' },
   'top-choice': { bg: '#F3F0FF', text: '#6d28d9', border: '#c4b5fd' },
 };
@@ -122,8 +122,8 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
       <div className="flex gap-3 p-3 flex-1">
         {/* Avatar */}
         <div
-          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-200"
-          style={{ background: btnGrad, color: '#0369a1' }}
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-400/40"
+          style={{ background: btnGrad, color: '#ffffff' }}
         >
           {tool.name.charAt(0)}
         </div>
@@ -132,19 +132,19 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
         <div className="flex-1 min-w-0 flex flex-col">
           <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
             <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-              <span className="text-[13.5px] font-bold text-slate-900 leading-snug group-hover:text-sky-700 transition-colors">
+              <span className="text-[14.5px] font-bold text-slate-900 leading-snug group-hover:text-sky-700 transition-colors">
                 {tool.name}
               </span>
               {tool.badge && BADGE_STYLES[tool.badge] && (
                 <span
-                  className="inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider border"
+                  className="inline-flex items-center px-1.5 py-px rounded text-[9.5px] font-bold uppercase tracking-wider border"
                   style={{ backgroundColor: BADGE_STYLES[tool.badge].bg, color: BADGE_STYLES[tool.badge].text, borderColor: BADGE_STYLES[tool.badge].border }}
                 >
                   {BADGE_LABELS[tool.badge] ?? tool.badge}
                 </span>
               )}
             </div>
-            <p className="text-[12px] text-slate-600 leading-snug line-clamp-2 mb-2">
+            <p className="text-[13px] text-slate-600 leading-snug line-clamp-2 mb-2">
               {tool.tagline || tool.description}
             </p>
           </Link>
@@ -156,7 +156,7 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
                 <Link
                   key={uc}
                   href={`/category/${tool.category}/${tool.slug}#use-cases`}
-                  className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-600 border-slate-200 transition-colors whitespace-nowrap"
+                  className="shrink-0 text-[11px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-600 border-slate-200 transition-colors whitespace-nowrap"
                   onMouseEnter={e => {
                     const el = e.currentTarget as HTMLElement;
                     el.style.color = accent;

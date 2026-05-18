@@ -52,7 +52,6 @@ export default function HomePage() {
   const [loading, setLoading]           = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [query, setQuery]               = useState('');
-  const [dirView, setDirView]           = useState<'recent' | 'top'>('recent');
   const canvasRef                       = useRef<HTMLCanvasElement>(null);
   const [heroVisible, setHeroVisible]   = useState(false);
   const [creditsHover, setCreditsHover] = useState(false);
@@ -268,9 +267,7 @@ export default function HomePage() {
 
   const sortedFiltered = query
     ? filtered
-    : dirView === 'top'
-      ? [...filtered].sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0))
-      : [...filtered].sort((a, b) => (b.updated_at ?? '').localeCompare(a.updated_at ?? ''));
+    : [...filtered].sort((a, b) => (b.upvotes ?? 0) - (a.upvotes ?? 0));
 
   const sections = activeCategory === 'all'
     ? SECTION_ORDER.filter(c => sortedFiltered.some(t => t.category === c))
@@ -402,26 +399,12 @@ export default function HomePage() {
 
           <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
             <div>
-              <p className="text-[10.5px] font-bold text-sky-600 uppercase tracking-[0.14em] mb-1.5">Directory</p>
-              <div className="flex items-center gap-1 mb-1">
-                <button
-                  onClick={() => setDirView('recent')}
-                  className={`text-2xl font-bold tracking-tight transition-colors ${dirView === 'recent' ? 'text-slate-900' : 'text-slate-300 hover:text-slate-500'}`}
-                >
-                  Recently Updated
-                </button>
-                <span className="text-2xl font-bold text-slate-200 select-none">/</span>
-                <button
-                  onClick={() => setDirView('top')}
-                  className={`text-2xl font-bold tracking-tight transition-colors ${dirView === 'top' ? 'text-slate-900' : 'text-slate-300 hover:text-slate-500'}`}
-                >
-                  Top Tools
-                </button>
-              </div>
+              <p className="text-[10.5px] font-bold text-sky-600 uppercase tracking-[0.14em] mb-1.5">Recently Added</p>
+              <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">Top Tools</h2>
               <p className="text-[13px] text-slate-500 font-medium">
                 {loading
                   ? 'Loading…'
-                  : `${sortedFiltered.length} tool${sortedFiltered.length !== 1 ? 's' : ''}${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
+                  : `${sortedFiltered.length} Featured${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
               </p>
             </div>
             <div className="relative w-full sm:w-72">
@@ -483,7 +466,7 @@ export default function HomePage() {
                     {[
                       { label: 'All Tools', value: tools.length, style: null },
                       { label: 'New',        value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc' } },
-                      { label: 'Trending',   value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FFFFF0', text: '#854d0e', border: '#fde68a' } },
+                      { label: 'Trending',   value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FBFFEB', text: '#3f6212', border: '#d9f99d' } },
                       { label: 'Top Choice', value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#F3F0FF', text: '#6d28d9', border: '#c4b5fd' } },
                       { label: 'Free Tier',  value: tools.filter(t => t.badge === 'free-tier').length,  style: { bg: '#F0FFF9', text: '#15803d', border: '#6ee7b7' } },
                     ].map(s => (
@@ -568,7 +551,7 @@ export default function HomePage() {
                             </span>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-display text-[15px] font-bold text-slate-900 leading-snug tracking-tight">{SECTION_LABELS[cat]}</h3>
-                              <p className="type-card-body font-medium text-slate-400">{totalCount} tool{totalCount !== 1 ? 's' : ''}</p>
+                              <p className="type-card-body font-medium text-slate-400">{totalCount} Featured</p>
                             </div>
                             <div className="hidden sm:block h-1 w-12 rounded-full opacity-40" style={{ background: accent }} />
                             <Link href={`/category/${cat}`} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">
