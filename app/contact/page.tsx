@@ -37,7 +37,7 @@ export default function ContactPage() {
             Get in Touch
           </h1>
           <p className="text-[15px] text-slate-500 leading-relaxed max-w-xl">
-            Corrections, tool submissions, partnerships, or just a question — reach us directly. We welcome all genuine inquiries from founders and growth teams.
+            AstroGTM is built by operators and founders, and we welcome thoughtful conversations from startups, growth teams, marketers, and product builders shaping the next generation of software.
           </p>
         </div>
       </section>
@@ -57,7 +57,7 @@ export default function ContactPage() {
             </div>
             <h2 className="text-[14px] font-bold text-slate-900 mb-1">Email Us</h2>
             <p className="text-[12px] text-slate-500 mb-3 leading-relaxed">
-              For tool submissions, corrections, review requests, and general inquiries.
+              For tool submissions, listing claims, corrections, and other enquiries.
             </p>
             <a
               href="mailto:contactastrogtm@gmail.com"
@@ -107,25 +107,22 @@ export default function ContactPage() {
           </div>
           <div className="px-6 sm:px-8 py-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
             {[
-              { label: 'Tool submissions', desc: 'Want your tool listed or reviewed?' },
-              { label: 'Corrections', desc: 'Found outdated or incorrect info?' },
-              { label: 'Partnerships', desc: 'Content, data, or distribution partnerships.' },
-              { label: 'Vendor inquiries', desc: 'Claim your listing or update details.' },
+              { label: 'Tool submissions', desc: 'Launch your product, get listed, or reach growth-focused teams on AstroGTM.' },
+              { label: 'Private expert reviews', desc: 'Get operator-led feedback on positioning, GTM workflows, onboarding, and discoverability.' },
+              { label: 'Advertisements & sponsorships', desc: 'Explore sponsored placements, newsletter features, and growth collaborations.' },
+              { label: 'Listing claims', desc: 'Claim and manage your product listing, assets, and company details.' },
+              { label: 'Corrections & bugs', desc: 'Report outdated information, broken links, inaccuracies, or platform issues.' },
+              { label: 'Personalized newsletters', desc: 'Get curated AI tool recommendations and GTM workflows tailored to your interests.' },
             ].map(({ label, desc }) => (
-              <div key={label} className="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
+              <div key={label} className="flex items-start gap-3 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3.5">
                 <span className="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0 mt-1.5" />
                 <div>
                   <p className="text-[13px] font-semibold text-slate-800">{label}</p>
-                  <p className="text-[12px] text-slate-500 mt-0.5">{desc}</p>
+                  <p className="text-[12px] text-slate-500 mt-0.5 leading-relaxed">{desc}</p>
                 </div>
               </div>
             ))}
           </div>
-        </div>
-
-        {/* ── Vendor note ── */}
-        <div className="bg-amber-50 border border-amber-200/80 rounded-2xl px-6 py-4 text-[13px] text-amber-800 leading-relaxed">
-          <strong className="font-semibold">Vendor note:</strong> We do not accept payment for reviews or ratings. Sponsored content is clearly labelled and kept strictly separate from editorial coverage.
         </div>
 
       </main>
