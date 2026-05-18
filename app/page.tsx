@@ -195,7 +195,7 @@ export default function HomePage() {
 
   useEffect(() => {
     supabase.from('tool_pages')
-      .select('id, slug, name, tagline, description, category, tags, badge, rating, rating_count, users, upvotes, use_cases, updated_at')
+      .select('id, slug, name, tagline, description, category, tags, badge, rating, rating_count, users, upvotes, use_cases, updated_at, logo_url, logo_alt')
       .eq('status', 'published')
       .order('updated_at', { ascending: false })
       .then(({ data }) => {

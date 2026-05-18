@@ -92,6 +92,8 @@ export interface ToolCardData {
   upvotes: number;
   use_cases: string[];
   updated_at?: string;
+  logo_url?: string | null;
+  logo_alt?: string | null;
 }
 
 /* ─── MiniStarRating ──────────────────────────────────────────── */
@@ -121,12 +123,24 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
       {/* Body */}
       <div className="flex gap-3 p-3 flex-1">
         {/* Avatar */}
-        <div
-          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-400/40"
-          style={{ background: btnGrad, color: '#ffffff' }}
-        >
-          {tool.name.charAt(0)}
-        </div>
+        {tool.logo_url ? (
+          <div className="shrink-0 w-8 h-8 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm mt-0.5 flex items-center justify-center">
+            <img
+              src={tool.logo_url}
+              alt={tool.logo_alt || `${tool.name} logo`}
+              width={32}
+              height={32}
+              className="w-full h-full object-contain"
+            />
+          </div>
+        ) : (
+          <div
+            className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-400/40"
+            style={{ background: btnGrad, color: '#ffffff' }}
+          >
+            {tool.name.charAt(0)}
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 min-w-0 flex flex-col">

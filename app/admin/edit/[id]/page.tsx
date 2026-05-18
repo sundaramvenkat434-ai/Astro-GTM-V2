@@ -20,7 +20,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { ToolPagePreview } from '@/components/tool-page-preview';
-import { ArrowLeft, Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, FileText, AlignLeft, Tag, Search, Link2, Type, Zap, Target, MessageSquare, Globe, Trash2, Plus, GripVertical, Pencil, Eye, Check, Layers, DollarSign, CircleHelp as HelpCircle, ChartBar as BarChart3, Star, Users, Save, Monitor, ThumbsUp, ThumbsDown, FlaskConical, Lightbulb, Image as ImageIcon, Newspaper, CalendarDays, Linkedin, Circle as XCircle, ExternalLink, BadgeCheck } from 'lucide-react';
+import { ArrowLeft, Loader as Loader2, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, FileText, AlignLeft, Tag, Search, Link2, Type, Zap, Target, MessageSquare, Globe, Trash2, Plus, GripVertical, Pencil, Eye, Check, Layers, DollarSign, CircleHelp as HelpCircle, ChartBar as BarChart3, Star, Users, Save, Monitor, ThumbsUp, ThumbsDown, FlaskConical, Lightbulb, Image as ImageIcon, Newspaper, CalendarDays, Linkedin, Circle as XCircle, ExternalLink, BadgeCheck, Upload, X } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ToolPage {
@@ -189,6 +189,8 @@ export default function EditToolPage() {
   const [saveSuccess, setSaveSuccess] = useState('');
   const [hasChanges, setHasChanges] = useState(false);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [logoUploadError, setLogoUploadError] = useState('');
 
   const loadTool = useCallback(async () => {
     const { data, error } = await supabase
@@ -223,6 +225,45 @@ export default function EditToolPage() {
     setTool({ ...tool, ...patch });
     setHasChanges(true);
     setSaveSuccess('');
+  }
+
+  async function handleLogoUpload(file: File) {
+    setLogoUploadError('');
+    if (!tool) return;
+
+    const MAX_SIZE = 512 * 1024; // 512 KB
+    if (file.size > MAX_SIZE) {
+      setLogoUploadError('File must be under 512 KB.');
+      return;
+    }
+    if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) {
+      setLogoUploadError('Only PNG, JPG, or WebP files are allowed.');
+      return;
+    }
+
+    const ext = file.type === 'image/png' ? 'png' : file.type === 'image/webp' ? 'webp' : 'jpg';
+    const path = `${tool.id}.${ext}`;
+
+    setLogoUploading(true);
+    const { error: upErr } = await supabase.storage
+      .from('tool-logos')
+      .upload(path, file, { upsert: true, contentType: file.type });
+    setLogoUploading(false);
+
+    if (upErr) {
+      setLogoUploadError(upErr.message);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage.from('tool-logos').getPublicUrl(path);
+    update({ logo_url: publicUrl, logo_alt: tool.logo_alt || `${tool.name} logo` });
+  }
+
+  async function handleLogoRemove() {
+    if (!tool?.logo_url) return;
+    const path = tool.logo_url.split('/tool-logos/')[1];
+    if (path) await supabase.storage.from('tool-logos').remove([path]);
+    update({ logo_url: null });
   }
 
   function updateFeature(index: number, field: 'title' | 'description', value: string) {
@@ -1287,12 +1328,42 @@ export default function EditToolPage() {
                     <Input value={tool.official_website || ''} onChange={(e) => update({ official_website: e.target.value || null })} className="h-8 text-sm" placeholder="https://..." />
                   </div>
                   <div>
-                    <label className="text-[11px] text-slate-500 block mb-1 flex items-center gap-1"><ImageIcon className="w-3 h-3" /> Logo URL</label>
-                    <Input value={tool.logo_url || ''} onChange={(e) => update({ logo_url: e.target.value || null })} className="h-8 text-sm" placeholder="https://..." />
-                  </div>
-                  <div>
-                    <label className="text-[11px] text-slate-500 block mb-1">Logo Alt Text</label>
-                    <Input value={tool.logo_alt || ''} onChange={(e) => update({ logo_alt: e.target.value || null })} className="h-8 text-sm" placeholder={`${tool.name || 'Tool'} logo`} />
+                    <label className="text-[11px] text-slate-500 block mb-1 flex items-center gap-1"><ImageIcon className="w-3 h-3" /> Tool Logo</label>
+                    <div className="flex items-start gap-3">
+                      {/* Preview */}
+                      <div className="shrink-0 w-14 h-14 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+                        {tool.logo_url ? (
+                          <img src={tool.logo_url} alt={tool.logo_alt || ''} className="w-full h-full object-contain" />
+                        ) : (
+                          <ImageIcon className="w-6 h-6 text-slate-300" />
+                        )}
+                      </div>
+                      {/* Controls */}
+                      <div className="flex-1 min-w-0 space-y-1.5">
+                        <label className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg border text-[11px] font-semibold cursor-pointer transition-colors ${logoUploading ? 'opacity-50 pointer-events-none' : 'border-slate-200 bg-white hover:bg-slate-50 text-slate-700'}`}>
+                          {logoUploading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Upload className="w-3 h-3" />}
+                          {logoUploading ? 'Uploading…' : 'Upload Logo'}
+                          <input
+                            type="file"
+                            accept="image/png,image/jpeg,image/webp"
+                            className="sr-only"
+                            disabled={logoUploading}
+                            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleLogoUpload(f); e.target.value = ''; }}
+                          />
+                        </label>
+                        <p className="text-[10px] text-slate-400 leading-snug">PNG, JPG or WebP · 512×512 px recommended · max 512 KB</p>
+                        {logoUploadError && <p className="text-[10px] text-red-500">{logoUploadError}</p>}
+                        {tool.logo_url && (
+                          <button onClick={handleLogoRemove} className="flex items-center gap-1 text-[10px] text-red-500 hover:text-red-700 transition-colors">
+                            <X className="w-3 h-3" /> Remove logo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <div className="mt-2">
+                      <label className="text-[11px] text-slate-400 block mb-1">Logo Alt Text</label>
+                      <Input value={tool.logo_alt || ''} onChange={(e) => update({ logo_alt: e.target.value || null })} className="h-7 text-xs" placeholder={`${tool.name || 'Tool'} logo`} />
+                    </div>
                   </div>
                   <div>
                     <label className="text-[11px] text-slate-500 block mb-1 flex items-center gap-1"><Users className="w-3 h-3" /> Founder Name</label>

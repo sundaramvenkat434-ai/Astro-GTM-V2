@@ -41,7 +41,7 @@ const CATEGORY_HERO_GRADIENT = 'radial-gradient(ellipse 120% 100% at 50% 0%, #B0
 export default async function CategoryPage({ params }: { params: { category: string } }) {
   const [{ data: catRow }, { data: tools }] = await Promise.all([
     supabaseServer.from('categories').select('*').eq('slug', params.category).maybeSingle(),
-    supabaseServer.from('tool_pages').select('id,slug,name,tagline,description,tags,badge,rating,rating_count,users,upvotes,use_cases')
+    supabaseServer.from('tool_pages').select('id,slug,name,tagline,description,tags,badge,rating,rating_count,users,upvotes,use_cases,logo_url,logo_alt')
       .eq('status', 'published').eq('category', params.category).order('published_at', { ascending: false }),
   ]);
 
