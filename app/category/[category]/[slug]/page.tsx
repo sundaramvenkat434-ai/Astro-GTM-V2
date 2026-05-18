@@ -962,7 +962,7 @@ export default async function SlugPage({
                       View all →
                     </Link>
                   </div>
-                  <div className="grid grid-cols-2 gap-2.5">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                     {similarTools.map((s) => (
                       <ToolCard key={s.id} tool={s} views={similarViewCounts[s.id]} />
                     ))}
