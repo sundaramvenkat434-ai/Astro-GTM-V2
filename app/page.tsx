@@ -392,7 +392,7 @@ export default function HomePage() {
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
               <input
                 type="search"
-                placeholder="Search by name, use case, or more..."
+                placeholder="Search by tool name, use case, or more..."
                 value={query}
                 onChange={e => setQuery(e.target.value)}
                 className="w-full pl-9 pr-4 py-2.5 text-[13.5px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
