@@ -270,6 +270,15 @@ export default function AboutPage() {
                 <ArrowRight className="w-3.5 h-3.5" />
               </p>
             </div>
+            <div className="mt-6">
+              <a
+                href="/contact"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-[13px] font-semibold text-sky-700 bg-white border border-sky-200 hover:bg-sky-50 hover:border-sky-300 shadow-sm transition-all"
+              >
+                Get in touch
+                <ArrowRight className="w-3.5 h-3.5" />
+              </a>
+            </div>
           </div>
         </div>
 
