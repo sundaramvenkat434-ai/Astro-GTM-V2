@@ -250,7 +250,7 @@ export default async function CategoryPage({ params }: { params: { category: str
                       <div className="flex items-center gap-2 ml-auto">
                         <Link
                           href={`/category/${params.category}`}
-                          className="hidden sm:inline text-[10px] font-medium px-1.5 py-0.5 rounded hover:opacity-75 transition-opacity"
+                          className="hidden sm:inline text-[10px] font-medium px-1.5 py-0.5 rounded transition-all hover:brightness-90 hover:saturate-150"
                           style={{
                             color: accent,
                             background: (CATEGORY_PASTEL[params.category] ?? '#B0E4FF') + '55',

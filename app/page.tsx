@@ -112,7 +112,7 @@ function CategoryPill({ category }: { category: string }) {
   return (
     <Link
       href={`/category/${category}`}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-opacity hover:opacity-75 shrink-0"
+      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-all hover:brightness-95 hover:border-current shrink-0"
       style={{ backgroundColor: bg, color: dark, borderColor: dark + '40' }}
     >
       <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dark }} />
@@ -221,7 +221,7 @@ function ToolCard({ tool, views }: { tool: ToolPage; views?: number }) {
         <div className="flex items-center gap-2 ml-auto">
           <Link
             href={`/category/${tool.category}`}
-            className="hidden sm:inline text-[10px] font-medium px-1.5 py-0.5 rounded hover:opacity-75 transition-opacity"
+            className="hidden sm:inline text-[10px] font-medium px-1.5 py-0.5 rounded transition-all hover:brightness-90 hover:saturate-150"
             style={{
               color: CATEGORY_PASTEL_DARK[tool.category] ?? '#64748b',
               background: CATEGORY_PASTEL[tool.category] ? CATEGORY_PASTEL[tool.category] + '55' : '#f1f5f9',
@@ -660,7 +660,7 @@ export default function HomePage() {
                           className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all"
                           style={active
                             ? { background: '#0f172a', color: '#fff', borderColor: '#0f172a' }
-                            : { background: '#fff', color: dark ?? '#475569', borderColor: '#e2e8f0' }
+                            : { background: '#fff', color: '#0f172a', borderColor: '#e2e8f0' }
                           }
                         >
                           {pastel && (
