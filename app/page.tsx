@@ -133,8 +133,8 @@ function MiniStarRating({ rating, toolId }: { rating: number; toolId: string }) 
   return (
     <span className="inline-flex items-center gap-1">
       <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
-      <span className="text-[11.5px] font-bold text-slate-800">{rating}</span>
-      <span className="text-[10px] text-slate-400 font-medium">({count})</span>
+      <span className="text-[12px] font-bold text-slate-800">{rating}</span>
+      <span className="text-[10.5px] text-slate-500 font-medium">({count})</span>
     </span>
   );
 }
@@ -151,10 +151,10 @@ function ToolCard({ tool, views }: { tool: ToolPage; views?: number }) {
       className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50 transition-all duration-200"
       style={bgGrad ? { background: bgGrad } : undefined}
     >
-      <div className="flex gap-3 p-3.5 flex-1">
+      <div className="flex gap-3 p-3 flex-1">
         {/* Gradient avatar */}
         <div
-          className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-[14px] shadow-sm mt-0.5 border border-sky-200"
+          className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-200"
           style={{ background: btnGrad, color: '#0369a1' }}
         >
           {tool.name.charAt(0)}
@@ -185,7 +185,7 @@ function ToolCard({ tool, views }: { tool: ToolPage; views?: number }) {
                 <Link
                   key={uc}
                   href={`/category/${tool.category}/${tool.slug}#use-cases`}
-                  className="shrink-0 text-[9.5px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-500 border-slate-200 hover:border-current transition-colors whitespace-nowrap"
+                  className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-600 border-slate-200 hover:border-current transition-colors whitespace-nowrap"
                   style={{ ['--hover-color' as string]: accent }}
                   onMouseEnter={e => {
                     (e.currentTarget as HTMLElement).style.color = accent;
@@ -207,12 +207,12 @@ function ToolCard({ tool, views }: { tool: ToolPage; views?: number }) {
       </div>
 
       {/* Footer */}
-      <div className="px-3.5 py-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+      <div className="px-3 py-2 border-t border-slate-100 flex items-center justify-between gap-2">
         <div className="flex items-center gap-2.5">
           <MiniStarRating rating={tool.rating} toolId={tool.id} />
           <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
           {views !== undefined && views > 0 && (
-            <span className="inline-flex items-center gap-1 text-[10.5px] text-slate-400 font-medium">
+            <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
               <Eye className="w-3 h-3 shrink-0" />
               {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
             </span>

@@ -115,12 +115,12 @@
 
   /* Card title */
   .type-card-title {
-    @apply font-sans text-[13px] font-semibold text-slate-900 leading-snug tracking-tight;
+    @apply font-sans text-[13.5px] font-bold text-slate-900 leading-snug tracking-tight;
   }
 
   /* Card sub / tagline */
   .type-card-body {
-    @apply text-[11.5px] text-slate-500 leading-relaxed;
+    @apply text-[12px] text-slate-600 leading-relaxed;
   }
 
   /* Micro label — badges, pills, captions */

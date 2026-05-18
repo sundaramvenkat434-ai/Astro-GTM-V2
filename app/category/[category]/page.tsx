@@ -194,9 +194,9 @@ export default async function CategoryPage({ params }: { params: { category: str
                     className="group flex flex-col h-full bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-200/50 transition-all duration-200"
                     style={bgGrad ? { background: bgGrad } : undefined}
                   >
-                    <div className="flex gap-3 p-3.5 flex-1">
+                    <div className="flex gap-3 p-3 flex-1">
                       <div
-                        className="shrink-0 w-9 h-9 rounded-xl flex items-center justify-center font-bold text-[14px] shadow-sm mt-0.5 border border-sky-200"
+                        className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-200"
                         style={{ background: CARD_BTN_GRADIENT, color: '#0369a1' }}
                       >
                         {tool.name.charAt(0)}
@@ -204,7 +204,7 @@ export default async function CategoryPage({ params }: { params: { category: str
                       <div className="flex-1 min-w-0 flex flex-col">
                         <Link href={`/category/${params.category}/${tool.slug}`} className="block">
                           <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
-                            <span className="text-[13px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors">
+                            <span className="text-[13.5px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors">
                               {tool.name}
                             </span>
                             {tool.badge && (
@@ -213,7 +213,7 @@ export default async function CategoryPage({ params }: { params: { category: str
                               </span>
                             )}
                           </div>
-                          <p className="text-[12px] text-slate-500 leading-snug line-clamp-2 mb-2">
+                          <p className="text-[12px] text-slate-600 leading-snug line-clamp-2 mb-2">
                             {tool.tagline || tool.description}
                           </p>
                         </Link>
@@ -223,7 +223,7 @@ export default async function CategoryPage({ params }: { params: { category: str
                               <Link
                                 key={uc}
                                 href={`/category/${params.category}/${tool.slug}`}
-                                className="shrink-0 text-[9.5px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-500 border-slate-200 hover:text-sky-700 hover:border-sky-300 transition-colors whitespace-nowrap"
+                                className="shrink-0 text-[10px] font-medium px-2 py-0.5 rounded-full border bg-white/80 text-slate-600 border-slate-200 hover:text-sky-700 hover:border-sky-300 transition-colors whitespace-nowrap"
                               >
                                 {uc}
                               </Link>
@@ -232,16 +232,16 @@ export default async function CategoryPage({ params }: { params: { category: str
                         )}
                       </div>
                     </div>
-                    <div className="px-3.5 py-2.5 border-t border-slate-100 flex items-center justify-between gap-2">
+                    <div className="px-3 py-2 border-t border-slate-100 flex items-center justify-between gap-2">
                       <div className="flex items-center gap-2.5">
                         <span className="inline-flex items-center gap-1">
                           <Star className="w-3 h-3 fill-amber-400 text-amber-400 shrink-0" />
-                          <span className="text-[11.5px] font-bold text-slate-800">{tool.rating}</span>
-                          <span className="text-[10px] text-slate-400 font-medium">({editorCount})</span>
+                          <span className="text-[12px] font-bold text-slate-800">{tool.rating}</span>
+                          <span className="text-[10.5px] text-slate-500 font-medium">({editorCount})</span>
                         </span>
                         <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
                         {views !== undefined && views > 0 && (
-                          <span className="inline-flex items-center gap-1 text-[10.5px] text-slate-400 font-medium">
+                          <span className="inline-flex items-center gap-1 text-[11px] text-slate-500 font-medium">
                             <Eye className="w-3 h-3 shrink-0" />
                             {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
                           </span>
