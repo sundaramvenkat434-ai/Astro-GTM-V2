@@ -219,15 +219,16 @@ function ToolCard({ tool, views }: { tool: ToolPage; views?: number }) {
           )}
         </div>
         <div className="flex items-center gap-2 ml-auto">
-          <span
-            className="hidden sm:inline text-[10px] font-medium px-1.5 py-0.5 rounded"
+          <Link
+            href={`/category/${tool.category}`}
+            className="hidden sm:inline text-[10px] font-medium px-1.5 py-0.5 rounded hover:opacity-75 transition-opacity"
             style={{
               color: CATEGORY_PASTEL_DARK[tool.category] ?? '#64748b',
               background: CATEGORY_PASTEL[tool.category] ? CATEGORY_PASTEL[tool.category] + '55' : '#f1f5f9',
             }}
           >
             {SECTION_LABELS[tool.category] ?? tool.category}
-          </span>
+          </Link>
           <Link
             href={`/category/${tool.category}/${tool.slug}`}
             className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-slate-800 bg-white border border-slate-300 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-400 active:scale-[0.97] transition-all shadow-sm"
