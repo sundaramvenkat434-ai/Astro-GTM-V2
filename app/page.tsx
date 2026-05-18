@@ -9,7 +9,7 @@ import { SiteFooter } from '@/components/site-footer';
 import {
   Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
   LayoutGrid, Gift, ExternalLink,
-  Zap, Share2, ChevronRight, LogIn, Scan, RefreshCw,
+  Zap, Share2, ChevronRight, LogIn, Scan, RefreshCw, Eye,
 } from 'lucide-react';
 
 /* ─── types ─────────────────────────────────────────────────── */
@@ -140,7 +140,7 @@ function MiniStarRating({ rating, toolId }: { rating: number; toolId: string }) 
 }
 
 /* ─── tool card ─────────────────────────────────────────────── */
-function ToolCard({ tool }: { tool: ToolPage }) {
+function ToolCard({ tool, views }: { tool: ToolPage; views?: number }) {
   const btnGrad   = CARD_BTN_GRADIENT[tool.category] ?? 'linear-gradient(135deg, #334155 0%, #475569 100%)';
   const bgGrad    = CARD_GRADIENTS[tool.category];
   const accent    = CATEGORY_ACCENT[tool.category] ?? '#64748b';
@@ -211,6 +211,12 @@ function ToolCard({ tool }: { tool: ToolPage }) {
         <div className="flex items-center gap-2.5">
           <MiniStarRating rating={tool.rating} toolId={tool.id} />
           <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
+          {views !== undefined && views > 0 && (
+            <span className="inline-flex items-center gap-1 text-[10.5px] text-slate-400 font-medium">
+              <Eye className="w-3 h-3 shrink-0" />
+              {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2 ml-auto">
           <span
@@ -237,6 +243,7 @@ function ToolCard({ tool }: { tool: ToolPage }) {
 /* ─── page ───────────────────────────────────────────────────── */
 export default function HomePage() {
   const [tools, setTools]               = useState<ToolPage[]>([]);
+  const [viewCounts, setViewCounts]     = useState<Record<string, number>>({});
   const [loading, setLoading]           = useState(true);
   const [activeCategory, setActiveCategory] = useState('all');
   const [query, setQuery]               = useState('');
@@ -386,7 +393,27 @@ export default function HomePage() {
       .select('id, slug, name, tagline, description, category, tags, badge, rating, rating_count, users, upvotes, use_cases')
       .eq('status', 'published')
       .order('upvotes', { ascending: false })
-      .then(({ data }) => { if (data) setTools(data as ToolPage[]); setLoading(false); });
+      .then(({ data }) => {
+        if (data) {
+          setTools(data as ToolPage[]);
+          const ids = (data as ToolPage[]).map(t => t.id);
+          if (ids.length > 0) {
+            supabase.from('page_views')
+              .select('page_id')
+              .in('page_id', ids)
+              .then(({ data: views }) => {
+                if (views) {
+                  const counts: Record<string, number> = {};
+                  for (const row of views) {
+                    counts[row.page_id] = (counts[row.page_id] ?? 0) + 1;
+                  }
+                  setViewCounts(counts);
+                }
+              });
+          }
+        }
+        setLoading(false);
+      });
   }, []);
 
   const filtered = tools.filter(t => {
@@ -687,7 +714,7 @@ export default function HomePage() {
                             </Link>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-fr gap-3">
-                            {sectionTools.map(tool => <ToolCard key={tool.id} tool={tool} />)}
+                            {sectionTools.map(tool => <ToolCard key={tool.id} tool={tool} views={viewCounts[tool.id]} />)}
                           </div>
                         </section>
                       );

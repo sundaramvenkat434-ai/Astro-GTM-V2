@@ -33,6 +33,7 @@ import {
   Linkedin,
   BadgeCheck,
   X,
+  Eye,
 } from 'lucide-react';
 import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
 import { UpvoteButton } from '@/components/upvote-button';
@@ -197,6 +198,14 @@ interface SimilarTool {
   rating: number;
   rating_count: string;
   published_date: string | null;
+}
+
+async function getViewCount(pageId: string): Promise<number> {
+  const { count } = await supabaseServer
+    .from('page_views')
+    .select('id', { count: 'exact', head: true })
+    .eq('page_id', pageId);
+  return count ?? 0;
 }
 
 async function getSimilarTools(category: string, excludeId: string): Promise<SimilarTool[]> {
@@ -491,9 +500,10 @@ export default async function SlugPage({
 
   const tool = await getTool(params.slug, params.category);
   if (tool) {
-    const [author, similarTools] = await Promise.all([
+    const [author, similarTools, viewCount] = await Promise.all([
       getAuthor(tool.reviewer_id),
       getSimilarTools(tool.category, tool.id).then((r) => r.slice(0, Math.floor(r.length / 2) * 2 || 0)),
+      getViewCount(tool.id),
     ]);
     const jsonLdItems = buildToolJsonLd(tool, author);
 
@@ -591,6 +601,12 @@ export default async function SlugPage({
                             {categoryLabel}
                           </Link>
                           <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
+                          {viewCount > 0 && (
+                            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                              <Eye className="w-3.5 h-3.5 shrink-0" />
+                              {viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount} views
+                            </span>
+                          )}
                         </div>
 
                         {(() => {
