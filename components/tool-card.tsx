@@ -59,7 +59,7 @@ export const BADGE_STYLES: Record<string, { bg: string; text: string; border: st
   new:          { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0' },
   trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' },
   'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' },
-  'top-choice': { bg: '#F7FBFF', text: '#1d6fad', border: '#bae6fd' },
+  'top-choice': { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd' },
 };
 
 export const BADGE_LABELS: Record<string, string> = {

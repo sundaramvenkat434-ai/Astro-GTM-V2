@@ -221,16 +221,40 @@ export default function HomePage() {
       });
   }, []);
 
-  const filtered = tools.filter(t => {
-    const matchCat = activeCategory === 'all' || t.category === activeCategory;
-    const q = query.toLowerCase();
-    const matchQ = !q ||
-      t.name.toLowerCase().includes(q) ||
-      (t.tagline || t.description).toLowerCase().includes(q) ||
-      (t.tags as string[])?.some(tag => tag.toLowerCase().includes(q)) ||
-      (t.use_cases as string[])?.some(uc => uc.toLowerCase().includes(q));
-    return matchCat && matchQ;
-  });
+  const filtered = (() => {
+    const q = query.trim().toLowerCase();
+    const catFiltered = tools.filter(t => activeCategory === 'all' || t.category === activeCategory);
+    if (!q) return catFiltered;
+
+    const keywords = q.split(/\s+/).filter(Boolean);
+
+    const score = (t: ToolPage): number => {
+      let s = 0;
+      const name    = t.name.toLowerCase();
+      const tagline = (t.tagline ?? '').toLowerCase();
+      const desc    = (t.description ?? '').toLowerCase();
+      const tags    = ((t.tags as string[]) ?? []).map(x => x.toLowerCase());
+      const uses    = ((t.use_cases as string[]) ?? []).map(x => x.toLowerCase());
+
+      for (const kw of keywords) {
+        if (name === kw)                           s += 100;
+        else if (name.startsWith(kw))              s += 60;
+        else if (name.includes(kw))                s += 40;
+        if (tags.some(tg => tg === kw))            s += 35;
+        else if (tags.some(tg => tg.includes(kw))) s += 20;
+        if (uses.some(u => u.includes(kw)))        s += 15;
+        if (tagline.includes(kw))                  s += 12;
+        if (desc.includes(kw))                     s += 8;
+      }
+      return s;
+    };
+
+    return catFiltered
+      .map(t => ({ t, s: score(t) }))
+      .filter(({ s }) => s > 0)
+      .sort((a, b) => b.s - a.s)
+      .map(({ t }) => t);
+  })();
 
   const categoryCounts = tools.reduce<Record<string, number>>((acc, t) => {
     acc[t.category] = (acc[t.category] || 0) + 1; return acc;
@@ -440,7 +464,7 @@ export default function HomePage() {
                       { label: 'New',       value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0' } },
                       { label: 'Free',      value: tools.filter(t => t.badge === 'free-tier').length,  style: { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0' } },
                       { label: 'Trending',  value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe' } },
-                      { label: 'Popular',   value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#F7FBFF', text: '#1d6fad', border: '#bae6fd' } },
+                      { label: 'Popular',   value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd' } },
                     ].map(s => (
                       <div key={s.label} className="flex items-center justify-between">
                         {s.style ? (
@@ -505,6 +529,8 @@ export default function HomePage() {
                     {sections.map(cat => {
                       const sectionTools = filtered.filter(t => t.category === cat);
                       if (!sectionTools.length) return null;
+                      const totalCount  = sectionTools.length;
+                      const visibleTools = sectionTools.slice(0, 10);
                       const accent = CATEGORY_PASTEL_DARK[cat] ?? '#64748b';
                       return (
                         <section key={cat} id={`section-${cat}`}>
@@ -521,16 +547,26 @@ export default function HomePage() {
                             </span>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-display text-[15px] font-bold text-slate-900 leading-snug tracking-tight">{SECTION_LABELS[cat]}</h3>
-                              <p className="type-card-body font-medium text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
+                              <p className="type-card-body font-medium text-slate-400">{totalCount} tool{totalCount !== 1 ? 's' : ''}</p>
                             </div>
                             <div className="hidden sm:block h-1 w-12 rounded-full opacity-40" style={{ background: accent }} />
                             <Link href={`/category/${cat}`} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">
-                              Browse all <ChevronRight className="w-3.5 h-3.5" />
+                              View All ({totalCount}) <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
                           <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-fr gap-3">
-                            {sectionTools.map(tool => <ToolCard key={tool.id} tool={tool} views={viewCounts[tool.id]} />)}
+                            {visibleTools.map(tool => <ToolCard key={tool.id} tool={tool} views={viewCounts[tool.id]} />)}
                           </div>
+                          {totalCount > 10 && (
+                            <div className="mt-4 flex justify-center">
+                              <Link
+                                href={`/category/${cat}`}
+                                className="inline-flex items-center gap-1 text-[12px] font-medium text-slate-400 hover:text-sky-600 transition-colors"
+                              >
+                                View all {totalCount} tools in {SECTION_LABELS[cat]} <ChevronRight className="w-3 h-3" />
+                              </Link>
+                            </div>
+                          )}
                         </section>
                       );
                     })}

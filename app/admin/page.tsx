@@ -1276,7 +1276,7 @@ export default function AdminDashboard() {
                                       new:          { bg: '#F7F7F7', text: '#475569', border: '#e2e8f0', label: 'New' },
                                       trending:     { bg: '#FAF7FF', text: '#7c3aed', border: '#ddd6fe', label: 'Trending' },
                                       'free-tier':  { bg: '#F7FFF9', text: '#15803d', border: '#bbf7d0', label: 'Free Tier' },
-                                      'top-choice': { bg: '#F7FBFF', text: '#1d6fad', border: '#bae6fd', label: 'Top Choice' },
+                                      'top-choice': { bg: '#E5F4FF', text: '#1d6fad', border: '#bae6fd', label: 'Top Choice' },
                                     };
                                     const s = ADMIN_BADGE[row.badge];
                                     if (!s) return null;
