@@ -532,7 +532,7 @@ export default function HomePage() {
                             </span>
                             <div className="flex-1 min-w-0">
                               <h3 className="font-display text-[15px] font-bold text-slate-900 leading-snug tracking-tight">{SECTION_LABELS[cat]}</h3>
-                              <p className="type-card-body font-medium text-slate-400">{totalCount} Featured</p>
+                              <p className="type-card-body font-semibold text-slate-600">{totalCount} Featured</p>
                             </div>
                             <div className="hidden sm:block h-1 w-12 rounded-full opacity-40" style={{ background: accent }} />
                             <Link href={`/category/${cat}`} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">

@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 
 /* ── AstroGTM logo ──────────────────────────────────────────── */
-export function AstroGTMLogo({ size = 32 }: { size?: number }) {
+export function AstroGTMLogo({ size = 32, dark = false }: { size?: number; dark?: boolean }) {
   const VW = 158;
   const VH = 36;
   const cx = 18;
@@ -61,8 +61,8 @@ export function AstroGTMLogo({ size = 32 }: { size?: number }) {
       <circle cx={cx + pr + 4.8} cy={cy - 4.2} r="0.85" fill="white" fillOpacity="0.7" />
 
       <text x="40" y="25" fontFamily="'DM Sans', 'Inter', system-ui, sans-serif" fontSize="19.5" letterSpacing="-0.04em">
-        <tspan fontWeight="700" fill="#0f172a">Astro</tspan>
-        <tspan fontWeight="800" fill="url(#lg-gtm)" dx="2">GTM</tspan>
+        <tspan fontWeight="700" fill={dark ? '#ffffff' : '#0f172a'}>Astro</tspan>
+        <tspan fontWeight="800" fill={dark ? '#38bdf8' : 'url(#lg-gtm)'} dx="2">GTM</tspan>
       </text>
     </svg>
   );
@@ -205,11 +205,13 @@ function NavDropdown({
   items,
   onItemClick,
   highlight = false,
+  dark = false,
 }: {
   trigger: React.ReactNode;
   items: { label: string; desc: string; href?: string; icon: React.ReactNode; accent: string }[];
   onItemClick?: (label: string) => void;
   highlight?: boolean;
+  dark?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
@@ -224,10 +226,14 @@ function NavDropdown({
 
   const btnClass = highlight
     ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-colors duration-150 ${
-        open ? 'bg-sky-100 border-sky-300 text-sky-800' : 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 hover:border-sky-300 hover:text-sky-800'
+        dark
+          ? open ? 'bg-sky-900/60 border-sky-600 text-sky-200' : 'bg-sky-900/30 border-sky-700/50 text-sky-300 hover:bg-sky-900/60 hover:border-sky-600 hover:text-sky-200'
+          : open ? 'bg-sky-100 border-sky-300 text-sky-800' : 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 hover:border-sky-300 hover:text-sky-800'
       }`
     : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-colors duration-150 ${
-        open ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+        dark
+          ? open ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'
+          : open ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
       }`;
 
   return (
@@ -285,31 +291,33 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
+      <header className="sticky top-0 z-30 border-b border-white/10 shadow-md" style={{ background: 'linear-gradient(90deg, #060d1f 0%, #0a1628 60%, #071820 100%)' }}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-3">
             <Link href="/" className="flex items-center group shrink-0">
-              <AstroGTMLogo size={34} />
+              <AstroGTMLogo size={34} dark />
             </Link>
 
             <nav className="flex items-center gap-0.5">
               {/* Submit Tool dropdown */}
               <NavDropdown
-                trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
+                trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-300" /><span className="hidden sm:inline text-slate-200">Submit Tool</span></>}
                 items={SUBMIT_OPTIONS}
+                dark
               />
 
               {/* Newsletters — highlighted pill trigger */}
               <NavDropdown
                 trigger={
                   <span className="inline-flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 shrink-0" style={{ color: '#0284c7' }} />
-                    <span className="hidden sm:inline font-semibold" style={{ color: '#0369a1' }}>Newsletters</span>
+                    <Mail className="w-3.5 h-3.5 shrink-0 text-sky-400" />
+                    <span className="hidden sm:inline font-semibold text-sky-300">Newsletters</span>
                   </span>
                 }
                 items={NEWSLETTER_OPTIONS}
                 onItemClick={() => setNewsletterOpen(true)}
                 highlight
+                dark
               />
             </nav>
           </div>
