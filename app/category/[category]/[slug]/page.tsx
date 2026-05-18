@@ -145,9 +145,19 @@ const CATEGORY_SCHEMA: Record<string, string> = {
 };
 
 const BADGE_STYLES: Record<string, string> = {
-  new: 'bg-sky-50 text-sky-600 border-sky-200',
-  popular: 'bg-amber-50 text-amber-600 border-amber-200',
-  free: 'bg-emerald-50 text-emerald-600 border-emerald-200',
+  new:          'bg-sky-50 text-sky-600 border-sky-200',
+  trending:     'bg-amber-50 text-amber-600 border-amber-200',
+  'free-tier':  'bg-emerald-50 text-emerald-600 border-emerald-200',
+  hot:          'bg-rose-50 text-rose-600 border-rose-200',
+  'top-choice': 'bg-violet-50 text-violet-600 border-violet-200',
+};
+
+const BADGE_LABELS: Record<string, string> = {
+  new:          'New',
+  trending:     'Trending',
+  'free-tier':  'Free Tier',
+  hot:          'Hot',
+  'top-choice': 'Top Choice',
 };
 
 
@@ -600,7 +610,7 @@ export default async function SlugPage({
                           <h1 className="font-display text-2xl sm:text-3xl font-bold text-slate-900 leading-tight tracking-tight">{tool.name}</h1>
                           {tool.badge && (
                             <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>
-                              {tool.badge}
+                              {BADGE_LABELS[tool.badge] ?? tool.badge}
                             </span>
                           )}
                           {tool.is_claimed && (

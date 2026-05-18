@@ -56,10 +56,19 @@ export const CARD_BTN_GRADIENT_MAP: Record<string, string> = {
 };
 
 export const BADGE_STYLES: Record<string, string> = {
-  new:     'bg-sky-50 text-sky-700 border-sky-200',
-  popular: 'bg-amber-50 text-amber-700 border-amber-200',
-  free:    'bg-emerald-50 text-emerald-700 border-emerald-200',
-  hot:     'bg-rose-50 text-rose-700 border-rose-200',
+  new:          'bg-sky-50 text-sky-700 border-sky-200',
+  trending:     'bg-amber-50 text-amber-700 border-amber-200',
+  'free-tier':  'bg-emerald-50 text-emerald-700 border-emerald-200',
+  hot:          'bg-rose-50 text-rose-700 border-rose-200',
+  'top-choice': 'bg-violet-50 text-violet-700 border-violet-200',
+};
+
+export const BADGE_LABELS: Record<string, string> = {
+  new:          'New',
+  trending:     'Trending',
+  'free-tier':  'Free Tier',
+  hot:          'Hot',
+  'top-choice': 'Top Choice',
 };
 
 /* ─── helpers ─────────────────────────────────────────────────── */
@@ -129,7 +138,7 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
               </span>
               {tool.badge && (
                 <span className={`inline-flex items-center px-1.5 py-px rounded text-[9px] font-bold uppercase tracking-wider border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                  {tool.badge}
+                  {BADGE_LABELS[tool.badge] ?? tool.badge}
                 </span>
               )}
             </div>

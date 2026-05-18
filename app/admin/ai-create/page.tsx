@@ -153,10 +153,12 @@ const FALLBACK_CATEGORIES = [
 ];
 
 const BADGES = [
-  { value: '_none', label: 'None' },
-  { value: 'new', label: 'New' },
-  { value: 'popular', label: 'Popular' },
-  { value: 'free', label: 'Free' },
+  { value: '_none',      label: 'None' },
+  { value: 'new',        label: 'New' },
+  { value: 'trending',   label: 'Trending' },
+  { value: 'free-tier',  label: 'Free Tier' },
+  { value: 'hot',        label: 'Hot' },
+  { value: 'top-choice', label: 'Top Choice' },
 ];
 
 const PROGRESS_STEPS = [
@@ -842,6 +844,7 @@ export default function AIPageCreator() {
       const d = data as StructuredResult;
       setResult({
         ...d,
+        badge: d.badge ?? 'new',
         pros: Array.isArray(d.pros) ? d.pros : [],
         cons: Array.isArray(d.cons) ? d.cons : [],
         what_we_learned: d.what_we_learned ?? null,

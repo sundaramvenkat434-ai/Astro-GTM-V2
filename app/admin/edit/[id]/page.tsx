@@ -88,10 +88,12 @@ const FALLBACK_CATEGORIES = [
 ];
 
 const BADGES = [
-  { value: '_none', label: 'None' },
-  { value: 'new', label: 'New' },
-  { value: 'popular', label: 'Popular' },
-  { value: 'free', label: 'Free' },
+  { value: '_none',      label: 'None' },
+  { value: 'new',        label: 'New' },
+  { value: 'trending',   label: 'Trending' },
+  { value: 'free-tier',  label: 'Free Tier' },
+  { value: 'hot',        label: 'Hot' },
+  { value: 'top-choice', label: 'Top Choice' },
 ];
 
 function SectionHeader({

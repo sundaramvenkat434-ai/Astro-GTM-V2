@@ -98,9 +98,19 @@ const CATEGORY_LABELS: Record<string, string> = {
 };
 
 const BADGE_STYLES: Record<string, string> = {
-  new: 'bg-sky-100 text-sky-700 border-sky-200',
-  popular: 'bg-amber-100 text-amber-700 border-amber-200',
-  free: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+  new:          'bg-sky-100 text-sky-700 border-sky-200',
+  trending:     'bg-amber-100 text-amber-700 border-amber-200',
+  'free-tier':  'bg-emerald-100 text-emerald-700 border-emerald-200',
+  hot:          'bg-rose-100 text-rose-700 border-rose-200',
+  'top-choice': 'bg-violet-100 text-violet-700 border-violet-200',
+};
+
+const BADGE_LABELS: Record<string, string> = {
+  new:          'New',
+  trending:     'Trending',
+  'free-tier':  'Free Tier',
+  hot:          'Hot',
+  'top-choice': 'Top Choice',
 };
 
 const RANK_MEDAL = [
@@ -314,7 +324,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                       <span className="font-semibold text-slate-900 text-sm">{tool.name}</span>
                       {tool.badge && (
                         <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                          {tool.badge}
+                          {BADGE_LABELS[tool.badge] ?? tool.badge}
                         </span>
                       )}
                     </div>
