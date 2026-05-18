@@ -121,21 +121,21 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
       style={bgGrad ? { background: bgGrad } : undefined}
     >
       {/* Body */}
-      <div className="flex gap-3 p-3 flex-1">
+      <div className="flex gap-3 p-4 flex-1">
         {/* Avatar */}
         {tool.logo_url ? (
-          <div className="shrink-0 w-8 h-8 rounded-lg overflow-hidden border border-slate-200 bg-white shadow-sm mt-0.5 flex items-center justify-center">
+          <div className="shrink-0 w-10 h-10 rounded-xl overflow-hidden mt-0.5 flex items-center justify-center" style={{ boxShadow: 'inset 0 0 0 1px rgba(15,23,42,0.08)' }}>
             <img
               src={tool.logo_url}
               alt={tool.logo_alt || `${tool.name} logo`}
-              width={32}
-              height={32}
+              width={40}
+              height={40}
               className="w-full h-full object-contain"
             />
           </div>
         ) : (
           <div
-            className="shrink-0 w-8 h-8 rounded-lg flex items-center justify-center font-bold text-[13px] shadow-sm mt-0.5 border border-sky-400/40"
+            className="shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-bold text-[14px] shadow-sm mt-0.5 border border-sky-400/40"
             style={{ background: btnGrad, color: '#ffffff' }}
           >
             {tool.name.charAt(0)}
@@ -143,9 +143,9 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
         )}
 
         {/* Content */}
-        <div className="flex-1 min-w-0 flex flex-col">
+        <div className="flex-1 min-w-0 flex flex-col gap-1.5">
           <Link href={`/category/${tool.category}/${tool.slug}`} className="block">
-            <div className="flex items-center gap-1.5 mb-0.5 flex-wrap">
+            <div className="flex items-center gap-1.5 flex-wrap">
               <span className="text-[14.5px] font-bold text-slate-900 leading-snug group-hover:text-sky-700 transition-colors">
                 {tool.name}
               </span>
@@ -158,14 +158,14 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
                 </span>
               )}
             </div>
-            <p className="text-[13px] text-slate-600 leading-snug line-clamp-2 mb-2">
+            <p className="text-[13px] text-slate-600 leading-relaxed line-clamp-2 mt-0.5">
               {tool.tagline || tool.description}
             </p>
           </Link>
 
           {/* Use cases */}
           {useCases.length > 0 && (
-            <div className="flex gap-1 overflow-x-auto scrollbar-none mt-auto pb-0.5">
+            <div className="flex gap-1 overflow-x-auto scrollbar-none pb-0.5">
               {useCases.map(uc => (
                 <Link
                   key={uc}

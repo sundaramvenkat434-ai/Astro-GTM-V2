@@ -291,33 +291,31 @@ export function SiteHeader() {
 
   return (
     <>
-      <header className="sticky top-0 z-30 border-b border-white/10 shadow-md" style={{ background: 'linear-gradient(90deg, #060d1f 0%, #0a1628 60%, #071820 100%)' }}>
+      <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-14 gap-3">
             <Link href="/" className="flex items-center group shrink-0">
-              <AstroGTMLogo size={34} dark />
+              <AstroGTMLogo size={34} />
             </Link>
 
             <nav className="flex items-center gap-0.5">
               {/* Submit Tool dropdown */}
               <NavDropdown
-                trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-300" /><span className="hidden sm:inline text-slate-200">Submit Tool</span></>}
+                trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
                 items={SUBMIT_OPTIONS}
-                dark
               />
 
               {/* Newsletters — highlighted pill trigger */}
               <NavDropdown
                 trigger={
                   <span className="inline-flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 shrink-0 text-sky-400" />
-                    <span className="hidden sm:inline font-semibold text-sky-300">Newsletters</span>
+                    <Mail className="w-3.5 h-3.5 shrink-0" style={{ color: '#0284c7' }} />
+                    <span className="hidden sm:inline font-semibold" style={{ color: '#0369a1' }}>Newsletters</span>
                   </span>
                 }
                 items={NEWSLETTER_OPTIONS}
                 onItemClick={() => setNewsletterOpen(true)}
                 highlight
-                dark
               />
             </nav>
           </div>

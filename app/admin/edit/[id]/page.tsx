@@ -1331,7 +1331,7 @@ export default function EditToolPage() {
                     <label className="text-[11px] text-slate-500 block mb-1 flex items-center gap-1"><ImageIcon className="w-3 h-3" /> Tool Logo</label>
                     <div className="flex items-start gap-3">
                       {/* Preview */}
-                      <div className="shrink-0 w-14 h-14 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-center overflow-hidden">
+                      <div className="shrink-0 w-14 h-14 flex items-center justify-center overflow-hidden" style={{ border: '1.5px dashed #cbd5e1' }}>
                         {tool.logo_url ? (
                           <img src={tool.logo_url} alt={tool.logo_alt || ''} className="w-full h-full object-contain" />
                         ) : (
