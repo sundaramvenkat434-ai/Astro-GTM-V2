@@ -226,34 +226,15 @@ export default function HomePage() {
     const catFiltered = tools.filter(t => activeCategory === 'all' || t.category === activeCategory);
     if (!q) return catFiltered;
 
-    const keywords = q.split(/\s+/).filter(Boolean);
-
-    const score = (t: ToolPage): number => {
-      let s = 0;
-      const name    = t.name.toLowerCase();
-      const tagline = (t.tagline ?? '').toLowerCase();
-      const desc    = (t.description ?? '').toLowerCase();
-      const tags    = ((t.tags as string[]) ?? []).map(x => x.toLowerCase());
-      const uses    = ((t.use_cases as string[]) ?? []).map(x => x.toLowerCase());
-
-      for (const kw of keywords) {
-        if (name === kw)                           s += 100;
-        else if (name.startsWith(kw))              s += 60;
-        else if (name.includes(kw))                s += 40;
-        if (tags.some(tg => tg === kw))            s += 35;
-        else if (tags.some(tg => tg.includes(kw))) s += 20;
-        if (uses.some(u => u.includes(kw)))        s += 15;
-        if (tagline.includes(kw))                  s += 12;
-        if (desc.includes(kw))                     s += 8;
-      }
-      return s;
-    };
-
-    return catFiltered
-      .map(t => ({ t, s: score(t) }))
-      .filter(({ s }) => s > 0)
-      .sort((a, b) => b.s - a.s)
-      .map(({ t }) => t);
+    return catFiltered.filter(t => {
+      const haystack = [
+        t.name,
+        t.tagline ?? '',
+        t.description ?? '',
+        ...((t.use_cases as string[]) ?? []),
+      ].join(' ').toLowerCase();
+      return haystack.includes(q);
+    });
   })();
 
   const categoryCounts = tools.reduce<Record<string, number>>((acc, t) => {
