@@ -9,12 +9,12 @@ export function SiteFooter() {
           <div className="flex items-center">
             <AstroGTMLogo size={28} />
           </div>
-          <nav className="flex items-center gap-5 text-xs text-slate-400">
+          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-slate-400">
             <Link href="/about" className="hover:text-slate-700 transition-colors">About</Link>
             <Link href="/privacy-policy" className="hover:text-slate-700 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-slate-700 transition-colors">Terms</Link>
             <Link href="/contact" className="hover:text-slate-700 transition-colors">Contact</Link>
-            <span className="text-slate-300">© {new Date().getFullYear()} AstroGTM</span>
+            <span className="text-slate-300 whitespace-nowrap">© {new Date().getFullYear()} AstroGTM</span>
           </nav>
         </div>
       </div>

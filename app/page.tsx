@@ -513,7 +513,7 @@ export default function HomePage() {
                               <p className="type-card-body font-medium text-slate-400">{sectionTools.length} tool{sectionTools.length !== 1 ? 's' : ''}</p>
                             </div>
                             <div className="hidden sm:block h-1 w-12 rounded-full opacity-40" style={{ background: accent }} />
-                            <Link href={`/category/${cat}`} className="hidden sm:inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">
+                            <Link href={`/category/${cat}`} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">
                               Browse all <ChevronRight className="w-3.5 h-3.5" />
                             </Link>
                           </div>
