@@ -171,7 +171,7 @@ const SUBMIT_OPTIONS = [
   },
   {
     label: 'For Promotions',
-    desc: 'Get 10X more traffic and signups',
+    desc: 'Get 10X more traffic & signups',
     href: '/contact',
     icon: <Megaphone className="w-3.5 h-3.5" />,
     accent: '#b45309',
@@ -181,8 +181,8 @@ const SUBMIT_OPTIONS = [
 /* ── Newsletter dropdown ─────────────────────────────────────── */
 const NEWSLETTER_OPTIONS = [
   {
-    label: 'Top #3 Tools',
-    desc: 'Handpicked by experts weekly',
+    label: 'Top X Weekly',
+    desc: 'Best reviewed tools by experts',
     icon: <Sparkles className="w-3.5 h-3.5" />,
     accent: '#0369a1',
   },
