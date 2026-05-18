@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
 
-const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000';
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://astrogtm.com';
 
 export const metadata: Metadata = {
   title: 'Privacy Policy — AstroGTM',
@@ -11,96 +11,294 @@ export const metadata: Metadata = {
   alternates: { canonical: `${SITE_URL}/privacy-policy` },
 };
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="mb-8 last:mb-0">
-      <h2 className="font-display text-[15px] font-bold text-slate-900 mb-2 tracking-tight">{title}</h2>
-      <div className="type-body space-y-2">{children}</div>
-    </div>
-  );
-}
+const SECTIONS: { num: string; title: string; content: React.ReactNode }[] = [
+  {
+    num: '1',
+    title: 'About AstroGTM',
+    content: (
+      <>
+        <p>
+          AstroGTM is an independent editorial platform and curated discovery layer for AI, GTM, SEO, marketing, and growth software.
+        </p>
+        <p>
+          We help founders, operators, marketers, and product teams discover proven tools, workflows, and software recommendations through editorial reviews, research, and curated listings.
+        </p>
+        <p>This Privacy Policy explains what information we collect, how we use it, and how we protect it.</p>
+      </>
+    ),
+  },
+  {
+    num: '2',
+    title: 'Information We Collect',
+    content: (
+      <>
+        <p className="font-semibold text-slate-800">Information You Provide</p>
+        <p>We may collect information you voluntarily submit through:</p>
+        <ul>
+          <li>Newsletter subscriptions</li>
+          <li>Contact forms</li>
+          <li>Listing claims</li>
+          <li>Partnership inquiries</li>
+          <li>Tool submissions</li>
+          <li>Feedback forms</li>
+        </ul>
+        <p>This may include:</p>
+        <ul>
+          <li>Name</li>
+          <li>Email address</li>
+          <li>Company name</li>
+          <li>LinkedIn profile</li>
+          <li>Website URL</li>
+          <li>Message content</li>
+        </ul>
+        <p className="font-semibold text-slate-800 mt-2">Usage & Analytics Data</p>
+        <p>We may automatically collect limited technical and usage information, including:</p>
+        <ul>
+          <li>Pages visited</li>
+          <li>Browser type</li>
+          <li>Device type</li>
+          <li>Referral sources</li>
+          <li>Session interactions</li>
+          <li>Approximate geographic region</li>
+          <li>On-site engagement metrics</li>
+        </ul>
+        <p>This data helps us improve the platform, content quality, and user experience.</p>
+        <p className="font-semibold text-slate-800 mt-2">Platform Interaction Data</p>
+        <p>
+          To maintain platform integrity and prevent abuse, we may store limited non-identifying interaction data such as:
+        </p>
+        <ul>
+          <li>Hashed browser/session identifiers</li>
+          <li>Vote interaction signals</li>
+          <li>Rate limiting metadata</li>
+        </ul>
+        <p>We do not use this information to personally identify users.</p>
+      </>
+    ),
+  },
+  {
+    num: '3',
+    title: 'How We Use Information',
+    content: (
+      <>
+        <p>We use collected information to:</p>
+        <ul>
+          <li>Operate and improve AstroGTM</li>
+          <li>Send newsletters and editorial updates</li>
+          <li>Respond to submissions and inquiries</li>
+          <li>Review listing claims</li>
+          <li>Improve recommendations and discovery systems</li>
+          <li>Detect abuse, spam, or fraudulent activity</li>
+          <li>Analyze platform performance and usage trends</li>
+        </ul>
+        <p>We do not sell personal data to third parties.</p>
+      </>
+    ),
+  },
+  {
+    num: '4',
+    title: 'Editorial Independence & Affiliate Disclosure',
+    content: (
+      <>
+        <p>Some pages on AstroGTM may contain affiliate links or sponsored placements.</p>
+        <p>Affiliate relationships do not directly influence:</p>
+        <ul>
+          <li>Editorial reviews</li>
+          <li>Rankings</li>
+          <li>Recommendations</li>
+          <li>Ratings</li>
+        </ul>
+        <p>
+          Sponsored content is clearly labeled and separated from independent editorial coverage wherever applicable.
+        </p>
+      </>
+    ),
+  },
+  {
+    num: '5',
+    title: 'Cookies & Analytics',
+    content: (
+      <>
+        <p>AstroGTM may use:</p>
+        <ul>
+          <li>First-party cookies</li>
+          <li>Analytics tools</li>
+          <li>Session storage</li>
+          <li>Lightweight tracking technologies</li>
+        </ul>
+        <p>to improve platform performance and understand site usage.</p>
+        <p>We aim to minimize invasive tracking wherever reasonably possible.</p>
+        <p>
+          You may disable cookies through your browser settings, although some interactive features may function differently.
+        </p>
+      </>
+    ),
+  },
+  {
+    num: '6',
+    title: 'Third-Party Services',
+    content: (
+      <>
+        <p>We may use trusted third-party infrastructure providers and services for:</p>
+        <ul>
+          <li>Analytics</li>
+          <li>Email delivery</li>
+          <li>Database hosting</li>
+          <li>Authentication</li>
+          <li>Media storage</li>
+          <li>Performance monitoring</li>
+        </ul>
+        <p>
+          These providers may process limited information solely to support platform operations. We are not responsible for the privacy practices of external websites, tools, or vendors linked from AstroGTM.
+        </p>
+      </>
+    ),
+  },
+  {
+    num: '7',
+    title: 'Data Storage & Security',
+    content: (
+      <>
+        <p>
+          We take reasonable technical and operational measures to protect submitted information from:
+        </p>
+        <ul>
+          <li>Unauthorized access</li>
+          <li>Misuse</li>
+          <li>Disclosure</li>
+          <li>Loss</li>
+        </ul>
+        <p>
+          Data may be processed and stored through secure cloud infrastructure providers, including managed database and hosting platforms. While we strive to maintain strong security practices, no online platform can guarantee absolute security.
+        </p>
+      </>
+    ),
+  },
+  {
+    num: '8',
+    title: 'Data Retention',
+    content: (
+      <>
+        <p>We retain information only for as long as reasonably necessary to:</p>
+        <ul>
+          <li>Operate the platform</li>
+          <li>Maintain editorial workflows</li>
+          <li>Comply with legal obligations</li>
+          <li>Resolve disputes</li>
+          <li>Prevent abuse</li>
+        </ul>
+        <p>Users may request deletion of submitted personal information where applicable.</p>
+      </>
+    ),
+  },
+  {
+    num: '9',
+    title: 'Your Rights',
+    content: (
+      <>
+        <p>Depending on your jurisdiction, you may have rights related to:</p>
+        <ul>
+          <li>Accessing your personal information</li>
+          <li>Correcting inaccurate data</li>
+          <li>Requesting deletion</li>
+          <li>Objecting to certain processing</li>
+          <li>Withdrawing consent</li>
+          <li>Requesting data portability</li>
+        </ul>
+        <p>
+          To exercise these rights, please contact us through the official{' '}
+          <Link href="/contact" className="text-sky-600 hover:text-sky-800 underline underline-offset-2 transition-colors">
+            AstroGTM contact page
+          </Link>.
+        </p>
+      </>
+    ),
+  },
+  {
+    num: '10',
+    title: "Children's Privacy",
+    content: (
+      <>
+        <p>
+          AstroGTM is intended for professional and business audiences and is not directed toward children under 13. We do not knowingly collect personal information from children.
+        </p>
+      </>
+    ),
+  },
+  {
+    num: '11',
+    title: 'Policy Updates',
+    content: (
+      <>
+        <p>
+          We may update this Privacy Policy periodically as AstroGTM evolves. The &quot;Last updated&quot; date at the top of this page reflects the latest revision. Continued use of the platform after updates constitutes acceptance of the revised policy.
+        </p>
+      </>
+    ),
+  },
+];
 
 export default function PrivacyPolicyPage() {
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-[#f8f9fb] flex flex-col">
       <SiteHeader />
 
-      <main className="flex-1 max-w-3xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-14">
-        <span className="type-eyebrow">Legal</span>
-        <h1 className="type-h1 mt-2 mb-1">Privacy Policy</h1>
-        <p className="text-sm text-slate-400 mb-10">Last updated: May 2026</p>
+      {/* ── Hero ── */}
+      <section className="relative overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'linear-gradient(145deg, rgba(176,228,255,0.18) 0%, rgba(255,255,255,0) 60%)' }}
+        />
+        <div className="relative max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 pt-14 pb-10">
+          <p className="text-[10px] font-bold uppercase tracking-widest text-sky-600 mb-3">Legal</p>
+          <h1 className="text-3xl sm:text-4xl font-bold text-slate-900 leading-tight tracking-tight mb-2">
+            Privacy Policy
+          </h1>
+          <p className="text-[13px] text-slate-400 font-medium">Last updated: May 2026</p>
+        </div>
+      </section>
 
-        <div className="bg-white border border-slate-200 rounded-2xl p-8 space-y-0">
+      <main className="flex-1 max-w-4xl mx-auto w-full px-4 sm:px-6 lg:px-8 pb-20">
+        <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden divide-y divide-slate-100">
+          {SECTIONS.map(({ num, title, content }) => (
+            <div key={num} className="px-6 sm:px-8 py-6">
+              <div className="flex items-start gap-4">
+                <span
+                  className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 text-[11px] font-bold text-sky-700 mt-0.5"
+                  style={{ background: 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)' }}
+                >
+                  {num}
+                </span>
+                <div className="flex-1 min-w-0">
+                  <h2 className="text-[14px] font-bold text-slate-900 mb-3 tracking-tight">{title}</h2>
+                  <div className="text-[13px] text-slate-600 leading-[1.8] space-y-2 [&_ul]:mt-1.5 [&_ul]:space-y-1 [&_ul]:pl-4 [&_ul]:list-none [&_ul_li]:flex [&_ul_li]:items-start [&_ul_li]:gap-2 [&_ul_li]:before:content-[''] [&_ul_li]:before:w-1.5 [&_ul_li]:before:h-1.5 [&_ul_li]:before:rounded-full [&_ul_li]:before:bg-sky-400 [&_ul_li]:before:shrink-0 [&_ul_li]:before:mt-[6px]">
+                    {content}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
 
-          <Section title="1. Who We Are">
-            <p>AstroGTM (&quot;we&quot;, &quot;our&quot;, &quot;us&quot;) is an independent publication reviewing AI tools and SaaS products for GTM, SEO, and growth teams. Our website is accessible at <strong>astrogtm.com</strong>.</p>
-          </Section>
-
-          <Section title="2. Information We Collect">
-            <p><strong>Information you provide:</strong> When you subscribe to our newsletter or submit a contact form, we collect your email address and any message content you include.</p>
-            <p><strong>Listing claims:</strong> If you submit a tool listing claim, we collect your name, email, LinkedIn URL, website, and any message you provide to verify ownership.</p>
-            <p><strong>Usage data:</strong> We automatically collect anonymised data including pages visited, time on site, browser type, device type, and referring URLs through analytics software.</p>
-            <p><strong>Upvotes & interactions:</strong> We record a browser fingerprint (a hashed, non-identifying token) to prevent duplicate upvotes. No personal data is stored for this purpose.</p>
-          </Section>
-
-          <Section title="3. How We Use Your Information">
-            <p>We use the information collected to:</p>
-            <ul className="list-disc list-inside space-y-1 ml-1">
-              <li>Send the weekly newsletter you opted into</li>
-              <li>Respond to contact and listing claim submissions</li>
-              <li>Understand how readers use the site and improve content</li>
-              <li>Prevent abuse (e.g., duplicate upvotes)</li>
-            </ul>
-            <p>We <strong>never sell</strong> your personal data to third parties.</p>
-          </Section>
-
-          <Section title="4. Newsletter">
-            <p>By subscribing you consent to receive our weekly email digest. Every email includes an unsubscribe link. You can also request removal at any time via our <Link href="/contact" className="text-sky-600 hover:text-sky-800 underline">contact page</Link>. We use Supabase to store subscriber data securely.</p>
-          </Section>
-
-          <Section title="5. Cookies & Analytics">
-            <p>We use first-party cookies and may use third-party analytics tools (such as Plausible, Google Analytics, or similar) to measure page traffic. Analytics data is aggregated and anonymised where possible.</p>
-            <p>You can disable cookies in your browser settings. Doing so will not prevent you from reading the site but may affect some interactive features.</p>
-          </Section>
-
-          <Section title="6. Third-Party Links & Affiliate Disclosure">
-            <p>Our reviews may contain affiliate links to tools and services. These are clearly disclosed at the top of any review that contains them. Affiliate relationships do not influence our ratings or editorial decisions.</p>
-            <p>We are not responsible for the privacy practices of third-party sites we link to. Please review their policies directly.</p>
-          </Section>
-
-          <Section title="7. Data Storage & Security">
-            <p>Subscriber and contact data is stored in Supabase, a hosted PostgreSQL service. Data is stored within the EU/US depending on your configured region and protected by row-level security policies. We take reasonable technical measures to protect your data from unauthorised access.</p>
-          </Section>
-
-          <Section title="8. Data Retention">
-            <p>Newsletter subscriber data is retained until you unsubscribe. Contact form submissions and listing claims are retained for up to 24 months for operational purposes. Analytics data is retained per the third-party provider&apos;s retention policy.</p>
-          </Section>
-
-          <Section title="9. Your Rights">
-            <p>Depending on your location (including under GDPR and CCPA), you may have the right to:</p>
-            <ul className="list-disc list-inside space-y-1 ml-1">
-              <li>Access the personal data we hold about you</li>
-              <li>Request correction or deletion of your data</li>
-              <li>Object to or restrict certain processing</li>
-              <li>Receive a portable copy of your data</li>
-            </ul>
-            <p>To exercise any of these rights, contact us via our <Link href="/contact" className="text-sky-600 hover:text-sky-800 underline">contact page</Link>. We will respond within 30 days.</p>
-          </Section>
-
-          <Section title="10. Children's Privacy">
-            <p>Our site is not directed at children under 13. We do not knowingly collect personal information from anyone under 13. If you believe a child has submitted data, contact us and we will delete it promptly.</p>
-          </Section>
-
-          <Section title="11. Changes to This Policy">
-            <p>We may update this policy occasionally. The &quot;Last updated&quot; date at the top will reflect any changes. Continued use of the site after changes constitutes acceptance of the revised policy.</p>
-          </Section>
-
-          <Section title="12. Contact">
-            <p>
-              For privacy-related questions or data requests, reach us via our{' '}
-              <Link href="/contact" className="text-sky-600 hover:text-sky-800 underline">contact page</Link>.
-            </p>
-          </Section>
+          {/* Section 12 — Contact (with link) */}
+          <div className="px-6 sm:px-8 py-6">
+            <div className="flex items-start gap-4">
+              <span
+                className="flex items-center justify-center w-7 h-7 rounded-lg shrink-0 text-[11px] font-bold text-sky-700 mt-0.5"
+                style={{ background: 'linear-gradient(145deg, #B0E4FF 0%, #cceeff 100%)' }}
+              >
+                12
+              </span>
+              <div className="flex-1 min-w-0">
+                <h2 className="text-[14px] font-bold text-slate-900 mb-3 tracking-tight">Contact</h2>
+                <p className="text-[13px] text-slate-600 leading-[1.8]">
+                  For privacy-related questions, data requests, corrections, or legal inquiries, please contact the AstroGTM team through the{' '}
+                  <Link href="/contact" className="text-sky-600 hover:text-sky-800 underline underline-offset-2 transition-colors">
+                    official contact page
+                  </Link>.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
       </main>
 
