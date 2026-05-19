@@ -194,7 +194,7 @@ const NEWSLETTER_OPTIONS = [
   },
   {
     label: 'Founder Stories',
-    desc: 'Successful AI growth experiments',
+    desc: 'Successful AI growth hacks (DIY)',
     icon: <BookOpen className="w-3.5 h-3.5" />,
     accent: '#0d9488',
   },
