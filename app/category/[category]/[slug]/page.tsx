@@ -896,7 +896,7 @@ export default async function SlugPage({
                         style={{ background: 'linear-gradient(to right, #f0f9ff, #f8fbff 60%, #ffffff)' }}
                       >
                         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-sky-200/60 via-sky-300/40 to-transparent pointer-events-none" />
-                        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Editorial fit assessment — based on team type &amp; workflow</p>
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Editorial fit assessment — based on team type &amp; workflow</p>
                       </div>
                       {/* Two columns mirroring Our Opinion */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
