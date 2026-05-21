@@ -728,10 +728,7 @@ export default async function SlugPage({
                   {((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0) && (
                     <div className="border-t border-slate-100">
                       {/* Section header */}
-                      <div
-                        className="px-6 py-4 border-b border-slate-100/80"
-                        style={{ background: 'linear-gradient(145deg, rgba(176,228,255,0.10) 0%, rgba(255,255,255,1) 60%)' }}
-                      >
+                      <div className="px-6 py-4 border-b border-slate-100/80 bg-gradient-to-b from-sky-50/60 to-white">
                         <div className="flex items-center gap-3">
                           <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100/80 flex items-center justify-center shrink-0">
                             <Lightbulb className="w-[16px] h-[16px] text-sky-500" />
@@ -776,7 +773,7 @@ export default async function SlugPage({
                       <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
 
                         {/* Strengths — blue */}
-                        <div className="p-5 bg-gradient-to-b from-sky-50/60 to-white">
+                        <div className="p-5" style={{ background: 'linear-gradient(145deg, rgba(176,228,255,0.10) 0%, rgba(255,255,255,1) 60%)' }}>
                           <div className="flex items-center gap-2 mb-4">
                             <div className="w-5 h-5 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
                               <ThumbsUp className="w-3 h-3 text-white" />
