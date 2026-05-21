@@ -729,26 +729,23 @@ export default async function SlugPage({
                     <div className="border-t-2 border-sky-200">
                       {/* Section header */}
                       <div
-                        className="px-6 py-5 border-b border-sky-100"
-                        style={{ background: 'linear-gradient(120deg, #0ea5e9 0%, #38bdf8 40%, #7dd3fc 100%)' }}
+                        className="px-6 py-5 border-b border-sky-100/70"
+                        style={{ background: 'linear-gradient(145deg, rgba(176,228,255,0.18) 0%, rgba(255,255,255,1) 65%)' }}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner border border-white/30">
-                            <Lightbulb className="w-[20px] h-[20px] text-white" />
+                          <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0">
+                            <Lightbulb className="w-[18px] h-[18px] text-sky-600" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[16px] font-bold text-white tracking-tight drop-shadow-sm">Our Opinion</span>
-                              <span
-                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/40 text-white"
-                                style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 100%)' }}
-                              >
+                              <span className="text-[15px] font-bold text-slate-800 tracking-tight">Our Opinion</span>
+                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">
                                 Editorial
                               </span>
                               {/* Tooltip */}
                               <div className="relative group/tip">
-                                <div className="w-4 h-4 rounded-full bg-white/30 border border-white/50 flex items-center justify-center cursor-default">
-                                  <ShieldCheck className="w-2.5 h-2.5 text-white" />
+                                <div className="w-4 h-4 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center cursor-default">
+                                  <ShieldCheck className="w-2.5 h-2.5 text-sky-500" />
                                 </div>
                                 <div className="pointer-events-none absolute left-0 bottom-full mb-2.5 w-72 bg-slate-900/95 text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
                                   This opinion is based on editorial testing, real-world usage, and trusted community feedback. While we aim to test tools thoroughly, some insights may also reflect proven public use cases.
@@ -756,7 +753,7 @@ export default async function SlugPage({
                                 </div>
                               </div>
                             </div>
-                            <p className="text-[12px] text-sky-100 mt-1 font-medium">Collective take from our editorial reviewers</p>
+                            <p className="text-[12px] text-slate-500 mt-1">Collective take from our editorial reviewers</p>
                           </div>
                         </div>
                       </div>
