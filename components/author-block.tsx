@@ -2,7 +2,7 @@
 // name, stats) renders in raw HTML and is crawler-visible without JavaScript.
 
 import Link from 'next/link';
-import { Linkedin, ExternalLink, BookOpen, Star, CalendarDays, Link as LinkOut } from 'lucide-react';
+import { Linkedin, ExternalLink, BookOpen, CalendarDays, Link as LinkOut } from 'lucide-react';
 import type { Author } from '@/lib/author-schema';
 import { AuthorBioToggle, UpdatedDateTooltip } from './author-block-interactive';
 
@@ -38,23 +38,23 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
   const hasSources = (sources?.length ?? 0) > 0;
 
   return (
-    <div className="mt-2 rounded-2xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+    <div className="mt-2 rounded-xl border border-slate-100 overflow-hidden bg-slate-50/50">
 
       {/* ── Top label bar — fully SSR ──────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-5 py-2.5 bg-slate-50 border-b border-slate-100">
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 border-b border-slate-100">
         <div className="flex items-center gap-1.5">
-          <BookOpen className="w-3.5 h-3.5 text-slate-400 shrink-0" aria-hidden="true" />
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Reviewed by</span>
+          <BookOpen className="w-3 h-3 text-slate-300 shrink-0" aria-hidden="true" />
+          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reviews Consolidated By</span>
         </div>
 
         {(publishedDate || updatedDate) && (
-          <span className="text-slate-200 text-[11px] hidden sm:inline" aria-hidden="true">·</span>
+          <span className="text-slate-200 text-[10px] hidden sm:inline" aria-hidden="true">·</span>
         )}
 
         {/* Published date — plain SSR text, no interactivity needed */}
         {publishedDate && (
-          <span className="inline-flex items-center gap-1 text-[11px] text-slate-400">
-            <CalendarDays className="w-3 h-3 text-slate-400" aria-hidden="true" />
+          <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
+            <CalendarDays className="w-2.5 h-2.5 text-slate-300" aria-hidden="true" />
             Published {fmtShort(publishedDate)}
           </span>
         )}
@@ -67,11 +67,12 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
       </div>
 
       {/* ── Author card — fully SSR ───────────────────────────────────────── */}
-      <div className="p-5">
-        <div className="flex items-start gap-4">
+      <div className="px-4 py-3">
+        <div className="flex items-center gap-3">
+          {/* Circular avatar */}
           <Link href={profileUrl} rel="author" className="shrink-0 group">
             <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-white font-bold text-base shadow-sm group-hover:opacity-90 transition-opacity"
+              className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-[12px] shadow-sm ring-2 ring-white group-hover:opacity-90 transition-opacity"
               style={{ background: author.avatar_color }}
             >
               {author.avatar_initials}
@@ -79,76 +80,56 @@ export function AuthorBlock({ author, publishedDate, updatedDate, sources }: Aut
           </Link>
 
           <div className="flex-1 min-w-0">
-            <div className="flex items-start justify-between gap-2 flex-wrap">
-              <div>
-                <Link href={profileUrl} rel="author" className="text-[15px] font-bold text-slate-900 hover:text-sky-700 transition-colors leading-tight block">
-                  {author.name}
-                </Link>
-                <p className="text-[12px] text-slate-500 mt-0.5">{author.title}</p>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                {author.linkedin_url && (
-                  <a
-                    href={author.linkedin_url}
-                    target="_blank"
-                    rel="noopener noreferrer author"
-                    className="w-7 h-7 rounded-lg bg-sky-50 border border-sky-200 flex items-center justify-center hover:bg-sky-100 transition-colors"
-                    aria-label={`${author.name} on LinkedIn`}
-                  >
-                    <Linkedin className="w-3.5 h-3.5 text-sky-600" />
-                  </a>
-                )}
-                <Link
-                  href={profileUrl}
-                  rel="author"
-                  className="w-7 h-7 rounded-lg bg-slate-50 border border-slate-200 flex items-center justify-center hover:bg-slate-100 transition-colors"
-                  aria-label={`${author.name} author profile`}
+            <div className="flex items-center gap-2 flex-wrap">
+              <Link href={profileUrl} rel="author" className="text-[13px] font-semibold text-slate-700 hover:text-sky-700 transition-colors leading-tight">
+                {author.name}
+              </Link>
+              {author.linkedin_url && (
+                <a
+                  href={author.linkedin_url}
+                  target="_blank"
+                  rel="noopener noreferrer author"
+                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-sky-50 transition-colors"
+                  aria-label={`${author.name} on LinkedIn`}
                 >
-                  <ExternalLink className="w-3.5 h-3.5 text-slate-500" />
-                </Link>
-              </div>
+                  <Linkedin className="w-3 h-3 text-slate-400 hover:text-sky-600 transition-colors" />
+                </a>
+              )}
+              <span className="text-[10px] text-slate-400 font-medium">Not Sponsored</span>
             </div>
-
-            {/* Stats — SSR-visible credentials */}
-            {author.stats.length > 0 && (
-              <div className="flex gap-4 mt-3 flex-wrap">
-                {author.stats.map((s) => (
-                  <div key={s.label}>
-                    <span className="text-[13px] font-bold text-slate-800">{s.value}</span>
-                    <span className="text-[11px] text-slate-400 ml-1">{s.label}</span>
-                  </div>
-                ))}
-              </div>
-            )}
+            <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{author.title}</p>
           </div>
+
+          <Link
+            href={profileUrl}
+            rel="author"
+            className="shrink-0 w-6 h-6 rounded flex items-center justify-center hover:bg-slate-100 transition-colors"
+            aria-label={`${author.name} author profile`}
+          >
+            <ExternalLink className="w-3 h-3 text-slate-300 hover:text-slate-500 transition-colors" />
+          </Link>
         </div>
 
         {/* Bio — text is SSR; the expand/collapse button is the only client piece */}
-        <AuthorBioToggle bio={author.bio} />
-
-        <div className="mt-3 flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-200 text-[11px] font-semibold text-sky-700">
-            <Star className="w-3 h-3 fill-sky-500 text-sky-500" />
-            AstroGTM Editorial
-          </span>
-          <span className="text-[11px] text-slate-400">Independent · Not sponsored</span>
+        <div className="mt-2 pl-12">
+          <AuthorBioToggle bio={author.bio} />
         </div>
       </div>
 
       {/* ── Sources — fully SSR, rel="nofollow noopener noreferrer" ──────── */}
       {hasSources && (
-        <div className="border-t border-slate-100 px-5 py-4">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2.5">Sources</p>
-          <ul className="space-y-1.5">
+        <div className="border-t border-slate-100 px-4 py-3">
+          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-300 mb-2">Sources</p>
+          <ul className="space-y-1">
             {(sources ?? []).map((src, i) => (
               <li key={i}>
                 <a
                   href={src.url}
                   target="_blank"
                   rel="nofollow noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[12px] text-slate-600 hover:text-sky-700 transition-colors group"
+                  className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-sky-700 transition-colors group"
                 >
-                  <LinkOut className="w-3 h-3 text-slate-300 group-hover:text-sky-500 shrink-0" aria-hidden="true" />
+                  <LinkOut className="w-2.5 h-2.5 text-slate-300 group-hover:text-sky-500 shrink-0" aria-hidden="true" />
                   {src.name}
                 </a>
               </li>

@@ -726,26 +726,26 @@ export default async function SlugPage({
 
                   {/* Our Opinion — Strengths + Limitations */}
                   {((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0) && (
-                    <div className="border-t-2 border-sky-200">
+                    <div className="border-t border-slate-100">
                       {/* Section header */}
                       <div
-                        className="px-6 py-5 border-b border-sky-100/70"
-                        style={{ background: 'linear-gradient(145deg, rgba(176,228,255,0.18) 0%, rgba(255,255,255,1) 65%)' }}
+                        className="px-6 py-4 border-b border-slate-100/80"
+                        style={{ background: 'linear-gradient(145deg, rgba(176,228,255,0.10) 0%, rgba(255,255,255,1) 60%)' }}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0">
-                            <Lightbulb className="w-[18px] h-[18px] text-sky-600" />
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-sky-50 border border-sky-100/80 flex items-center justify-center shrink-0">
+                            <Lightbulb className="w-[16px] h-[16px] text-sky-500" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[15px] font-bold text-slate-800 tracking-tight">Our Opinion</span>
-                              <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">
+                              <span className="text-[14px] font-bold text-slate-800 tracking-tight">Our Opinion</span>
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-50 text-sky-600 border border-sky-100">
                                 Editorial
                               </span>
                               {/* Tooltip */}
                               <div className="relative group/tip">
-                                <div className="w-4 h-4 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center cursor-default">
-                                  <ShieldCheck className="w-2.5 h-2.5 text-sky-500" />
+                                <div className="w-3.5 h-3.5 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center cursor-default">
+                                  <ShieldCheck className="w-2 h-2 text-slate-400" />
                                 </div>
                                 <div className="pointer-events-none absolute left-0 bottom-full mb-2.5 w-72 bg-slate-900/95 text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
                                   This opinion is based on editorial testing, real-world usage, and trusted community feedback. While we aim to test tools thoroughly, some insights may also reflect proven public use cases.
@@ -753,8 +753,22 @@ export default async function SlugPage({
                                 </div>
                               </div>
                             </div>
-                            <p className="text-[12px] text-slate-500 mt-1">Collective take from our editorial reviewers</p>
+                            <p className="text-[11px] text-slate-400 mt-0.5">Collective take from our editorial reviewers</p>
                           </div>
+                          {/* Reviewer avatar pill */}
+                          <Link
+                            href={`/author/${author.slug}`}
+                            rel="author"
+                            className="flex items-center gap-1.5 shrink-0 group/rev"
+                          >
+                            <span className="text-[10px] text-slate-400 group-hover/rev:text-slate-600 transition-colors hidden sm:inline">Reviewed by</span>
+                            <div
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm ring-1 ring-slate-200/60 group-hover/rev:ring-sky-300 transition-all"
+                              style={{ background: author.avatar_color }}
+                            >
+                              {author.avatar_initials}
+                            </div>
+                          </Link>
                         </div>
                       </div>
 
