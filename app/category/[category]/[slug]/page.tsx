@@ -756,19 +756,25 @@ export default async function SlugPage({
                 <section id="section-our-opinion">
                   <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
                     {/* Section header */}
-                    <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white border border-sky-200 flex items-center justify-center shrink-0 shadow-sm">
+                    <div
+                      className="px-6 py-4 border-b border-sky-200/60 relative overflow-hidden"
+                      style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 40%, #e0f7fa 70%, #f0f9ff 100%)' }}
+                    >
+                      {/* Subtle shine overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-white/10 pointer-events-none" />
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
+                      <div className="relative flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white/80 border border-sky-200/80 flex items-center justify-center shrink-0 shadow-sm backdrop-blur-sm">
                           <Lightbulb className="w-[16px] h-[16px] text-sky-600" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[14px] font-bold text-sky-900 tracking-tight">Our Opinion</span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">
+                            <span className="text-[14px] font-bold text-sky-900 tracking-tight drop-shadow-sm">Our Opinion</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-white/70 text-sky-700 border border-sky-300/60 shadow-sm backdrop-blur-sm">
                               Editorial
                             </span>
                             <div className="relative group/tip">
-                              <div className="w-3.5 h-3.5 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center cursor-default">
+                              <div className="w-3.5 h-3.5 rounded-full bg-white/70 border border-sky-300/60 flex items-center justify-center cursor-default shadow-sm">
                                 <ShieldCheck className="w-2 h-2 text-sky-500" />
                               </div>
                               <div className="pointer-events-none absolute left-0 bottom-full mb-2.5 w-72 bg-slate-900/95 text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
@@ -777,13 +783,13 @@ export default async function SlugPage({
                               </div>
                             </div>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">Collective take from our editorial reviewers</p>
+                          <p className="text-[11px] text-sky-700/70 mt-0.5">Collective take from our editorial reviewers</p>
                         </div>
                         {/* Reviewer avatar */}
                         <Link href={`/author/${author.slug}`} rel="author" className="flex items-center gap-1.5 shrink-0 group/rev">
-                          <span className="text-[10px] text-slate-500 group-hover/rev:text-slate-700 transition-colors hidden sm:inline">Reviewed by</span>
+                          <span className="text-[10px] text-sky-700/60 group-hover/rev:text-sky-800 transition-colors hidden sm:inline">Reviewed by</span>
                           <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm ring-1 ring-sky-200 group-hover/rev:ring-sky-400 transition-all"
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white/80 shadow-md ring-1 ring-sky-300/60 group-hover/rev:ring-sky-400 transition-all"
                             style={{ background: author.avatar_color }}
                           >
                             {author.avatar_initials}
@@ -844,33 +850,45 @@ export default async function SlugPage({
               {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
                 <section id="section-who-is-it-for">
                   <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
-                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Team / Company Type</span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-28 text-right">Fit Score</span>
-                    </div>
-                    <ul className="divide-y divide-slate-100">
-                      {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
-                        const score = Math.max(1, Math.min(10, Math.round(entry.score)));
-                        const pct = (score / 10) * 100;
-                        const barColor = score >= 8 ? 'bg-sky-500' : score >= 5 ? 'bg-sky-400' : 'bg-slate-300';
-                        const scoreColor = score >= 8 ? 'text-sky-700' : score >= 5 ? 'text-slate-600' : 'text-slate-400';
-                        return (
-                          <li key={i} className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
-                            <div>
-                              <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
-                              {entry.note && <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{entry.note}</p>}
-                            </div>
-                            <div className="flex flex-col items-end gap-1.5 w-28 shrink-0">
-                              <span className={`text-[13px] font-bold tabular-nums ${scoreColor}`}>{score}<span className="text-[10px] font-normal text-slate-400">/10</span></span>
-                              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                    {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
+                      const score = Math.max(1, Math.min(10, Math.round(entry.score)));
+                      const pct = (score / 10) * 100;
+                      const isHigh = score >= 8;
+                      const isMid = score >= 5 && score < 8;
+                      const tileBg = isHigh
+                        ? 'bg-sky-50 border-sky-200 hover:border-sky-300 hover:shadow-sky-100/60'
+                        : isMid
+                        ? 'bg-white border-slate-200/80 hover:border-slate-300'
+                        : 'bg-slate-50/60 border-slate-200/60 hover:border-slate-300';
+                      const scoreBg = isHigh
+                        ? 'bg-sky-500 text-white'
+                        : isMid
+                        ? 'bg-slate-700 text-white'
+                        : 'bg-slate-300 text-slate-600';
+                      const barColor = isHigh ? 'bg-sky-500' : isMid ? 'bg-slate-500' : 'bg-slate-300';
+                      return (
+                        <div
+                          key={i}
+                          className={`relative flex flex-col gap-2.5 p-3.5 rounded-xl border shadow-sm hover:shadow-md transition-all ${tileBg}`}
+                        >
+                          {/* Score badge */}
+                          <div className="flex items-start justify-between gap-2">
+                            <p className="text-[12px] font-semibold text-slate-800 leading-snug flex-1">{entry.audience}</p>
+                            <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-md shrink-0 ${scoreBg}`}>
+                              {score}<span className="text-[9px] font-normal opacity-75">/10</span>
+                            </span>
+                          </div>
+                          {entry.note && (
+                            <p className="text-[10px] text-slate-400 leading-snug">{entry.note}</p>
+                          )}
+                          {/* Progress bar */}
+                          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-auto">
+                            <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
               )}
