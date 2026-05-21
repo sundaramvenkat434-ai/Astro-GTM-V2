@@ -65,6 +65,8 @@ interface ToolPage {
   latest_news: { title: string; url: string }[];
   published_date: string | null;
   updated_date: string | null;
+  // Who Is It For
+  who_is_it_for: { audience: string; label: string; note?: string }[];
   // Sources
   sources: { name: string; url: string }[];
   // Reviewer
@@ -448,6 +450,7 @@ export default function EditToolPage() {
         what_we_learned: tool.what_we_learned || null,
         honest_take: tool.honest_take || [],
         limitations: tool.limitations || [],
+        who_is_it_for: tool.who_is_it_for || [],
         logo_url: tool.logo_url || null,
         logo_alt: tool.logo_alt || null,
         screenshots: tool.screenshots || [],
@@ -1062,6 +1065,60 @@ export default function EditToolPage() {
                         <button onClick={() => update({ limitations: (tool.limitations || []).filter((_, j) => j !== i) })} className="text-amber-200 hover:text-red-500 shrink-0">
                           <Trash2 className="w-2.5 h-2.5" />
                         </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Who Is It For */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <SectionHeader
+                    icon={<Users className="w-3.5 h-3.5" />}
+                    label="Who Is It For"
+                    count={tool.who_is_it_for?.length}
+                    action={
+                      (tool.who_is_it_for?.length ?? 0) < 6
+                        ? <button onClick={() => update({ who_is_it_for: [...(tool.who_is_it_for || []), { audience: '', label: 'Ideal For', note: '' }] })} className="text-[11px] text-sky-600 hover:text-sky-800 flex items-center gap-0.5">
+                            <Plus className="w-3 h-3" /> Add
+                          </button>
+                        : undefined
+                    }
+                  />
+                  <p className="text-[11px] text-slate-400 -mt-1 mb-3">Add up to 6 entries — 3 positive fit and 3 cautionary. Each entry needs a label, audience name, and a short note.</p>
+                  <div className="space-y-2">
+                    {(tool.who_is_it_for || []).map((entry, i) => (
+                      <div key={i} className="rounded-lg border border-slate-200 p-3 space-y-2">
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={entry.label}
+                            onChange={(e) => { const next = [...(tool.who_is_it_for || [])]; next[i] = { ...next[i], label: e.target.value }; update({ who_is_it_for: next }); }}
+                            className="text-xs text-slate-700 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-400 flex-1"
+                          >
+                            <option>Ideal For</option>
+                            <option>Works Well For</option>
+                            <option>Can Work For</option>
+                            <option>Limited Fit</option>
+                            <option>Not Ideal For</option>
+                            <option>Better Alternatives Exist</option>
+                          </select>
+                          <button onClick={() => update({ who_is_it_for: (tool.who_is_it_for || []).filter((_, j) => j !== i) })} className="text-slate-300 hover:text-red-500 shrink-0">
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <input
+                          type="text"
+                          value={entry.audience}
+                          onChange={(e) => { const next = [...(tool.who_is_it_for || [])]; next[i] = { ...next[i], audience: e.target.value }; update({ who_is_it_for: next }); }}
+                          placeholder="Audience / team type (e.g. B2B SaaS Startups)"
+                          className="w-full text-xs text-slate-700 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-400"
+                        />
+                        <textarea
+                          value={entry.note || ''}
+                          onChange={(e) => { const next = [...(tool.who_is_it_for || [])]; next[i] = { ...next[i], note: e.target.value }; update({ who_is_it_for: next }); }}
+                          rows={2}
+                          placeholder="Short note explaining the fit — practical, specific, editorial tone."
+                          className="w-full text-xs text-slate-700 rounded border border-slate-200 bg-slate-50 px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-sky-400 resize-none"
+                        />
                       </div>
                     ))}
                   </div>

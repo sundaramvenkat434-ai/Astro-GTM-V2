@@ -44,10 +44,19 @@ export const dynamicParams = true;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://astrogtm.com';
 
+type WhoIsItForLabel =
+  | 'Ideal For'
+  | 'Works Well For'
+  | 'Can Work For'
+  | 'Limited Fit'
+  | 'Not Ideal For'
+  | 'Better Alternatives Exist';
+
 interface WhoIsItForEntry {
   audience: string;
-  score: number;
+  label: WhoIsItForLabel;
   note?: string;
+  score?: number; // legacy, no longer used for display
 }
 
 interface ToolPage {
@@ -844,60 +853,86 @@ export default async function SlugPage({
                 </section>
               )}
 
-              {/* ── Suitable For ── */}
-              {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
-                <section id="section-who-is-it-for">
-                  <SectionHeading accent="blue" description="Editorial assessment of team and workflow fit">Who Is It For</SectionHeading>
-                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    {/* Header */}
-                    <div
-                      className="px-6 py-4 border-b border-sky-100 relative overflow-hidden"
-                      style={{ background: 'linear-gradient(to right, #f0f9ff, #f8fbff 60%, #ffffff)' }}
-                    >
-                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-sky-200/60 via-sky-300/40 to-transparent pointer-events-none" />
-                      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Editorial fit assessment — based on team type &amp; workflow</p>
+              {/* ── Who Is It For ── */}
+              {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (() => {
+                const entries = tool.who_is_it_for as WhoIsItForEntry[];
+                const positiveLabels: WhoIsItForLabel[] = ['Ideal For', 'Works Well For', 'Can Work For'];
+                const cautionLabels: WhoIsItForLabel[] = ['Limited Fit', 'Not Ideal For', 'Better Alternatives Exist'];
+                const positive = entries.filter(e => positiveLabels.includes(e.label));
+                const caution = entries.filter(e => cautionLabels.includes(e.label));
+
+                const LABEL_STYLES: Record<WhoIsItForLabel, { dot: string; pill: string; pillBorder: string; pillText: string }> = {
+                  'Ideal For':                { dot: 'bg-sky-500',    pill: 'bg-sky-50',      pillBorder: 'border-sky-200',      pillText: 'text-sky-700'   },
+                  'Works Well For':           { dot: 'bg-sky-400',    pill: 'bg-sky-50/60',   pillBorder: 'border-sky-200/70',   pillText: 'text-sky-600'   },
+                  'Can Work For':             { dot: 'bg-teal-400',   pill: 'bg-teal-50',     pillBorder: 'border-teal-200',     pillText: 'text-teal-700'  },
+                  'Limited Fit':              { dot: 'bg-amber-400',  pill: 'bg-amber-50',    pillBorder: 'border-amber-200',    pillText: 'text-amber-700' },
+                  'Not Ideal For':            { dot: 'bg-orange-400', pill: 'bg-orange-50',   pillBorder: 'border-orange-200',   pillText: 'text-orange-700'},
+                  'Better Alternatives Exist':{ dot: 'bg-slate-400',  pill: 'bg-slate-100',   pillBorder: 'border-slate-200',    pillText: 'text-slate-500' },
+                };
+
+                const renderCard = (entry: WhoIsItForEntry, i: number) => {
+                  const s = LABEL_STYLES[entry.label] ?? LABEL_STYLES['Can Work For'];
+                  return (
+                    <div key={i} className="flex flex-col gap-2.5 p-4 rounded-xl border border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm transition-all">
+                      <span className={`self-start inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${s.pill} ${s.pillBorder} ${s.pillText}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
+                        {entry.label}
+                      </span>
+                      <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
+                      {entry.note && (
+                        <p className="text-[12px] text-slate-500 leading-relaxed flex-1">{entry.note}</p>
+                      )}
                     </div>
-                    {/* Grid of cards */}
-                    <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      {(tool.who_is_it_for as WhoIsItForEntry[]).slice(0, 3).map((entry, i) => {
-                        const score = Math.max(1, Math.min(10, Math.round(entry.score)));
-                        type FitTier = {
-                          label: string;
-                          labelColor: string;
-                          labelBg: string;
-                          labelBorder: string;
-                          accentBar: string;
-                          iconColor: string;
-                        };
-                        const tier: FitTier =
-                          score >= 9 ? { label: 'Ideal For', labelColor: 'text-sky-700', labelBg: 'bg-sky-50', labelBorder: 'border-sky-200', accentBar: 'bg-sky-500', iconColor: 'text-sky-500' }
-                          : score >= 7 ? { label: 'Works Well For', labelColor: 'text-sky-600', labelBg: 'bg-sky-50/60', labelBorder: 'border-sky-200/70', accentBar: 'bg-sky-400', iconColor: 'text-sky-400' }
-                          : score >= 5 ? { label: 'Can Work For', labelColor: 'text-amber-700', labelBg: 'bg-amber-50', labelBorder: 'border-amber-200', accentBar: 'bg-amber-400', iconColor: 'text-amber-500' }
-                          : score >= 4 ? { label: 'Limited Fit', labelColor: 'text-amber-600', labelBg: 'bg-amber-50/60', labelBorder: 'border-amber-200/60', accentBar: 'bg-amber-300', iconColor: 'text-amber-400' }
-                          : score >= 3 ? { label: 'Not Ideal For', labelColor: 'text-slate-500', labelBg: 'bg-slate-50', labelBorder: 'border-slate-200', accentBar: 'bg-slate-300', iconColor: 'text-slate-400' }
-                          : { label: 'Better Alternatives Exist', labelColor: 'text-slate-400', labelBg: 'bg-slate-50/60', labelBorder: 'border-slate-200/60', accentBar: 'bg-slate-200', iconColor: 'text-slate-300' };
-                        return (
-                          <div key={i} className="flex flex-col gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/40 hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all">
-                            {/* Fit label pill */}
-                            <span className={`self-start inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${tier.labelBg} ${tier.labelColor} ${tier.labelBorder}`}>
-                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tier.accentBar}`} />
-                              {tier.label}
-                            </span>
-                            {/* Audience */}
-                            <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
-                            {/* Note */}
-                            {entry.note && (
-                              <p className="text-[11px] text-slate-500 leading-relaxed flex-1">{entry.note}</p>
-                            )}
-                            {/* Accent bar at bottom */}
-                            <div className={`w-8 h-0.5 rounded-full ${tier.accentBar} mt-auto opacity-60`} />
+                  );
+                };
+
+                return (
+                  <section id="section-who-is-it-for">
+                    <SectionHeading accent="blue" description="Editorial assessment of team and workflow fit">Who Is It For</SectionHeading>
+                    <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                      {/* Header */}
+                      <div
+                        className="px-6 py-4 border-b border-sky-100 relative overflow-hidden"
+                        style={{ background: 'linear-gradient(to right, #f0f9ff, #f8fbff 60%, #ffffff)' }}
+                      >
+                        <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-sky-200/60 via-sky-300/40 to-transparent pointer-events-none" />
+                        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Editorial fit assessment — based on team type &amp; workflow</p>
+                      </div>
+                      {/* Two columns mirroring Our Opinion */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                        {/* Positive column */}
+                        {positive.length > 0 && (
+                          <div className="p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="w-5 h-5 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
+                                <ThumbsUp className="w-3 h-3 text-white" />
+                              </div>
+                              <span className="text-[12px] font-bold text-sky-700 uppercase tracking-wider">Good Fit</span>
+                            </div>
+                            <div className="space-y-2.5">
+                              {positive.map((entry, i) => renderCard(entry, i))}
+                            </div>
                           </div>
-                        );
-                      })}
+                        )}
+                        {/* Cautionary column */}
+                        {caution.length > 0 && (
+                          <div className="p-5">
+                            <div className="flex items-center gap-2 mb-4">
+                              <div className="w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center shrink-0">
+                                <ThumbsDown className="w-3 h-3 text-white" />
+                              </div>
+                              <span className="text-[12px] font-bold text-amber-600 uppercase tracking-wider">Cautionary</span>
+                            </div>
+                            <div className="space-y-2.5">
+                              {caution.map((entry, i) => renderCard(entry, i))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                </section>
-              )}
+                  </section>
+                );
+              })()}
 
               {/* ── Pricing ── */}
               {tool.pricing.length > 0 && (
