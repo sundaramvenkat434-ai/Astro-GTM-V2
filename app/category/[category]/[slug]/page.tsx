@@ -757,25 +757,23 @@ export default async function SlugPage({
                   <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
                     {/* Section header */}
                     <div
-                      className="px-6 py-4 border-b border-sky-200/60 relative overflow-hidden"
-                      style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #bae6fd 40%, #e0f7fa 70%, #f0f9ff 100%)' }}
+                      className="px-6 py-4 border-b border-sky-100 relative overflow-hidden"
+                      style={{ background: 'linear-gradient(to right, #f0f9ff, #f8fbff 60%, #ffffff)' }}
                     >
-                      {/* Subtle shine overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-transparent to-white/10 pointer-events-none" />
-                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-white/80 to-transparent pointer-events-none" />
-                      <div className="relative flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-white/80 border border-sky-200/80 flex items-center justify-center shrink-0 shadow-sm backdrop-blur-sm">
-                          <Lightbulb className="w-[16px] h-[16px] text-sky-600" />
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-sky-200/60 via-sky-300/40 to-transparent pointer-events-none" />
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-sky-100 flex items-center justify-center shrink-0 shadow-sm">
+                          <Lightbulb className="w-[16px] h-[16px] text-sky-500" />
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[14px] font-bold text-sky-900 tracking-tight drop-shadow-sm">Our Opinion</span>
-                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-white/70 text-sky-700 border border-sky-300/60 shadow-sm backdrop-blur-sm">
+                            <span className="text-[14px] font-bold text-slate-800 tracking-tight">Our Opinion</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-50 text-sky-600 border border-sky-200">
                               Editorial
                             </span>
                             <div className="relative group/tip">
-                              <div className="w-3.5 h-3.5 rounded-full bg-white/70 border border-sky-300/60 flex items-center justify-center cursor-default shadow-sm">
-                                <ShieldCheck className="w-2 h-2 text-sky-500" />
+                              <div className="w-3.5 h-3.5 rounded-full bg-sky-50 border border-sky-200 flex items-center justify-center cursor-default">
+                                <ShieldCheck className="w-2 h-2 text-sky-400" />
                               </div>
                               <div className="pointer-events-none absolute left-0 bottom-full mb-2.5 w-72 bg-slate-900/95 text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
                                 This opinion is based on editorial testing, real-world usage, and trusted community feedback. While we aim to test tools thoroughly, some insights may also reflect proven public use cases.
@@ -783,13 +781,13 @@ export default async function SlugPage({
                               </div>
                             </div>
                           </div>
-                          <p className="text-[11px] text-sky-700/70 mt-0.5">Collective take from our editorial reviewers</p>
+                          <p className="text-[11px] text-slate-400 mt-0.5">Collective take from our editorial reviewers</p>
                         </div>
                         {/* Reviewer avatar */}
                         <Link href={`/author/${author.slug}`} rel="author" className="flex items-center gap-1.5 shrink-0 group/rev">
-                          <span className="text-[10px] text-sky-700/60 group-hover/rev:text-sky-800 transition-colors hidden sm:inline">Reviewed by</span>
+                          <span className="text-[10px] text-slate-400 group-hover/rev:text-slate-600 transition-colors hidden sm:inline">Reviewed by</span>
                           <div
-                            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white/80 shadow-md ring-1 ring-sky-300/60 group-hover/rev:ring-sky-400 transition-all"
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm ring-1 ring-sky-200 group-hover/rev:ring-sky-300 transition-all"
                             style={{ background: author.avatar_color }}
                           >
                             {author.avatar_initials}
@@ -850,41 +848,30 @@ export default async function SlugPage({
               {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
                 <section id="section-who-is-it-for">
                   <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
-                    {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
+                  <div className="grid grid-cols-3 gap-3">
+                    {(tool.who_is_it_for as WhoIsItForEntry[]).slice(0, 3).map((entry, i) => {
                       const score = Math.max(1, Math.min(10, Math.round(entry.score)));
                       const pct = (score / 10) * 100;
                       const isHigh = score >= 8;
                       const isMid = score >= 5 && score < 8;
-                      const tileBg = isHigh
-                        ? 'bg-sky-50 border-sky-200 hover:border-sky-300 hover:shadow-sky-100/60'
-                        : isMid
-                        ? 'bg-white border-slate-200/80 hover:border-slate-300'
-                        : 'bg-slate-50/60 border-slate-200/60 hover:border-slate-300';
-                      const scoreBg = isHigh
-                        ? 'bg-sky-500 text-white'
-                        : isMid
-                        ? 'bg-slate-700 text-white'
-                        : 'bg-slate-300 text-slate-600';
-                      const barColor = isHigh ? 'bg-sky-500' : isMid ? 'bg-slate-500' : 'bg-slate-300';
+                      const barColor = isHigh ? 'bg-sky-500' : isMid ? 'bg-amber-400' : 'bg-slate-300';
+                      const scoreColor = isHigh ? 'text-sky-600' : isMid ? 'text-amber-600' : 'text-slate-400';
                       return (
                         <div
                           key={i}
-                          className={`relative flex flex-col gap-2.5 p-3.5 rounded-xl border shadow-sm hover:shadow-md transition-all ${tileBg}`}
+                          className="flex flex-col gap-3 p-4 rounded-xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
                         >
-                          {/* Score badge */}
                           <div className="flex items-start justify-between gap-2">
                             <p className="text-[12px] font-semibold text-slate-800 leading-snug flex-1">{entry.audience}</p>
-                            <span className={`text-[11px] font-bold tabular-nums px-1.5 py-0.5 rounded-md shrink-0 ${scoreBg}`}>
-                              {score}<span className="text-[9px] font-normal opacity-75">/10</span>
+                            <span className={`text-[13px] font-bold tabular-nums shrink-0 ${scoreColor}`}>
+                              {score}<span className="text-[10px] font-normal text-slate-300">/10</span>
                             </span>
                           </div>
                           {entry.note && (
-                            <p className="text-[10px] text-slate-400 leading-snug">{entry.note}</p>
+                            <p className="text-[11px] text-slate-400 leading-relaxed">{entry.note}</p>
                           )}
-                          {/* Progress bar */}
                           <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-auto">
-                            <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
+                            <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
                           </div>
                         </div>
                       );
