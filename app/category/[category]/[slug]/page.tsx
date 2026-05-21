@@ -545,7 +545,6 @@ export default async function SlugPage({
       ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQ' }] : []),
       ...((tool.pros?.length ?? 0) > 0 || (tool.cons?.length ?? 0) > 0 ? [{ id: 'pros-cons', label: 'Pros & Cons' }] : []),
       ...(tool.what_we_learned != null ? [{ id: 'what-we-learned', label: 'Case Study' }] : []),
-      ...((tool.honest_take?.length ?? 0) > 0 ? [{ id: 'honest-take', label: 'Honest Take' }] : []),
       ...((tool.official_website || tool.founder_name || (tool.latest_news?.length ?? 0) > 0) ? [{ id: 'about-author', label: 'Official Links' }] : []),
       ...(similarTools.length > 0 ? [{ id: 'similar-tools', label: 'Similar Tools' }] : []),
     ];
@@ -690,21 +689,34 @@ export default async function SlugPage({
                 </div>
 
                 {/* About */}
-                <div className="mt-3 bg-white border border-slate-200/80 rounded-2xl shadow-sm p-6 sm:p-8">
-                  <h2 className="text-sm font-semibold text-slate-900 mb-3">About {tool.name}</h2>
-                  <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
+                <div className="mt-3 bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                  <div className="p-6 sm:p-8">
+                    <h2 className="text-sm font-semibold text-slate-900 mb-3">About {tool.name}</h2>
+                    <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
+                  </div>
 
-                  {/* Stats — compact, inside About card */}
-                  {tool.stats.length > 0 && (
-                    <div className="mt-5 pt-5 border-t border-slate-100">
-                      <div className={`grid gap-3 ${tool.stats.length === 2 ? 'grid-cols-2' : tool.stats.length >= 4 ? 'grid-cols-4' : 'grid-cols-3'}`}>
-                        {tool.stats.map((stat: { label: string; value: string }) => (
-                          <div key={stat.label} className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-3 text-center">
-                            <p className="text-base font-bold text-slate-800 tabular-nums leading-none">{stat.value}</p>
-                            <p className="text-[11px] text-slate-400 mt-1 font-medium">{stat.label}</p>
-                          </div>
-                        ))}
+                  {/* Honest Take — inside About card */}
+                  {(tool.honest_take?.length ?? 0) > 0 && (
+                    <div className="border-t border-slate-100">
+                      <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-50/70 to-white border-b border-amber-100/60">
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+                          <Lightbulb className="w-4 h-4 text-amber-500" />
+                        </div>
+                        <div>
+                          <p className="text-[13px] font-bold text-slate-800">Our Honest Take</p>
+                          <p className="text-[11px] text-amber-600 mt-0.5">Independent editorial opinion — not sponsored</p>
+                        </div>
                       </div>
+                      <ul className="p-4 space-y-2">
+                        {(tool.honest_take ?? []).map((bullet, i) => (
+                          <li key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50/40 border border-amber-100/60">
+                            <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                              <span className="text-white text-[10px] font-bold leading-none">{i + 1}</span>
+                            </div>
+                            <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
+                          </li>
+                        ))}
+                      </ul>
                     </div>
                   )}
                 </div>
@@ -872,33 +884,6 @@ export default async function SlugPage({
                 </section>
               )}
 
-              {/* ── Honest Take ── */}
-              {(tool.honest_take?.length ?? 0) > 0 && (
-                <section id="section-honest-take">
-                  <SectionHeading accent="amber" description="Independent editorial opinion — not sponsored">Our Honest Take</SectionHeading>
-                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    {/* Header */}
-                    <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-50 to-white border-b border-amber-100">
-                      <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                        <Lightbulb className="w-4 h-4 text-amber-600" />
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-semibold text-slate-800">Editor&apos;s Verdict</p>
-                        <p className="text-[11px] text-amber-600 mt-0.5">Unsponsored, independent opinion</p>
-                      </div>
-                    </div>
-                    {/* Points */}
-                    <ol className="p-4 space-y-2">
-                      {(tool.honest_take ?? []).map((bullet, i) => (
-                        <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-amber-400 text-white text-[10px] font-bold shrink-0 mt-0.5 leading-none">{i + 1}</span>
-                          <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
-                        </li>
-                      ))}
-                    </ol>
-                  </div>
-                </section>
-              )}
 
               {/* ── Official links + news ── */}
               {(tool.official_website || tool.founder_name || (tool.latest_news?.length ?? 0) > 0) && (
