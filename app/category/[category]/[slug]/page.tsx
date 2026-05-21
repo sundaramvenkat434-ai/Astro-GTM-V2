@@ -32,6 +32,7 @@ import {
   BadgeCheck,
   ShieldCheck,
   Eye,
+  Users,
 } from 'lucide-react';
 import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
 import { UpvoteButton } from '@/components/upvote-button';
@@ -861,27 +862,55 @@ export default async function SlugPage({
                 const positive = entries.filter(e => positiveLabels.includes(e.label));
                 const caution = entries.filter(e => cautionLabels.includes(e.label));
 
-                const LABEL_STYLES: Record<WhoIsItForLabel, { dot: string; pill: string; pillBorder: string; pillText: string }> = {
-                  'Ideal For':                { dot: 'bg-sky-500',    pill: 'bg-sky-50',      pillBorder: 'border-sky-200',      pillText: 'text-sky-700'   },
-                  'Works Well For':           { dot: 'bg-sky-400',    pill: 'bg-sky-50/60',   pillBorder: 'border-sky-200/70',   pillText: 'text-sky-600'   },
-                  'Can Work For':             { dot: 'bg-teal-400',   pill: 'bg-teal-50',     pillBorder: 'border-teal-200',     pillText: 'text-teal-700'  },
-                  'Limited Fit':              { dot: 'bg-amber-400',  pill: 'bg-amber-50',    pillBorder: 'border-amber-200',    pillText: 'text-amber-700' },
-                  'Not Ideal For':            { dot: 'bg-orange-400', pill: 'bg-orange-50',   pillBorder: 'border-orange-200',   pillText: 'text-orange-700'},
-                  'Better Alternatives Exist':{ dot: 'bg-slate-400',  pill: 'bg-slate-100',   pillBorder: 'border-slate-200',    pillText: 'text-slate-500' },
+                const LABEL_PILL: Record<WhoIsItForLabel, { bg: string; text: string; border: string }> = {
+                  'Ideal For':                { bg: 'bg-sky-50',    text: 'text-sky-700',    border: 'border-sky-200'   },
+                  'Works Well For':           { bg: 'bg-sky-50/70', text: 'text-sky-600',    border: 'border-sky-200/80'},
+                  'Can Work For':             { bg: 'bg-teal-50',   text: 'text-teal-700',   border: 'border-teal-200'  },
+                  'Limited Fit':              { bg: 'bg-amber-50',  text: 'text-amber-700',  border: 'border-amber-200' },
+                  'Not Ideal For':            { bg: 'bg-orange-50', text: 'text-orange-700', border: 'border-orange-200'},
+                  'Better Alternatives Exist':{ bg: 'bg-slate-50',  text: 'text-slate-600',  border: 'border-slate-200' },
                 };
 
-                const renderCard = (entry: WhoIsItForEntry, i: number) => {
-                  const s = LABEL_STYLES[entry.label] ?? LABEL_STYLES['Can Work For'];
+                const renderPositiveCard = (entry: WhoIsItForEntry, i: number) => {
+                  const pill = LABEL_PILL[entry.label] ?? LABEL_PILL['Can Work For'];
                   return (
-                    <div key={i} className="flex flex-col gap-2.5 p-4 rounded-xl border border-slate-100 bg-white hover:border-slate-200 hover:shadow-sm transition-all">
-                      <span className={`self-start inline-flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${s.pill} ${s.pillBorder} ${s.pillText}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${s.dot}`} />
-                        {entry.label}
-                      </span>
-                      <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
-                      {entry.note && (
-                        <p className="text-[12px] text-slate-500 leading-relaxed flex-1">{entry.note}</p>
-                      )}
+                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-sky-100 shadow-sm hover:border-sky-300 hover:shadow-md transition-all group/item">
+                      <div className="w-5 h-5 rounded-full bg-sky-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover/item:bg-sky-700 transition-colors">
+                        <Check className="w-3 h-3 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
+                        </div>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${pill.bg} ${pill.border} ${pill.text}`}>
+                          {entry.label}
+                        </span>
+                        {entry.note && (
+                          <p className="text-[12px] text-slate-500 leading-relaxed mt-2">{entry.note}</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                };
+
+                const renderCautionCard = (entry: WhoIsItForEntry, i: number) => {
+                  const pill = LABEL_PILL[entry.label] ?? LABEL_PILL['Limited Fit'];
+                  return (
+                    <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white/80 border border-amber-100 hover:border-amber-200 transition-all">
+                      <div className="w-5 h-5 rounded-full bg-amber-300/80 flex items-center justify-center shrink-0 mt-0.5">
+                        <span className="text-amber-800 text-[10px] font-bold leading-none">{i + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
+                        </div>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold border ${pill.bg} ${pill.border} ${pill.text}`}>
+                          {entry.label}
+                        </span>
+                        {entry.note && (
+                          <p className="text-[12px] text-slate-500 leading-relaxed mt-2">{entry.note}</p>
+                        )}
+                      </div>
                     </div>
                   );
                 };
@@ -896,13 +925,26 @@ export default async function SlugPage({
                         style={{ background: 'linear-gradient(to right, #f0f9ff, #f8fbff 60%, #ffffff)' }}
                       >
                         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-sky-200/60 via-sky-300/40 to-transparent pointer-events-none" />
-                        <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-500">Editorial fit assessment — based on team type &amp; workflow</p>
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-white border border-sky-100 flex items-center justify-center shrink-0 shadow-sm">
+                            <Users className="w-[16px] h-[16px] text-sky-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="text-[14px] font-bold text-slate-800 tracking-tight">Who Is It For</span>
+                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-50 text-sky-600 border border-sky-200">
+                                Fit Guide
+                              </span>
+                            </div>
+                            <p className="text-[11px] text-slate-500 mt-0.5">Editorial fit assessment — based on team type &amp; workflow</p>
+                          </div>
+                        </div>
                       </div>
                       {/* Two columns mirroring Our Opinion */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-                        {/* Positive column */}
+                        {/* Good Fit column */}
                         {positive.length > 0 && (
-                          <div className="p-5">
+                          <div className="p-5 bg-white">
                             <div className="flex items-center gap-2 mb-4">
                               <div className="w-5 h-5 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
                                 <ThumbsUp className="w-3 h-3 text-white" />
@@ -910,13 +952,13 @@ export default async function SlugPage({
                               <span className="text-[12px] font-bold text-sky-700 uppercase tracking-wider">Good Fit</span>
                             </div>
                             <div className="space-y-2.5">
-                              {positive.map((entry, i) => renderCard(entry, i))}
+                              {positive.map((entry, i) => renderPositiveCard(entry, i))}
                             </div>
                           </div>
                         )}
                         {/* Cautionary column */}
                         {caution.length > 0 && (
-                          <div className="p-5">
+                          <div className="p-5 bg-white">
                             <div className="flex items-center gap-2 mb-4">
                               <div className="w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center shrink-0">
                                 <ThumbsDown className="w-3 h-3 text-white" />
@@ -924,7 +966,7 @@ export default async function SlugPage({
                               <span className="text-[12px] font-bold text-amber-600 uppercase tracking-wider">Cautionary</span>
                             </div>
                             <div className="space-y-2.5">
-                              {caution.map((entry, i) => renderCard(entry, i))}
+                              {caution.map((entry, i) => renderCautionCard(entry, i))}
                             </div>
                           </div>
                         )}
