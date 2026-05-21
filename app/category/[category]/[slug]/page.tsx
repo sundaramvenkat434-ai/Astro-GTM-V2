@@ -539,8 +539,9 @@ export default async function SlugPage({
 
     const navSections: SidebarSection[] = [
       { id: 'overview', label: 'Overview' },
+      ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screens' }] : []),
+      { id: 'our-opinion', label: 'Our Opinion' },
       ...(tool.features.length > 0 ? [{ id: 'features', label: 'Features' }] : []),
-      ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screenshots' }] : []),
       ...(tool.pricing.length > 0 ? [{ id: 'pricing', label: 'Pricing' }] : []),
       ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQ' }] : []),
       ...((tool.pros?.length ?? 0) > 0 || (tool.cons?.length ?? 0) > 0 ? [{ id: 'pros-cons', label: 'Pros & Cons' }] : []),
@@ -569,7 +570,7 @@ export default async function SlugPage({
             <main className="flex-1 min-w-0 space-y-6">
 
               {/* ── Hero card ── */}
-              <section id="section-overview">
+              <div id="section-overview">
                 <div className="rounded-2xl border border-slate-200 shadow-md overflow-hidden">
                   {/* Category-matched gradient header */}
                   <div
@@ -687,9 +688,35 @@ export default async function SlugPage({
                   </div>
 
                 </div>
+              </div>
 
-                {/* About */}
-                <div className="mt-3 bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+              {/* ── Screenshots ── */}
+              {(tool.screenshots?.length ?? 0) > 0 && (
+                <section id="section-screenshots">
+                  <SectionHeading accent="slate">Screens</SectionHeading>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {(tool.screenshots ?? []).map((s, i) => (
+                      <div key={i} className="rounded-xl overflow-hidden border border-slate-200/80 bg-white shadow-sm">
+                        <img
+                          src={s.url}
+                          alt={s.alt || `${tool.name} - screenshot ${i + 1}`}
+                          loading="lazy"
+                          width={800}
+                          height={500}
+                          className="w-full h-52 object-cover"
+                        />
+                        {s.alt && (
+                          <p className="px-4 py-2.5 text-[11px] text-slate-400 border-t border-slate-100">{s.alt}</p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              )}
+
+              {/* ── About + Our Opinion ── */}
+              <section id="section-our-opinion">
+                <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
                   <div className="p-6 sm:p-8">
                     <h2 className="text-sm font-semibold text-slate-900 mb-3">About {tool.name}</h2>
                     <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
@@ -738,30 +765,6 @@ export default async function SlugPage({
                             <p className="text-[13px] text-slate-500 leading-relaxed">{f.description}</p>
                           </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
-
-              {/* ── Screenshots ── */}
-              {(tool.screenshots?.length ?? 0) > 0 && (
-                <section id="section-screenshots">
-                  <SectionHeading accent="slate">Screenshots</SectionHeading>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {(tool.screenshots ?? []).map((s, i) => (
-                      <div key={i} className="rounded-xl overflow-hidden border border-slate-200/80 bg-white shadow-sm">
-                        <img
-                          src={s.url}
-                          alt={s.alt || `${tool.name} - screenshot ${i + 1}`}
-                          loading="lazy"
-                          width={800}
-                          height={500}
-                          className="w-full h-52 object-cover"
-                        />
-                        {s.alt && (
-                          <p className="px-4 py-2.5 text-[11px] text-slate-400 border-t border-slate-100">{s.alt}</p>
-                        )}
                       </div>
                     ))}
                   </div>
