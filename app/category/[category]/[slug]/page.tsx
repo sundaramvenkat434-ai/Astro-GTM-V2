@@ -31,6 +31,7 @@ import {
   CalendarDays,
   Linkedin,
   BadgeCheck,
+  ShieldCheck,
   X,
   Eye,
 } from 'lucide-react';
@@ -539,7 +540,7 @@ export default async function SlugPage({
 
     const navSections: SidebarSection[] = [
       { id: 'overview', label: 'Overview' },
-      ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screens' }] : []),
+      ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screenshots' }] : []),
       { id: 'our-opinion', label: 'Our Opinion' },
       ...(tool.features.length > 0 ? [{ id: 'features', label: 'Features' }] : []),
       ...(tool.pricing.length > 0 ? [{ id: 'pricing', label: 'Pricing' }] : []),
@@ -693,7 +694,7 @@ export default async function SlugPage({
               {/* ── Screenshots ── */}
               {(tool.screenshots?.length ?? 0) > 0 && (
                 <section id="section-screenshots">
-                  <SectionHeading accent="slate">Screens</SectionHeading>
+                  <SectionHeading accent="slate">Screenshots</SectionHeading>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     {(tool.screenshots ?? []).map((s, i) => (
                       <div key={i} className="rounded-xl overflow-hidden border border-slate-200/80 bg-white shadow-sm">
@@ -722,22 +723,34 @@ export default async function SlugPage({
                     <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
                   </div>
 
-                  {/* Honest Take — inside About card */}
+                  {/* Our Opinion — inside About card */}
                   {(tool.honest_take?.length ?? 0) > 0 && (
                     <div className="border-t border-slate-100">
-                      <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-amber-50/70 to-white border-b border-amber-100/60">
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
-                          <Lightbulb className="w-4 h-4 text-amber-500" />
+                      <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-sky-50/70 to-white border-b border-sky-100/60">
+                        <div className="w-8 h-8 rounded-lg bg-sky-100 flex items-center justify-center shrink-0">
+                          <Lightbulb className="w-4 h-4 text-sky-600" />
                         </div>
-                        <div>
-                          <p className="text-[13px] font-bold text-slate-800">Our Honest Take</p>
-                          <p className="text-[11px] text-amber-600 mt-0.5">Independent editorial opinion — not sponsored</p>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="text-[13px] font-bold text-slate-800">Our Opinion</p>
+                            {/* Tooltip */}
+                            <div className="relative group/tip">
+                              <div className="w-4 h-4 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center cursor-default">
+                                <ShieldCheck className="w-2.5 h-2.5 text-sky-600" />
+                              </div>
+                              <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2 w-64 bg-slate-900 text-white text-[11px] leading-relaxed rounded-lg px-3 py-2.5 shadow-xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-150 z-50">
+                                This opinion is based on our editorial experience with the tool, including usability, UI/UX, and real-world usage. We aim to test tools thoroughly whenever possible, though some insights may also come from community feedback and proven use cases.
+                                <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-4 border-x-transparent border-t-4 border-t-slate-900" />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-sky-600 mt-0.5">Collective take from our editorial reviewers</p>
                         </div>
                       </div>
                       <ul className="p-4 space-y-2">
                         {(tool.honest_take ?? []).map((bullet, i) => (
-                          <li key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl bg-amber-50/40 border border-amber-100/60">
-                            <div className="w-5 h-5 rounded-full bg-amber-400 flex items-center justify-center shrink-0 mt-0.5">
+                          <li key={i} className="flex items-start gap-3 px-4 py-3 rounded-xl bg-sky-50/40 border border-sky-100/60">
+                            <div className="w-5 h-5 rounded-full bg-sky-500 flex items-center justify-center shrink-0 mt-0.5">
                               <span className="text-white text-[10px] font-bold leading-none">{i + 1}</span>
                             </div>
                             <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
