@@ -546,13 +546,14 @@ export default async function SlugPage({
 
     const navSections: SidebarSection[] = [
       { id: 'overview', label: 'Overview' },
-      ...(tool.features.length > 0 ? [{ id: 'features', label: 'Features' }] : []),
+      ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screenshots' }] : []),
+      { id: 'features', label: 'Features' },
       ...((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0 ? [{ id: 'our-opinion', label: 'Our Opinion' }] : []),
+      ...((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 ? [{ id: 'who-is-it-for', label: 'Suitable For' }] : [] as SidebarSection[],
       ...(tool.pricing.length > 0 ? [{ id: 'pricing', label: 'Pricing' }] : []),
       ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQs' }] : []),
-      ...((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 ? [{ id: 'who-is-it-for', label: 'Who Is It For' }] : [] as SidebarSection[],
-      ...((tool.official_website || tool.founder_name || (tool.latest_news?.length ?? 0) > 0) ? [{ id: 'about-author', label: 'Official Links' }] : []),
       ...(similarTools.length > 0 ? [{ id: 'similar-tools', label: 'Similar Tools' }] : []),
+      { id: 'editor-details', label: 'Editor Details' },
     ];
 
     return (
@@ -715,37 +716,40 @@ export default async function SlugPage({
                 </section>
               )}
 
-              {/* ── About (Overview text) ── */}
-              <section id="section-overview-about">
+              {/* ── About + Features (merged card) ── */}
+              <section id="section-features">
                 <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                  <div className="p-6 sm:p-8">
+                  {/* About text */}
+                  <div className="p-6 sm:p-8 border-b border-slate-100">
                     <h2 className="text-sm font-semibold text-slate-900 mb-3">About {tool.name}</h2>
                     <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
                   </div>
+                  {/* Features grid — always render header, grid only when present */}
+                  <div className="px-6 sm:px-8 pt-6 pb-7">
+                    <div className="flex items-center gap-2 mb-5">
+                      <div className="w-1 h-4 rounded-full bg-sky-500 shrink-0" />
+                      <h3 className="text-[13px] font-bold text-slate-900 tracking-tight uppercase">Key Features</h3>
+                    </div>
+                    {tool.features.length > 0 ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        {tool.features.map((f: { title: string; description: string }, i: number) => (
+                          <div key={i} className="group flex items-start gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-sm transition-all">
+                            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-sky-100 text-sky-600 mt-0.5 group-hover:bg-sky-200 transition-colors">
+                              <Check className="w-3.5 h-3.5" />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-[13px] text-slate-900 mb-0.5">{f.title}</p>
+                              <p className="text-[12px] text-slate-500 leading-relaxed">{f.description}</p>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-[13px] text-slate-400 italic">No features listed yet.</p>
+                    )}
+                  </div>
                 </div>
               </section>
-
-              {/* ── Features ── */}
-              {tool.features.length > 0 && (
-                <section id="section-features">
-                  <SectionHeading accent="blue">Features</SectionHeading>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {tool.features.map((f: { title: string; description: string }, i: number) => (
-                      <div key={i} className="group bg-white border border-slate-200/80 rounded-xl p-5 shadow-sm hover:border-sky-200 hover:shadow-md transition-all">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-sky-50 text-sky-600 mt-0.5 group-hover:bg-sky-100 transition-colors">
-                            <Check className="w-4 h-4" />
-                          </div>
-                          <div>
-                            <p className="font-semibold text-[13px] text-slate-900 mb-1">{f.title}</p>
-                            <p className="text-[13px] text-slate-500 leading-relaxed">{f.description}</p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </section>
-              )}
 
               {/* ── Our Opinion ── */}
               {((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0) && (
@@ -836,57 +840,11 @@ export default async function SlugPage({
                 </section>
               )}
 
-              {/* ── Pricing ── */}
-              {tool.pricing.length > 0 && (
-                <section id="section-pricing">
-                  <SectionHeading accent="emerald">Pricing</SectionHeading>
-                  <div className={`grid gap-3 ${tool.pricing.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'}`}>
-                    {tool.pricing.map((plan) => {
-                      const isFree = /free/i.test(plan.plan) || /^\$?0(\/mo)?$/i.test(plan.price.trim());
-                      return (
-                      <div
-                        key={plan.plan}
-                        className={`relative bg-white rounded-2xl border p-6 flex flex-col transition-all shadow-sm hover:shadow-md ${
-                          isFree
-                            ? 'border-emerald-300 ring-1 ring-emerald-100'
-                            : 'border-slate-200/80 hover:border-slate-300'
-                        }`}
-                      >
-                        {isFree && (
-                          <div className="absolute -top-3 left-1/2 -translate-x-1/2">
-                            <span className="bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">
-                              Free tier
-                            </span>
-                          </div>
-                        )}
-                        <div className="mb-5">
-                          <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-400">{plan.plan}</p>
-                          <p className={`text-3xl font-bold tracking-tight ${isFree ? 'text-emerald-600' : 'text-slate-900'}`}>{plan.price}</p>
-                        </div>
-                        <ul className="space-y-2.5 flex-1">
-                          {plan.features.map((f: string) => (
-                            <li key={f} className="flex items-start gap-2 text-[13px] text-slate-600">
-                              <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isFree ? 'text-emerald-500' : 'text-slate-400'}`} />
-                              {f}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
-
-              {/* ── FAQ ── */}
-              <FaqSection faqs={tool.faqs} />
-
-              {/* ── Who Is It For ── */}
+              {/* ── Suitable For ── */}
               {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
                 <section id="section-who-is-it-for">
-                  <SectionHeading accent="blue" description="Recommended fit by team type and use case">Who Is It For</SectionHeading>
+                  <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
                   <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    {/* Column headers */}
                     <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Team / Company Type</span>
                       <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-28 text-right">Fit Score</span>
@@ -895,29 +853,18 @@ export default async function SlugPage({
                       {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
                         const score = Math.max(1, Math.min(10, Math.round(entry.score)));
                         const pct = (score / 10) * 100;
-                        const barColor =
-                          score >= 8 ? 'bg-sky-500' :
-                          score >= 5 ? 'bg-sky-400' :
-                          'bg-slate-300';
-                        const scoreColor =
-                          score >= 8 ? 'text-sky-700' :
-                          score >= 5 ? 'text-slate-600' :
-                          'text-slate-400';
+                        const barColor = score >= 8 ? 'bg-sky-500' : score >= 5 ? 'bg-sky-400' : 'bg-slate-300';
+                        const scoreColor = score >= 8 ? 'text-sky-700' : score >= 5 ? 'text-slate-600' : 'text-slate-400';
                         return (
                           <li key={i} className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
                             <div>
                               <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
-                              {entry.note && (
-                                <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{entry.note}</p>
-                              )}
+                              {entry.note && <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{entry.note}</p>}
                             </div>
                             <div className="flex flex-col items-end gap-1.5 w-28 shrink-0">
                               <span className={`text-[13px] font-bold tabular-nums ${scoreColor}`}>{score}<span className="text-[10px] font-normal text-slate-400">/10</span></span>
                               <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div
-                                  className={`h-full rounded-full transition-all ${barColor}`}
-                                  style={{ width: `${pct}%` }}
-                                />
+                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
                               </div>
                             </div>
                           </li>
@@ -928,64 +875,47 @@ export default async function SlugPage({
                 </section>
               )}
 
-
-              {/* ── Official links + news ── */}
-              {(tool.official_website || tool.founder_name || (tool.latest_news?.length ?? 0) > 0) && (
-                <section id="section-about-author">
-                  <SectionHeading accent="slate">Official Info</SectionHeading>
-                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    {tool.official_website && (
-                      <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                          <Globe className="w-3.5 h-3.5 text-slate-500" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Official Website</p>
-                          <a href={tool.official_website} target="_blank" rel="noopener noreferrer" className="text-[13px] text-sky-600 hover:text-sky-800 transition-colors">
-                            {tool.official_website}
-                          </a>
-                        </div>
-                      </div>
-                    )}
-                    {tool.founder_name && (
-                      <div className="flex items-center gap-3 px-6 py-4 border-b border-slate-100">
-                        <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-                          <Linkedin className="w-3.5 h-3.5 text-slate-500" />
-                        </div>
-                        <div>
-                          <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Founder</p>
-                          {tool.founder_linkedin ? (
-                            <a href={tool.founder_linkedin} target="_blank" rel="noopener noreferrer" className="text-[13px] font-semibold text-slate-800 hover:text-sky-700 transition-colors flex items-center gap-1.5">
-                              {tool.founder_name}
-                              <ExternalLink className="w-3 h-3 text-slate-400" />
-                            </a>
-                          ) : (
-                            <p className="text-[13px] font-semibold text-slate-800">{tool.founder_name}</p>
+              {/* ── Pricing ── */}
+              {tool.pricing.length > 0 && (
+                <section id="section-pricing">
+                  <SectionHeading accent="emerald">Pricing</SectionHeading>
+                  <div className={`grid gap-3 ${tool.pricing.length === 2 ? 'grid-cols-1 sm:grid-cols-2' : 'grid-cols-1 sm:grid-cols-3'}`}>
+                    {tool.pricing.map((plan) => {
+                      const isFree = /free/i.test(plan.plan) || /^\$?0(\/mo)?$/i.test(plan.price.trim());
+                      return (
+                        <div
+                          key={plan.plan}
+                          className={`relative bg-white rounded-2xl border p-6 flex flex-col transition-all shadow-sm hover:shadow-md ${
+                            isFree ? 'border-emerald-300 ring-1 ring-emerald-100' : 'border-slate-200/80 hover:border-slate-300'
+                          }`}
+                        >
+                          {isFree && (
+                            <div className="absolute -top-3 left-1/2 -translate-x-1/2">
+                              <span className="bg-emerald-500 text-white text-[10px] font-bold uppercase tracking-wider px-3 py-1 rounded-full shadow-sm">Free tier</span>
+                            </div>
                           )}
+                          <div className="mb-5">
+                            <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-400">{plan.plan}</p>
+                            <p className={`text-3xl font-bold tracking-tight ${isFree ? 'text-emerald-600' : 'text-slate-900'}`}>{plan.price}</p>
+                          </div>
+                          <ul className="space-y-2.5 flex-1">
+                            {plan.features.map((f: string) => (
+                              <li key={f} className="flex items-start gap-2 text-[13px] text-slate-600">
+                                <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isFree ? 'text-emerald-500' : 'text-slate-400'}`} />
+                                {f}
+                              </li>
+                            ))}
+                          </ul>
                         </div>
-                      </div>
-                    )}
-                    {(tool.latest_news?.length ?? 0) > 0 && (
-                      <div className="px-6 py-4">
-                        <div className="flex items-center gap-2 mb-3">
-                          <Newspaper className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                          <p className="text-[11px] font-semibold text-slate-600 uppercase tracking-wider">Latest News</p>
-                        </div>
-                        <ul className="space-y-2">
-                          {(tool.latest_news ?? []).map((item, i) => (
-                            <li key={i}>
-                              <a href={item.url} target="_blank" rel="nofollow noopener noreferrer" className="inline-flex items-start gap-2 text-[13px] text-slate-600 hover:text-sky-700 transition-colors group">
-                                <ExternalLink className="w-3.5 h-3.5 text-slate-300 group-hover:text-sky-500 shrink-0 mt-0.5" />
-                                {item.title}
-                              </a>
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
                 </section>
               )}
+
+
+              {/* ── FAQ ── */}
+              <FaqSection faqs={tool.faqs} />
 
               {/* ── Similar Tools ── */}
               {similarTools.length > 0 && (
@@ -1044,13 +974,14 @@ export default async function SlugPage({
                 </section>
               )}
 
-              {/* ── Author block ── */}
-              <AuthorBlock
-                author={author}
-                publishedDate={tool.published_date ?? tool.created_at}
-                updatedDate={tool.updated_date ?? tool.updated_at}
-                sources={(tool.sources ?? []).filter(s => s.name && s.url)}
-              />
+              {/* ── Editor Details ── */}
+              <section id="section-editor-details">
+                <AuthorBlock
+                  author={author}
+                  publishedDate={tool.published_date ?? tool.created_at}
+                  sources={(tool.sources ?? []).filter(s => s.name && s.url)}
+                />
+              </section>
             </main>
           </div>
         </div>

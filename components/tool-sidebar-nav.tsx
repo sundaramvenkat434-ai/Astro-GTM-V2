@@ -16,14 +16,14 @@ const DEFAULT_SECTIONS: SidebarSection[] = [
 
 const SECTION_DOTS: Record<string, string> = {
   overview: 'bg-slate-400',
-  features: 'bg-sky-500',
   screenshots: 'bg-slate-300',
+  features: 'bg-sky-500',
   'our-opinion': 'bg-sky-400',
+  'who-is-it-for': 'bg-sky-300',
   pricing: 'bg-emerald-500',
   faq: 'bg-slate-300',
-  'who-is-it-for': 'bg-sky-300',
-  'about-author': 'bg-slate-300',
   'similar-tools': 'bg-slate-300',
+  'editor-details': 'bg-slate-300',
 };
 
 interface Props {
