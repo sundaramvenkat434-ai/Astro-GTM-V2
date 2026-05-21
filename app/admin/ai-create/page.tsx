@@ -70,6 +70,9 @@ import {
   GitCompare,
   Trophy,
   FlaskConical,
+  ThumbsUp,
+  ThumbsDown,
+  Lightbulb,
 } from 'lucide-react';
 
 interface PageTemplate {
@@ -140,6 +143,7 @@ interface StructuredResult {
   cons: string[];
   what_we_learned: { use_case: string; bullets: string[] } | null;
   honest_take: string[];
+  limitations: string[];
 }
 
 const FALLBACK_CATEGORIES = [
@@ -848,6 +852,7 @@ export default function AIPageCreator() {
         cons: Array.isArray(d.cons) ? d.cons : [],
         what_we_learned: d.what_we_learned ?? null,
         honest_take: Array.isArray(d.honest_take) ? d.honest_take : [],
+        limitations: Array.isArray(d.limitations) ? d.limitations : [],
       });
       setLeftCollapsed(true);
     } catch (err: unknown) {
@@ -911,6 +916,7 @@ export default function AIPageCreator() {
       cons: result.cons || [],
       what_we_learned: result.what_we_learned || null,
       honest_take: result.honest_take || [],
+      limitations: result.limitations || [],
       status: 'published',
       author_id: userId,
       published_at: new Date().toISOString(),
@@ -1771,11 +1777,11 @@ The AI will clean this up and produce a complete, structured tool page with name
                         )}
                       </div>
 
-                      {/* Our Honest Take */}
+                      {/* Our Opinion — Strengths */}
                       <div className="bg-white rounded-xl border border-slate-200 p-5">
                         <SectionHeader
-                          icon={<MessageSquare className="w-3.5 h-3.5" />}
-                          label="Our Honest Take"
+                          icon={<ThumbsUp className="w-3.5 h-3.5" />}
+                          label="Our Opinion — Strengths"
                           count={result.honest_take?.length}
                           action={
                             <button onClick={() => updateResult({ honest_take: [...(result.honest_take || []), ''] })} className="text-[11px] text-sky-600 hover:text-sky-800 flex items-center gap-0.5">
@@ -1783,11 +1789,11 @@ The AI will clean this up and produce a complete, structured tool page with name
                             </button>
                           }
                         />
-                        <p className="text-[11px] text-slate-400 -mt-1 mb-3">3 first-person bullets. Start with &quot;In our experience,&quot;, &quot;We found that&quot;, &quot;Honestly,&quot; etc.</p>
+                        <p className="text-[11px] text-slate-400 -mt-1 mb-3">Positive strengths. Start with &quot;In our experience,&quot;, &quot;We found that&quot;, &quot;Honestly,&quot; etc.</p>
                         <div className="space-y-2">
                           {(result.honest_take || []).map((bullet, i) => (
-                            <div key={i} className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/40 px-3 py-2.5">
-                              <MessageSquare className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                            <div key={i} className="flex items-start gap-2 rounded-lg border border-sky-100 bg-sky-50/40 px-3 py-2.5">
+                              <ThumbsUp className="w-3.5 h-3.5 text-sky-500 shrink-0 mt-0.5" />
                               <textarea
                                 value={bullet}
                                 onChange={(e) => {
@@ -1799,7 +1805,43 @@ The AI will clean this up and produce a complete, structured tool page with name
                                 className="flex-1 text-xs text-slate-700 bg-transparent border-0 p-0 focus:outline-none resize-none leading-relaxed"
                                 placeholder='e.g. "In our experience, the onboarding is fast but real value shows after connecting your data sources."'
                               />
-                              <button onClick={() => updateResult({ honest_take: (result.honest_take || []).filter((_, j) => j !== i) })} className="text-amber-300 hover:text-red-500 shrink-0">
+                              <button onClick={() => updateResult({ honest_take: (result.honest_take || []).filter((_, j) => j !== i) })} className="text-sky-200 hover:text-red-500 shrink-0">
+                                <Trash2 className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Our Opinion — Limitations */}
+                      <div className="bg-white rounded-xl border border-slate-200 p-5">
+                        <SectionHeader
+                          icon={<ThumbsDown className="w-3.5 h-3.5" />}
+                          label="Our Opinion — Limitations"
+                          count={result.limitations?.length}
+                          action={
+                            <button onClick={() => updateResult({ limitations: [...(result.limitations || []), ''] })} className="text-[11px] text-amber-600 hover:text-amber-800 flex items-center gap-0.5">
+                              <Plus className="w-3 h-3" /> Add
+                            </button>
+                          }
+                        />
+                        <p className="text-[11px] text-slate-400 -mt-1 mb-3">Known limitations, caveats, or areas to watch out for.</p>
+                        <div className="space-y-2">
+                          {(result.limitations || []).map((bullet, i) => (
+                            <div key={i} className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/40 px-3 py-2.5">
+                              <ThumbsDown className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                              <textarea
+                                value={bullet}
+                                onChange={(e) => {
+                                  const next = [...(result.limitations || [])];
+                                  next[i] = e.target.value;
+                                  updateResult({ limitations: next });
+                                }}
+                                rows={2}
+                                className="flex-1 text-xs text-slate-700 bg-transparent border-0 p-0 focus:outline-none resize-none leading-relaxed"
+                                placeholder='e.g. "The free plan is quite limited and the pricing jumps significantly at higher tiers."'
+                              />
+                              <button onClick={() => updateResult({ limitations: (result.limitations || []).filter((_, j) => j !== i) })} className="text-amber-200 hover:text-red-500 shrink-0">
                                 <Trash2 className="w-2.5 h-2.5" />
                               </button>
                             </div>

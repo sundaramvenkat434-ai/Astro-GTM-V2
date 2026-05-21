@@ -77,6 +77,7 @@ interface ToolPage {
   cons?: string[] | null;
   what_we_learned?: { use_case: string; bullets: string[] } | null;
   honest_take?: string[] | null;
+  limitations?: string[] | null;
   logo_url?: string | null;
   logo_alt?: string | null;
   screenshots?: { url: string; alt: string }[] | null;
@@ -723,49 +724,86 @@ export default async function SlugPage({
                     <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
                   </div>
 
-                  {/* Our Opinion — inside About card */}
-                  {(tool.honest_take?.length ?? 0) > 0 && (
-                    <div className="border-t-2 border-sky-100">
-                      {/* Header */}
+                  {/* Our Opinion — Strengths + Limitations */}
+                  {((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0) && (
+                    <div className="border-t-2 border-sky-200">
+                      {/* Section header */}
                       <div
                         className="px-6 py-5 border-b border-sky-100"
-                        style={{ background: 'linear-gradient(135deg, #e0f2fe 0%, #f0f9ff 60%, #ffffff 100%)' }}
+                        style={{ background: 'linear-gradient(120deg, #0ea5e9 0%, #38bdf8 40%, #7dd3fc 100%)' }}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-sky-600 flex items-center justify-center shrink-0 shadow-sm">
-                            <Lightbulb className="w-4.5 h-4.5 text-white w-[18px] h-[18px]" />
+                          <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0 shadow-inner border border-white/30">
+                            <Lightbulb className="w-[20px] h-[20px] text-white" />
                           </div>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[15px] font-bold text-sky-900 tracking-tight">Our Opinion</span>
-                              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-600 text-white text-[10px] font-semibold uppercase tracking-wide">
+                              <span className="text-[16px] font-bold text-white tracking-tight drop-shadow-sm">Our Opinion</span>
+                              <span
+                                className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider border border-white/40 text-white"
+                                style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.10) 100%)' }}
+                              >
                                 Editorial
                               </span>
                               {/* Tooltip */}
                               <div className="relative group/tip">
-                                <div className="w-4 h-4 rounded-full bg-white border border-sky-300 flex items-center justify-center cursor-default shadow-sm">
-                                  <ShieldCheck className="w-2.5 h-2.5 text-sky-600" />
+                                <div className="w-4 h-4 rounded-full bg-white/30 border border-white/50 flex items-center justify-center cursor-default">
+                                  <ShieldCheck className="w-2.5 h-2.5 text-white" />
                                 </div>
-                                <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 bottom-full mb-2.5 w-72 bg-slate-900/95 backdrop-blur-sm text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
+                                <div className="pointer-events-none absolute left-0 bottom-full mb-2.5 w-72 bg-slate-900/95 text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
                                   This opinion is based on editorial testing, real-world usage, and trusted community feedback. While we aim to test tools thoroughly, some insights may also reflect proven public use cases.
-                                  <span className="absolute left-1/2 -translate-x-1/2 top-full w-0 h-0 border-x-[5px] border-x-transparent border-t-[5px] border-t-slate-900/95" />
+                                  <span className="absolute left-4 top-full w-0 h-0 border-x-[5px] border-x-transparent border-t-[5px] border-t-slate-900/95" />
                                 </div>
                               </div>
                             </div>
-                            <p className="text-[12px] text-sky-600/80 mt-1 font-medium">Collective take from our editorial reviewers</p>
+                            <p className="text-[12px] text-sky-100 mt-1 font-medium">Collective take from our editorial reviewers</p>
                           </div>
                         </div>
                       </div>
-                      {/* Opinion bullets */}
-                      <div className="p-5 space-y-3 bg-gradient-to-b from-sky-50/30 to-white">
-                        {(tool.honest_take ?? []).map((bullet, i) => (
-                          <div key={i} className="flex items-start gap-3.5 p-4 rounded-xl bg-white border border-sky-100 shadow-sm hover:border-sky-200 hover:shadow-md transition-all">
-                            <div className="w-6 h-6 rounded-lg bg-sky-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm">
-                              <span className="text-white text-[11px] font-bold leading-none">{i + 1}</span>
+
+                      {/* Two-column grid */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+
+                        {/* Strengths — blue */}
+                        <div className="p-5 bg-gradient-to-b from-sky-50/60 to-white">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-5 h-5 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
+                              <ThumbsUp className="w-3 h-3 text-white" />
                             </div>
-                            <p className="text-[13.5px] text-slate-700 leading-relaxed">{bullet}</p>
+                            <span className="text-[12px] font-bold text-sky-700 uppercase tracking-wider">Strengths</span>
                           </div>
-                        ))}
+                          <div className="space-y-2.5">
+                            {(tool.honest_take ?? []).map((bullet, i) => (
+                              <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-sky-100 shadow-sm hover:border-sky-300 hover:shadow-md transition-all group/item">
+                                <div className="w-5 h-5 rounded-full bg-sky-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover/item:bg-sky-700 transition-colors">
+                                  <span className="text-white text-[10px] font-bold leading-none">{i + 1}</span>
+                                </div>
+                                <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Limitations — warm yellow, subtle */}
+                        <div className="p-5" style={{ background: 'linear-gradient(160deg, #fefce8 0%, #fffbeb 50%, #ffffff 100%)' }}>
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center shrink-0">
+                              <ThumbsDown className="w-3 h-3 text-white" />
+                            </div>
+                            <span className="text-[12px] font-bold text-amber-600 uppercase tracking-wider">Limitations</span>
+                          </div>
+                          <div className="space-y-2.5">
+                            {(tool.limitations ?? []).map((bullet, i) => (
+                              <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white/80 border border-amber-100 hover:border-amber-200 transition-all">
+                                <div className="w-5 h-5 rounded-full bg-amber-300/80 flex items-center justify-center shrink-0 mt-0.5">
+                                  <span className="text-amber-800 text-[10px] font-bold leading-none">{i + 1}</span>
+                                </div>
+                                <p className="text-[13px] text-slate-600 leading-relaxed">{bullet}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
                       </div>
                     </div>
                   )}

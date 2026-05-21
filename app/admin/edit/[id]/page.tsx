@@ -54,6 +54,7 @@ interface ToolPage {
   cons: string[];
   what_we_learned: { use_case: string; bullets: string[] } | null;
   honest_take: string[];
+  limitations: string[];
   // Enrichment
   logo_url: string | null;
   logo_alt: string | null;
@@ -446,6 +447,7 @@ export default function EditToolPage() {
         cons: tool.cons || [],
         what_we_learned: tool.what_we_learned || null,
         honest_take: tool.honest_take || [],
+        limitations: tool.limitations || [],
         logo_url: tool.logo_url || null,
         logo_alt: tool.logo_alt || null,
         screenshots: tool.screenshots || [],
@@ -1001,11 +1003,11 @@ export default function EditToolPage() {
                   )}
                 </div>
 
-                {/* Honest Take */}
+                {/* Our Opinion — Strengths */}
                 <div className="bg-white rounded-xl border border-slate-200 p-5">
                   <SectionHeader
                     icon={<Lightbulb className="w-3.5 h-3.5" />}
-                    label="Our Honest Take"
+                    label="Our Opinion — Strengths"
                     count={tool.honest_take?.length}
                     action={
                       <button onClick={() => update({ honest_take: [...(tool.honest_take || []), ''] })} className="text-[11px] text-sky-600 hover:text-sky-800 flex items-center gap-0.5">
@@ -1013,10 +1015,11 @@ export default function EditToolPage() {
                       </button>
                     }
                   />
+                  <p className="text-[11px] text-slate-400 -mt-1 mb-3">Positive strengths. Start with &quot;In our experience,&quot;, &quot;We found that&quot;, &quot;Honestly,&quot; etc.</p>
                   <div className="space-y-2">
                     {(tool.honest_take || []).map((bullet, i) => (
-                      <div key={i} className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/40 px-3 py-2.5">
-                        <MessageSquare className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+                      <div key={i} className="flex items-start gap-2 rounded-lg border border-sky-100 bg-sky-50/40 px-3 py-2.5">
+                        <ThumbsUp className="w-3.5 h-3.5 text-sky-500 shrink-0 mt-0.5" />
                         <textarea
                           value={bullet}
                           onChange={(e) => { const next = [...(tool.honest_take || [])]; next[i] = e.target.value; update({ honest_take: next }); }}
@@ -1024,7 +1027,39 @@ export default function EditToolPage() {
                           className="flex-1 text-xs text-slate-700 bg-transparent border-0 p-0 focus:outline-none resize-none leading-relaxed"
                           placeholder='Start with "In our experience,", "We found that", "Honestly,"...'
                         />
-                        <button onClick={() => update({ honest_take: (tool.honest_take || []).filter((_, j) => j !== i) })} className="text-amber-300 hover:text-red-500 shrink-0">
+                        <button onClick={() => update({ honest_take: (tool.honest_take || []).filter((_, j) => j !== i) })} className="text-sky-200 hover:text-red-500 shrink-0">
+                          <Trash2 className="w-2.5 h-2.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Our Opinion — Limitations */}
+                <div className="bg-white rounded-xl border border-slate-200 p-5">
+                  <SectionHeader
+                    icon={<ThumbsDown className="w-3.5 h-3.5" />}
+                    label="Our Opinion — Limitations"
+                    count={tool.limitations?.length}
+                    action={
+                      <button onClick={() => update({ limitations: [...(tool.limitations || []), ''] })} className="text-[11px] text-amber-600 hover:text-amber-800 flex items-center gap-0.5">
+                        <Plus className="w-3 h-3" /> Add
+                      </button>
+                    }
+                  />
+                  <p className="text-[11px] text-slate-400 -mt-1 mb-3">Known limitations, caveats, or areas to watch out for.</p>
+                  <div className="space-y-2">
+                    {(tool.limitations || []).map((bullet, i) => (
+                      <div key={i} className="flex items-start gap-2 rounded-lg border border-amber-100 bg-amber-50/40 px-3 py-2.5">
+                        <ThumbsDown className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                        <textarea
+                          value={bullet}
+                          onChange={(e) => { const next = [...(tool.limitations || [])]; next[i] = e.target.value; update({ limitations: next }); }}
+                          rows={2}
+                          className="flex-1 text-xs text-slate-700 bg-transparent border-0 p-0 focus:outline-none resize-none leading-relaxed"
+                          placeholder='e.g. "The free plan is quite limited and the pricing jumps significantly at higher tiers."'
+                        />
+                        <button onClick={() => update({ limitations: (tool.limitations || []).filter((_, j) => j !== i) })} className="text-amber-200 hover:text-red-500 shrink-0">
                           <Trash2 className="w-2.5 h-2.5" />
                         </button>
                       </div>
