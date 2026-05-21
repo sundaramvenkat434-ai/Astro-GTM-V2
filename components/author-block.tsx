@@ -1,10 +1,8 @@
-// Server component — no 'use client'. All visible text (dates, sources, author
-// name, stats) renders in raw HTML and is crawler-visible without JavaScript.
+// Server component — no 'use client'. All visible text renders in raw HTML.
 
 import Link from 'next/link';
-import { Linkedin, ExternalLink, BookOpen, CalendarDays, Link as LinkOut } from 'lucide-react';
+import { Linkedin, ExternalLink, Link as LinkOut } from 'lucide-react';
 import type { Author } from '@/lib/author-schema';
-import { AuthorBioToggle, UpdatedDateTooltip } from './author-block-interactive';
 
 export type { Author };
 export { FALLBACK } from '@/lib/author-schema';
@@ -21,120 +19,79 @@ interface AuthorBlockProps {
   sources?: Source[];
 }
 
-function fmtShort(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', { month: 'short', year: 'numeric' });
-}
-
-function fmtExact(iso: string) {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'long',
-    day: 'numeric',
-    year: 'numeric',
-  });
-}
-
-export function AuthorBlock({ author, publishedDate, updatedDate, sources }: AuthorBlockProps) {
+export function AuthorBlock({ author, sources }: AuthorBlockProps) {
   const profileUrl = `/author/${author.slug}`;
   const hasSources = (sources?.length ?? 0) > 0;
 
   return (
-    <div className="mt-2 rounded-xl border border-slate-100 overflow-hidden bg-slate-50/50">
+    <div className="mt-2 rounded-lg border border-slate-100 bg-white/60 overflow-hidden">
+      {/* Single compact row */}
+      <div className="flex items-center gap-2.5 px-4 py-2.5">
+        {/* Label */}
+        <span className="text-[10px] font-medium text-slate-400 uppercase tracking-wider shrink-0">Reviews by</span>
 
-      {/* ── Top label bar — fully SSR ──────────────────────────────────────── */}
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 py-2 border-b border-slate-100">
-        <div className="flex items-center gap-1.5">
-          <BookOpen className="w-3 h-3 text-slate-300 shrink-0" aria-hidden="true" />
-          <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Reviews Consolidated By</span>
+        {/* Circular avatar */}
+        <Link href={profileUrl} rel="author" className="shrink-0">
+          <div
+            className="w-6 h-6 rounded-full flex items-center justify-center text-white text-[9px] font-bold ring-1 ring-white hover:opacity-80 transition-opacity"
+            style={{ background: author.avatar_color }}
+          >
+            {author.avatar_initials}
+          </div>
+        </Link>
+
+        {/* Name + title */}
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <Link href={profileUrl} rel="author" className="text-[12px] font-medium text-slate-600 hover:text-sky-700 transition-colors truncate">
+            {author.name}
+          </Link>
+          <span className="text-slate-300 text-[11px] hidden sm:inline" aria-hidden="true">·</span>
+          <span className="text-[11px] text-slate-400 truncate hidden sm:inline">{author.title}</span>
         </div>
 
-        {(publishedDate || updatedDate) && (
-          <span className="text-slate-200 text-[10px] hidden sm:inline" aria-hidden="true">·</span>
-        )}
-
-        {/* Published date — plain SSR text, no interactivity needed */}
-        {publishedDate && (
-          <span className="inline-flex items-center gap-1 text-[10px] text-slate-400">
-            <CalendarDays className="w-2.5 h-2.5 text-slate-300" aria-hidden="true" />
-            Published {fmtShort(publishedDate)}
-          </span>
-        )}
-
-        {/* Updated date — text is SSR-rendered inside UpdatedDateTooltip; the
-            client layer only adds the hover tooltip, not the visible text. */}
-        {updatedDate && (
-          <UpdatedDateTooltip short={fmtShort(updatedDate)} exact={fmtExact(updatedDate)} />
-        )}
-      </div>
-
-      {/* ── Author card — fully SSR ───────────────────────────────────────── */}
-      <div className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          {/* Circular avatar */}
-          <Link href={profileUrl} rel="author" className="shrink-0 group">
-            <div
-              className="w-9 h-9 rounded-full flex items-center justify-center text-white font-bold text-[12px] shadow-sm ring-2 ring-white group-hover:opacity-90 transition-opacity"
-              style={{ background: author.avatar_color }}
+        {/* Actions */}
+        <div className="flex items-center gap-1 shrink-0">
+          {author.linkedin_url && (
+            <a
+              href={author.linkedin_url}
+              target="_blank"
+              rel="noopener noreferrer author"
+              className="w-5 h-5 flex items-center justify-center hover:bg-slate-100 rounded transition-colors"
+              aria-label={`${author.name} on LinkedIn`}
             >
-              {author.avatar_initials}
-            </div>
-          </Link>
-
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2 flex-wrap">
-              <Link href={profileUrl} rel="author" className="text-[13px] font-semibold text-slate-700 hover:text-sky-700 transition-colors leading-tight">
-                {author.name}
-              </Link>
-              {author.linkedin_url && (
-                <a
-                  href={author.linkedin_url}
-                  target="_blank"
-                  rel="noopener noreferrer author"
-                  className="w-5 h-5 rounded flex items-center justify-center hover:bg-sky-50 transition-colors"
-                  aria-label={`${author.name} on LinkedIn`}
-                >
-                  <Linkedin className="w-3 h-3 text-slate-400 hover:text-sky-600 transition-colors" />
-                </a>
-              )}
-              <span className="text-[10px] text-slate-400 font-medium">Not Sponsored</span>
-            </div>
-            <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{author.title}</p>
-          </div>
-
+              <Linkedin className="w-3 h-3 text-slate-400" />
+            </a>
+          )}
           <Link
             href={profileUrl}
             rel="author"
-            className="shrink-0 w-6 h-6 rounded flex items-center justify-center hover:bg-slate-100 transition-colors"
-            aria-label={`${author.name} author profile`}
+            className="w-5 h-5 flex items-center justify-center hover:bg-slate-100 rounded transition-colors"
+            aria-label={`${author.name} profile`}
           >
-            <ExternalLink className="w-3 h-3 text-slate-300 hover:text-slate-500 transition-colors" />
+            <ExternalLink className="w-3 h-3 text-slate-400" />
           </Link>
         </div>
 
-        {/* Bio — text is SSR; the expand/collapse button is the only client piece */}
-        <div className="mt-2 pl-12">
-          <AuthorBioToggle bio={author.bio} />
-        </div>
+        {/* Not sponsored */}
+        <span className="text-[10px] text-slate-300 font-medium shrink-0 hidden sm:inline">Not Sponsored</span>
       </div>
 
-      {/* ── Sources — fully SSR, rel="nofollow noopener noreferrer" ──────── */}
+      {/* Sources — minimal, only if present */}
       {hasSources && (
-        <div className="border-t border-slate-100 px-4 py-3">
-          <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-300 mb-2">Sources</p>
-          <ul className="space-y-1">
-            {(sources ?? []).map((src, i) => (
-              <li key={i}>
-                <a
-                  href={src.url}
-                  target="_blank"
-                  rel="nofollow noopener noreferrer"
-                  className="inline-flex items-center gap-1.5 text-[11px] text-slate-500 hover:text-sky-700 transition-colors group"
-                >
-                  <LinkOut className="w-2.5 h-2.5 text-slate-300 group-hover:text-sky-500 shrink-0" aria-hidden="true" />
-                  {src.name}
-                </a>
-              </li>
-            ))}
-          </ul>
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-1 px-4 pb-2.5 border-t border-slate-100 pt-2">
+          <span className="text-[10px] font-medium text-slate-300 uppercase tracking-wider">Sources</span>
+          {(sources ?? []).map((src, i) => (
+            <a
+              key={i}
+              href={src.url}
+              target="_blank"
+              rel="nofollow noopener noreferrer"
+              className="inline-flex items-center gap-1 text-[11px] text-slate-400 hover:text-sky-600 transition-colors"
+            >
+              <LinkOut className="w-2.5 h-2.5 shrink-0" aria-hidden="true" />
+              {src.name}
+            </a>
+          ))}
         </div>
       )}
     </div>

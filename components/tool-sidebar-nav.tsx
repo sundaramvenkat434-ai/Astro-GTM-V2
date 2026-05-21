@@ -18,11 +18,10 @@ const SECTION_DOTS: Record<string, string> = {
   overview: 'bg-slate-400',
   features: 'bg-sky-500',
   screenshots: 'bg-slate-300',
+  'our-opinion': 'bg-sky-400',
   pricing: 'bg-emerald-500',
   faq: 'bg-slate-300',
-  'pros-cons': 'bg-emerald-400',
-  'what-we-learned': 'bg-teal-500',
-  'honest-take': 'bg-amber-400',
+  'who-is-it-for': 'bg-sky-300',
   'about-author': 'bg-slate-300',
   'similar-tools': 'bg-slate-300',
 };

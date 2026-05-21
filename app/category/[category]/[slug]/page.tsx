@@ -25,14 +25,12 @@ import {
   ThumbsUp,
   ThumbsDown,
   Lightbulb,
-  FlaskConical,
   Globe,
   Newspaper,
   CalendarDays,
   Linkedin,
   BadgeCheck,
   ShieldCheck,
-  X,
   Eye,
 } from 'lucide-react';
 import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
@@ -45,6 +43,12 @@ export const revalidate = 3600;
 export const dynamicParams = true;
 
 const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL || 'https://astrogtm.com';
+
+interface WhoIsItForEntry {
+  audience: string;
+  score: number;
+  note?: string;
+}
 
 interface ToolPage {
   id: string;
@@ -93,6 +97,7 @@ interface ToolPage {
   reviewer_id?: string | null;
   website_url?: string | null;
   sources?: { name: string; url: string }[] | null;
+  who_is_it_for?: WhoIsItForEntry[] | null;
   is_claimed?: boolean;
   claimed_founded_by?: string | null;
   claimed_founder_names?: string | null;
@@ -541,13 +546,11 @@ export default async function SlugPage({
 
     const navSections: SidebarSection[] = [
       { id: 'overview', label: 'Overview' },
-      ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screenshots' }] : []),
-      { id: 'our-opinion', label: 'Our Opinion' },
       ...(tool.features.length > 0 ? [{ id: 'features', label: 'Features' }] : []),
+      ...((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0 ? [{ id: 'our-opinion', label: 'Our Opinion' }] : []),
       ...(tool.pricing.length > 0 ? [{ id: 'pricing', label: 'Pricing' }] : []),
-      ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQ' }] : []),
-      ...((tool.pros?.length ?? 0) > 0 || (tool.cons?.length ?? 0) > 0 ? [{ id: 'pros-cons', label: 'Pros & Cons' }] : []),
-      ...(tool.what_we_learned != null ? [{ id: 'what-we-learned', label: 'Case Study' }] : []),
+      ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQs' }] : []),
+      ...((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 ? [{ id: 'who-is-it-for', label: 'Who Is It For' }] : [] as SidebarSection[],
       ...((tool.official_website || tool.founder_name || (tool.latest_news?.length ?? 0) > 0) ? [{ id: 'about-author', label: 'Official Links' }] : []),
       ...(similarTools.length > 0 ? [{ id: 'similar-tools', label: 'Similar Tools' }] : []),
     ];
@@ -646,14 +649,10 @@ export default async function SlugPage({
 
                         {(() => {
                           const pub = tool.published_date ?? tool.created_at;
-                          const upd = tool.updated_date ?? tool.updated_at;
                           return (
                             <p className="text-[11px] text-slate-400 mt-2.5 flex items-center gap-1.5">
                               <CalendarDays className="w-3 h-3 shrink-0" />
-                              <span>Published {new Date(pub).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
-                              {upd !== pub && (
-                                <span>· Updated {new Date(upd).toLocaleDateString('en-US', { year: 'numeric', month: 'short' })}</span>
-                              )}
+                              <span>Added {new Date(pub).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</span>
                             </p>
                           );
                         })()}
@@ -716,105 +715,13 @@ export default async function SlugPage({
                 </section>
               )}
 
-              {/* ── About + Our Opinion ── */}
-              <section id="section-our-opinion">
+              {/* ── About (Overview text) ── */}
+              <section id="section-overview-about">
                 <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
                   <div className="p-6 sm:p-8">
                     <h2 className="text-sm font-semibold text-slate-900 mb-3">About {tool.name}</h2>
                     <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
                   </div>
-
-                  {/* Our Opinion — Strengths + Limitations */}
-                  {((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0) && (
-                    <div className="border-t border-slate-100">
-                      {/* Section header */}
-                      <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-white border border-sky-200 flex items-center justify-center shrink-0 shadow-sm">
-                            <Lightbulb className="w-[16px] h-[16px] text-sky-600" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <span className="text-[14px] font-bold text-sky-900 tracking-tight">Our Opinion</span>
-                              <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">
-                                Editorial
-                              </span>
-                              {/* Tooltip */}
-                              <div className="relative group/tip">
-                                <div className="w-3.5 h-3.5 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center cursor-default">
-                                  <ShieldCheck className="w-2 h-2 text-sky-500" />
-                                </div>
-                                <div className="pointer-events-none absolute left-0 bottom-full mb-2.5 w-72 bg-slate-900/95 text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
-                                  This opinion is based on editorial testing, real-world usage, and trusted community feedback. While we aim to test tools thoroughly, some insights may also reflect proven public use cases.
-                                  <span className="absolute left-4 top-full w-0 h-0 border-x-[5px] border-x-transparent border-t-[5px] border-t-slate-900/95" />
-                                </div>
-                              </div>
-                            </div>
-                            <p className="text-[11px] text-sky-600/70 mt-0.5">Collective take from our editorial reviewers</p>
-                          </div>
-                          {/* Reviewer avatar pill */}
-                          <Link
-                            href={`/author/${author.slug}`}
-                            rel="author"
-                            className="flex items-center gap-1.5 shrink-0 group/rev"
-                          >
-                            <span className="text-[10px] text-sky-500 group-hover/rev:text-sky-700 transition-colors hidden sm:inline">Reviewed by</span>
-                            <div
-                              className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm ring-1 ring-sky-200 group-hover/rev:ring-sky-400 transition-all"
-                              style={{ background: author.avatar_color }}
-                            >
-                              {author.avatar_initials}
-                            </div>
-                          </Link>
-                        </div>
-                      </div>
-
-                      {/* Two-column grid */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-
-                        {/* Strengths — blue */}
-                        <div className="p-5 bg-white">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-5 h-5 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
-                              <ThumbsUp className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="text-[12px] font-bold text-sky-700 uppercase tracking-wider">Strengths</span>
-                          </div>
-                          <div className="space-y-2.5">
-                            {(tool.honest_take ?? []).map((bullet, i) => (
-                              <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-sky-100 shadow-sm hover:border-sky-300 hover:shadow-md transition-all group/item">
-                                <div className="w-5 h-5 rounded-full bg-sky-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover/item:bg-sky-700 transition-colors">
-                                  <span className="text-white text-[10px] font-bold leading-none">{i + 1}</span>
-                                </div>
-                                <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Limitations — warm yellow, subtle */}
-                        <div className="p-5 bg-white">
-                          <div className="flex items-center gap-2 mb-4">
-                            <div className="w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center shrink-0">
-                              <ThumbsDown className="w-3 h-3 text-white" />
-                            </div>
-                            <span className="text-[12px] font-bold text-amber-600 uppercase tracking-wider">Limitations</span>
-                          </div>
-                          <div className="space-y-2.5">
-                            {(tool.limitations ?? []).map((bullet, i) => (
-                              <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white/80 border border-amber-100 hover:border-amber-200 transition-all">
-                                <div className="w-5 h-5 rounded-full bg-amber-300/80 flex items-center justify-center shrink-0 mt-0.5">
-                                  <span className="text-amber-800 text-[10px] font-bold leading-none">{i + 1}</span>
-                                </div>
-                                <p className="text-[13px] text-slate-600 leading-relaxed">{bullet}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                      </div>
-                    </div>
-                  )}
                 </div>
               </section>
 
@@ -836,6 +743,95 @@ export default async function SlugPage({
                         </div>
                       </div>
                     ))}
+                  </div>
+                </section>
+              )}
+
+              {/* ── Our Opinion ── */}
+              {((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0) && (
+                <section id="section-our-opinion">
+                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                    {/* Section header */}
+                    <div className="px-6 py-4 border-b border-sky-100 bg-sky-50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-white border border-sky-200 flex items-center justify-center shrink-0 shadow-sm">
+                          <Lightbulb className="w-[16px] h-[16px] text-sky-600" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-[14px] font-bold text-sky-900 tracking-tight">Our Opinion</span>
+                            <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">
+                              Editorial
+                            </span>
+                            <div className="relative group/tip">
+                              <div className="w-3.5 h-3.5 rounded-full bg-sky-100 border border-sky-200 flex items-center justify-center cursor-default">
+                                <ShieldCheck className="w-2 h-2 text-sky-500" />
+                              </div>
+                              <div className="pointer-events-none absolute left-0 bottom-full mb-2.5 w-72 bg-slate-900/95 text-white text-[11px] leading-relaxed rounded-xl px-3.5 py-3 shadow-2xl opacity-0 group-hover/tip:opacity-100 transition-opacity duration-200 z-50">
+                                This opinion is based on editorial testing, real-world usage, and trusted community feedback. While we aim to test tools thoroughly, some insights may also reflect proven public use cases.
+                                <span className="absolute left-4 top-full w-0 h-0 border-x-[5px] border-x-transparent border-t-[5px] border-t-slate-900/95" />
+                              </div>
+                            </div>
+                          </div>
+                          <p className="text-[11px] text-slate-500 mt-0.5">Collective take from our editorial reviewers</p>
+                        </div>
+                        {/* Reviewer avatar */}
+                        <Link href={`/author/${author.slug}`} rel="author" className="flex items-center gap-1.5 shrink-0 group/rev">
+                          <span className="text-[10px] text-slate-500 group-hover/rev:text-slate-700 transition-colors hidden sm:inline">Reviewed by</span>
+                          <div
+                            className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[10px] font-bold border-2 border-white shadow-sm ring-1 ring-sky-200 group-hover/rev:ring-sky-400 transition-all"
+                            style={{ background: author.avatar_color }}
+                          >
+                            {author.avatar_initials}
+                          </div>
+                        </Link>
+                      </div>
+                    </div>
+                    {/* Two-column grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                      {/* Strengths */}
+                      {(tool.honest_take?.length ?? 0) > 0 && (
+                        <div className="p-5 bg-white">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-5 h-5 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
+                              <ThumbsUp className="w-3 h-3 text-white" />
+                            </div>
+                            <span className="text-[12px] font-bold text-sky-700 uppercase tracking-wider">Strengths</span>
+                          </div>
+                          <div className="space-y-2.5">
+                            {(tool.honest_take ?? []).map((bullet, i) => (
+                              <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white border border-sky-100 shadow-sm hover:border-sky-300 hover:shadow-md transition-all group/item">
+                                <div className="w-5 h-5 rounded-full bg-sky-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover/item:bg-sky-700 transition-colors">
+                                  <span className="text-white text-[10px] font-bold leading-none">{i + 1}</span>
+                                </div>
+                                <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                      {/* Limitations */}
+                      {(tool.limitations?.length ?? 0) > 0 && (
+                        <div className="p-5 bg-white">
+                          <div className="flex items-center gap-2 mb-4">
+                            <div className="w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center shrink-0">
+                              <ThumbsDown className="w-3 h-3 text-white" />
+                            </div>
+                            <span className="text-[12px] font-bold text-amber-600 uppercase tracking-wider">Limitations</span>
+                          </div>
+                          <div className="space-y-2.5">
+                            {(tool.limitations ?? []).map((bullet, i) => (
+                              <div key={i} className="flex items-start gap-3 p-3.5 rounded-xl bg-white/80 border border-amber-100 hover:border-amber-200 transition-all">
+                                <div className="w-5 h-5 rounded-full bg-amber-300/80 flex items-center justify-center shrink-0 mt-0.5">
+                                  <span className="text-amber-800 text-[10px] font-bold leading-none">{i + 1}</span>
+                                </div>
+                                <p className="text-[13px] text-slate-600 leading-relaxed">{bullet}</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </section>
               )}
@@ -885,73 +881,49 @@ export default async function SlugPage({
               {/* ── FAQ ── */}
               <FaqSection faqs={tool.faqs} />
 
-              {/* ── Pros & Cons ── */}
-              {((tool.pros?.length ?? 0) > 0 || (tool.cons?.length ?? 0) > 0) && (
-                <section id="section-pros-cons">
-                  <SectionHeading accent="emerald" description="Our hands-on assessment after testing">Pros &amp; Cons</SectionHeading>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {(tool.pros?.length ?? 0) > 0 && (
-                      <div className="bg-emerald-50 border border-emerald-100 rounded-2xl overflow-hidden">
-                        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-emerald-100">
-                          <ThumbsUp className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                          <h3 className="text-[12px] font-bold text-emerald-800 uppercase tracking-wide">Pros</h3>
-                        </div>
-                        <ul className="divide-y divide-emerald-100/60 p-1">
-                          {(tool.pros ?? []).map((pro, i) => (
-                            <li key={i} className="flex items-start gap-3 px-4 py-3 text-[13px] text-emerald-900">
-                              <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                              {pro}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                    {(tool.cons?.length ?? 0) > 0 && (
-                      <div className="bg-red-50 border border-red-100 rounded-2xl overflow-hidden">
-                        <div className="flex items-center gap-2 px-5 py-3.5 border-b border-red-100">
-                          <ThumbsDown className="w-3.5 h-3.5 text-red-500 shrink-0" />
-                          <h3 className="text-[12px] font-bold text-red-700 uppercase tracking-wide">Cons</h3>
-                        </div>
-                        <ul className="divide-y divide-red-100/60 p-1">
-                          {(tool.cons ?? []).map((con, i) => (
-                            <li key={i} className="flex items-start gap-3 px-4 py-3 text-[13px] text-red-900">
-                              <X className="w-3.5 h-3.5 text-red-500 shrink-0 mt-0.5" />
-                              {con}
-                            </li>
-                          ))}
-                        </ul>
-                      </div>
-                    )}
-                  </div>
-                </section>
-              )}
-
-              {/* ── Case Study ── */}
-              {tool.what_we_learned != null && (tool.what_we_learned.bullets?.length ?? 0) > 0 && (
-                <section id="section-what-we-learned">
-                  <SectionHeading accent="teal" description="What we found after hands-on testing">Case Study</SectionHeading>
+              {/* ── Who Is It For ── */}
+              {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
+                <section id="section-who-is-it-for">
+                  <SectionHeading accent="blue" description="Recommended fit by team type and use case">Who Is It For</SectionHeading>
                   <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    {/* Header */}
-                    <div className="flex items-center gap-3 px-6 py-4 bg-gradient-to-r from-teal-50 to-white border-b border-teal-100">
-                      <div className="w-8 h-8 rounded-lg bg-teal-100 flex items-center justify-center shrink-0">
-                        <FlaskConical className="w-4 h-4 text-teal-600" />
-                      </div>
-                      <div>
-                        <p className="text-[13px] font-semibold text-slate-800">Hands-on Testing Results</p>
-                        {tool.what_we_learned.use_case && (
-                          <p className="text-[11px] text-teal-600 mt-0.5">Tested for: <span className="font-medium">{tool.what_we_learned.use_case}</span></p>
-                        )}
-                      </div>
+                    {/* Column headers */}
+                    <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Team / Company Type</span>
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-28 text-right">Fit Score</span>
                     </div>
-                    {/* Findings */}
-                    <ol className="p-4 space-y-2">
-                      {tool.what_we_learned.bullets.map((bullet, i) => (
-                        <li key={i} className="flex items-start gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                          <span className="flex items-center justify-center w-5 h-5 rounded-full bg-teal-500 text-white text-[10px] font-bold shrink-0 mt-0.5 leading-none">{i + 1}</span>
-                          <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
-                        </li>
-                      ))}
-                    </ol>
+                    <ul className="divide-y divide-slate-100">
+                      {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
+                        const score = Math.max(1, Math.min(10, Math.round(entry.score)));
+                        const pct = (score / 10) * 100;
+                        const barColor =
+                          score >= 8 ? 'bg-sky-500' :
+                          score >= 5 ? 'bg-sky-400' :
+                          'bg-slate-300';
+                        const scoreColor =
+                          score >= 8 ? 'text-sky-700' :
+                          score >= 5 ? 'text-slate-600' :
+                          'text-slate-400';
+                        return (
+                          <li key={i} className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
+                            <div>
+                              <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
+                              {entry.note && (
+                                <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{entry.note}</p>
+                              )}
+                            </div>
+                            <div className="flex flex-col items-end gap-1.5 w-28 shrink-0">
+                              <span className={`text-[13px] font-bold tabular-nums ${scoreColor}`}>{score}<span className="text-[10px] font-normal text-slate-400">/10</span></span>
+                              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all ${barColor}`}
+                                  style={{ width: `${pct}%` }}
+                                />
+                              </div>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
                   </div>
                 </section>
               )}
