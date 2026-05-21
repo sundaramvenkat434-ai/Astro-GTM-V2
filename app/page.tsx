@@ -299,7 +299,7 @@ export default function HomePage() {
             Discover new, proven{' '}
             <span className="text-white font-medium">AI growth tools</span>{' '}
             across SEO, lead gen, sales outreach, social media, and more,{' '}
-            <span className="text-emerald-400 font-semibold">reviewed by experts</span>.
+            <span className="text-emerald-400 font-semibold">tested by experts</span>.
           </p>
 
           {/* CTAs */}
