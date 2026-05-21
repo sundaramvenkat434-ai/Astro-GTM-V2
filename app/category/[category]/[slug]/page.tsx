@@ -549,7 +549,7 @@ export default async function SlugPage({
       ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screenshots' }] : []),
       { id: 'features', label: 'Features' },
       ...((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0 ? [{ id: 'our-opinion', label: 'Our Opinion' }] : []),
-      ...((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 ? [{ id: 'who-is-it-for', label: 'Suitable For' }] : [] as SidebarSection[],
+      ...((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 ? [{ id: 'who-is-it-for', label: 'Who Is It For' }] : [] as SidebarSection[],
       ...(tool.pricing.length > 0 ? [{ id: 'pricing', label: 'Pricing' }] : []),
       ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQs' }] : []),
       ...(similarTools.length > 0 ? [{ id: 'similar-tools', label: 'Similar Tools' }] : []),
@@ -847,35 +847,54 @@ export default async function SlugPage({
               {/* ── Suitable For ── */}
               {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
                 <section id="section-who-is-it-for">
-                  <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
-                  <div className="grid grid-cols-3 gap-3">
-                    {(tool.who_is_it_for as WhoIsItForEntry[]).slice(0, 3).map((entry, i) => {
-                      const score = Math.max(1, Math.min(10, Math.round(entry.score)));
-                      const pct = (score / 10) * 100;
-                      const isHigh = score >= 8;
-                      const isMid = score >= 5 && score < 8;
-                      const barColor = isHigh ? 'bg-sky-500' : isMid ? 'bg-amber-400' : 'bg-slate-300';
-                      const scoreColor = isHigh ? 'text-sky-600' : isMid ? 'text-amber-600' : 'text-slate-400';
-                      return (
-                        <div
-                          key={i}
-                          className="flex flex-col gap-3 p-4 rounded-xl bg-white border border-slate-200/80 shadow-sm hover:shadow-md hover:border-slate-300 transition-all"
-                        >
-                          <div className="flex items-start justify-between gap-2">
-                            <p className="text-[12px] font-semibold text-slate-800 leading-snug flex-1">{entry.audience}</p>
-                            <span className={`text-[13px] font-bold tabular-nums shrink-0 ${scoreColor}`}>
-                              {score}<span className="text-[10px] font-normal text-slate-300">/10</span>
+                  <SectionHeading accent="blue" description="Editorial assessment of team and workflow fit">Who Is It For</SectionHeading>
+                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                    {/* Header */}
+                    <div
+                      className="px-6 py-4 border-b border-sky-100 relative overflow-hidden"
+                      style={{ background: 'linear-gradient(to right, #f0f9ff, #f8fbff 60%, #ffffff)' }}
+                    >
+                      <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-sky-200/60 via-sky-300/40 to-transparent pointer-events-none" />
+                      <p className="text-[11px] font-semibold uppercase tracking-widest text-slate-400">Editorial fit assessment — based on team type &amp; workflow</p>
+                    </div>
+                    {/* Grid of cards */}
+                    <div className="p-5 grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      {(tool.who_is_it_for as WhoIsItForEntry[]).slice(0, 3).map((entry, i) => {
+                        const score = Math.max(1, Math.min(10, Math.round(entry.score)));
+                        type FitTier = {
+                          label: string;
+                          labelColor: string;
+                          labelBg: string;
+                          labelBorder: string;
+                          accentBar: string;
+                          iconColor: string;
+                        };
+                        const tier: FitTier =
+                          score >= 9 ? { label: 'Ideal For', labelColor: 'text-sky-700', labelBg: 'bg-sky-50', labelBorder: 'border-sky-200', accentBar: 'bg-sky-500', iconColor: 'text-sky-500' }
+                          : score >= 7 ? { label: 'Works Well For', labelColor: 'text-sky-600', labelBg: 'bg-sky-50/60', labelBorder: 'border-sky-200/70', accentBar: 'bg-sky-400', iconColor: 'text-sky-400' }
+                          : score >= 5 ? { label: 'Can Work For', labelColor: 'text-amber-700', labelBg: 'bg-amber-50', labelBorder: 'border-amber-200', accentBar: 'bg-amber-400', iconColor: 'text-amber-500' }
+                          : score >= 4 ? { label: 'Limited Fit', labelColor: 'text-amber-600', labelBg: 'bg-amber-50/60', labelBorder: 'border-amber-200/60', accentBar: 'bg-amber-300', iconColor: 'text-amber-400' }
+                          : score >= 3 ? { label: 'Not Ideal For', labelColor: 'text-slate-500', labelBg: 'bg-slate-50', labelBorder: 'border-slate-200', accentBar: 'bg-slate-300', iconColor: 'text-slate-400' }
+                          : { label: 'Better Alternatives Exist', labelColor: 'text-slate-400', labelBg: 'bg-slate-50/60', labelBorder: 'border-slate-200/60', accentBar: 'bg-slate-200', iconColor: 'text-slate-300' };
+                        return (
+                          <div key={i} className="flex flex-col gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/40 hover:bg-white hover:border-slate-200 hover:shadow-sm transition-all">
+                            {/* Fit label pill */}
+                            <span className={`self-start inline-flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider border ${tier.labelBg} ${tier.labelColor} ${tier.labelBorder}`}>
+                              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tier.accentBar}`} />
+                              {tier.label}
                             </span>
+                            {/* Audience */}
+                            <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
+                            {/* Note */}
+                            {entry.note && (
+                              <p className="text-[11px] text-slate-500 leading-relaxed flex-1">{entry.note}</p>
+                            )}
+                            {/* Accent bar at bottom */}
+                            <div className={`w-8 h-0.5 rounded-full ${tier.accentBar} mt-auto opacity-60`} />
                           </div>
-                          {entry.note && (
-                            <p className="text-[11px] text-slate-400 leading-relaxed">{entry.note}</p>
-                          )}
-                          <div className="w-full h-1 bg-slate-100 rounded-full overflow-hidden mt-auto">
-                            <div className={`h-full rounded-full transition-all ${barColor}`} style={{ width: `${pct}%` }} />
-                          </div>
-                        </div>
-                      );
-                    })}
+                        );
+                      })}
+                    </div>
                   </div>
                 </section>
               )}
