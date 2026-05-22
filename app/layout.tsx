@@ -3,18 +3,37 @@ import type { Metadata } from 'next';
 import { Inter, DM_Sans } from 'next/font/google';
 import Script from 'next/script';
 import { GlobalLoader } from '@/components/global-loader';
+import { supabaseServer } from '@/lib/supabase-server';
+
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const dmSans = DM_Sans({ subsets: ['latin'], variable: '--font-dm-sans', weight: ['400', '500', '600', '700'] });
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000'),
-  title: {
-    default: 'Best AI Tools for GTM, SEO & Growth | AstroGTM',
-    template: '%s | AstroGTM',
-  },
-  description: 'Explore an expert-curated list of the latest AI tools to scale user acquisition — built for founders, marketers, and GTM teams.',
-  robots: { index: true, follow: true },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const { data } = await supabaseServer
+    .from('admin_settings')
+    .select('key, value')
+    .in('key', ['site_meta_title', 'site_meta_description']);
+
+  let title = 'Best AI Tools for GTM, SEO & Growth | AstroGTM';
+  let description = 'Explore an expert-curated list of the latest AI tools to scale user acquisition — built for founders, marketers, and GTM teams.';
+
+  if (data) {
+    for (const row of data) {
+      if (row.key === 'site_meta_title' && row.value) title = row.value;
+      if (row.key === 'site_meta_description' && row.value) description = row.value;
+    }
+  }
+
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://localhost:3000'),
+    title: {
+      default: title,
+      template: '%s | AstroGTM',
+    },
+    description,
+    robots: { index: true, follow: true },
+  };
+}
 
 export default function RootLayout({
   children,

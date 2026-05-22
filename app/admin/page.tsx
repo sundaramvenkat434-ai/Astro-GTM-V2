@@ -1038,6 +1038,10 @@ export default function AdminDashboard() {
                   <BadgeCheck className="w-3.5 h-3.5 mr-1.5 text-sky-600" />
                   <span className="hidden sm:inline">Claims</span>
                 </Button>
+                <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => router.push('/admin/settings')}>
+                  <Settings2 className="w-3.5 h-3.5 mr-1.5" />
+                  <span className="hidden sm:inline">Settings</span>
+                </Button>
                 <Button variant="outline" size="sm" className="h-8 text-xs" onClick={() => router.push('/admin/sitemap')}>
                   <Map className="w-3.5 h-3.5 mr-1.5" />
                   <span className="hidden sm:inline">Sitemap</span>
