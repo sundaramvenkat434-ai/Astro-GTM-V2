@@ -229,7 +229,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
   const articleLd = buildArticleSchema({ headline: page.meta_title || page.name, pageUrl });
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <div className="min-h-screen bg-[#f8f9fb] flex flex-col">
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(itemListLd) }} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify(articleLd) }} />
@@ -244,105 +244,129 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
         ]}
       />
 
-      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-12">
-
-        {/* ── HERO ── */}
-        <section>
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-13 h-13 w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center shrink-0">
-              <Trophy className="w-5 h-5 text-amber-400" />
-            </div>
+      {/* ── HERO (light) ── */}
+      <section className="bg-white border-b border-slate-200">
+        <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+          <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-10">
             <div className="flex-1 min-w-0">
-              <div className="flex flex-wrap items-center gap-2 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+              <div className="flex flex-wrap items-center gap-2.5 mb-4">
+                <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                </div>
+                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
                   {categoryLabel}
                 </span>
-                <span className="text-xs text-slate-400">{tools.length} tools compared</span>
+                <span className="text-[11px] text-slate-400 font-medium">{tools.length} tools compared</span>
               </div>
-              <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold text-slate-900 leading-tight mb-3">
+              <h1 className="text-2xl sm:text-3xl lg:text-[2.5rem] font-extrabold text-slate-900 leading-[1.15] tracking-tight mb-3">
                 {page.name}
               </h1>
               {page.tagline && (
-                <p className="text-base sm:text-lg text-slate-500 leading-relaxed">{page.tagline}</p>
+                <p className="text-[15px] sm:text-[17px] text-slate-500 leading-relaxed max-w-2xl">{page.tagline}</p>
+              )}
+              {page.intro && (
+                <p className="text-[14px] text-slate-600 leading-relaxed mt-4 max-w-2xl">{page.intro}</p>
               )}
             </div>
-          </div>
-
-          {/* Intro + top pick side by side on larger screens */}
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-4">
-            {page.intro && (
-              <div className="bg-white border border-slate-200 rounded-2xl p-6">
-                <p className="text-slate-600 leading-relaxed text-sm sm:text-base">{page.intro}</p>
-              </div>
-            )}
 
             {/* Top pick card */}
             {topTool && (
-              <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 flex flex-col gap-3">
+              <div className="lg:w-[280px] shrink-0 bg-gradient-to-br from-amber-50 to-white border border-amber-200/70 rounded-2xl p-5 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <Crown className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wider">Our Top Pick</span>
+                  <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Our Top Pick</span>
                 </div>
                 <div>
-                  <p className="font-bold text-slate-900 text-base mb-0.5">{topTool.name}</p>
-                  <p className="text-xs text-slate-500 leading-relaxed line-clamp-2">{topTool.tagline}</p>
+                  <p className="font-bold text-slate-900 text-[15px] mb-1">{topTool.name}</p>
+                  <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2">{topTool.tagline}</p>
                 </div>
                 <StarRow rating={topTool.rating} count={topTool.rating_count} />
                 <Link
                   href={`/category/${topTool.category}/${topTool.slug}`}
-                  className="inline-flex items-center justify-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-700 transition-colors"
+                  className="inline-flex items-center justify-center gap-1.5 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-700 transition-colors mt-1"
                 >
                   View Full Review <ArrowUpRight className="w-3.5 h-3.5" />
                 </Link>
               </div>
             )}
           </div>
-        </section>
+        </div>
+      </section>
 
-        {/* ── QUICK NAV ── */}
+      <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-12">
+
+        {/* ── RANKINGS ── */}
         <section>
-          <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center gap-3 mb-5">
             <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">Rankings at a Glance</h2>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
-          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
+          <div className="grid grid-cols-1 gap-2.5">
             {orderedEntries.map(({ tool, entry }, i) => {
               const medal = RANK_MEDAL[i];
               return (
                 <Link
                   key={tool.id}
                   href={`/category/${tool.category}/${tool.slug}`}
-                  className="flex items-center gap-4 px-5 py-3.5 hover:bg-slate-50 transition-colors group"
+                  className={`group flex items-center gap-4 px-5 py-4 rounded-xl border transition-all duration-200 ${
+                    i === 0
+                      ? 'bg-gradient-to-r from-amber-50/70 to-white border-amber-200/60 hover:border-amber-300 hover:shadow-md hover:shadow-amber-50'
+                      : 'bg-white border-slate-200 hover:border-slate-300 hover:shadow-md hover:shadow-slate-100/50'
+                  }`}
                 >
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${medal ? `${medal.bg} ${medal.text}` : 'bg-slate-100 text-slate-600'}`}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 shadow-sm ${medal ? `${medal.bg} ${medal.text}` : 'bg-slate-100 text-slate-600'}`}>
                     {i + 1}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-semibold text-slate-900 text-sm">{tool.name}</span>
+                      <span className="font-bold text-slate-900 text-[14px] group-hover:text-sky-700 transition-colors">{tool.name}</span>
+                      {i === 0 && (
+                        <span className="hidden sm:inline-flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-amber-100 text-amber-700 text-[9px] font-bold uppercase tracking-wide border border-amber-200">
+                          <Crown className="w-2.5 h-2.5" /> Best
+                        </span>
+                      )}
                       {tool.badge && (
                         <span
-                          className="inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border"
+                          className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border"
                           style={{ backgroundColor: BADGE_STYLES[tool.badge]?.bg ?? '#f1f5f9', color: BADGE_STYLES[tool.badge]?.text ?? '#475569', borderColor: BADGE_STYLES[tool.badge]?.border ?? '#e2e8f0' }}
                         >
                           {BADGE_LABELS[tool.badge] ?? tool.badge}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400 truncate">{entry.best_for || tool.tagline}</p>
+                    <p className="text-[12px] text-slate-500 truncate mb-1.5">{tool.tagline}</p>
+                    <div className="flex items-center gap-3">
+                      <div className="flex items-center gap-0.5">
+                        {[1, 2, 3, 4, 5].map((s) => (
+                          <Star
+                            key={s}
+                            className={`w-3 h-3 ${
+                              s <= Math.floor(tool.rating)
+                                ? 'fill-amber-400 text-amber-400'
+                                : s - 0.5 <= tool.rating
+                                ? 'fill-amber-200 text-amber-300'
+                                : 'fill-slate-100 text-slate-200'
+                            }`}
+                          />
+                        ))}
+                        <span className="text-[11px] font-bold text-slate-700 ml-1">{tool.rating}</span>
+                        <span className="text-[10px] text-slate-400 ml-0.5">({tool.rating_count})</span>
+                      </div>
+                      {entry.best_for && (
+                        <span className="hidden sm:inline text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium truncate max-w-[160px]">
+                          {entry.best_for}
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div className="flex items-center gap-3 shrink-0">
                     {entry.score > 0 && (
-                      <div className="hidden sm:flex items-center gap-1">
+                      <div className="hidden sm:flex items-center gap-1 px-2 py-1 rounded-md bg-slate-50 border border-slate-100">
                         <span className="text-xs font-bold text-slate-700">{entry.score}</span>
                         <span className="text-[10px] text-slate-400">/100</span>
                       </div>
                     )}
-                    <div className="flex items-center gap-1">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                      <span className="text-xs font-semibold text-slate-700">{tool.rating}</span>
-                    </div>
-                    <ArrowUpRight className="w-3.5 h-3.5 text-slate-300 group-hover:text-slate-600 transition-colors" />
+                    <ArrowUpRight className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors" />
                   </div>
                 </Link>
               );
