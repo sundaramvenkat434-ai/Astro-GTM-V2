@@ -634,7 +634,7 @@ export default function TopXCreateV2Page() {
       });
       if (dbErr) throw new Error(dbErr.message);
       setSuccess(status === 'published' ? 'Page published!' : 'Saved as draft.');
-      setTimeout(() => router.push('/admin'), 1500);
+      setTimeout(() => router.push('/admin/dashboard'), 1500);
     } catch (e) {
       setError(String(e));
     } finally {
@@ -743,7 +743,7 @@ export default function TopXCreateV2Page() {
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-14">
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" onClick={() => router.push('/admin')}>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/admin/dashboard')}>
                   <ArrowLeft className="w-4 h-4 mr-2" />
                   Back
                 </Button>

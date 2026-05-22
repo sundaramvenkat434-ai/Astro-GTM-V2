@@ -333,7 +333,7 @@ export default function MediaExtractPage() {
       <header className="bg-white border-b border-slate-200 sticky top-0 z-10 shrink-0">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center gap-3 h-14">
-            <Button variant="ghost" size="sm" onClick={() => router.push('/admin')}>
+            <Button variant="ghost" size="sm" onClick={() => router.push('/admin/dashboard')}>
               <ArrowLeft className="w-4 h-4 mr-1.5" />
               Back
             </Button>

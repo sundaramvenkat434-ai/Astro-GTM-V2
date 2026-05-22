@@ -475,7 +475,7 @@ export default function ComparisonEditPage() {
           <div className="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
             <div className="flex items-center justify-between h-14">
               <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" onClick={() => router.push('/admin')}>
+                <Button variant="ghost" size="sm" onClick={() => router.push('/admin/dashboard')}>
                   <ArrowLeft className="w-4 h-4 mr-2" />Back
                 </Button>
                 <Separator orientation="vertical" className="h-5" />
