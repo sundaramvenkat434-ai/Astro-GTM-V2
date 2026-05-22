@@ -6,7 +6,9 @@ export function GlobalLoader() {
   const [loading, setLoading] = useState(true);
 
   const show = useCallback(() => setLoading(true), []);
-  const hide = useCallback(() => setLoading(false), []);
+  const hide = useCallback(() => {
+    setTimeout(() => setLoading(false), 2000);
+  }, []);
 
   useEffect(() => {
     // Initial page load
