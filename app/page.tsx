@@ -300,24 +300,24 @@ export default function HomePage() {
 
       {/* ── Hero ── */}
       <section
-        className="relative overflow-hidden border-b border-cyan-900/30"
-        style={{ background: 'linear-gradient(160deg, #020817 0%, #0a1628 25%, #071c2e 45%, #051b24 65%, #030f1a 85%, #010814 100%)' }}
+        className="relative overflow-hidden border-b border-slate-900/60"
+        style={{ background: 'linear-gradient(160deg, #000000 0%, #020510 20%, #030a14 40%, #020810 60%, #010408 80%, #000000 100%)' }}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-80" aria-hidden />
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-65" aria-hidden />
         {/* Top edge glow */}
         <div className="absolute left-0 right-0 top-0 h-px pointer-events-none"
-          style={{ background: 'linear-gradient(90deg, transparent 5%, rgba(6,182,212,0.4) 25%, rgba(14,165,233,0.6) 45%, rgba(20,184,166,0.6) 60%, rgba(34,211,238,0.4) 80%, transparent 95%)' }} />
-        {/* Top radial glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 70% 55% at 50% 0%, rgba(14,165,233,0.18) 0%, rgba(6,182,212,0.06) 50%, transparent 80%)' }} />
-        {/* Side accent glows */}
+          style={{ background: 'linear-gradient(90deg, transparent 10%, rgba(6,182,212,0.3) 30%, rgba(14,165,233,0.45) 50%, rgba(20,184,166,0.3) 70%, transparent 90%)' }} />
+        {/* Top radial glow — dimmer */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 65% 50% at 50% 0%, rgba(14,165,233,0.1) 0%, rgba(6,182,212,0.03) 50%, transparent 80%)' }} />
+        {/* Side accent glows — subtler */}
         <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle at center, rgba(20,184,166,0.08) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle at center, rgba(20,184,166,0.04) 0%, transparent 70%)' }} />
         <div className="absolute top-1/3 -right-20 w-[350px] h-[350px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle at center, rgba(14,165,233,0.06) 0%, transparent 70%)' }} />
+          style={{ background: 'radial-gradient(circle at center, rgba(14,165,233,0.03) 0%, transparent 70%)' }} />
         {/* Bottom fade */}
         <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-          style={{ background: 'linear-gradient(to top, rgba(2,8,23,0.95) 0%, rgba(2,8,23,0.4) 50%, transparent 100%)' }} />
+          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }} />
 
         <div className={`relative max-w-3xl mx-auto px-6 sm:px-6 lg:px-8 pt-12 pb-12 sm:pt-20 sm:pb-20 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
 
