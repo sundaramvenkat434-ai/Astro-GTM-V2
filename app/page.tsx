@@ -532,45 +532,38 @@ export default function HomePage() {
               </div>
             </div>
 
-            {/* Cards 2x2 grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {topXPages.slice(0, 4).map(page => (
+            {/* Cards 3-col grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {topXPages.slice(0, 6).map(page => (
                 <Link
                   key={page.id}
                   href={`/category/${page.category}/${page.slug}`}
-                  className="group relative flex flex-col rounded-xl border border-slate-200 overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-100/60 transition-all duration-200"
-                  style={{ background: 'linear-gradient(145deg, #f8fafe 0%, #ffffff 40%, #ffffff 100%)' }}
+                  className="group flex flex-col rounded-xl border border-slate-200 overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all duration-200"
+                  style={{ background: 'linear-gradient(150deg, #f9fbfe 0%, #ffffff 50%)' }}
                 >
-                  <div className="p-5 flex-1 flex flex-col">
-                    {/* Category + tool count */}
-                    <div className="flex items-center justify-between gap-2 mb-3">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600">
+                  <div className="px-4 py-3.5 flex-1 flex flex-col">
+                    {/* Category */}
+                    <div className="flex items-center justify-between gap-2 mb-2">
+                      <span className="text-[9px] font-bold uppercase tracking-widest text-sky-600">
                         {SECTION_LABELS[page.category] || page.category}
                       </span>
-                      <span className="text-[10px] font-medium text-slate-400">
+                      <span className="text-[9px] font-medium text-slate-400">
                         {(page.tool_ids || []).length} tools
                       </span>
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-[15px] font-bold text-slate-900 leading-snug mb-1 group-hover:text-sky-700 transition-colors line-clamp-1">
+                    <h3 className="text-[14px] font-bold text-slate-900 leading-snug mb-2 group-hover:text-sky-700 transition-colors line-clamp-1">
                       {page.name}
                     </h3>
 
-                    {/* Tagline */}
-                    {page.tagline && (
-                      <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-1 mb-3">
-                        {page.tagline}
-                      </p>
-                    )}
-
                     {/* Rankings list */}
-                    <div className="space-y-2.5">
+                    <div className="space-y-1.5">
                       {(page.tool_ids || []).slice(0, 3).map((toolId, idx) => {
                         const info = topXToolInfo[toolId];
                         return (
-                          <div key={toolId} className="flex items-start gap-2.5">
-                            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5 ${
+                          <div key={toolId} className="flex items-start gap-2">
+                            <span className={`w-[18px] h-[18px] rounded flex items-center justify-center text-[9px] font-bold shrink-0 mt-px ${
                               idx === 0 ? 'bg-amber-100 text-amber-700' :
                               idx === 1 ? 'bg-slate-100 text-slate-600' :
                               'bg-orange-50 text-orange-600'
@@ -578,19 +571,19 @@ export default function HomePage() {
                               {idx + 1}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="text-[13px] font-semibold text-slate-800 truncate">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[12px] font-semibold text-slate-800 truncate">
                                   {info?.name || '...'}
                                 </span>
                                 {info?.rating && (
                                   <span className="shrink-0 flex items-center gap-0.5">
-                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
-                                    <span className="text-[11px] font-bold text-slate-600">{info.rating}</span>
+                                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
+                                    <span className="text-[10px] font-bold text-slate-600">{info.rating}</span>
                                   </span>
                                 )}
                               </div>
                               {info?.tagline && (
-                                <p className="text-[11px] text-slate-400 leading-snug truncate mt-0.5">{info.tagline}</p>
+                                <p className="text-[10px] text-slate-400 leading-tight truncate">{info.tagline}</p>
                               )}
                             </div>
                           </div>
@@ -600,11 +593,8 @@ export default function HomePage() {
                   </div>
 
                   {/* Footer */}
-                  <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
-                    <span className="text-[11px] text-slate-400 font-medium">
-                      {new Date(page.published_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
-                    </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 opacity-70 group-hover:opacity-100 transition-opacity">
+                  <div className="px-4 py-2.5 border-t border-slate-100 flex items-center justify-end">
+                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-600 opacity-70 group-hover:opacity-100 transition-opacity">
                       View ranking <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
