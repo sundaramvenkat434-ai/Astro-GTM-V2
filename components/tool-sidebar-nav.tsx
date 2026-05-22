@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 
 export interface SidebarSection {
   id: string;
@@ -32,29 +32,6 @@ interface Props {
 
 export function ToolSidebarNav({ sections = DEFAULT_SECTIONS }: Props) {
   const [activeId, setActiveId] = useState<string>(sections[0]?.id ?? '');
-
-  useEffect(() => {
-    const els = sections
-      .map((s) => document.getElementById(`section-${s.id}`))
-      .filter(Boolean) as HTMLElement[];
-
-    if (els.length === 0) return;
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveId(entry.target.id.replace('section-', ''));
-            break;
-          }
-        }
-      },
-      { rootMargin: '-20% 0px -60% 0px', threshold: 0 }
-    );
-
-    els.forEach((el) => observer.observe(el));
-    return () => observer.disconnect();
-  }, [sections]);
 
   return (
     <aside className="hidden xl:block w-52 shrink-0 self-start sticky top-8">
