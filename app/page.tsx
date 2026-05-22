@@ -57,16 +57,16 @@ export default function HomePage() {
     window.addEventListener('resize', resize);
     let t = 0;
 
-    // Stars — layered depth with warm + cool tones
-    const STARS = Array.from({ length: 400 }, () => {
+    // Stars — sparse and tiny
+    const STARS = Array.from({ length: 150 }, () => {
       const layer = Math.random();
       return {
         x: Math.random(), y: Math.random(),
-        r: layer < 0.6 ? 0.2 + Math.random() * 0.8 : 0.8 + Math.random() * 2.0,
+        r: layer < 0.8 ? 0.2 + Math.random() * 0.5 : 0.5 + Math.random() * 0.8,
         twinkleSpeed: 0.008 + Math.random() * 0.04,
         twinkleOffset: Math.random() * Math.PI * 2,
-        baseOpacity: layer < 0.6 ? 0.15 + Math.random() * 0.3 : 0.3 + Math.random() * 0.5,
-        hue: layer < 0.3 ? '14,165,233' : layer < 0.55 ? '20,184,166' : layer < 0.75 ? '56,189,248' : layer < 0.9 ? '186,230,253' : '255,255,255',
+        baseOpacity: layer < 0.7 ? 0.1 + Math.random() * 0.2 : 0.2 + Math.random() * 0.35,
+        hue: layer < 0.4 ? '14,165,233' : layer < 0.7 ? '20,184,166' : layer < 0.9 ? '56,189,248' : '186,230,253',
       };
     });
 
@@ -80,13 +80,13 @@ export default function HomePage() {
       { x: 0.60, y: 0.45, r: 0.18, color: '8,145,178',  vx: -0.00007, vy:  0.00008, pulse: 0.005 },
     ];
 
-    // Floating particles — more numerous, varied sizes
-    const DUST = Array.from({ length: 80 }, () => ({
+    // Floating particles — fewer and smaller
+    const DUST = Array.from({ length: 30 }, () => ({
       x: Math.random(), y: Math.random(),
-      vx: (Math.random() - 0.5) * 0.00018,
-      vy: -0.00012 - Math.random() * 0.00025,
-      r: 0.8 + Math.random() * 2.8,
-      opacity: 0.05 + Math.random() * 0.15,
+      vx: (Math.random() - 0.5) * 0.00015,
+      vy: -0.00010 - Math.random() * 0.00018,
+      r: 0.6 + Math.random() * 1.4,
+      opacity: 0.04 + Math.random() * 0.08,
       color: Math.random() < 0.6 ? '14,165,233' : '20,184,166',
     }));
 
@@ -148,20 +148,12 @@ export default function HomePage() {
         ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       }
 
-      // Stars with depth-based rendering
+      // Stars
       for (const s of STARS) {
         const flicker = Math.sin(t * s.twinkleSpeed + s.twinkleOffset) * 0.5 + 0.5;
         ctx.globalAlpha = s.baseOpacity * flicker;
         ctx.beginPath(); ctx.arc(s.x*W, s.y*H, s.r, 0, Math.PI*2);
         ctx.fillStyle = `rgb(${s.hue})`; ctx.fill();
-        // Glow effect for larger stars
-        if (s.r > 1.2) {
-          const glow = ctx.createRadialGradient(s.x*W, s.y*H, 0, s.x*W, s.y*H, s.r * 3);
-          glow.addColorStop(0, `rgba(${s.hue},${s.baseOpacity * flicker * 0.4})`);
-          glow.addColorStop(1, `rgba(${s.hue},0)`);
-          ctx.fillStyle = glow;
-          ctx.beginPath(); ctx.arc(s.x*W, s.y*H, s.r * 3, 0, Math.PI*2); ctx.fill();
-        }
       }
       ctx.globalAlpha = 1;
 
