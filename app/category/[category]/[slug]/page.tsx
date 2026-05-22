@@ -846,12 +846,12 @@ export default async function SlugPage({
                 const sorted = [...entries].sort((a, b) => b.score - a.score);
 
                 const TIER_CONFIG = [
-                  { label: 'Best Fit', pct: 100, bar: 'bg-sky-500', badge: 'bg-sky-100 text-sky-700 border-sky-200' },
-                  { label: 'Competent', pct: 85, bar: 'bg-sky-400', badge: 'bg-sky-100 text-sky-600 border-sky-200' },
-                  { label: 'Capable', pct: 70, bar: 'bg-sky-300', badge: 'bg-sky-50 text-sky-600 border-sky-200' },
-                  { label: 'Better Alternatives', pct: 50, bar: 'bg-amber-400', badge: 'bg-amber-100 text-amber-700 border-amber-200' },
-                  { label: 'Not Ideal', pct: 25, bar: 'bg-amber-300', badge: 'bg-amber-100 text-amber-600 border-amber-200' },
-                  { label: 'Not Suitable', pct: 10, bar: 'bg-amber-200', badge: 'bg-amber-50 text-amber-600 border-amber-200' },
+                  { label: 'Best Fit', pct: 100, gradient: 'from-sky-500 to-sky-400', badge: 'bg-sky-100 text-sky-700 border-sky-200' },
+                  { label: 'Competent', pct: 85, gradient: 'from-sky-400 to-sky-300', badge: 'bg-sky-100 text-sky-600 border-sky-200' },
+                  { label: 'Capable', pct: 70, gradient: 'from-sky-300 to-sky-200', badge: 'bg-sky-50 text-sky-600 border-sky-200' },
+                  { label: 'Better Alternatives', pct: 50, gradient: 'from-amber-400 to-amber-300', badge: 'bg-amber-100 text-amber-700 border-amber-200' },
+                  { label: 'Feature Mismatch', pct: 25, gradient: 'from-amber-300 to-amber-200', badge: 'bg-amber-100 text-amber-600 border-amber-200' },
+                  { label: 'Not Suitable', pct: 10, gradient: 'from-amber-200 to-amber-100', badge: 'bg-amber-50 text-amber-600 border-amber-200' },
                 ];
 
                 const topThree = sorted.slice(0, 3);
@@ -877,9 +877,9 @@ export default async function SlugPage({
                       </div>
                       {entry.note && <p className="text-[11px] text-slate-500 leading-relaxed mb-3 line-clamp-2">{entry.note}</p>}
                       {!entry.note && <div className="mb-3" />}
-                      <div className="w-full h-1.5 bg-white/80 rounded-full overflow-hidden border border-slate-100/80">
+                      <div className="w-full h-2 bg-slate-100/80 rounded-full overflow-hidden">
                         <div
-                          className={`h-full rounded-full ${tier.bar} transition-all duration-500 group-hover:opacity-80`}
+                          className={`h-full rounded-full bg-gradient-to-r ${tier.gradient} transition-all duration-500 group-hover:shadow-sm`}
                           style={{ width: `${tier.pct}%` }}
                         />
                       </div>
