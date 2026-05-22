@@ -9,12 +9,21 @@ import { ToolCard, SECTION_ORDER, SECTION_LABELS } from '@/components/tool-card'
 import type { ToolCardData } from '@/components/tool-card';
 import {
   Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
-  LayoutGrid, Gift,
+  LayoutGrid, Gift, Trophy, Calendar,
   Zap, Share2, ChevronRight, LogIn, Scan, RefreshCw,
 } from 'lucide-react';
 
 /* ─── types ─────────────────────────────────────────────────── */
 type ToolPage = ToolCardData;
+
+interface TopXPageSummary {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  tool_ids: string[];
+  published_at: string;
+}
 
 /* ─── tokens ─────────────────────────────────────────────────── */
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -39,6 +48,8 @@ export default function HomePage() {
   const canvasRef                       = useRef<HTMLCanvasElement>(null);
   const [heroVisible, setHeroVisible]   = useState(false);
   const [creditsHover, setCreditsHover] = useState(false);
+  const [topXPages, setTopXPages]       = useState<TopXPageSummary[]>([]);
+  const [topXToolNames, setTopXToolNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);
@@ -202,6 +213,32 @@ export default function HomePage() {
           }
         }
         setLoading(false);
+      });
+  }, []);
+
+  useEffect(() => {
+    supabase.from('top_x_pages')
+      .select('id, slug, name, category, tool_ids, published_at')
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(6)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          setTopXPages(data as TopXPageSummary[]);
+          const allToolIds = Array.from(new Set(data.flatMap((p: TopXPageSummary) => p.tool_ids || [])));
+          if (allToolIds.length > 0) {
+            supabase.from('tool_pages')
+              .select('id, name')
+              .in('id', allToolIds)
+              .then(({ data: toolData }) => {
+                if (toolData) {
+                  const nameMap: Record<string, string> = {};
+                  for (const t of toolData) nameMap[t.id] = t.name;
+                  setTopXToolNames(nameMap);
+                }
+              });
+          }
+        }
       });
   }, []);
 
@@ -475,6 +512,75 @@ export default function HomePage() {
           )}
         </div>
       </section>
+
+      {/* ── Top X Rankings ── */}
+      {topXPages.length > 0 && (
+        <section className="bg-white border-t border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+            <div className="flex items-center justify-between gap-4 mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Top Rankings</h2>
+                  <p className="text-[13px] text-slate-500 mt-0.5">Curated comparisons of the best tools</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {topXPages.map(page => (
+                <Link
+                  key={page.id}
+                  href={`/category/${page.category}/${page.slug}`}
+                  className="group relative bg-slate-50 border border-slate-200 rounded-2xl p-5 hover:border-slate-300 hover:shadow-md hover:shadow-slate-100 transition-all"
+                >
+                  {/* Date badge */}
+                  <div className="flex items-center gap-1.5 mb-3">
+                    <Calendar className="w-3 h-3 text-slate-400" />
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {new Date(page.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                    <span className="ml-auto text-[10px] font-semibold uppercase tracking-wider text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">
+                      {SECTION_LABELS[page.category] || page.category}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="text-[15px] font-bold text-slate-900 leading-snug mb-3 group-hover:text-slate-700 transition-colors line-clamp-2">
+                    {page.name}
+                  </h3>
+
+                  {/* Tool rankings */}
+                  <div className="space-y-1.5">
+                    {(page.tool_ids || []).slice(0, 5).map((toolId, idx) => (
+                      <div key={toolId} className="flex items-center gap-2.5">
+                        <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                          idx === 0 ? 'bg-amber-100 text-amber-700' :
+                          idx === 1 ? 'bg-slate-200 text-slate-600' :
+                          idx === 2 ? 'bg-orange-100 text-orange-700' :
+                          'bg-slate-100 text-slate-500'
+                        }`}>
+                          {idx + 1}
+                        </span>
+                        <span className="text-[12.5px] text-slate-600 truncate">
+                          {topXToolNames[toolId] || 'Loading...'}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Arrow indicator */}
+                  <div className="mt-4 flex items-center gap-1 text-[11px] font-semibold text-sky-600 opacity-0 group-hover:opacity-100 transition-opacity">
+                    View full comparison <ArrowRight className="w-3 h-3" />
+                  </div>
+                </Link>
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
 
       <SiteFooter />
     </div>
