@@ -13,6 +13,11 @@ import {
   BadgeCheck,
   DollarSign,
   Flame,
+  Zap,
+  ThumbsUp,
+  ThumbsDown,
+  Lightbulb,
+  Target,
 } from 'lucide-react';
 import { FaqSection } from '@/components/faq-accordion';
 import { AuthorBlock } from '@/components/author-block';
@@ -22,12 +27,19 @@ import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+interface WhoIsItForEntry {
+  audience: string;
+  score: number;
+  note?: string;
+}
+
 export interface TopXTool {
   id: string;
   slug: string;
   name: string;
   tagline: string;
   description: string;
+  long_description?: string;
   category: string;
   tags: string[];
   badge: string | null;
@@ -37,6 +49,15 @@ export interface TopXTool {
   features: { title: string; description: string }[];
   use_cases: string[];
   pricing: { plan: string; price: string; features: string[]; highlighted?: boolean }[];
+  pros?: string[] | null;
+  cons?: string[] | null;
+  honest_take?: string[] | null;
+  limitations?: string[] | null;
+  who_is_it_for?: WhoIsItForEntry[] | null;
+  screenshots?: { url: string; alt: string }[] | null;
+  logo_url?: string | null;
+  logo_alt?: string | null;
+  website_url?: string | null;
 }
 
 export interface TopXEntry {
@@ -87,16 +108,6 @@ export interface TopXPageData {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const CATEGORY_LABELS: Record<string, string> = {
-  seo: 'SEO & Content',
-  analytics: 'Analytics',
-  developer: 'Developer Tools',
-  marketing: 'Marketing',
-  security: 'Security',
-  design: 'Design',
-  infrastructure: 'Infrastructure',
-};
-
 const BADGE_STYLES: Record<string, { bg: string; text: string; border: string }> = {
   new:          { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc' },
   trending:     { bg: '#FBFFEB', text: '#3f6212', border: '#d9f99d' },
@@ -112,9 +123,9 @@ const BADGE_LABELS: Record<string, string> = {
 };
 
 const RANK_MEDAL = [
-  { bg: 'bg-amber-400', text: 'text-white', ring: 'ring-amber-300', label: '🥇' },
-  { bg: 'bg-slate-400', text: 'text-white', ring: 'ring-slate-300', label: '🥈' },
-  { bg: 'bg-orange-400', text: 'text-white', ring: 'ring-orange-300', label: '🥉' },
+  { bg: 'bg-amber-400', text: 'text-white', ring: 'ring-amber-300' },
+  { bg: 'bg-slate-400', text: 'text-white', ring: 'ring-slate-300' },
+  { bg: 'bg-orange-400', text: 'text-white', ring: 'ring-orange-300' },
 ];
 
 const SEGMENT_ICONS: Record<string, typeof Crown> = {
@@ -177,7 +188,6 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
   const pageUrl = `${siteUrl}/category/${page.category}/${page.slug}`;
   const toolMap = Object.fromEntries(tools.map((t) => [t.id, t]));
 
-  // Ordered entries matched to tools
   const orderedEntries: { tool: TopXTool; entry: TopXEntry }[] = (page.tool_ids || [])
     .map((id) => {
       const tool = toolMap[id];
@@ -244,7 +254,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
         ]}
       />
 
-      {/* ── HERO (light) ── */}
+      {/* ── HERO ── */}
       <section className="bg-white border-b border-slate-200">
         <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
           <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-10">
@@ -269,16 +279,22 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
               )}
             </div>
 
-            {/* Top pick card */}
             {topTool && (
               <div className="lg:w-[280px] shrink-0 bg-gradient-to-br from-amber-50 to-white border border-amber-200/70 rounded-2xl p-5 flex flex-col gap-3">
                 <div className="flex items-center gap-2">
                   <Crown className="w-4 h-4 text-amber-500 shrink-0" />
                   <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wider">Our Top Pick</span>
                 </div>
-                <div>
-                  <p className="font-bold text-slate-900 text-[15px] mb-1">{topTool.name}</p>
-                  <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2">{topTool.tagline}</p>
+                <div className="flex items-center gap-3">
+                  {topTool.logo_url && (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden border border-white bg-white shrink-0 flex items-center justify-center shadow-sm">
+                      <img src={topTool.logo_url} alt={topTool.logo_alt || topTool.name} width={40} height={40} className="w-full h-full object-contain" />
+                    </div>
+                  )}
+                  <div>
+                    <p className="font-bold text-slate-900 text-[15px] mb-0.5">{topTool.name}</p>
+                    <p className="text-[11px] text-slate-500 leading-snug line-clamp-2">{topTool.tagline}</p>
+                  </div>
                 </div>
                 <StarRow rating={topTool.rating} count={topTool.rating_count} />
                 <Link
@@ -295,7 +311,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
 
       <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 space-y-12">
 
-        {/* ── RANKINGS ── */}
+        {/* ── RANKINGS AT A GLANCE ── */}
         <section>
           <div className="flex items-center gap-3 mb-5">
             <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">Rankings at a Glance</h2>
@@ -325,10 +341,10 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                           <Crown className="w-2.5 h-2.5" /> Best
                         </span>
                       )}
-                      {tool.badge && (
+                      {tool.badge && BADGE_STYLES[tool.badge] && (
                         <span
                           className="hidden sm:inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold uppercase tracking-wide border"
-                          style={{ backgroundColor: BADGE_STYLES[tool.badge]?.bg ?? '#f1f5f9', color: BADGE_STYLES[tool.badge]?.text ?? '#475569', borderColor: BADGE_STYLES[tool.badge]?.border ?? '#e2e8f0' }}
+                          style={{ backgroundColor: BADGE_STYLES[tool.badge].bg, color: BADGE_STYLES[tool.badge].text, borderColor: BADGE_STYLES[tool.badge].border }}
                         >
                           {BADGE_LABELS[tool.badge] ?? tool.badge}
                         </span>
@@ -338,19 +354,9 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                     <div className="flex items-center gap-3">
                       <div className="flex items-center gap-0.5">
                         {[1, 2, 3, 4, 5].map((s) => (
-                          <Star
-                            key={s}
-                            className={`w-3 h-3 ${
-                              s <= Math.floor(tool.rating)
-                                ? 'fill-amber-400 text-amber-400'
-                                : s - 0.5 <= tool.rating
-                                ? 'fill-amber-200 text-amber-300'
-                                : 'fill-slate-100 text-slate-200'
-                            }`}
-                          />
+                          <Star key={s} className={`w-3 h-3 ${s <= Math.floor(tool.rating) ? 'fill-amber-400 text-amber-400' : s - 0.5 <= tool.rating ? 'fill-amber-200 text-amber-300' : 'fill-slate-100 text-slate-200'}`} />
                         ))}
                         <span className="text-[11px] font-bold text-slate-700 ml-1">{tool.rating}</span>
-                        <span className="text-[10px] text-slate-400 ml-0.5">({tool.rating_count})</span>
                       </div>
                       {entry.best_for && (
                         <span className="hidden sm:inline text-[10px] text-slate-500 bg-slate-100 px-2 py-0.5 rounded-full font-medium truncate max-w-[160px]">
@@ -410,37 +416,92 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
           </section>
         )}
 
-        {/* ── DETAILED TOOL CARDS ── */}
+        {/* ── USE CASE COMPARISON ── */}
+        {orderedEntries.some(({ tool }) => tool.use_cases?.length > 0) && (
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">Use Cases Compared</h2>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="divide-y divide-slate-100">
+                {orderedEntries.map(({ tool }, i) => {
+                  if (!tool.use_cases?.length) return null;
+                  const primary = tool.use_cases[0];
+                  const secondary = tool.use_cases.slice(1, 4);
+                  return (
+                    <div key={tool.id} className="px-5 py-4 flex items-start gap-4">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 mt-0.5 ${RANK_MEDAL[i] ? `${RANK_MEDAL[i].bg} ${RANK_MEDAL[i].text}` : 'bg-slate-100 text-slate-600'}`}>
+                        {i + 1}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Link href={`/category/${tool.category}/${tool.slug}`} className="text-[13px] font-bold text-slate-900 hover:text-sky-700 transition-colors">{tool.name}</Link>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-800 bg-sky-50 border-2 border-sky-200 px-2.5 py-1 rounded-lg">
+                            <Zap className="w-3 h-3 text-sky-500 shrink-0" />
+                            {primary}
+                            <span className="text-[8px] font-bold uppercase tracking-wider text-sky-600 bg-sky-100 px-1 py-px rounded">Primary</span>
+                          </span>
+                          {secondary.map((uc) => (
+                            <span key={uc} className="inline-flex items-center gap-1 text-[11px] font-medium text-slate-600 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
+                              <span className="w-1.5 h-1.5 rounded-full bg-slate-400 shrink-0" />
+                              {uc}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── DETAILED TOOL REVIEWS ── */}
         <section className="space-y-6">
           <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">Detailed Reviews</h2>
+            <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">In-Depth Reviews</h2>
             <div className="h-px flex-1 bg-slate-200" />
           </div>
 
           {orderedEntries.map(({ tool, entry }, i) => {
             const medal = RANK_MEDAL[i];
+            const strengths = tool.honest_take?.slice(0, 3) ?? entry.pros?.slice(0, 3) ?? [];
+            const weaknesses = tool.limitations?.slice(0, 3) ?? entry.cons?.slice(0, 3) ?? [];
+            const whoFit = (tool.who_is_it_for as WhoIsItForEntry[] | null)?.slice(0, 3) ?? [];
+
             return (
               <div key={tool.id} id={`tool-${i + 1}`} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:border-slate-300 hover:shadow-lg hover:shadow-slate-100 transition-all">
 
                 {/* Card header */}
                 <div className="p-6 sm:p-7">
                   <div className="flex items-start gap-4">
-                    {/* Rank badge */}
                     <div className={`w-11 h-11 rounded-xl flex items-center justify-center text-sm font-bold shrink-0 ring-2 ${medal ? `${medal.bg} ${medal.text} ${medal.ring}` : 'bg-slate-100 text-slate-600 ring-slate-200'}`}>
                       #{i + 1}
                     </div>
 
                     <div className="flex-1 min-w-0">
                       <div className="flex flex-wrap items-center gap-2 mb-1">
+                        {tool.logo_url && (
+                          <div className="w-8 h-8 rounded-lg overflow-hidden border border-slate-100 bg-white shrink-0 flex items-center justify-center">
+                            <img src={tool.logo_url} alt={tool.logo_alt || tool.name} width={32} height={32} className="w-full h-full object-contain" />
+                          </div>
+                        )}
                         <h3 className="text-xl font-bold text-slate-900">{tool.name}</h3>
                         {i === 0 && (
                           <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-bold uppercase tracking-wide border border-amber-200">
-                            <Crown className="w-2.5 h-2.5" /> Editor's Choice
+                            <Crown className="w-2.5 h-2.5" /> Editor&apos;s Choice
                           </span>
                         )}
-                        {tool.badge && (
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border ${BADGE_STYLES[tool.badge] || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
-                            {tool.badge}
+                        {tool.badge && BADGE_STYLES[tool.badge] && (
+                          <span
+                            className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border"
+                            style={{ backgroundColor: BADGE_STYLES[tool.badge].bg, color: BADGE_STYLES[tool.badge].text, borderColor: BADGE_STYLES[tool.badge].border }}
+                          >
+                            {BADGE_LABELS[tool.badge] ?? tool.badge}
                           </span>
                         )}
                       </div>
@@ -479,60 +540,105 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                   )}
                 </div>
 
-                {/* Pros / Cons / Pricing */}
+                {/* ── Strengths & Limitations (from tool page editorial) ── */}
+                {(strengths.length > 0 || weaknesses.length > 0) && (
+                  <div className="border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
+                    {strengths.length > 0 && (
+                      <div className="px-6 py-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <ThumbsUp className="w-3.5 h-3.5 text-sky-600" />
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-sky-700">Strengths</p>
+                        </div>
+                        <ul className="space-y-2">
+                          {strengths.map((s, j) => (
+                            <li key={j} className="flex items-start gap-2">
+                              <Check className="w-3.5 h-3.5 text-sky-500 shrink-0 mt-0.5" />
+                              <span className="text-xs text-slate-600 leading-relaxed">{s}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                    {weaknesses.length > 0 && (
+                      <div className="px-6 py-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <ThumbsDown className="w-3.5 h-3.5 text-amber-500" />
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Limitations</p>
+                        </div>
+                        <ul className="space-y-2">
+                          {weaknesses.map((w, j) => (
+                            <li key={j} className="flex items-start gap-2">
+                              <X className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
+                              <span className="text-xs text-slate-600 leading-relaxed">{w}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ── Standout Features + Pricing ── */}
                 <div className="border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-                  {/* Pros */}
-                  {entry.pros?.length > 0 && (
-                    <div className="px-6 py-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 mb-3">Pros</p>
-                      <ul className="space-y-2">
-                        {entry.pros.map((pro, j) => (
-                          <li key={j} className="flex items-start gap-2">
-                            <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                            <span className="text-xs text-slate-600 leading-relaxed">{pro}</span>
-                          </li>
-                        ))}
-                      </ul>
+                  {/* Key features */}
+                  <div className="px-6 py-4 sm:col-span-2">
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Standout Features</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {tool.features?.slice(0, 4).map((f, j) => (
+                        <div key={j} className="flex items-start gap-2">
+                          <div className="w-5 h-5 rounded-md bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0 mt-0.5">
+                            <Check className="w-3 h-3 text-sky-500" />
+                          </div>
+                          <div>
+                            <p className="text-[11px] font-semibold text-slate-800">{f.title}</p>
+                            <p className="text-[10px] text-slate-500 leading-relaxed line-clamp-1">{f.description}</p>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  )}
+                  </div>
 
-                  {/* Cons */}
-                  {entry.cons?.length > 0 && (
-                    <div className="px-6 py-4">
-                      <p className="text-[10px] font-bold uppercase tracking-wider text-red-500 mb-3">Cons</p>
-                      <ul className="space-y-2">
-                        {entry.cons.map((con, j) => (
-                          <li key={j} className="flex items-start gap-2">
-                            <X className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
-                            <span className="text-xs text-slate-600 leading-relaxed">{con}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
-
-                  {/* Pricing + features */}
+                  {/* Pricing highlight */}
                   <div className="px-6 py-4">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-3">Pricing</p>
                     {entry.pricing_summary ? (
                       <p className="text-sm font-semibold text-slate-800 mb-2">{entry.pricing_summary}</p>
                     ) : tool.pricing?.length > 0 ? (
-                      <p className="text-sm font-semibold text-slate-800 mb-2">{tool.pricing[0].price}</p>
-                    ) : null}
-                    {tool.features?.slice(0, 3).map((f, j) => (
-                      <div key={j} className="flex items-center gap-1.5 mb-1.5">
-                        <Check className="w-3 h-3 text-slate-400 shrink-0" />
-                        <span className="text-[11px] text-slate-500">{f.title}</span>
+                      <div className="space-y-1.5">
+                        {tool.pricing.slice(0, 3).map((p, j) => (
+                          <div key={j} className="flex items-center justify-between gap-2">
+                            <span className="text-[11px] text-slate-600 font-medium">{p.plan}</span>
+                            <span className="text-[11px] font-bold text-slate-800">{p.price}</span>
+                          </div>
+                        ))}
                       </div>
-                    ))}
+                    ) : null}
                   </div>
                 </div>
 
-                {/* Tags + mobile CTA */}
+                {/* ── Who Is It For (compressed) ── */}
+                {whoFit.length > 0 && (
+                  <div className="border-t border-slate-100 px-6 py-4">
+                    <div className="flex items-center gap-2 mb-3">
+                      <Target className="w-3.5 h-3.5 text-sky-500" />
+                      <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Best Suited For</p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {whoFit.map((w, j) => (
+                        <div key={j} className="inline-flex items-center gap-2 text-[11px] bg-sky-50 border border-sky-100 px-3 py-1.5 rounded-lg">
+                          <span className="font-semibold text-sky-800">{w.audience}</span>
+                          {w.note && <span className="text-sky-600 hidden sm:inline">- {w.note}</span>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Footer: tags + CTA */}
                 <div className="border-t border-slate-100 px-6 py-3 flex items-center justify-between gap-3">
                   <div className="flex flex-wrap gap-1.5">
-                    {tool.tags.slice(0, 5).map((tag) => (
-                      <span key={tag} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{tag}</span>
+                    {tool.use_cases.slice(0, 3).map((uc) => (
+                      <span key={uc} className="text-[10px] bg-slate-100 text-slate-500 px-2 py-0.5 rounded-full">{uc}</span>
                     ))}
                   </div>
                   <Link
@@ -547,7 +653,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
           })}
         </section>
 
-        {/* ── COMPARISON TABLE ── */}
+        {/* ── SIDE-BY-SIDE COMPARISON TABLE ── */}
         {page.comparison_table?.length > 0 && (
           <section>
             <div className="flex items-center gap-3 mb-4">
@@ -578,7 +684,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                               <div>
                                 <Link
                                   href={tool ? `/category/${tool.category}/${tool.slug}` : '#'}
-                                  className="font-semibold text-sm text-slate-900 hover:text-slate-600 transition-colors"
+                                  className="font-semibold text-sm text-slate-900 hover:text-sky-700 transition-colors"
                                 >
                                   {row.tool_name}
                                 </Link>
@@ -617,7 +723,141 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
           </section>
         )}
 
-        {/* ── OUTRO / VERDICT ── */}
+        {/* ── EDITORIAL OPINIONS SUMMARY ── */}
+        {orderedEntries.some(({ tool }) => (tool.honest_take?.length ?? 0) > 0) && (
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">Editorial Insights</h2>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden divide-y divide-slate-100">
+              {orderedEntries.map(({ tool }, i) => {
+                if (!tool.honest_take?.length) return null;
+                return (
+                  <div key={tool.id} className="px-6 py-5">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={`w-7 h-7 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 ${RANK_MEDAL[i] ? `${RANK_MEDAL[i].bg} ${RANK_MEDAL[i].text}` : 'bg-slate-100 text-slate-600'}`}>
+                        {i + 1}
+                      </div>
+                      <Link href={`/category/${tool.category}/${tool.slug}`} className="text-[14px] font-bold text-slate-900 hover:text-sky-700 transition-colors">
+                        {tool.name}
+                      </Link>
+                      <Lightbulb className="w-3.5 h-3.5 text-sky-400 shrink-0" />
+                    </div>
+                    <p className="text-[13px] text-slate-600 leading-relaxed">
+                      {tool.honest_take[0]}
+                    </p>
+                    {tool.honest_take.length > 1 && (
+                      <Link href={`/category/${tool.category}/${tool.slug}#section-our-opinion`} className="inline-flex items-center gap-1 text-[11px] text-sky-600 font-medium mt-2 hover:text-sky-800 transition-colors">
+                        Read full editorial <ArrowUpRight className="w-3 h-3" />
+                      </Link>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ── WORKFLOW FIT (Who Is It For comparison) ── */}
+        {orderedEntries.some(({ tool }) => ((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0) && (
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">Workflow Fit</h2>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <p className="text-[13px] text-slate-500 mb-4 -mt-2">Which tool fits your team type and workflow best</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {orderedEntries.map(({ tool }, i) => {
+                const entries = (tool.who_is_it_for as WhoIsItForEntry[] | null)?.slice(0, 2);
+                if (!entries?.length) return null;
+                return (
+                  <Link
+                    key={tool.id}
+                    href={`/category/${tool.category}/${tool.slug}#section-who-is-it-for`}
+                    className="group bg-white border border-slate-200 rounded-xl p-4 hover:border-sky-200 hover:shadow-sm transition-all"
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <div className={`w-6 h-6 rounded-md flex items-center justify-center text-[10px] font-bold ${RANK_MEDAL[i] ? `${RANK_MEDAL[i].bg} ${RANK_MEDAL[i].text}` : 'bg-slate-100 text-slate-600'}`}>
+                        {i + 1}
+                      </div>
+                      <span className="text-[13px] font-bold text-slate-900 group-hover:text-sky-700 transition-colors">{tool.name}</span>
+                    </div>
+                    <div className="space-y-2">
+                      {entries.map((e, j) => (
+                        <div key={j} className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded-full bg-sky-100 flex items-center justify-center shrink-0">
+                            <Check className="w-2.5 h-2.5 text-sky-600" />
+                          </div>
+                          <span className="text-[11px] text-slate-700 font-medium">{e.audience}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-[10px] text-slate-400 mt-3 group-hover:text-sky-500 font-medium transition-colors">
+                      See full fit analysis
+                    </p>
+                  </Link>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ── PRICING OVERVIEW ── */}
+        {orderedEntries.some(({ tool }) => tool.pricing?.length > 0) && (
+          <section>
+            <div className="flex items-center gap-3 mb-4">
+              <h2 className="text-lg font-bold text-slate-900 whitespace-nowrap">Pricing Overview</h2>
+              <div className="h-px flex-1 bg-slate-200" />
+            </div>
+            <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[500px]">
+                  <thead>
+                    <tr className="bg-slate-50 border-b border-slate-200">
+                      <th className="text-left px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Tool</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Plans</th>
+                      <th className="text-center px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Free Tier</th>
+                      <th className="text-left px-4 py-3 text-[11px] font-bold uppercase tracking-wider text-slate-500">Starting At</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {orderedEntries.map(({ tool, entry }, i) => {
+                      if (!tool.pricing?.length) return null;
+                      const hasFree = tool.pricing.some((p) => /free/i.test(p.plan) || /^\$?0/i.test(p.price.trim()));
+                      const lowestPaid = tool.pricing.find((p) => !/free/i.test(p.plan) && !/^\$?0/i.test(p.price.trim()));
+                      return (
+                        <tr key={tool.id} className={`hover:bg-slate-50 transition-colors ${i === 0 ? 'bg-amber-50/30' : ''}`}>
+                          <td className="px-5 py-3.5">
+                            <Link href={`/category/${tool.category}/${tool.slug}`} className="font-semibold text-sm text-slate-900 hover:text-sky-700 transition-colors">
+                              {tool.name}
+                            </Link>
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="text-xs text-slate-600">{tool.pricing.length} plan{tool.pricing.length > 1 ? 's' : ''}</span>
+                          </td>
+                          <td className="px-4 py-3.5 text-center">
+                            {hasFree
+                              ? <Check className="w-4 h-4 text-emerald-500 mx-auto" />
+                              : <X className="w-4 h-4 text-slate-300 mx-auto" />
+                            }
+                          </td>
+                          <td className="px-4 py-3.5">
+                            <span className="text-sm font-semibold text-slate-800">
+                              {entry.pricing_summary || lowestPaid?.price || tool.pricing[0]?.price || '-'}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {/* ── OUTRO / FINAL VERDICT ── */}
         {page.outro && (
           <section className="bg-white border border-slate-200 rounded-2xl p-6 sm:p-8">
             <div className="flex items-center gap-2 mb-4">

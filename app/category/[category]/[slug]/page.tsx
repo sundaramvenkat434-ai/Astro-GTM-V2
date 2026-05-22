@@ -268,7 +268,7 @@ async function getTopXTools(toolIds: string[]): Promise<TopXTool[]> {
   if (!toolIds.length) return [];
   const { data } = await supabaseServer
     .from('tool_pages')
-    .select('id, slug, name, tagline, description, category, tags, badge, rating, rating_count, users, features, use_cases')
+    .select('id, slug, name, tagline, description, long_description, category, tags, badge, rating, rating_count, users, features, use_cases, pricing, pros, cons, honest_take, limitations, who_is_it_for, screenshots, logo_url, logo_alt, website_url')
     .in('id', toolIds)
     .eq('status', 'published');
   if (!data) return [];
