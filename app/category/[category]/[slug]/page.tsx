@@ -860,22 +860,23 @@ export default async function SlugPage({
                 const renderCard = (entry: WhoIsItForEntry, idx: number, isTop: boolean) => {
                   const tierIdx = isTop ? idx : idx + 3;
                   const tier = TIER_CONFIG[tierIdx];
-                  const cardBg = isTop ? 'bg-sky-50/40' : 'bg-amber-50/30';
+                  const cardBg = isTop ? 'bg-sky-50/50' : 'bg-amber-50/40';
                   const cardBorder = isTop ? 'border-sky-100' : 'border-amber-100';
                   const hoverBorder = isTop ? 'hover:border-sky-200' : 'hover:border-amber-200';
 
                   return (
                     <div
                       key={tierIdx}
-                      className={`rounded-lg border ${cardBorder} ${hoverBorder} ${cardBg} px-3.5 py-3 transition-all hover:shadow-sm group`}
+                      className={`rounded-xl border ${cardBorder} ${hoverBorder} ${cardBg} px-4 py-4 transition-all hover:shadow-sm group`}
                     >
-                      <div className="flex items-center justify-between gap-2 mb-2">
-                        <p className="text-[12px] font-semibold text-slate-800 leading-snug truncate">{entry.audience}</p>
-                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border shrink-0 ${tier.badge}`}>
+                      <div className="flex items-start justify-between gap-3 mb-2.5">
+                        <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border shrink-0 ${tier.badge}`}>
                           {tier.label}
                         </span>
                       </div>
-                      {entry.note && <p className="text-[10px] text-slate-500 leading-relaxed mb-2 line-clamp-2">{entry.note}</p>}
+                      {entry.note && <p className="text-[11px] text-slate-500 leading-relaxed mb-3 line-clamp-2">{entry.note}</p>}
+                      {!entry.note && <div className="mb-3" />}
                       <div className="w-full h-1.5 bg-white/80 rounded-full overflow-hidden border border-slate-100/80">
                         <div
                           className={`h-full rounded-full ${tier.bar} transition-all duration-500 group-hover:opacity-80`}
@@ -889,12 +890,12 @@ export default async function SlugPage({
                 return (
                   <section id="section-who-is-it-for">
                     <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
-                    <div className="space-y-2">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    <div className="space-y-2.5">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                         {topThree.map((entry, i) => renderCard(entry, i, true))}
                       </div>
                       {bottomThree.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                           {bottomThree.map((entry, i) => renderCard(entry, i, false))}
                         </div>
                       )}
