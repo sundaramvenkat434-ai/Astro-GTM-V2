@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { SiteHeader } from '@/components/site-header';
 import { SiteFooter } from '@/components/site-footer';
-import { ToolCard, SECTION_ORDER, SECTION_LABELS, CATEGORY_PASTEL, CATEGORY_PASTEL_DARK } from '@/components/tool-card';
+import { ToolCard, SECTION_ORDER, SECTION_LABELS } from '@/components/tool-card';
 import type { ToolCardData } from '@/components/tool-card';
 import {
   Search, TrendingUp, Users, Megaphone, Star, ArrowRight,
@@ -28,22 +28,6 @@ const CATEGORY_ICONS: Record<string, React.ReactNode> = {
 };
 
 
-/* ─── category pill ─────────────────────────────────────────── */
-function CategoryPill({ category }: { category: string }) {
-  const bg   = CATEGORY_PASTEL[category];
-  const dark = CATEGORY_PASTEL_DARK[category];
-  if (!bg) return null;
-  return (
-    <Link
-      href={`/category/${category}`}
-      className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold border transition-all hover:brightness-95 hover:border-current shrink-0"
-      style={{ backgroundColor: bg, color: dark, borderColor: dark + '40' }}
-    >
-      <span className="w-1.5 h-1.5 rounded-full shrink-0" style={{ backgroundColor: dark }} />
-      {SECTION_LABELS[category] ?? category}
-    </Link>
-  );
-}
 
 /* ─── page ───────────────────────────────────────────────────── */
 export default function HomePage() {
@@ -376,188 +360,117 @@ export default function HomePage() {
 
       {/* ── All Tools Directory ── */}
       <section id="tools-section" className="bg-[#f8f9fb] flex-1">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-14">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
-          <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-8">
-            <div>
-              <p className="text-[10.5px] font-bold text-sky-600 uppercase tracking-[0.14em] mb-1.5">Recently Added</p>
-              <h2 className="text-2xl font-bold text-slate-900 tracking-tight mb-1">Top Tools</h2>
-              <p className="text-[13px] text-slate-500 font-medium">
-                {loading
-                  ? 'Loading…'
-                  : `${sortedFiltered.length} Featured${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ''}`}
-              </p>
+          {/* Section header with integrated search */}
+          <div className="mb-8">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
+              <div>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Explore Tools</h2>
+                <p className="text-[13px] text-slate-500 mt-0.5">
+                  {loading
+                    ? 'Loading...'
+                    : `${sortedFiltered.length} tools${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ' across all categories'}`}
+                </p>
+              </div>
+              <div className="relative w-full md:w-80">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
+                <input
+                  type="search"
+                  placeholder="Search tools, use cases..."
+                  value={query}
+                  onChange={e => setQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 text-[13px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
+                />
+              </div>
             </div>
-            <div className="relative w-full sm:w-72">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 pointer-events-none" />
-              <input
-                type="search"
-                placeholder="Search by tool name, use case, or more..."
-                value={query}
-                onChange={e => setQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2.5 text-[13.5px] border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-sky-500/20 focus:border-sky-400 placeholder-slate-400 transition shadow-sm"
-              />
+
+            {/* Category tabs — visible on all screen sizes */}
+            <div className="flex gap-1.5 overflow-x-auto pb-1 scrollbar-hide">
+              {categories.map(cat => {
+                const active = activeCategory === cat.id;
+                return (
+                  <button
+                    key={cat.id}
+                    onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
+                    className={`shrink-0 flex items-center gap-1.5 px-3.5 py-2 rounded-lg text-[12.5px] font-semibold border transition-all ${
+                      active
+                        ? 'bg-slate-900 text-white border-slate-900 shadow-sm'
+                        : 'bg-white text-slate-600 border-slate-200 hover:border-slate-300 hover:bg-slate-50'
+                    }`}
+                  >
+                    <span className={`transition-colors ${active ? 'text-white/70' : 'text-slate-400'}`}>
+                      {CATEGORY_ICONS[cat.id] ?? CATEGORY_ICONS['all']}
+                    </span>
+                    {cat.label}
+                    <span className={`text-[10px] tabular-nums ml-0.5 px-1.5 py-0.5 rounded-full ${
+                      active ? 'bg-white/20 text-white/80' : 'bg-slate-100 text-slate-400'
+                    }`}>{cat.count}</span>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
           {loading ? (
             <div className="flex flex-col items-center py-24 gap-3">
               <div className="w-10 h-10 rounded-xl bg-slate-200 animate-pulse" />
-              <p className="text-sm text-slate-400">Loading tools…</p>
+              <p className="text-sm text-slate-400">Loading tools...</p>
+            </div>
+          ) : sortedFiltered.length === 0 ? (
+            <div className="flex flex-col items-center py-24 text-center">
+              <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4">
+                <Search className="w-6 h-6 text-slate-400" />
+              </div>
+              <p className="text-slate-700 font-semibold mb-1">No tools found</p>
+              <p className="text-slate-400 text-[13px]">Try a different search or category.</p>
             </div>
           ) : (
-            <div className="flex gap-6 items-start">
-              {/* Desktop sidebar */}
-              {categories.length > 1 && (
-                <aside className="hidden lg:block w-52 shrink-0 self-start sticky top-20">
-                  <div className="bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm">
-                    <div className="px-4 py-3 border-b border-slate-100">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Filter by Category</p>
-                    </div>
-                    <nav className="p-2 space-y-0.5">
-                      {categories.map(cat => {
-                        const active = activeCategory === cat.id;
-                        const dotColor = CATEGORY_PASTEL_DARK[cat.id];
-                        return (
-                          <button
-                            key={cat.id}
-                            onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
-                            className={`w-full flex items-center justify-between gap-2 px-3 py-2.5 rounded-lg text-[13px] font-medium transition-all ${
-                              active ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                            }`}
-                          >
-                            <span className="flex items-center gap-2">
-                              <span
-                                className="w-2 h-2 rounded-full shrink-0"
-                                style={{ backgroundColor: active ? 'rgba(255,255,255,0.6)' : (dotColor ?? '#94a3b8') }}
-                              />
-                              {cat.label}
-                            </span>
-                            <span className={`text-[11px] tabular-nums px-1.5 py-0.5 rounded-full ${
-                              active ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
-                            }`}>{cat.count}</span>
-                          </button>
-                        );
-                      })}
-                    </nav>
-                  </div>
-
-                  <div className="mt-4 bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-3">
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Quick Stats</p>
-                    {[
-                      { label: 'All Tools', value: tools.length, style: null },
-                      { label: 'New',        value: tools.filter(t => t.badge === 'new').length,        style: { bg: '#F0FEFF', text: '#0e7490', border: '#a5f3fc' } },
-                      { label: 'Trending',   value: tools.filter(t => t.badge === 'trending').length,   style: { bg: '#FBFFEB', text: '#3f6212', border: '#d9f99d' } },
-                      { label: 'Top Choice', value: tools.filter(t => t.badge === 'top-choice').length, style: { bg: '#F3F0FF', text: '#6d28d9', border: '#c4b5fd' } },
-                      { label: 'Free Tier',  value: tools.filter(t => t.badge === 'free-tier').length,  style: { bg: '#F0FFF9', text: '#15803d', border: '#6ee7b7' } },
-                    ].map(s => (
-                      <div key={s.label} className="flex items-center justify-between">
-                        {s.style ? (
-                          <span
-                            className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider border"
-                            style={{ backgroundColor: s.style.bg, color: s.style.text, borderColor: s.style.border }}
-                          >
-                            {s.label}
-                          </span>
-                        ) : (
-                          <span className="text-[12.5px] text-slate-500">{s.label}</span>
-                        )}
-                        <span className="text-[13.5px] font-bold text-slate-800">{s.value}</span>
-                      </div>
-                    ))}
-                  </div>
-                </aside>
-              )}
-
-              <main className="flex-1 min-w-0">
-                {/* Mobile category pills */}
-                {categories.length > 1 && (
-                  <div className="flex lg:hidden gap-2 overflow-x-auto pb-3 mb-5 scrollbar-hide">
-                    {categories.map(cat => {
-                      const active = activeCategory === cat.id;
-                      const pastel = CATEGORY_PASTEL[cat.id];
-                      const dark   = CATEGORY_PASTEL_DARK[cat.id];
-                      return (
-                        <button
-                          key={cat.id}
-                          onClick={() => { setActiveCategory(cat.id); setQuery(''); }}
-                          className="shrink-0 flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[12px] font-semibold border transition-all"
-                          style={active
-                            ? { background: '#0f172a', color: '#fff', borderColor: '#0f172a' }
-                            : { background: '#fff', color: '#0f172a', borderColor: '#e2e8f0' }
-                          }
+            <div className="space-y-10">
+              {sections.map(cat => {
+                const sectionTools = sortedFiltered.filter(t => t.category === cat);
+                if (!sectionTools.length) return null;
+                const totalCount  = sectionTools.length;
+                const visibleTools = sectionTools.slice(0, 9);
+                return (
+                  <section key={cat} id={`section-${cat}`}>
+                    {/* Section header */}
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className="w-8 h-8 rounded-lg flex items-center justify-center text-slate-500 bg-white border border-slate-200 shadow-sm"
                         >
-                          {pastel && (
-                            <span
-                              className="w-1.5 h-1.5 rounded-full shrink-0"
-                              style={{ backgroundColor: active ? 'rgba(255,255,255,0.7)' : (dark ?? '#94a3b8') }}
-                            />
-                          )}
-                          {cat.label}
-                          <span className="text-[10px] opacity-65">{cat.count}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                )}
-
-                {sortedFiltered.length === 0 ? (
-                  <div className="flex flex-col items-center py-24 text-center">
-                    <div className="w-14 h-14 rounded-2xl bg-white border border-slate-200 flex items-center justify-center mb-4">
-                      <Search className="w-6 h-6 text-slate-400" />
+                          {CATEGORY_ICONS[cat]}
+                        </span>
+                        <div>
+                          <h3 className="text-[15px] font-bold text-slate-900 leading-tight">{SECTION_LABELS[cat]}</h3>
+                          <p className="text-[11px] text-slate-400 font-medium">{totalCount} tool{totalCount !== 1 ? 's' : ''}</p>
+                        </div>
+                      </div>
+                      <Link
+                        href={`/category/${cat}`}
+                        className="inline-flex items-center gap-1 px-3 py-1.5 text-[11px] font-semibold text-sky-600 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors"
+                      >
+                        View All <ArrowRight className="w-3 h-3" />
+                      </Link>
                     </div>
-                    <p className="text-slate-700 font-semibold mb-1">No tools found</p>
-                    <p className="text-slate-400 text-[13px]">Try a different search or category.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-10">
-                    {sections.map(cat => {
-                      const sectionTools = sortedFiltered.filter(t => t.category === cat);
-                      if (!sectionTools.length) return null;
-                      const totalCount  = sectionTools.length;
-                      const visibleTools = sectionTools.slice(0, 10);
-                      const accent = CATEGORY_PASTEL_DARK[cat] ?? '#64748b';
-                      return (
-                        <section key={cat} id={`section-${cat}`}>
-                          <div className="flex items-center gap-3 mb-5 pb-3 border-b border-slate-200">
-                            <span
-                              className="w-8 h-8 rounded-lg flex items-center justify-center border"
-                              style={{
-                                backgroundColor: CATEGORY_PASTEL[cat] ?? '#f1f5f9',
-                                color: CATEGORY_PASTEL_DARK[cat] ?? '#475569',
-                                borderColor: CATEGORY_PASTEL_DARK[cat] ? CATEGORY_PASTEL_DARK[cat] + '40' : '#e2e8f0',
-                              }}
-                            >
-                              {CATEGORY_ICONS[cat]}
-                            </span>
-                            <div className="flex-1 min-w-0">
-                              <h3 className="font-display text-[15px] font-bold text-slate-900 leading-snug tracking-tight">{SECTION_LABELS[cat]}</h3>
-                              <p className="type-card-body font-semibold text-slate-600">{totalCount} Featured</p>
-                            </div>
-                            <div className="hidden sm:block h-1 w-12 rounded-full opacity-40" style={{ background: accent }} />
-                            <Link href={`/category/${cat}`} className="inline-flex items-center gap-1 text-[12.5px] font-semibold text-sky-600 hover:text-sky-800 transition-colors">
-                              View All ({totalCount}) <ChevronRight className="w-3.5 h-3.5" />
-                            </Link>
-                          </div>
-                          <div className="grid grid-cols-1 sm:grid-cols-2 auto-rows-fr gap-3">
-                            {visibleTools.map(tool => <ToolCard key={tool.id} tool={tool} views={viewCounts[tool.id]} />)}
-                          </div>
-                          {totalCount > 10 && (
-                            <div className="mt-4 flex justify-center">
-                              <Link
-                                href={`/category/${cat}`}
-                                className="inline-flex items-center gap-1 text-[12px] font-medium text-slate-400 hover:text-sky-600 transition-colors"
-                              >
-                                View all {totalCount} tools in {SECTION_LABELS[cat]} <ChevronRight className="w-3 h-3" />
-                              </Link>
-                            </div>
-                          )}
-                        </section>
-                      );
-                    })}
-                  </div>
-                )}
-              </main>
+                    {/* Tools grid */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-3">
+                      {visibleTools.map(tool => <ToolCard key={tool.id} tool={tool} views={viewCounts[tool.id]} />)}
+                    </div>
+                    {totalCount > 9 && (
+                      <div className="mt-4 flex justify-center">
+                        <Link
+                          href={`/category/${cat}`}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 text-[12px] font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all"
+                        >
+                          See all {totalCount} tools in {SECTION_LABELS[cat]} <ChevronRight className="w-3.5 h-3.5" />
+                        </Link>
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
             </div>
           )}
         </div>
