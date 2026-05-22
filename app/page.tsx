@@ -66,7 +66,7 @@ export default function HomePage() {
         twinkleSpeed: 0.008 + Math.random() * 0.04,
         twinkleOffset: Math.random() * Math.PI * 2,
         baseOpacity: layer < 0.6 ? 0.1 + Math.random() * 0.25 : 0.2 + Math.random() * 0.4,
-        hue: layer < 0.25 ? '6,182,212' : layer < 0.45 ? '14,165,233' : layer < 0.65 ? '20,184,166' : layer < 0.8 ? '34,211,238' : layer < 0.92 ? '56,189,248' : '165,243,252',
+        hue: layer < 0.3 ? '14,165,233' : layer < 0.5 ? '56,189,248' : layer < 0.65 ? '59,130,246' : layer < 0.8 ? '96,165,250' : layer < 0.92 ? '34,211,238' : '147,197,253',
       };
     });
 
