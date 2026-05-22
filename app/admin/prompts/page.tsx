@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
@@ -14,7 +15,6 @@ import {
   CardDescription,
 } from '@/components/ui/card';
 import {
-  ArrowLeft,
   Loader as Loader2,
   Save,
   RotateCcw,
@@ -164,50 +164,23 @@ export default function PromptsAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
-      </div>
+      <AdminShell><div className="flex-1 flex items-center justify-center py-20"><Loader2 className="w-8 h-8 animate-spin text-slate-400" /></div></AdminShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => router.push('/admin')}
-              >
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Back
-              </Button>
-              <div className="h-5 w-px bg-slate-200" />
-              <div className="flex items-center gap-2">
-                <div className="flex items-center justify-center w-7 h-7 rounded-lg bg-slate-900">
-                  <MessageSquareCode className="w-3.5 h-3.5 text-white" />
-                </div>
-                <h1 className="text-sm font-semibold text-slate-900">
-                  AI Prompts
-                </h1>
-              </div>
-            </div>
-            <Badge variant="secondary" className="text-[11px]">
-              {PROMPT_KEYS.length} prompts
-            </Badge>
+    <AdminShell>
+      <div className="p-6 max-w-5xl">
+        <div className="flex items-center justify-between mb-6">
+          <div>
+            <h1 className="text-lg font-bold text-slate-900">AI Prompts</h1>
+            <p className="text-sm text-slate-500 mt-1">
+              System instructions sent to the AI model in each edge function. Changes take effect immediately.
+            </p>
           </div>
-        </div>
-      </header>
-
-      <main className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="mb-6">
-          <p className="text-sm text-slate-500 max-w-2xl">
-            These prompts are sent to the AI model as system instructions in
-            each edge function. Changes take effect immediately on the next
-            function call.
-          </p>
+          <Badge variant="secondary" className="text-[11px]">
+            {PROMPT_KEYS.length} prompts
+          </Badge>
         </div>
 
         <div className="space-y-6">
@@ -316,7 +289,7 @@ export default function PromptsAdmin() {
             );
           })}
         </div>
-      </main>
-    </div>
+      </div>
+    </AdminShell>
   );
 }

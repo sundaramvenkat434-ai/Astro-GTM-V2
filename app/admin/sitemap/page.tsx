@@ -2,14 +2,14 @@
 
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from '@/components/ui/select';
 import {
-  ArrowLeft, Search, Plus, ExternalLink, Copy,
+  Search, Plus, ExternalLink, Copy,
   CircleCheck as CheckCircle2, Loader as Loader2, X, Map,
   SlidersHorizontal, Clock, Send, TriangleAlert as AlertTriangle,
 } from 'lucide-react';
@@ -441,85 +441,81 @@ export default function SitemapAdmin() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-slate-50">
-        <Loader2 className="w-7 h-7 animate-spin text-slate-400" />
-      </div>
+      <AdminShell>
+        <div className="flex-1 flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
+        </div>
+      </AdminShell>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex flex-col">
+    <AdminShell>
+      <div className="p-6">
 
-      {/* ── Header ── */}
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 gap-3">
-            <div className="flex items-center gap-2.5 min-w-0">
-              <Link href="/admin" className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors shrink-0">
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
-              <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
-                <Map className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-semibold text-slate-900 text-sm truncate">Sitemap Editor</span>
-              <span className="text-xs text-slate-400 shrink-0">{enabledCount} URLs</span>
-            </div>
-
-            <div className="flex items-center gap-1.5 shrink-0">
-              <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer"
-                className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-                <ExternalLink className="w-3.5 h-3.5" />View
-              </a>
-
-              <button onClick={handleCopy}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-                {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
-              </button>
-
-              {/* Bulk edit */}
-              <button onClick={() => setShowBulkModal(true)}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-                <SlidersHorizontal className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Bulk</span>
-              </button>
-
-              {/* Validate */}
-              <button onClick={handleValidate}
-                className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 transition-colors">
-                <AlertTriangle className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Validate</span>
-              </button>
-
-              {/* Submission log */}
-              <button onClick={openLog}
-                className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
-                <Clock className="w-3.5 h-3.5" />
-                <span className="hidden sm:inline">Log</span>
-              </button>
-
-              {/* Scan */}
-              <button onClick={handleScan} disabled={scanning}
-                className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 transition-colors disabled:opacity-50">
-                {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline">{scanning ? 'Scanning…' : 'Scan'}</span>
-              </button>
-
-              {/* Save */}
-              <button onClick={handleSave} disabled={saving || !xmlDirty}
-                className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors font-medium disabled:opacity-40 ${
-                  xmlDirty ? 'bg-slate-900 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-400'
-                }`}>
-                {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
-                {saving ? 'Saving…' : saved ? 'Saved!' : 'Save'}
-              </button>
-            </div>
+      {/* ── Toolbar ── */}
+      <div className="flex items-center justify-between mb-5">
+        <div className="flex items-center gap-2.5 min-w-0">
+          <div className="w-7 h-7 rounded-lg bg-slate-900 flex items-center justify-center shrink-0">
+            <Map className="w-3.5 h-3.5 text-white" />
           </div>
+          <span className="font-semibold text-slate-900 text-sm truncate">Sitemap Editor</span>
+          <span className="text-xs text-slate-400 shrink-0">{enabledCount} URLs</span>
         </div>
-      </header>
+
+        <div className="flex items-center gap-1.5 shrink-0">
+          <a href="/sitemap.xml" target="_blank" rel="noopener noreferrer"
+            className="hidden sm:flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+            <ExternalLink className="w-3.5 h-3.5" />View
+          </a>
+
+          <button onClick={handleCopy}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+            {copied ? <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" /> : <Copy className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+          </button>
+
+          {/* Bulk edit */}
+          <button onClick={() => setShowBulkModal(true)}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Bulk</span>
+          </button>
+
+          {/* Validate */}
+          <button onClick={handleValidate}
+            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 transition-colors">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Validate</span>
+          </button>
+
+          {/* Submission log */}
+          <button onClick={openLog}
+            className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300 transition-colors">
+            <Clock className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">Log</span>
+          </button>
+
+          {/* Scan */}
+          <button onClick={handleScan} disabled={scanning}
+            className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-slate-900 px-2.5 py-1.5 rounded-lg border border-slate-300 hover:border-slate-400 transition-colors disabled:opacity-50">
+            {scanning ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Search className="w-3.5 h-3.5" />}
+            <span className="hidden sm:inline">{scanning ? 'Scanning…' : 'Scan'}</span>
+          </button>
+
+          {/* Save */}
+          <button onClick={handleSave} disabled={saving || !xmlDirty}
+            className={`flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg transition-colors font-medium disabled:opacity-40 ${
+              xmlDirty ? 'bg-slate-900 text-white hover:bg-slate-700' : 'bg-slate-100 text-slate-400'
+            }`}>
+            {saving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : saved ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
+            {saving ? 'Saving…' : saved ? 'Saved!' : 'Save'}
+          </button>
+        </div>
+      </div>
 
       {/* ── XML Editor ── */}
-      <div className="flex-1 max-w-5xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+      <div className="flex-1 max-w-5xl w-full mx-auto">
 
         {/* ── Validation panel ── */}
         {xmlValidated && (
@@ -774,6 +770,7 @@ export default function SitemapAdmin() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </AdminShell>
   );
 }

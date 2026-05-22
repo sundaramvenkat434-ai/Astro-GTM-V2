@@ -4,10 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
-import {
-  ArrowLeft, BadgeCheck, Trash2, Check, X, Loader, ExternalLink,
-  Calendar, Mail, Linkedin, Globe, RefreshCw,
-} from 'lucide-react';
+import { AdminShell } from '@/components/admin-shell';
+import { BadgeCheck, Trash2, Check, X, Loader, Loader as Loader2, ExternalLink, Calendar, Mail, Linkedin, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Claim {
@@ -76,33 +74,19 @@ export default function AdminClaimsPage() {
   const filtered = filter === 'all' ? claims : claims.filter(c => c.status === filter);
   const counts = { all: claims.length, pending: claims.filter(c => c.status === 'pending').length, approved: claims.filter(c => c.status === 'approved').length, rejected: claims.filter(c => c.status === 'rejected').length };
 
-  return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 sticky top-0 z-10">
-        <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14">
-            <div className="flex items-center gap-3">
-              <Link href="/admin" className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
-                <ArrowLeft className="w-4 h-4" />
-              </Link>
-              <div className="w-7 h-7 rounded-lg bg-sky-600 flex items-center justify-center">
-                <BadgeCheck className="w-3.5 h-3.5 text-white" />
-              </div>
-              <span className="font-semibold text-slate-900 text-sm">Listing Claims</span>
-              {counts.pending > 0 && (
-                <span className="text-xs bg-amber-100 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-full font-semibold">
-                  {counts.pending} pending
-                </span>
-              )}
-            </div>
-            <button onClick={load} className="p-2 rounded-lg hover:bg-slate-100 text-slate-500 transition-colors">
-              <RefreshCw className="w-4 h-4" />
-            </button>
-          </div>
+  if (loading) {
+    return (
+      <AdminShell>
+        <div className="flex-1 flex items-center justify-center py-20">
+          <Loader2 className="w-8 h-8 animate-spin text-slate-400" />
         </div>
-      </header>
+      </AdminShell>
+    );
+  }
 
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  return (
+    <AdminShell>
+      <div className="p-6">
         {/* Filter tabs */}
         <div className="flex gap-1 mb-6 bg-white border border-slate-200 rounded-xl p-1 w-fit">
           {(['all', 'pending', 'approved', 'rejected'] as const).map(f => (
@@ -116,11 +100,7 @@ export default function AdminClaimsPage() {
           ))}
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader className="w-6 h-6 animate-spin text-slate-300" />
-          </div>
-        ) : filtered.length === 0 ? (
+        {filtered.length === 0 ? (
           <div className="text-center py-20">
             <BadgeCheck className="w-10 h-10 text-slate-200 mx-auto mb-3" />
             <p className="text-sm font-semibold text-slate-400">No {filter === 'all' ? '' : filter} claims</p>
@@ -218,6 +198,6 @@ export default function AdminClaimsPage() {
           </div>
         )}
       </div>
-    </div>
+    </AdminShell>
   );
 }
