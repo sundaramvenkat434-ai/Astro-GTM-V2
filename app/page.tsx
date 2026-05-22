@@ -516,54 +516,56 @@ export default function HomePage() {
 
       {/* ── Top X Rankings ── */}
       {topXPages.length > 0 && (
-        <section className="bg-white border-t border-slate-200">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+        <section
+          className="border-t border-sky-100"
+          style={{ background: 'linear-gradient(175deg, #f0f9ff 0%, #e8f4fd 30%, #f5faff 70%, #ffffff 100%)' }}
+        >
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16">
 
             {/* Section header */}
             <div className="flex items-center justify-between gap-4 mb-8">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center">
-                  <Trophy className="w-4 h-4 text-amber-400" />
+                <div className="w-10 h-10 rounded-xl bg-sky-600 flex items-center justify-center shadow-sm">
+                  <Trophy className="w-5 h-5 text-white" />
                 </div>
                 <div>
                   <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Top Rankings</h2>
-                  <p className="text-[13px] text-slate-500 mt-0.5">Curated comparisons of the best tools</p>
+                  <p className="text-sm text-slate-500 mt-0.5">Curated comparisons of the best tools</p>
                 </div>
               </div>
             </div>
 
             {/* Cards 3-col grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {topXPages.slice(0, 6).map(page => (
                 <Link
                   key={page.id}
                   href={`/category/${page.category}/${page.slug}`}
-                  className="group flex flex-col rounded-xl border border-slate-200 overflow-hidden hover:border-slate-300 hover:shadow-sm transition-all duration-200"
-                  style={{ background: 'linear-gradient(150deg, #f9fbfe 0%, #ffffff 50%)' }}
+                  className="group flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/40 transition-all duration-200"
                 >
-                  <div className="px-4 py-3.5 flex-1 flex flex-col">
+                  <div className="p-5 flex-1 flex flex-col">
                     {/* Category */}
-                    <div className="flex items-center justify-between gap-2 mb-2">
-                      <span className="text-[9px] font-bold uppercase tracking-widest text-sky-600">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600">
                         {SECTION_LABELS[page.category] || page.category}
                       </span>
-                      <span className="text-[9px] font-medium text-slate-400">
+                      <span className="text-[10px] font-medium text-slate-400">
                         {(page.tool_ids || []).length} tools
                       </span>
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-[14px] font-bold text-slate-900 leading-snug mb-2 group-hover:text-sky-700 transition-colors line-clamp-1">
+                    <h3 className="text-[15px] font-bold text-slate-900 leading-snug mb-3 group-hover:text-sky-700 transition-colors line-clamp-1">
                       {page.name}
                     </h3>
 
                     {/* Rankings list */}
-                    <div className="space-y-1.5">
+                    <div className="space-y-3">
                       {(page.tool_ids || []).slice(0, 3).map((toolId, idx) => {
                         const info = topXToolInfo[toolId];
                         return (
-                          <div key={toolId} className="flex items-start gap-2">
-                            <span className={`w-[18px] h-[18px] rounded flex items-center justify-center text-[9px] font-bold shrink-0 mt-px ${
+                          <div key={toolId} className="flex items-start gap-2.5">
+                            <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 ${
                               idx === 0 ? 'bg-amber-100 text-amber-700' :
                               idx === 1 ? 'bg-slate-100 text-slate-600' :
                               'bg-orange-50 text-orange-600'
@@ -571,19 +573,19 @@ export default function HomePage() {
                               {idx + 1}
                             </span>
                             <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[12px] font-semibold text-slate-800 truncate">
+                              <div className="flex items-center gap-2">
+                                <span className="text-[13px] font-semibold text-slate-800 truncate">
                                   {info?.name || '...'}
                                 </span>
                                 {info?.rating && (
                                   <span className="shrink-0 flex items-center gap-0.5">
-                                    <Star className="w-2.5 h-2.5 fill-amber-400 text-amber-400" />
-                                    <span className="text-[10px] font-bold text-slate-600">{info.rating}</span>
+                                    <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                    <span className="text-[11px] font-bold text-slate-700">{info.rating}</span>
                                   </span>
                                 )}
                               </div>
                               {info?.tagline && (
-                                <p className="text-[10px] text-slate-400 leading-tight truncate">{info.tagline}</p>
+                                <p className="text-[11px] text-slate-500 leading-snug truncate mt-0.5">{info.tagline}</p>
                               )}
                             </div>
                           </div>
@@ -593,8 +595,11 @@ export default function HomePage() {
                   </div>
 
                   {/* Footer */}
-                  <div className="px-4 py-2.5 border-t border-slate-100 flex items-center justify-end">
-                    <span className="inline-flex items-center gap-1 text-[10px] font-semibold text-sky-600 opacity-70 group-hover:opacity-100 transition-opacity">
+                  <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-400 font-medium">
+                      {new Date(page.published_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
+                    </span>
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 opacity-70 group-hover:opacity-100 transition-opacity">
                       View ranking <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
