@@ -1,18 +1,43 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 
 export function GlobalLoader() {
-  const [loading, setLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
+  const [visible, setVisible] = useState(false);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const show = useCallback(() => setLoading(true), []);
-  const hide = useCallback(() => {
-    setTimeout(() => setLoading(false), 2000);
+  const start = useCallback(() => {
+    setProgress(0);
+    setVisible(true);
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+
+    let current = 0;
+    intervalRef.current = setInterval(() => {
+      current += Math.random() * 12 + 3;
+      if (current >= 90) current = 90;
+      setProgress(current);
+    }, 200);
+  }, []);
+
+  const finish = useCallback(() => {
+    if (intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+    setProgress(100);
+    timeoutRef.current = setTimeout(() => {
+      setVisible(false);
+      setProgress(0);
+    }, 300);
   }, []);
 
   useEffect(() => {
     // Initial page load
-    const dismissInitial = () => setTimeout(hide, 100);
+    start();
+    const dismissInitial = () => setTimeout(finish, 100);
     if (document.readyState === 'complete') {
       dismissInitial();
     } else {
@@ -27,33 +52,28 @@ export function GlobalLoader() {
       const href = anchor.getAttribute('href');
       if (!href) return;
 
-      // Skip external links, hash links, and new-tab links
       if (href.startsWith('http') || href.startsWith('#') || href.startsWith('mailto:')) return;
       if (anchor.target === '_blank') return;
       if (e.ctrlKey || e.metaKey || e.shiftKey) return;
 
-      // Same page — skip
       const url = new URL(href, window.location.origin);
       if (url.pathname === window.location.pathname && url.search === window.location.search) return;
 
-      show();
+      start();
     };
 
-    // Listen for popstate (back/forward)
     const handlePopState = () => {
-      show();
+      start();
     };
 
     document.addEventListener('click', handleClick, true);
     window.addEventListener('popstate', handlePopState);
 
-    // MutationObserver to detect when Next.js swaps the page content
-    let hideTimeout: ReturnType<typeof setTimeout>;
+    // Detect when Next.js finishes rendering new content
+    let finishTimeout: ReturnType<typeof setTimeout>;
     const observer = new MutationObserver(() => {
-      if (loading) {
-        clearTimeout(hideTimeout);
-        hideTimeout = setTimeout(hide, 150);
-      }
+      clearTimeout(finishTimeout);
+      finishTimeout = setTimeout(finish, 150);
     });
 
     observer.observe(document.body, { childList: true, subtree: true });
@@ -63,24 +83,20 @@ export function GlobalLoader() {
       window.removeEventListener('popstate', handlePopState);
       window.removeEventListener('load', dismissInitial);
       observer.disconnect();
-      clearTimeout(hideTimeout);
+      if (intervalRef.current) clearInterval(intervalRef.current);
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      clearTimeout(finishTimeout);
     };
-  }, [show, hide, loading]);
+  }, [start, finish]);
+
+  if (!visible) return null;
 
   return (
-    <div
-      className={`global-loader ${!loading ? 'global-loader--fade' : ''}`}
-      aria-hidden={!loading}
-    >
-      <div className="loader-planet-wrapper">
-        <div className="loader-atmosphere" />
-        <div className="loader-planet">
-          <div className="loader-planet-shine" />
-        </div>
-        <div className="loader-orbit">
-          <div className="loader-moon" />
-        </div>
-      </div>
+    <div className="global-progress-bar" aria-hidden="true">
+      <div
+        className="global-progress-bar__fill"
+        style={{ width: `${progress}%` }}
+      />
     </div>
   );
 }
