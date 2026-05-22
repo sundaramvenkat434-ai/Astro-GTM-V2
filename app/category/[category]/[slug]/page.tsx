@@ -841,54 +841,62 @@ export default async function SlugPage({
               )}
 
               {/* ── Suitable For ── */}
-              {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
-                <section id="section-who-is-it-for">
-                  <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
-                      const score = Math.max(1, Math.min(10, Math.round(entry.score)));
-                      const pct = (score / 10) * 100;
+              {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (() => {
+                const entries = (tool.who_is_it_for as WhoIsItForEntry[]).slice(0, 6);
+                const sorted = [...entries].sort((a, b) => b.score - a.score);
+                const topThree = sorted.slice(0, 3);
+                const bottomThree = sorted.slice(3, 6);
 
-                      const tier = score >= 9
-                        ? { label: 'Best Fit', bg: 'bg-emerald-50', border: 'border-emerald-200', hoverBorder: 'hover:border-emerald-300', bar: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', scoreColor: 'text-emerald-700' }
-                        : score >= 7
-                        ? { label: 'Suitable', bg: 'bg-sky-50', border: 'border-sky-200', hoverBorder: 'hover:border-sky-300', bar: 'bg-sky-500', badge: 'bg-sky-100 text-sky-700 border-sky-200', scoreColor: 'text-sky-700' }
-                        : score >= 5
-                        ? { label: 'May Work', bg: 'bg-amber-50', border: 'border-amber-200', hoverBorder: 'hover:border-amber-300', bar: 'bg-amber-400', badge: 'bg-amber-100 text-amber-700 border-amber-200', scoreColor: 'text-amber-600' }
-                        : score >= 4
-                        ? { label: 'Better Alternatives', bg: 'bg-orange-50', border: 'border-orange-200', hoverBorder: 'hover:border-orange-300', bar: 'bg-orange-400', badge: 'bg-orange-100 text-orange-700 border-orange-200', scoreColor: 'text-orange-600' }
-                        : score >= 2
-                        ? { label: 'Not Ideal', bg: 'bg-red-50', border: 'border-red-200', hoverBorder: 'hover:border-red-300', bar: 'bg-red-400', badge: 'bg-red-100 text-red-700 border-red-200', scoreColor: 'text-red-600' }
-                        : { label: 'Not Suitable', bg: 'bg-rose-50', border: 'border-rose-200', hoverBorder: 'hover:border-rose-300', bar: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700 border-rose-200', scoreColor: 'text-rose-700' };
+                const renderCard = (entry: WhoIsItForEntry, i: number, isPositive: boolean) => {
+                  const score = Math.max(1, Math.min(10, Math.round(entry.score)));
+                  const pct = (score / 10) * 100;
 
-                      return (
+                  const tier = isPositive
+                    ? { label: score >= 9 ? 'Best Fit' : score >= 7 ? 'Suitable' : 'May Work', bg: 'bg-sky-50/60', border: 'border-sky-100', hoverBorder: 'hover:border-sky-300', bar: 'bg-sky-500', badge: 'bg-sky-100 text-sky-700 border-sky-200', scoreColor: 'text-sky-700' }
+                    : { label: score <= 2 ? 'Not Suitable' : score <= 4 ? 'Not Ideal' : 'Better Alternatives', bg: 'bg-amber-50/50', border: 'border-amber-100', hoverBorder: 'hover:border-amber-300', bar: 'bg-amber-400', badge: 'bg-amber-100 text-amber-700 border-amber-200', scoreColor: 'text-amber-600' };
+
+                  return (
+                    <div
+                      key={i}
+                      className={`relative rounded-xl border ${tier.border} ${tier.hoverBorder} ${tier.bg} p-4 transition-all hover:shadow-md group`}
+                    >
+                      <div className="flex items-start justify-between gap-2 mb-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border ${tier.badge}`}>
+                          {tier.label}
+                        </span>
+                        <span className={`text-2xl font-bold tabular-nums leading-none ${tier.scoreColor}`}>
+                          {score}<span className="text-[11px] font-normal text-slate-400">/10</span>
+                        </span>
+                      </div>
+                      <p className="text-[13px] font-semibold text-slate-800 leading-snug mb-1">{entry.audience}</p>
+                      {entry.note && <p className="text-[11px] text-slate-500 leading-relaxed mb-3">{entry.note}</p>}
+                      {!entry.note && <div className="mb-3" />}
+                      <div className="w-full h-2 bg-white/80 rounded-full overflow-hidden border border-slate-100">
                         <div
-                          key={i}
-                          className={`relative rounded-xl border ${tier.border} ${tier.hoverBorder} ${tier.bg} p-4 transition-all hover:shadow-md group`}
-                        >
-                          <div className="flex items-start justify-between gap-2 mb-3">
-                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border ${tier.badge}`}>
-                              {tier.label}
-                            </span>
-                            <span className={`text-2xl font-bold tabular-nums leading-none ${tier.scoreColor}`}>
-                              {score}<span className="text-[11px] font-normal text-slate-400">/10</span>
-                            </span>
-                          </div>
-                          <p className="text-[13px] font-semibold text-slate-800 leading-snug mb-1">{entry.audience}</p>
-                          {entry.note && <p className="text-[11px] text-slate-500 leading-relaxed mb-3">{entry.note}</p>}
-                          {!entry.note && <div className="mb-3" />}
-                          <div className="w-full h-2 bg-white/80 rounded-full overflow-hidden border border-slate-100">
-                            <div
-                              className={`h-full rounded-full ${tier.bar} transition-all duration-500 group-hover:opacity-90`}
-                              style={{ width: `${pct}%` }}
-                            />
-                          </div>
+                          className={`h-full rounded-full ${tier.bar} transition-all duration-500 group-hover:opacity-90`}
+                          style={{ width: `${pct}%` }}
+                        />
+                      </div>
+                    </div>
+                  );
+                };
+
+                return (
+                  <section id="section-who-is-it-for">
+                    <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                        {topThree.map((entry, i) => renderCard(entry, i, true))}
+                      </div>
+                      {bottomThree.length > 0 && (
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                          {bottomThree.map((entry, i) => renderCard(entry, i + 3, false))}
                         </div>
-                      );
-                    })}
-                  </div>
-                </section>
-              )}
+                      )}
+                    </div>
+                  </section>
+                );
+              })()}
 
               {/* ── Pricing ── */}
               {tool.pricing.length > 0 && (
