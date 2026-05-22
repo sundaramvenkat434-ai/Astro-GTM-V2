@@ -146,12 +146,15 @@
   justify-content: center;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   opacity: 1;
-  transition: opacity 0.35s ease-out;
+  transition: opacity 0.3s ease-out, visibility 0s linear 0s;
+  visibility: visible;
 }
 
 .global-loader--fade {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.3s ease-out, visibility 0s linear 0.3s;
 }
 
 .loader-planet-wrapper {
