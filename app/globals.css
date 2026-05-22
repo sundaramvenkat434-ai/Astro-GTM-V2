@@ -135,3 +135,101 @@
 .scrollbar-none::-webkit-scrollbar {
   display: none;
 }
+
+/* ── Global Loader (planet/orbit inspired) ──────────────── */
+.global-loader {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  opacity: 1;
+  transition: opacity 0.35s ease-out;
+}
+
+.global-loader--fade {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.loader-planet-wrapper {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  animation: loader-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes loader-pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.04); }
+}
+
+.loader-atmosphere {
+  position: absolute;
+  inset: 2px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(14, 165, 233, 0.15) 60%, rgba(56, 189, 248, 0.3) 100%);
+  animation: loader-atmos-pulse 2s ease-in-out infinite;
+}
+
+@keyframes loader-atmos-pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50% { opacity: 1; transform: scale(1.08); }
+}
+
+.loader-planet {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 28px;
+  height: 28px;
+  margin: -14px 0 0 -14px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at 38% 32%, #38bdf8 0%, #0369a1 45%, #0c2340 100%);
+  box-shadow: 0 0 16px rgba(14, 165, 233, 0.35), inset 0 -3px 6px rgba(12, 35, 64, 0.4);
+  overflow: hidden;
+}
+
+.loader-planet-shine {
+  position: absolute;
+  top: 3px;
+  left: 4px;
+  width: 10px;
+  height: 8px;
+  border-radius: 50%;
+  background: radial-gradient(ellipse, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0) 70%);
+}
+
+.loader-orbit {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border-radius: 50%;
+  border: 1.5px solid transparent;
+  border-top-color: rgba(56, 189, 248, 0.7);
+  border-right-color: rgba(56, 189, 248, 0.3);
+  animation: loader-orbit-spin 1.2s linear infinite;
+  transform-origin: center;
+}
+
+@keyframes loader-orbit-spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.loader-moon {
+  position: absolute;
+  top: -3px;
+  left: 50%;
+  margin-left: -3px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #ffffff, #bae6fd);
+  box-shadow: 0 0 6px rgba(186, 230, 253, 0.8);
+}
