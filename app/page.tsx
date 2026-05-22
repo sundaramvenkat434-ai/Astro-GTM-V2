@@ -57,16 +57,16 @@ export default function HomePage() {
     window.addEventListener('resize', resize);
     let t = 0;
 
-    // Stars — sparse and tiny
-    const STARS = Array.from({ length: 150 }, () => {
+    // Stars — cool cyan/teal palette matching the header gradient
+    const STARS = Array.from({ length: 200 }, () => {
       const layer = Math.random();
       return {
         x: Math.random(), y: Math.random(),
-        r: layer < 0.8 ? 0.2 + Math.random() * 0.5 : 0.5 + Math.random() * 0.8,
+        r: layer < 0.75 ? 0.2 + Math.random() * 0.5 : 0.5 + Math.random() * 0.8,
         twinkleSpeed: 0.008 + Math.random() * 0.04,
         twinkleOffset: Math.random() * Math.PI * 2,
-        baseOpacity: layer < 0.7 ? 0.1 + Math.random() * 0.2 : 0.2 + Math.random() * 0.35,
-        hue: layer < 0.4 ? '14,165,233' : layer < 0.7 ? '20,184,166' : layer < 0.9 ? '56,189,248' : '186,230,253',
+        baseOpacity: layer < 0.6 ? 0.1 + Math.random() * 0.25 : 0.2 + Math.random() * 0.4,
+        hue: layer < 0.25 ? '6,182,212' : layer < 0.45 ? '14,165,233' : layer < 0.65 ? '20,184,166' : layer < 0.8 ? '34,211,238' : layer < 0.92 ? '56,189,248' : '165,243,252',
       };
     });
 
