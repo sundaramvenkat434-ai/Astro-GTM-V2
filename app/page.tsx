@@ -50,7 +50,7 @@ export default function HomePage() {
   const [heroVisible, setHeroVisible]   = useState(false);
   const [creditsHover, setCreditsHover] = useState(false);
   const [topXPages, setTopXPages]       = useState<TopXPageSummary[]>([]);
-  const [topXToolNames, setTopXToolNames] = useState<Record<string, string>>({});
+  const [topXToolInfo, setTopXToolInfo] = useState<Record<string, { name: string; rating: number; tagline: string }>>({});
 
   useEffect(() => {
     const t = setTimeout(() => setHeroVisible(true), 80);
@@ -229,13 +229,13 @@ export default function HomePage() {
           const allToolIds = Array.from(new Set(data.flatMap((p: TopXPageSummary) => p.tool_ids || [])));
           if (allToolIds.length > 0) {
             supabase.from('tool_pages')
-              .select('id, name')
+              .select('id, name, rating, tagline')
               .in('id', allToolIds)
               .then(({ data: toolData }) => {
                 if (toolData) {
-                  const nameMap: Record<string, string> = {};
-                  for (const t of toolData) nameMap[t.id] = t.name;
-                  setTopXToolNames(nameMap);
+                  const infoMap: Record<string, { name: string; rating: number; tagline: string }> = {};
+                  for (const t of toolData) infoMap[t.id] = { name: t.name, rating: t.rating, tagline: t.tagline };
+                  setTopXToolInfo(infoMap);
                 }
               });
           }
@@ -516,107 +516,89 @@ export default function HomePage() {
 
       {/* ── Top X Rankings ── */}
       {topXPages.length > 0 && (
-        <section className="relative overflow-hidden border-t border-slate-800/50"
-          style={{ background: 'linear-gradient(170deg, #060d1f 0%, #0a1628 40%, #081a24 70%, #040d18 100%)' }}
-        >
-          <div className="absolute inset-0 pointer-events-none opacity-30"
-            style={{ background: 'radial-gradient(ellipse 50% 50% at 70% 30%, rgba(14,165,233,0.12) 0%, transparent 60%), radial-gradient(ellipse 40% 40% at 20% 70%, rgba(20,184,166,0.08) 0%, transparent 50%)' }}
-          />
-          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14 sm:py-20">
+        <section className="bg-white border-t border-slate-200">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
             {/* Section header */}
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-10">
-              <div>
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400/20 to-amber-600/10 border border-amber-400/20 flex items-center justify-center">
-                    <Trophy className="w-5 h-5 text-amber-400" />
-                  </div>
-                  <span className="text-[11px] font-bold uppercase tracking-widest text-amber-400/80">Curated Rankings</span>
+            <div className="flex items-center justify-between gap-4 mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center">
+                  <Trophy className="w-4 h-4 text-amber-400" />
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                  Top Tool Comparisons
-                </h2>
-                <p className="text-[14px] text-slate-400 mt-1.5 max-w-lg leading-relaxed">
-                  Expert-curated lists comparing the best tools in each category, ranked and reviewed.
-                </p>
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Top Rankings</h2>
+                  <p className="text-[13px] text-slate-500 mt-0.5">Curated comparisons of the best tools</p>
+                </div>
               </div>
             </div>
 
-            {/* Cards grid */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-              {topXPages.map(page => (
+            {/* Cards 2x2 grid */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {topXPages.slice(0, 4).map(page => (
                 <Link
                   key={page.id}
                   href={`/category/${page.category}/${page.slug}`}
-                  className="group relative flex flex-col rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-sm overflow-hidden hover:border-white/[0.12] hover:bg-white/[0.05] transition-all duration-300"
+                  className="group relative flex flex-col rounded-xl border border-slate-200 overflow-hidden hover:border-slate-300 hover:shadow-md hover:shadow-slate-100/60 transition-all duration-200"
+                  style={{ background: 'linear-gradient(145deg, #f8fafe 0%, #ffffff 40%, #ffffff 100%)' }}
                 >
-                  {/* Top gradient accent */}
-                  <div className="absolute top-0 left-0 right-0 h-px"
-                    style={{ background: 'linear-gradient(90deg, transparent 10%, rgba(56,189,248,0.4) 50%, transparent 90%)' }}
-                  />
-
-                  <div className="p-5 sm:p-6 flex-1 flex flex-col">
+                  <div className="p-5 flex-1 flex flex-col">
                     {/* Category + tool count */}
-                    <div className="flex items-center justify-between gap-2 mb-4">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-sky-400/70">
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-sky-600">
                         {SECTION_LABELS[page.category] || page.category}
                       </span>
-                      <span className="text-[10px] font-medium text-slate-500">
+                      <span className="text-[10px] font-medium text-slate-400">
                         {(page.tool_ids || []).length} tools
                       </span>
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-[15px] sm:text-base font-bold text-white leading-snug mb-2 group-hover:text-sky-100 transition-colors line-clamp-2">
+                    <h3 className="text-[15px] font-bold text-slate-900 leading-snug mb-1 group-hover:text-sky-700 transition-colors line-clamp-1">
                       {page.name}
                     </h3>
 
                     {/* Tagline */}
                     {page.tagline && (
-                      <p className="text-[12.5px] text-slate-400 leading-relaxed line-clamp-2 mb-4">
+                      <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-1 mb-3">
                         {page.tagline}
                       </p>
                     )}
 
                     {/* Rankings list */}
-                    <div className="mt-auto space-y-2 pt-2">
-                      {(page.tool_ids || []).slice(0, 3).map((toolId, idx) => (
-                        <div key={toolId} className="flex items-center gap-2.5">
-                          <span className={`w-6 h-6 rounded-lg flex items-center justify-center text-[11px] font-bold shrink-0 ${
-                            idx === 0 ? 'bg-amber-400/15 text-amber-400 ring-1 ring-amber-400/30' :
-                            idx === 1 ? 'bg-slate-400/10 text-slate-300 ring-1 ring-slate-400/20' :
-                            'bg-orange-400/10 text-orange-300 ring-1 ring-orange-400/20'
-                          }`}>
-                            {idx + 1}
-                          </span>
-                          <span className={`text-[12.5px] truncate ${
-                            idx === 0 ? 'text-white font-semibold' : 'text-slate-300'
-                          }`}>
-                            {topXToolNames[toolId] || '...'}
-                          </span>
-                          {idx === 0 && (
-                            <span className="ml-auto shrink-0 text-[9px] font-bold uppercase tracking-wider text-amber-400/70 bg-amber-400/10 px-1.5 py-0.5 rounded">
-                              #1
+                    <div className="space-y-2">
+                      {(page.tool_ids || []).slice(0, 3).map((toolId, idx) => {
+                        const info = topXToolInfo[toolId];
+                        return (
+                          <div key={toolId} className="flex items-center gap-2.5">
+                            <span className={`w-5 h-5 rounded-md flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                              idx === 0 ? 'bg-amber-100 text-amber-700' :
+                              idx === 1 ? 'bg-slate-100 text-slate-600' :
+                              'bg-orange-50 text-orange-600'
+                            }`}>
+                              {idx + 1}
                             </span>
-                          )}
-                        </div>
-                      ))}
-                      {(page.tool_ids || []).length > 3 && (
-                        <div className="flex items-center gap-2.5 pl-8">
-                          <span className="text-[11px] text-slate-500">
-                            +{(page.tool_ids || []).length - 3} more
-                          </span>
-                        </div>
-                      )}
+                            <span className="text-[13px] font-medium text-slate-800 truncate flex-1">
+                              {info?.name || '...'}
+                            </span>
+                            {info?.rating && (
+                              <span className="shrink-0 flex items-center gap-1">
+                                <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                                <span className="text-[11px] font-bold text-slate-700">{info.rating}</span>
+                                <span className="text-[10px] text-slate-400">/5</span>
+                              </span>
+                            )}
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
                   {/* Footer */}
-                  <div className="px-5 sm:px-6 py-3.5 border-t border-white/[0.05] flex items-center justify-between">
-                    <span className="text-[11px] text-slate-500 font-medium">
+                  <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
+                    <span className="text-[11px] text-slate-400 font-medium">
                       {new Date(page.published_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                     </span>
-                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-400 opacity-70 group-hover:opacity-100 transition-opacity">
+                    <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-sky-600 opacity-70 group-hover:opacity-100 transition-opacity">
                       View ranking <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
                     </span>
                   </div>
