@@ -957,14 +957,16 @@ export default async function SlugPage({
                       </div>
                       <p className="text-[12px] text-slate-400 mt-1 ml-[14px]">Other {categoryLabel} tools worth exploring</p>
                     </div>
-                    <Link href={`/category/${tool.category}`} className="text-xs text-sky-600 hover:text-sky-800 transition-colors font-medium whitespace-nowrap mt-1">
-                      View all →
+                    <Link href={`/category/${tool.category}`} className="inline-flex items-center gap-1 text-xs text-sky-600 hover:text-sky-800 transition-colors font-medium whitespace-nowrap mt-1 px-2.5 py-1 rounded-lg hover:bg-sky-50">
+                      View all <span aria-hidden="true">&rarr;</span>
                     </Link>
                   </div>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    {similarTools.map((s) => (
-                      <ToolCard key={s.id} tool={s} views={similarViewCounts[s.id]} />
-                    ))}
+                  <div className="bg-gradient-to-b from-slate-50/40 to-white border border-slate-200/60 rounded-2xl p-2.5 sm:p-3.5">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {similarTools.map((s) => (
+                        <ToolCard key={s.id} tool={s} views={similarViewCounts[s.id]} />
+                      ))}
+                    </div>
                   </div>
                 </section>
               )}
