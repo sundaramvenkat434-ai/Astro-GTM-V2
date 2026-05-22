@@ -28,15 +28,34 @@ interface NavItem {
   icon: React.ReactNode;
 }
 
-const NAV_ITEMS: NavItem[] = [
-  { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
-  { label: 'Page Templates', href: '/admin/templates', icon: <LayoutGrid className="w-4 h-4" /> },
-  { label: 'Sitemap XML', href: '/admin/sitemap', icon: <Map className="w-4 h-4" /> },
-  { label: 'Robots TXT', href: '/admin/robots', icon: <Shield className="w-4 h-4" /> },
-  { label: 'LLMS TXT', href: '/admin/llms-txt', icon: <FileText className="w-4 h-4" /> },
-  { label: 'AI Prompts', href: '/admin/prompts', icon: <MessageSquareCode className="w-4 h-4" /> },
-  { label: 'Author Profiles', href: '/admin/authors', icon: <Users2 className="w-4 h-4" /> },
-  { label: 'Tool Claims', href: '/admin/claims', icon: <BadgeCheck className="w-4 h-4" /> },
+interface NavSection {
+  title?: string;
+  items: NavItem[];
+}
+
+const NAV_SECTIONS: NavSection[] = [
+  {
+    items: [
+      { label: 'Dashboard', href: '/admin/dashboard', icon: <LayoutDashboard className="w-4 h-4" /> },
+      { label: 'Page Templates', href: '/admin/templates', icon: <LayoutGrid className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: 'SEO Config Files',
+    items: [
+      { label: 'Sitemap.xml', href: '/admin/sitemap', icon: <Map className="w-4 h-4" /> },
+      { label: 'Robots.txt', href: '/admin/robots', icon: <Shield className="w-4 h-4" /> },
+      { label: 'llms.txt', href: '/admin/llms-txt', icon: <FileText className="w-4 h-4" /> },
+    ],
+  },
+  {
+    title: 'Content',
+    items: [
+      { label: 'AI Prompts', href: '/admin/prompts', icon: <MessageSquareCode className="w-4 h-4" /> },
+      { label: 'Author Profiles', href: '/admin/authors', icon: <Users2 className="w-4 h-4" /> },
+      { label: 'Tool Claims', href: '/admin/claims', icon: <BadgeCheck className="w-4 h-4" /> },
+    ],
+  },
 ];
 
 export function AdminShell({ children }: { children: React.ReactNode }) {
@@ -93,24 +112,33 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className="flex-1 px-3 py-2 space-y-0.5">
-          {NAV_ITEMS.map((item) => {
-            const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
-                  isActive
-                    ? 'bg-sky-50 text-sky-700 font-semibold'
-                    : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
-                }`}
-              >
-                <span className={isActive ? 'text-sky-600' : 'text-slate-400'}>{item.icon}</span>
-                {item.label}
-              </Link>
-            );
-          })}
+        <nav className="flex-1 px-3 py-2 space-y-4 overflow-y-auto">
+          {NAV_SECTIONS.map((section, sIdx) => (
+            <div key={sIdx}>
+              {section.title && (
+                <p className="px-3 mb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">{section.title}</p>
+              )}
+              <div className="space-y-0.5">
+                {section.items.map((item) => {
+                  const isActive = pathname === item.href || (item.href !== '/admin/dashboard' && pathname.startsWith(item.href));
+                  return (
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                        isActive
+                          ? 'bg-sky-50 text-sky-700 font-semibold'
+                          : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                      }`}
+                    >
+                      <span className={isActive ? 'text-sky-600' : 'text-slate-400'}>{item.icon}</span>
+                      {item.label}
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
         </nav>
 
         {/* Bottom section */}

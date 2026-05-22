@@ -14,7 +14,7 @@ export function SiteFooter() {
             <Link href="/privacy-policy" className="hover:text-slate-700 transition-colors">Privacy</Link>
             <Link href="/terms" className="hover:text-slate-700 transition-colors">Terms</Link>
             <Link href="/contact" className="hover:text-slate-700 transition-colors">Contact</Link>
-            <a href="/llms.txt" className="hover:text-slate-700 transition-colors">LLMS.txt</a>
+            <a href="/llms.txt" className="hover:text-slate-700 transition-colors">llms.txt</a>
             <span className="text-slate-300 whitespace-nowrap">© {new Date().getFullYear()} AstroGTM</span>
           </nav>
         </div>
