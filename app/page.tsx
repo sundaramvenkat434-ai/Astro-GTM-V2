@@ -57,64 +57,46 @@ export default function HomePage() {
     window.addEventListener('resize', resize);
     let t = 0;
 
-    // Stars — cool cyan/teal palette matching the header gradient
-    const STARS = Array.from({ length: 280 }, () => {
-      const layer = Math.random();
-      return {
-        x: Math.random(), y: Math.random(),
-        r: layer < 0.75 ? 0.2 + Math.random() * 0.5 : 0.5 + Math.random() * 0.8,
-        twinkleSpeed: 0.008 + Math.random() * 0.04,
-        twinkleOffset: Math.random() * Math.PI * 2,
-        baseOpacity: layer < 0.6 ? 0.1 + Math.random() * 0.25 : 0.2 + Math.random() * 0.4,
-        hue: layer < 0.3 ? '14,165,233' : layer < 0.5 ? '56,189,248' : layer < 0.65 ? '59,130,246' : layer < 0.8 ? '96,165,250' : layer < 0.92 ? '34,211,238' : '147,197,253',
-      };
-    });
-
-    // Nebula orbs — larger, more colorful, with pulsing
-    const ORBS = [
-      { x: 0.78, y: 0.18, r: 0.40, color: '14,165,233', vx:  0.00008, vy:  0.00005, pulse: 0.003 },
-      { x: 0.12, y: 0.55, r: 0.32, color: '20,184,166', vx: -0.00006, vy: -0.00004, pulse: 0.002 },
-      { x: 0.45, y: 0.85, r: 0.28, color: '6,182,212',  vx:  0.00005, vy:  0.00007, pulse: 0.004 },
-      { x: 0.92, y: 0.65, r: 0.22, color: '56,189,248', vx: -0.00009, vy:  0.00003, pulse: 0.0025 },
-      { x: 0.35, y: 0.15, r: 0.26, color: '34,211,238', vx:  0.00004, vy: -0.00006, pulse: 0.0035 },
-      { x: 0.60, y: 0.45, r: 0.18, color: '8,145,178',  vx: -0.00007, vy:  0.00008, pulse: 0.005 },
-    ];
-
-    // Floating particles — fewer and smaller
-    const DUST = Array.from({ length: 30 }, () => ({
+    const STARS = Array.from({ length: 300 }, () => ({
       x: Math.random(), y: Math.random(),
-      vx: (Math.random() - 0.5) * 0.00015,
-      vy: -0.00010 - Math.random() * 0.00018,
-      r: 0.6 + Math.random() * 1.4,
-      opacity: 0.04 + Math.random() * 0.08,
-      color: Math.random() < 0.6 ? '14,165,233' : '20,184,166',
+      r: 0.3 + Math.random() * 1.6,
+      twinkleSpeed: 0.012 + Math.random() * 0.05,
+      twinkleOffset: Math.random() * Math.PI * 2,
+      baseOpacity: 0.2 + Math.random() * 0.5,
+      hue: Math.random() < 0.5 ? '14,165,233' : Math.random() < 0.5 ? '20,184,166' : '100,116,139',
     }));
 
-    // Shooting stars
-    type Shooter = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; active: boolean; width: number };
-    const SHOOTERS: Shooter[] = Array.from({ length: 6 }, () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, maxLife: 1, active: false, width: 1.5 }));
-    function spawnShooter(s: Shooter) {
-      s.x = Math.random() * 0.7; s.y = Math.random() * 0.35;
-      const angle = Math.PI / 7 + (Math.random() - 0.5) * 0.5;
-      const speed = 0.005 + Math.random() * 0.005;
-      s.vx = Math.cos(angle) * speed; s.vy = Math.sin(angle) * speed;
-      s.maxLife = 40 + Math.random() * 60; s.life = 0; s.active = true;
-      s.width = 1.2 + Math.random() * 1.5;
-    }
-    spawnShooter(SHOOTERS[0]);
-    setTimeout(() => spawnShooter(SHOOTERS[1]), 1200);
-    setTimeout(() => spawnShooter(SHOOTERS[2]), 3000);
-
-    // Orbital rings
-    const RINGS = [
-      { cx: 0.82, cy: 0.18, rx: 0.11, ry: 0.04,  angle: 0,   speed:  0.002, opacity: 0.10, color: '14,165,233' },
-      { cx: 0.15, cy: 0.22, rx: 0.08, ry: 0.03,  angle: 1.2, speed: -0.0015, opacity: 0.08, color: '20,184,166' },
-      { cx: 0.55, cy: 0.75, rx: 0.06, ry: 0.022, angle: 2.5, speed:  0.0025, opacity: 0.06, color: '56,189,248' },
+    const ORBS = [
+      { x: 0.75, y: 0.22, r: 0.34, color: '56,189,248',  vx:  0.00010, vy:  0.00007 },
+      { x: 0.15, y: 0.58, r: 0.28, color: '20,184,166',  vx: -0.00008, vy: -0.00005 },
+      { x: 0.50, y: 0.88, r: 0.24, color: '125,211,252', vx:  0.00006, vy:  0.00009 },
+      { x: 0.92, y: 0.70, r: 0.20, color: '56,189,248',  vx: -0.00010, vy:  0.00004 },
     ];
 
-    // Grid mesh lines
-    const GRID_SPACING = 60;
-    const GRID_OPACITY_BASE = 0.025;
+    const DUST = Array.from({ length: 50 }, () => ({
+      x: Math.random(), y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.00022,
+      vy: -0.00018 - Math.random() * 0.00028,
+      r: 1.2 + Math.random() * 2.2,
+      opacity: 0.07 + Math.random() * 0.12,
+    }));
+
+    type Shooter = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; active: boolean };
+    const SHOOTERS: Shooter[] = Array.from({ length: 5 }, () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, maxLife: 1, active: false }));
+    function spawnShooter(s: Shooter) {
+      s.x = 0.05 + Math.random() * 0.55; s.y = 0.02 + Math.random() * 0.4;
+      const angle = Math.PI / 6 + (Math.random() - 0.5) * 0.4;
+      const speed = 0.004 + Math.random() * 0.004;
+      s.vx = Math.cos(angle) * speed; s.vy = Math.sin(angle) * speed;
+      s.maxLife = 50 + Math.random() * 50; s.life = 0; s.active = true;
+    }
+    spawnShooter(SHOOTERS[0]);
+    setTimeout(() => spawnShooter(SHOOTERS[1]), 1800);
+
+    const RINGS = [
+      { cx: 0.85, cy: 0.15, rx: 0.09, ry: 0.035, angle: 0,   speed:  0.003, opacity: 0.12 },
+      { cx: 0.12, cy: 0.2,  rx: 0.07, ry: 0.025, angle: 1.2, speed: -0.002, opacity: 0.09 },
+    ];
 
     function draw() {
       if (!ctx || !canvas) return;
@@ -122,70 +104,49 @@ export default function HomePage() {
       ctx.clearRect(0, 0, W, H);
       t++;
 
-      // Subtle animated grid mesh
-      const gridShift = (t * 0.15) % GRID_SPACING;
-      ctx.strokeStyle = `rgba(14,165,233,${GRID_OPACITY_BASE})`;
-      ctx.lineWidth = 0.5;
-      for (let x = -GRID_SPACING + gridShift; x < W + GRID_SPACING; x += GRID_SPACING) {
-        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
-      }
-      for (let y = -GRID_SPACING + gridShift * 0.5; y < H + GRID_SPACING; y += GRID_SPACING) {
-        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke();
-      }
-
-      // Nebula orbs with pulsing
       for (const o of ORBS) {
         o.x += o.vx; o.y += o.vy;
-        if (o.x < -0.15) o.x = 1.15; if (o.x > 1.15) o.x = -0.15;
-        if (o.y < -0.15) o.y = 1.15; if (o.y > 1.15) o.y = -0.15;
-        const pulse = 1 + Math.sin(t * o.pulse) * 0.15;
-        const radius = o.r * pulse;
-        const g = ctx.createRadialGradient(o.x*W, o.y*H, 0, o.x*W, o.y*H, radius*W);
-        g.addColorStop(0, `rgba(${o.color},0.22)`);
-        g.addColorStop(0.3, `rgba(${o.color},0.12)`);
-        g.addColorStop(0.6, `rgba(${o.color},0.04)`);
+        if (o.x < -0.1) o.x = 1.1; if (o.x > 1.1) o.x = -0.1;
+        if (o.y < -0.1) o.y = 1.1; if (o.y > 1.1) o.y = -0.1;
+        const g = ctx.createRadialGradient(o.x*W, o.y*H, 0, o.x*W, o.y*H, o.r*W);
+        g.addColorStop(0, `rgba(${o.color},0.18)`);
+        g.addColorStop(0.5, `rgba(${o.color},0.07)`);
         g.addColorStop(1, `rgba(${o.color},0)`);
         ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       }
 
-      // Stars
       for (const s of STARS) {
-        const flicker = Math.sin(t * s.twinkleSpeed + s.twinkleOffset) * 0.5 + 0.5;
+        const flicker = Math.sin(t * s.twinkleSpeed + s.twinkleOffset) * 0.45 + 0.55;
         ctx.globalAlpha = s.baseOpacity * flicker;
         ctx.beginPath(); ctx.arc(s.x*W, s.y*H, s.r, 0, Math.PI*2);
         ctx.fillStyle = `rgb(${s.hue})`; ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Floating dust particles
       for (const d of DUST) {
         d.x += d.vx; d.y += d.vy;
-        if (d.y < -0.03) { d.y = 1.03; d.x = Math.random(); }
-        if (d.x < -0.02) d.x = 1.02; if (d.x > 1.02) d.x = -0.02;
-        const breathe = 0.7 + Math.sin(t * 0.02 + d.x * 10) * 0.3;
-        ctx.globalAlpha = d.opacity * breathe;
+        if (d.y < -0.02) { d.y = 1.02; d.x = Math.random(); }
+        if (d.x < 0) d.x = 1; if (d.x > 1) d.x = 0;
+        ctx.globalAlpha = d.opacity;
         const dg = ctx.createRadialGradient(d.x*W, d.y*H, 0, d.x*W, d.y*H, d.r);
-        dg.addColorStop(0, `rgba(${d.color},0.9)`); dg.addColorStop(1, `rgba(${d.color},0)`);
+        dg.addColorStop(0, 'rgba(14,165,233,0.9)'); dg.addColorStop(1, 'rgba(14,165,233,0)');
         ctx.fillStyle = dg; ctx.beginPath(); ctx.arc(d.x*W, d.y*H, d.r, 0, Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha = 1;
 
-      // Orbital rings
       for (const ring of RINGS) {
         ring.angle += ring.speed;
-        const ringPulse = 0.8 + Math.sin(t * 0.01 + ring.cx * 5) * 0.2;
         ctx.save();
         ctx.translate(ring.cx*W, ring.cy*H);
         ctx.rotate(ring.angle);
         ctx.scale(1, ring.ry / ring.rx);
         ctx.beginPath(); ctx.arc(0, 0, ring.rx*W, 0, Math.PI*2);
         ctx.restore();
-        ctx.strokeStyle = `rgba(${ring.color},${ring.opacity * ringPulse})`;
-        ctx.lineWidth = 1.2; ctx.stroke();
+        ctx.strokeStyle = `rgba(14,165,233,${ring.opacity})`;
+        ctx.lineWidth = 1; ctx.stroke();
       }
 
-      // Shooting stars — spawn more frequently
-      if (t % 70 === 0) {
+      if (t % 90 === 0) {
         const idle = SHOOTERS.find(s => !s.active);
         if (idle) spawnShooter(idle);
       }
@@ -194,29 +155,20 @@ export default function HomePage() {
         s.x += s.vx; s.y += s.vy; s.life++;
         if (s.life > s.maxLife || s.x > 1.2 || s.y > 1.2) { s.active = false; continue; }
         const prog = s.life / s.maxLife;
-        const alpha = prog < 0.1 ? prog / 0.1 : prog > 0.7 ? (1 - prog) / 0.3 : 1;
-        const tailLen = 120 + prog * 80;
-        const speed = Math.sqrt(s.vx*s.vx + s.vy*s.vy);
-        const nx = s.vx / speed;
-        const ny = s.vy / speed;
+        const alpha = prog < 0.15 ? prog / 0.15 : prog > 0.75 ? (1 - prog) / 0.25 : 1;
+        const tailLen = 100 + prog * 60;
+        const nx = s.vx / Math.sqrt(s.vx*s.vx + s.vy*s.vy);
+        const ny = s.vy / Math.sqrt(s.vx*s.vx + s.vy*s.vy);
         const grd = ctx.createLinearGradient(s.x*W - nx*tailLen, s.y*H - ny*tailLen, s.x*W, s.y*H);
         grd.addColorStop(0, 'rgba(14,165,233,0)');
-        grd.addColorStop(0.5, `rgba(56,189,248,${alpha*0.3})`);
-        grd.addColorStop(0.85, `rgba(186,230,253,${alpha*0.7})`);
+        grd.addColorStop(0.7, `rgba(56,189,248,${alpha*0.5})`);
         grd.addColorStop(1, `rgba(255,255,255,${alpha*0.95})`);
-        ctx.strokeStyle = grd; ctx.lineWidth = s.width;
+        ctx.strokeStyle = grd; ctx.lineWidth = 1.8;
         ctx.beginPath();
         ctx.moveTo(s.x*W - nx*tailLen, s.y*H - ny*tailLen);
         ctx.lineTo(s.x*W, s.y*H); ctx.stroke();
-        // Bright head
-        ctx.beginPath(); ctx.arc(s.x*W, s.y*H, 2.5, 0, Math.PI*2);
-        ctx.fillStyle = `rgba(255,255,255,${alpha*0.95})`; ctx.fill();
-        // Head glow
-        const headGlow = ctx.createRadialGradient(s.x*W, s.y*H, 0, s.x*W, s.y*H, 8);
-        headGlow.addColorStop(0, `rgba(186,230,253,${alpha*0.5})`);
-        headGlow.addColorStop(1, 'rgba(186,230,253,0)');
-        ctx.fillStyle = headGlow;
-        ctx.beginPath(); ctx.arc(s.x*W, s.y*H, 8, 0, Math.PI*2); ctx.fill();
+        ctx.beginPath(); ctx.arc(s.x*W, s.y*H, 2, 0, Math.PI*2);
+        ctx.fillStyle = `rgba(255,255,255,${alpha*0.9})`; ctx.fill();
       }
 
       raf = requestAnimationFrame(draw);
@@ -292,24 +244,16 @@ export default function HomePage() {
 
       {/* ── Hero ── */}
       <section
-        className="relative overflow-hidden border-b border-slate-900/60"
-        style={{ background: 'linear-gradient(160deg, #000000 0%, #020510 20%, #030a14 40%, #020810 60%, #010408 80%, #000000 100%)' }}
+        className="relative overflow-hidden border-b border-slate-800/50"
+        style={{ background: 'linear-gradient(160deg, #060d1f 0%, #0a1628 45%, #071820 75%, #040d18 100%)' }}
       >
-        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-65" aria-hidden />
-        {/* Top edge glow */}
+        <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-70" aria-hidden />
         <div className="absolute left-0 right-0 top-0 h-px pointer-events-none"
-          style={{ background: 'linear-gradient(90deg, transparent 10%, rgba(6,182,212,0.3) 30%, rgba(14,165,233,0.45) 50%, rgba(20,184,166,0.3) 70%, transparent 90%)' }} />
-        {/* Top radial glow — dimmer */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 65% 50% at 50% 0%, rgba(14,165,233,0.1) 0%, rgba(6,182,212,0.03) 50%, transparent 80%)' }} />
-        {/* Side accent glows — subtler */}
-        <div className="absolute top-1/4 -left-20 w-[400px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle at center, rgba(20,184,166,0.04) 0%, transparent 70%)' }} />
-        <div className="absolute top-1/3 -right-20 w-[350px] h-[350px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle at center, rgba(14,165,233,0.03) 0%, transparent 70%)' }} />
-        {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-          style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.98) 0%, rgba(0,0,0,0.5) 50%, transparent 100%)' }} />
+          style={{ background: 'linear-gradient(90deg, transparent 10%, rgba(14,165,233,0.5) 40%, rgba(20,184,166,0.5) 60%, transparent 90%)' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 60% 60% at 50% 0%, rgba(14,165,233,0.13) 0%, transparent 70%)' }} />
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
+          style={{ background: 'linear-gradient(to top, rgba(4,13,24,0.9) 0%, transparent 100%)' }} />
 
         <div className={`relative max-w-3xl mx-auto px-6 sm:px-6 lg:px-8 pt-12 pb-12 sm:pt-20 sm:pb-20 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
 
