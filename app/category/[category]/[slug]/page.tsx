@@ -844,37 +844,42 @@ export default async function SlugPage({
               {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (() => {
                 const entries = (tool.who_is_it_for as WhoIsItForEntry[]).slice(0, 6);
                 const sorted = [...entries].sort((a, b) => b.score - a.score);
+
+                const TIER_CONFIG = [
+                  { label: 'Best Fit', pct: 100, bar: 'bg-sky-500', badge: 'bg-sky-100 text-sky-700 border-sky-200' },
+                  { label: 'Competent', pct: 85, bar: 'bg-sky-400', badge: 'bg-sky-100 text-sky-600 border-sky-200' },
+                  { label: 'Capable', pct: 70, bar: 'bg-sky-300', badge: 'bg-sky-50 text-sky-600 border-sky-200' },
+                  { label: 'Better Alternatives', pct: 50, bar: 'bg-amber-400', badge: 'bg-amber-100 text-amber-700 border-amber-200' },
+                  { label: 'Not Ideal', pct: 25, bar: 'bg-amber-300', badge: 'bg-amber-100 text-amber-600 border-amber-200' },
+                  { label: 'Not Suitable', pct: 10, bar: 'bg-amber-200', badge: 'bg-amber-50 text-amber-600 border-amber-200' },
+                ];
+
                 const topThree = sorted.slice(0, 3);
                 const bottomThree = sorted.slice(3, 6);
 
-                const renderCard = (entry: WhoIsItForEntry, i: number, isPositive: boolean) => {
-                  const score = Math.max(1, Math.min(10, Math.round(entry.score)));
-                  const pct = (score / 10) * 100;
-
-                  const tier = isPositive
-                    ? { label: score >= 9 ? 'Best Fit' : score >= 7 ? 'Suitable' : 'May Work', bg: 'bg-sky-50/60', border: 'border-sky-100', hoverBorder: 'hover:border-sky-300', bar: 'bg-sky-500', badge: 'bg-sky-100 text-sky-700 border-sky-200', scoreColor: 'text-sky-700' }
-                    : { label: score <= 2 ? 'Not Suitable' : score <= 4 ? 'Not Ideal' : 'Better Alternatives', bg: 'bg-amber-50/50', border: 'border-amber-100', hoverBorder: 'hover:border-amber-300', bar: 'bg-amber-400', badge: 'bg-amber-100 text-amber-700 border-amber-200', scoreColor: 'text-amber-600' };
+                const renderCard = (entry: WhoIsItForEntry, idx: number, isTop: boolean) => {
+                  const tierIdx = isTop ? idx : idx + 3;
+                  const tier = TIER_CONFIG[tierIdx];
+                  const cardBg = isTop ? 'bg-sky-50/40' : 'bg-amber-50/30';
+                  const cardBorder = isTop ? 'border-sky-100' : 'border-amber-100';
+                  const hoverBorder = isTop ? 'hover:border-sky-200' : 'hover:border-amber-200';
 
                   return (
                     <div
-                      key={i}
-                      className={`relative rounded-xl border ${tier.border} ${tier.hoverBorder} ${tier.bg} p-4 transition-all hover:shadow-md group`}
+                      key={tierIdx}
+                      className={`rounded-lg border ${cardBorder} ${hoverBorder} ${cardBg} px-3.5 py-3 transition-all hover:shadow-sm group`}
                     >
-                      <div className="flex items-start justify-between gap-2 mb-3">
-                        <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border ${tier.badge}`}>
+                      <div className="flex items-center justify-between gap-2 mb-2">
+                        <p className="text-[12px] font-semibold text-slate-800 leading-snug truncate">{entry.audience}</p>
+                        <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wide border shrink-0 ${tier.badge}`}>
                           {tier.label}
                         </span>
-                        <span className={`text-2xl font-bold tabular-nums leading-none ${tier.scoreColor}`}>
-                          {score}<span className="text-[11px] font-normal text-slate-400">/10</span>
-                        </span>
                       </div>
-                      <p className="text-[13px] font-semibold text-slate-800 leading-snug mb-1">{entry.audience}</p>
-                      {entry.note && <p className="text-[11px] text-slate-500 leading-relaxed mb-3">{entry.note}</p>}
-                      {!entry.note && <div className="mb-3" />}
-                      <div className="w-full h-2 bg-white/80 rounded-full overflow-hidden border border-slate-100">
+                      {entry.note && <p className="text-[10px] text-slate-500 leading-relaxed mb-2 line-clamp-2">{entry.note}</p>}
+                      <div className="w-full h-1.5 bg-white/80 rounded-full overflow-hidden border border-slate-100/80">
                         <div
-                          className={`h-full rounded-full ${tier.bar} transition-all duration-500 group-hover:opacity-90`}
-                          style={{ width: `${pct}%` }}
+                          className={`h-full rounded-full ${tier.bar} transition-all duration-500 group-hover:opacity-80`}
+                          style={{ width: `${tier.pct}%` }}
                         />
                       </div>
                     </div>
@@ -884,13 +889,13 @@ export default async function SlugPage({
                 return (
                   <section id="section-who-is-it-for">
                     <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
-                    <div className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    <div className="space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
                         {topThree.map((entry, i) => renderCard(entry, i, true))}
                       </div>
                       {bottomThree.length > 0 && (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
-                          {bottomThree.map((entry, i) => renderCard(entry, i + 3, false))}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                          {bottomThree.map((entry, i) => renderCard(entry, i, false))}
                         </div>
                       )}
                     </div>
