@@ -673,28 +673,27 @@ export default async function SlugPage({
                     {/* Use Cases */}
                     {tool.use_cases.length > 0 && (
                       <div className="mt-5 pt-5 border-t border-slate-200/60">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-3">Use Cases</p>
-                        {/* Primary use case */}
-                        <div className="mb-3">
-                          <div className="inline-flex items-center gap-2 text-[13px] font-semibold text-sky-800 bg-sky-50 border border-sky-200 px-4 py-2 rounded-xl shadow-sm">
-                            <Zap className="w-3.5 h-3.5 text-sky-600 shrink-0" />
-                            {tool.use_cases[0]}
-                            <span className="ml-1 text-[9px] font-bold uppercase tracking-wider text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-md">Primary</span>
-                          </div>
+                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2.5">Use Cases</p>
+                        <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+                          {tool.use_cases.map((uc: string, idx: number) => (
+                            <span
+                              key={uc}
+                              className={`shrink-0 inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1 rounded-lg transition-colors shadow-sm ${
+                                idx === 0
+                                  ? 'text-sky-800 bg-sky-50 border-2 border-sky-300 font-semibold'
+                                  : 'text-slate-600 bg-white/80 border border-slate-200 hover:border-slate-300 hover:bg-white'
+                              }`}
+                            >
+                              <span
+                                className={`w-1.5 h-1.5 rounded-full shrink-0 ${idx === 0 ? 'bg-sky-500' : 'bg-slate-400'}`}
+                              />
+                              {uc}
+                              {idx === 0 && (
+                                <span className="ml-0.5 text-[9px] font-bold uppercase tracking-wider text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-md">Primary</span>
+                              )}
+                            </span>
+                          ))}
                         </div>
-                        {/* Secondary use cases */}
-                        {tool.use_cases.length > 1 && (
-                          <div className="flex flex-wrap gap-1.5">
-                            {tool.use_cases.slice(1).map((uc: string) => (
-                              <span key={uc} className="inline-flex items-center gap-1.5 text-[12px] font-medium text-slate-600 bg-white/80 border border-slate-200 hover:border-slate-300 hover:bg-white px-3 py-1 rounded-lg transition-colors shadow-sm">
-                                <span
-                                  className="w-1.5 h-1.5 rounded-full shrink-0 bg-slate-400"
-                                />
-                                {uc}
-                              </span>
-                            ))}
-                          </div>
-                        )}
                       </div>
                     )}
                   </div>
