@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { AdminShell } from '@/components/admin-shell';
-import { BadgeCheck, Trash2, Check, X, Loader, Loader as Loader2, ExternalLink, Calendar, Mail, Linkedin, Globe } from 'lucide-react';
+import { BadgeCheck, Trash2, Check, X, Loader as Loader2, ExternalLink, Calendar, Mail, Linkedin, Globe } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface Claim {
@@ -162,7 +162,7 @@ export default function AdminClaimsPage() {
                           disabled={actionId === claim.id}
                           className="inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-1.5 rounded-lg transition-colors disabled:opacity-60"
                         >
-                          {actionId === claim.id ? <Loader className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
+                          {actionId === claim.id ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Check className="w-3.5 h-3.5" />}
                           Approve
                         </button>
                         <button
