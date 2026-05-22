@@ -844,33 +844,48 @@ export default async function SlugPage({
               {((tool.who_is_it_for as WhoIsItForEntry[] | null)?.length ?? 0) > 0 && (
                 <section id="section-who-is-it-for">
                   <SectionHeading accent="blue" description="Recommended fit by team type and use case">Suitable For</SectionHeading>
-                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    <div className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3 border-b border-slate-100 bg-slate-50">
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Team / Company Type</span>
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 w-28 text-right">Fit Score</span>
-                    </div>
-                    <ul className="divide-y divide-slate-100">
-                      {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
-                        const score = Math.max(1, Math.min(10, Math.round(entry.score)));
-                        const pct = (score / 10) * 100;
-                        const barColor = score >= 8 ? 'bg-sky-500' : score >= 5 ? 'bg-sky-400' : 'bg-slate-300';
-                        const scoreColor = score >= 8 ? 'text-sky-700' : score >= 5 ? 'text-slate-600' : 'text-slate-400';
-                        return (
-                          <li key={i} className="grid grid-cols-[1fr_auto] items-center gap-4 px-5 py-3.5 hover:bg-slate-50/60 transition-colors">
-                            <div>
-                              <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
-                              {entry.note && <p className="text-[11px] text-slate-400 mt-0.5 leading-snug">{entry.note}</p>}
-                            </div>
-                            <div className="flex flex-col items-end gap-1.5 w-28 shrink-0">
-                              <span className={`text-[13px] font-bold tabular-nums ${scoreColor}`}>{score}<span className="text-[10px] font-normal text-slate-400">/10</span></span>
-                              <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                                <div className={`h-full rounded-full ${barColor}`} style={{ width: `${pct}%` }} />
-                              </div>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ul>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {(tool.who_is_it_for as WhoIsItForEntry[]).map((entry, i) => {
+                      const score = Math.max(1, Math.min(10, Math.round(entry.score)));
+                      const pct = (score / 10) * 100;
+
+                      const tier = score >= 9
+                        ? { label: 'Best Fit', bg: 'bg-emerald-50', border: 'border-emerald-200', hoverBorder: 'hover:border-emerald-300', bar: 'bg-emerald-500', badge: 'bg-emerald-100 text-emerald-700 border-emerald-200', scoreColor: 'text-emerald-700' }
+                        : score >= 7
+                        ? { label: 'Suitable', bg: 'bg-sky-50', border: 'border-sky-200', hoverBorder: 'hover:border-sky-300', bar: 'bg-sky-500', badge: 'bg-sky-100 text-sky-700 border-sky-200', scoreColor: 'text-sky-700' }
+                        : score >= 5
+                        ? { label: 'May Work', bg: 'bg-amber-50', border: 'border-amber-200', hoverBorder: 'hover:border-amber-300', bar: 'bg-amber-400', badge: 'bg-amber-100 text-amber-700 border-amber-200', scoreColor: 'text-amber-600' }
+                        : score >= 4
+                        ? { label: 'Better Alternatives', bg: 'bg-orange-50', border: 'border-orange-200', hoverBorder: 'hover:border-orange-300', bar: 'bg-orange-400', badge: 'bg-orange-100 text-orange-700 border-orange-200', scoreColor: 'text-orange-600' }
+                        : score >= 2
+                        ? { label: 'Not Ideal', bg: 'bg-red-50', border: 'border-red-200', hoverBorder: 'hover:border-red-300', bar: 'bg-red-400', badge: 'bg-red-100 text-red-700 border-red-200', scoreColor: 'text-red-600' }
+                        : { label: 'Not Suitable', bg: 'bg-rose-50', border: 'border-rose-200', hoverBorder: 'hover:border-rose-300', bar: 'bg-rose-500', badge: 'bg-rose-100 text-rose-700 border-rose-200', scoreColor: 'text-rose-700' };
+
+                      return (
+                        <div
+                          key={i}
+                          className={`relative rounded-xl border ${tier.border} ${tier.hoverBorder} ${tier.bg} p-4 transition-all hover:shadow-md group`}
+                        >
+                          <div className="flex items-start justify-between gap-2 mb-3">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border ${tier.badge}`}>
+                              {tier.label}
+                            </span>
+                            <span className={`text-2xl font-bold tabular-nums leading-none ${tier.scoreColor}`}>
+                              {score}<span className="text-[11px] font-normal text-slate-400">/10</span>
+                            </span>
+                          </div>
+                          <p className="text-[13px] font-semibold text-slate-800 leading-snug mb-1">{entry.audience}</p>
+                          {entry.note && <p className="text-[11px] text-slate-500 leading-relaxed mb-3">{entry.note}</p>}
+                          {!entry.note && <div className="mb-3" />}
+                          <div className="w-full h-2 bg-white/80 rounded-full overflow-hidden border border-slate-100">
+                            <div
+                              className={`h-full rounded-full ${tier.bar} transition-all duration-500 group-hover:opacity-90`}
+                              style={{ width: `${pct}%` }}
+                            />
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </section>
               )}
