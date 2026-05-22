@@ -58,7 +58,7 @@ export default function HomePage() {
     let t = 0;
 
     // Stars — cool cyan/teal palette matching the header gradient
-    const STARS = Array.from({ length: 200 }, () => {
+    const STARS = Array.from({ length: 280 }, () => {
       const layer = Math.random();
       return {
         x: Math.random(), y: Math.random(),
