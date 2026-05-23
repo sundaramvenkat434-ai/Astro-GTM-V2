@@ -38,6 +38,16 @@ export default function AdminLogin() {
       localStorage.removeItem(SESSION_EXPIRY_KEY);
     }
 
+    // Update last_login_at for this user in admin_users (best-effort, non-blocking)
+    const { data: { session: newSession } } = await supabase.auth.getSession();
+    if (newSession?.user?.email) {
+      supabase
+        .from('admin_users')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('email', newSession.user.email)
+        .then(() => {});
+    }
+
     router.push('/admin/dashboard');
   }
 
