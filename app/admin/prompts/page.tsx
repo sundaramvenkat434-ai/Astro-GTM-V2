@@ -240,11 +240,13 @@ function TestModal({
   promptLabel,
   modelValue,
   onClose,
+  onComplete,
 }: {
   promptKey: string;
   promptLabel: string;
   modelValue: string;
   onClose: () => void;
+  onComplete?: (key: string, elapsedMs: number) => void;
 }) {
   const [input, setInput] = useState('');
   const [running, setRunning] = useState(false);
@@ -311,7 +313,9 @@ function TestModal({
     } catch (err: unknown) {
       setRawOutput(JSON.stringify({ error: String(err) }, null, 2));
     } finally {
-      setElapsed(Date.now() - start);
+      const ms = Date.now() - start;
+      setElapsed(ms);
+      onComplete?.(promptKey, ms);
       setRunning(false);
     }
   }
@@ -465,16 +469,27 @@ function TestModal({
                   Clear
                 </Button>
               )}
-              {elapsed !== null && (
-                <span className="text-[10px] text-slate-400 ml-auto whitespace-nowrap">{(elapsed / 1000).toFixed(1)}s</span>
-              )}
             </div>
           </div>
 
           {/* Right — output */}
           <div className="flex-1 flex flex-col min-w-0">
             <div className="px-4 py-3 border-b border-slate-100 flex items-center justify-between">
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Model Output</p>
+              <div className="flex items-center gap-2.5">
+                <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Model Output</p>
+                {elapsed !== null && (
+                  <div className="flex items-center gap-1 bg-emerald-50 border border-emerald-200 rounded-full px-2 py-0.5">
+                    <Clock className="w-3 h-3 text-emerald-500" />
+                    <span className="text-[10px] font-bold text-emerald-700">{(elapsed / 1000).toFixed(2)}s</span>
+                  </div>
+                )}
+                {running && (
+                  <div className="flex items-center gap-1 bg-sky-50 border border-sky-200 rounded-full px-2 py-0.5">
+                    <Loader2 className="w-3 h-3 text-sky-500 animate-spin" />
+                    <span className="text-[10px] font-semibold text-sky-600">Processing...</span>
+                  </div>
+                )}
+              </div>
               {rawOutput && (
                 <div className="flex items-center gap-2">
                   {/* View toggle */}
@@ -661,6 +676,7 @@ export default function PromptsAdmin() {
   const [backupModel, setBackupModel] = useState('google/gemma-4-31b-it:free');
   const [testModalKey, setTestModalKey] = useState<string | null>(null);
   const [showLog, setShowLog] = useState(false);
+  const [lastElapsed, setLastElapsed] = useState<Record<string, number>>({});
 
   const ALL_SETTINGS_KEYS = [
     ...PROMPT_KEYS.map((p) => p.key),
@@ -948,6 +964,14 @@ export default function PromptsAdmin() {
                           Test prompt
                         </button>
                       )}
+                      {lastElapsed[config.key] !== undefined && (
+                        <div className="flex items-center gap-1 bg-slate-100 rounded-full px-2 py-0.5">
+                          <Clock className="w-3 h-3 text-slate-400" />
+                          <span className="text-[10px] font-semibold text-slate-600">
+                            Last: {(lastElapsed[config.key] / 1000).toFixed(2)}s
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -985,6 +1009,7 @@ export default function PromptsAdmin() {
           promptLabel={activeTestConfig.label}
           modelValue={activeTestModelValue}
           onClose={() => setTestModalKey(null)}
+          onComplete={(key, ms) => setLastElapsed((prev) => ({ ...prev, [key]: ms }))}
         />
       )}
 
