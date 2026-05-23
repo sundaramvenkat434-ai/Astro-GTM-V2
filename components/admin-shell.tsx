@@ -58,12 +58,6 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Tool Claims', href: '/admin/claims', icon: <BadgeCheck className="w-4 h-4" /> },
     ],
   },
-  {
-    title: 'Access',
-    items: [
-      { label: 'Admin Users', href: '/admin/users', icon: <Shield className="w-4 h-4" /> },
-    ],
-  },
 ];
 
 async function enforceSessionExpiry(signOut: () => Promise<void>) {
