@@ -8,7 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AstroGTMLogo } from '@/components/site-header';
-import { Lock, Mail, CircleAlert as AlertCircle, Loader as Loader2, Shield, ArrowRight } from 'lucide-react';
+import { Lock, Mail, CircleAlert as AlertCircle, Loader as Loader2, Shield, ArrowRight, CalendarCheck } from 'lucide-react';
+import { SESSION_EXPIRY_KEY, setDaySession } from '@/lib/admin-session';
 
 export default function AdminLogin() {
   const router = useRouter();
@@ -16,6 +17,7 @@ export default function AdminLogin() {
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [keepToday, setKeepToday] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -28,6 +30,12 @@ export default function AdminLogin() {
       setError(authError.message === 'Invalid login credentials' ? 'Invalid email or password. Please try again.' : authError.message);
       setLoading(false);
       return;
+    }
+
+    if (keepToday) {
+      setDaySession();
+    } else {
+      localStorage.removeItem(SESSION_EXPIRY_KEY);
     }
 
     router.push('/admin/dashboard');
@@ -103,6 +111,30 @@ export default function AdminLogin() {
                   />
                 </div>
               </div>
+
+              {/* Keep me logged in today */}
+              <button
+                type="button"
+                onClick={() => setKeepToday((v) => !v)}
+                className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-lg border-2 transition-all text-left ${
+                  keepToday
+                    ? 'border-sky-400 bg-sky-50'
+                    : 'border-slate-200 bg-slate-50 hover:border-slate-300'
+                }`}
+              >
+                <div className={`w-4 h-4 rounded border-2 flex items-center justify-center shrink-0 transition-colors ${keepToday ? 'bg-sky-500 border-sky-500' : 'border-slate-300 bg-white'}`}>
+                  {keepToday && (
+                    <svg className="w-2.5 h-2.5 text-white" fill="none" viewBox="0 0 10 10">
+                      <path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  )}
+                </div>
+                <CalendarCheck className={`w-4 h-4 shrink-0 ${keepToday ? 'text-sky-600' : 'text-slate-400'}`} />
+                <div>
+                  <p className={`text-xs font-semibold ${keepToday ? 'text-sky-800' : 'text-slate-700'}`}>Keep me logged in today</p>
+                  <p className="text-[10px] text-slate-400 mt-px">Session expires at midnight</p>
+                </div>
+              </button>
 
               <Button
                 type="submit"

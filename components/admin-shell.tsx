@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { SESSION_EXPIRY_KEY } from '@/lib/admin-session';
 import { AstroGTMLogo } from '@/components/site-header';
 import {
   Plus,
@@ -20,6 +21,7 @@ import {
   User,
   ChevronDown,
   Loader as Loader2,
+  CalendarCheck,
 } from 'lucide-react';
 
 interface NavItem {
@@ -58,27 +60,62 @@ const NAV_SECTIONS: NavSection[] = [
   },
 ];
 
+async function enforceSessionExpiry(signOut: () => Promise<void>) {
+  const raw = localStorage.getItem(SESSION_EXPIRY_KEY);
+  if (!raw) return;
+  const expiry = parseInt(raw);
+  if (isNaN(expiry)) return;
+  if (Date.now() >= expiry) {
+    localStorage.removeItem(SESSION_EXPIRY_KEY);
+    await signOut();
+  }
+}
+
 export function AdminShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [userEmail, setUserEmail] = useState('');
   const [loading, setLoading] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null);
+
+  async function doSignOut() {
+    localStorage.removeItem(SESSION_EXPIRY_KEY);
+    await supabase.auth.signOut();
+    router.push('/admin/login');
+  }
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) {
         router.push('/admin/login');
         return;
       }
+
+      // Check if a day-session expiry exists and is past
+      await enforceSessionExpiry(doSignOut);
+
+      const raw = localStorage.getItem(SESSION_EXPIRY_KEY);
+      if (raw) setSessionExpiresAt(parseInt(raw));
+
       setUserEmail(session.user.email || '');
       setLoading(false);
     });
-  }, [router]);
+  }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Schedule automatic sign-out at midnight when day-session is active
+  useEffect(() => {
+    if (!sessionExpiresAt) return;
+    const msUntilExpiry = sessionExpiresAt - Date.now();
+    if (msUntilExpiry <= 0) return;
+    const timer = setTimeout(() => {
+      doSignOut();
+    }, msUntilExpiry);
+    return () => clearTimeout(timer);
+  }, [sessionExpiresAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    router.push('/admin/login');
+    await doSignOut();
   }
 
   if (loading) {
@@ -140,6 +177,19 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
             </div>
           ))}
         </nav>
+
+        {/* Day-session badge */}
+        {sessionExpiresAt && (
+          <div className="mx-3 mb-2 flex items-center gap-2 bg-sky-50 border border-sky-200 rounded-lg px-3 py-2">
+            <CalendarCheck className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+            <div className="min-w-0">
+              <p className="text-[10px] font-semibold text-sky-700">Logged in today</p>
+              <p className="text-[9px] text-sky-500 truncate">
+                Expires at {new Date(sessionExpiresAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+            </div>
+          </div>
+        )}
 
         {/* Bottom section */}
         <div className="border-t border-slate-100 p-3 mt-auto">
