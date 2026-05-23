@@ -294,171 +294,287 @@ function ChangelogModal({ modelKey, onClose }: { modelKey: string; onClose: () =
 
 // ── Test Modal ───────────────────────────────────────────────────────────────
 
+type TestStep = 'input' | 'payload' | 'generating' | 'result';
+
 function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; modelValue: string; onClose: () => void }) {
   const [input, setInput] = useState('');
-  const [running, setRunning] = useState(false);
+  const [step, setStep] = useState<TestStep>('input');
+  const [payload, setPayload] = useState<object | null>(null);
   const [result, setResult] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [showRaw, setShowRaw] = useState(true);
   const [inputTokens, setInputTokens] = useState(0);
   const [outputTokens, setOutputTokens] = useState(0);
+  const [systemPrompt, setSystemPrompt] = useState('');
 
-  async function runTest() {
+  async function handleShowPayload() {
     if (!input.trim()) return;
-    setRunning(true);
+    const { data: settingRow } = await supabase.from('admin_settings').select('value').eq('key', promptKey).maybeSingle();
+    const sp = settingRow?.value ?? '(no prompt saved)';
+    setSystemPrompt(sp);
+
+    const p = {
+      model: modelValue,
+      messages: [
+        { role: 'system', content: sp },
+        { role: 'user', content: input },
+      ],
+      temperature: 0.7,
+      max_tokens: 4000,
+    };
+    setPayload(p);
+    setInputTokens(estimateTokens(sp + input));
+    setStep('payload');
+  }
+
+  async function handleGenerateOutput() {
+    setStep('generating');
     setResult(null);
     setElapsed(null);
     const start = Date.now();
 
     try {
-      const { data: settingRow } = await supabase.from('admin_settings').select('value').eq('key', promptKey).maybeSingle();
-      const systemPrompt = settingRow?.value ?? '(no prompt saved)';
+      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+      const { data: { session } } = await supabase.auth.getSession();
 
-      const payload = {
-        model: modelValue,
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: input },
-        ],
-        temperature: 0.7,
-        max_tokens: 1000,
-      };
+      const res = await fetch(`${supabaseUrl}/functions/v1/test-prompt`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.access_token ?? anonKey}`,
+          'apikey': anonKey,
+        },
+        body: JSON.stringify({
+          prompt_key: promptKey,
+          model: modelValue,
+          user_input: input,
+        }),
+      });
 
+      const data = await res.json();
       const ms = Date.now() - start;
       setElapsed(ms);
-      setInputTokens(estimateTokens(systemPrompt + input));
-      setOutputTokens(estimateTokens(JSON.stringify(payload)));
-      setResult(JSON.stringify(payload, null, 2));
+
+      if (data.error) {
+        setResult(JSON.stringify({ error: data.error }, null, 2));
+      } else {
+        setResult(data.output ?? JSON.stringify(data, null, 2));
+        setOutputTokens(data.output_tokens ?? estimateTokens(data.output ?? ''));
+        if (data.input_tokens) setInputTokens(data.input_tokens);
+      }
     } catch (err: unknown) {
       setResult(JSON.stringify({ error: String(err) }, null, 2));
       setElapsed(Date.now() - start);
     } finally {
-      setRunning(false);
+      setStep('result');
     }
   }
 
-  async function copyResult() {
-    if (!result) return;
-    await navigator.clipboard.writeText(result);
+  async function copyText(text: string) {
+    await navigator.clipboard.writeText(text);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   }
 
+  function handleReset() {
+    setStep('input');
+    setPayload(null);
+    setResult(null);
+    setElapsed(null);
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl mx-4 max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-sky-600" />
-            <h3 className="text-sm font-bold text-slate-900">Test Prompt</h3>
-            <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{getModelLabel(modelValue)}</span>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl mx-4 max-h-[88vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center">
+              <FlaskConical className="w-4 h-4 text-white" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-slate-900">Prompt Playground</h3>
+              <p className="text-[10px] text-slate-400">{getModelLabel(modelValue)}</p>
+            </div>
           </div>
-          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
-            <X className="w-4 h-4 text-slate-400" />
-          </button>
+          <div className="flex items-center gap-3">
+            {/* Step indicator */}
+            <div className="flex items-center gap-1.5">
+              {(['input', 'payload', 'result'] as const).map((s, i) => (
+                <div key={s} className="flex items-center gap-1">
+                  <div className={`w-2 h-2 rounded-full transition-colors ${
+                    step === s || (step === 'generating' && s === 'result') ? 'bg-sky-500' :
+                    (['input', 'payload', 'generating', 'result'].indexOf(step) > i) ? 'bg-emerald-400' : 'bg-slate-200'
+                  }`} />
+                  {i < 2 && <div className="w-4 h-px bg-slate-200" />}
+                </div>
+              ))}
+            </div>
+            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+              <X className="w-4 h-4 text-slate-400" />
+            </button>
+          </div>
         </div>
 
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 overflow-hidden">
-          {/* Left -- Input */}
-          <div className="p-5 flex flex-col gap-3 overflow-y-auto">
-            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Input</p>
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              rows={8}
-              className="text-xs font-mono border-slate-200 resize-y flex-1"
-              placeholder="Enter test user message..."
-            />
-            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
-              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">JSON Payload Preview</p>
-              <pre className="text-[9px] font-mono text-slate-600 overflow-x-auto max-h-32 leading-relaxed">
-{`{
-  "model": "${modelValue}",
-  "messages": [system + user],
-  "temperature": 0.7,
-  "max_tokens": 1000
-}`}
-              </pre>
+        {/* Body */}
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 overflow-hidden min-h-0">
+          {/* Left panel -- always shows input + payload */}
+          <div className="p-5 flex flex-col gap-4 overflow-y-auto">
+            <div>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">User Input</p>
+              <Textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                rows={6}
+                disabled={step !== 'input'}
+                className="text-xs font-mono border-slate-200 resize-y bg-white disabled:opacity-60"
+                placeholder="Enter the user message to test against the system prompt..."
+              />
             </div>
-            <Button
-              size="sm"
-              onClick={runTest}
-              disabled={running || !input.trim()}
-              className="h-9 text-xs bg-gradient-to-r from-sky-700 to-blue-800 hover:from-sky-800 hover:to-blue-900 text-white"
-            >
-              {running ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Play className="w-3 h-3 mr-1.5" />}
-              Run Test
-            </Button>
+
+            {/* JSON Payload -- visible after step 1 */}
+            {payload && (
+              <div className="flex-1 min-h-0">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">JSON Payload</p>
+                  <button
+                    onClick={() => copyText(JSON.stringify(payload, null, 2))}
+                    className="text-[10px] text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors"
+                  >
+                    {copied ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                    Copy
+                  </button>
+                </div>
+                <pre className="text-[10px] font-mono bg-slate-900 text-slate-200 p-4 rounded-xl overflow-auto max-h-[280px] leading-relaxed whitespace-pre-wrap break-words">
+                  {JSON.stringify(payload, null, 2)}
+                </pre>
+              </div>
+            )}
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+              {step === 'input' && (
+                <Button
+                  size="sm"
+                  onClick={handleShowPayload}
+                  disabled={!input.trim()}
+                  className="h-9 text-xs bg-slate-900 hover:bg-slate-800 text-white"
+                >
+                  <Zap className="w-3 h-3 mr-1.5" />
+                  Preview Payload
+                </Button>
+              )}
+              {step === 'payload' && (
+                <Button
+                  size="sm"
+                  onClick={handleGenerateOutput}
+                  className="h-9 text-xs bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white shadow-md"
+                >
+                  <Play className="w-3 h-3 mr-1.5" />
+                  Generate Output
+                </Button>
+              )}
+              {(step === 'payload' || step === 'result') && (
+                <Button variant="outline" size="sm" onClick={handleReset} className="h-9 text-xs">
+                  <RefreshCw className="w-3 h-3 mr-1.5" />
+                  Reset
+                </Button>
+              )}
+              {step === 'input' && (
+                <span className="text-[10px] text-slate-400 ml-2">Step 1: Enter your test input</span>
+              )}
+              {step === 'payload' && (
+                <span className="text-[10px] text-slate-400 ml-2">Step 2: Review payload, then generate</span>
+              )}
+            </div>
           </div>
 
-          {/* Right -- Output */}
+          {/* Right panel -- output */}
           <div className="p-5 flex flex-col gap-3 overflow-y-auto">
             <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Output</p>
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">AI Output</p>
               {result && (
                 <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                  <button onClick={() => setShowRaw(true)} className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>Raw</button>
-                  <button onClick={() => setShowRaw(false)} className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${!showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>Formatted</button>
+                  <button onClick={() => setShowRaw(true)} className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ${showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Raw</button>
+                  <button onClick={() => setShowRaw(false)} className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ${!showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Formatted</button>
                 </div>
               )}
             </div>
 
-            {running && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
-                <div className="relative">
-                  <div className="w-12 h-12 rounded-full border-2 border-sky-200 border-t-sky-600 animate-spin" />
-                  <Zap className="w-4 h-4 text-sky-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+            {step === 'input' && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+                  <FlaskConical className="w-6 h-6 text-slate-300" />
                 </div>
-                <p className="text-[11px] text-slate-500 font-medium">Processing with {getModelLabel(modelValue)}...</p>
+                <p className="text-[12px] text-slate-400 max-w-[200px]">Enter your input and preview the payload first</p>
               </div>
             )}
 
-            {!running && !result && (
-              <div className="flex-1 flex items-center justify-center py-12">
-                <p className="text-[12px] text-slate-400">Run a test to see output here</p>
+            {step === 'payload' && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12 text-center">
+                <div className="w-14 h-14 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center">
+                  <Play className="w-6 h-6 text-sky-400" />
+                </div>
+                <p className="text-[12px] text-slate-500 font-medium">Ready to generate</p>
+                <p className="text-[11px] text-slate-400 max-w-[240px]">Click &quot;Generate Output&quot; to send the payload to {getModelLabel(modelValue)}</p>
               </div>
             )}
 
-            {!running && result && (
+            {step === 'generating' && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
+                <div className="relative">
+                  <div className="w-16 h-16 rounded-full border-[3px] border-sky-100 border-t-sky-600 animate-spin" />
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-sky-600 animate-pulse" />
+                  </div>
+                </div>
+                <div className="text-center">
+                  <p className="text-[12px] font-medium text-slate-700">Generating with {getModelLabel(modelValue)}</p>
+                  <p className="text-[10px] text-slate-400 mt-1">This may take a moment...</p>
+                </div>
+              </div>
+            )}
+
+            {step === 'result' && result && (
               <>
-                <div className="relative flex-1">
+                <div className="relative flex-1 min-h-0">
                   <button
-                    onClick={copyResult}
-                    className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-700 bg-white/80 backdrop-blur px-2 py-1 rounded-md border border-slate-200 transition-colors z-10"
+                    onClick={() => copyText(result)}
+                    className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-700 bg-white/90 backdrop-blur px-2 py-1 rounded-md border border-slate-200 transition-colors z-10"
                   >
                     {copied ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                     {copied ? 'Copied' : 'Copy'}
                   </button>
                   {showRaw ? (
-                    <pre className="text-[10px] font-mono bg-slate-900 text-slate-100 p-4 rounded-lg overflow-auto max-h-[400px] leading-relaxed whitespace-pre-wrap break-words">
+                    <pre className="text-[10px] font-mono bg-slate-900 text-slate-100 p-4 rounded-xl overflow-auto max-h-[420px] leading-relaxed whitespace-pre-wrap break-words">
                       {result}
                     </pre>
                   ) : (
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 overflow-auto max-h-[400px]">
-                      <pre className="text-[11px] font-mono text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
-                        {result}
-                      </pre>
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 overflow-auto max-h-[420px]">
+                      <div className="text-[11px] text-slate-700 whitespace-pre-wrap break-words leading-relaxed prose prose-sm max-w-none">
+                        {(() => {
+                          try { return JSON.stringify(JSON.parse(result), null, 2); } catch { return result; }
+                        })()}
+                      </div>
                     </div>
                   )}
                 </div>
 
-                <div className="flex items-center gap-4 pt-2 border-t border-slate-100">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-400">Input tokens:</span>
-                    <span className="text-[11px] font-semibold text-slate-700">{inputTokens.toLocaleString()}</span>
+                <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100">
+                  <div className="bg-slate-50 rounded-lg px-3 py-2 text-center">
+                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Input Tokens</p>
+                    <p className="text-[13px] font-bold text-slate-800 mt-0.5">{inputTokens.toLocaleString()}</p>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-[10px] text-slate-400">Output tokens:</span>
-                    <span className="text-[11px] font-semibold text-slate-700">{outputTokens.toLocaleString()}</span>
+                  <div className="bg-slate-50 rounded-lg px-3 py-2 text-center">
+                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Output Tokens</p>
+                    <p className="text-[13px] font-bold text-slate-800 mt-0.5">{outputTokens.toLocaleString()}</p>
                   </div>
-                  {elapsed !== null && (
-                    <div className="flex items-center gap-1.5 ml-auto">
-                      <Clock className="w-3 h-3 text-slate-400" />
-                      <span className="text-[11px] font-semibold text-slate-700">{formatTime(elapsed)}</span>
-                      <span className="text-[10px] text-slate-400">({elapsed}ms)</span>
-                    </div>
-                  )}
+                  <div className="bg-slate-50 rounded-lg px-3 py-2 text-center">
+                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Processing</p>
+                    <p className="text-[13px] font-bold text-slate-800 mt-0.5">{elapsed !== null ? formatTime(elapsed) : '--:--'}</p>
+                  </div>
                 </div>
               </>
             )}
