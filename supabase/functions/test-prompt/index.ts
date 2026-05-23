@@ -29,7 +29,7 @@ Deno.serve(async (req: Request) => {
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    const db = createClient(supabaseUrl, supabaseServiceKey);
 
     const body: TestRequest = await req.json();
     const { prompt_key, model, user_input } = body;
@@ -41,7 +41,7 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const { data: settingRow } = await supabase
+    const { data: settingRow } = await db
       .from("admin_settings")
       .select("value")
       .eq("key", prompt_key)
@@ -54,9 +54,10 @@ Deno.serve(async (req: Request) => {
     const openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         "Authorization": `Bearer ${openrouterKey}`,
+        "Content-Type": "application/json",
         "HTTP-Referer": supabaseUrl,
+        "X-Title": "Prompt Test",
       },
       body: JSON.stringify({
         model,
@@ -74,8 +75,12 @@ Deno.serve(async (req: Request) => {
 
     if (!openrouterRes.ok) {
       return new Response(
-        JSON.stringify({ error: data?.error?.message || "OpenRouter API error", details: data }),
-        { status: openrouterRes.status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({
+          error: data?.error?.message || data?.message || `OpenRouter error ${openrouterRes.status}`,
+          status: openrouterRes.status,
+          raw: data,
+        }),
+        { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
