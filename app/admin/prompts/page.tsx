@@ -7,31 +7,7 @@ import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
-import {
-  Loader as Loader2,
-  Save,
-  RotateCcw,
-  Sparkles,
-  Shield,
-  Zap,
-  CircleCheck as CheckCircle2,
-  TriangleAlert as AlertTriangle,
-  ChevronDown,
-  FlaskConical,
-  Play,
-  Copy,
-  CopyCheck,
-  RefreshCw,
-  Activity,
-  X,
-  Clock,
-  ArrowLeftRight,
-  Code2,
-  FileJson,
-  AlignLeft,
-  History,
-  ChevronRight,
-} from 'lucide-react';
+import { Loader as Loader2, Save, RotateCcw, Sparkles, Shield, Zap, CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, ChevronDown, FlaskConical, Play, Copy, CopyCheck, RefreshCw, Activity, X, Clock, ArrowLeftRight, Code as Code2, FileJson, AlignLeft, History, ChevronRight } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,13 +31,10 @@ interface ModelLogEntry {
 // ── Model catalogue ───────────────────────────────────────────────────────────
 
 const OPENROUTER_MODELS = [
-  { value: 'minimax/minimax-m2.5:free',              label: 'MiniMax M2.5',                 provider: 'OpenRouter' },
-  { value: 'openai/gpt-oss-120b:free',               label: 'OpenAI GPT-OSS-120b',          provider: 'OpenRouter' },
-  { value: 'deepseek/deepseek-v4-flash:free',        label: 'DeepSeek V4 Flash',            provider: 'OpenRouter' },
-  { value: 'qwen/qwen3-next-80b-a3b-instruct:free',  label: 'Qwen3 Next 80B A3B Instruct',  provider: 'OpenRouter' },
-  { value: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'NVIDIA Nemotron 3 Super',      provider: 'OpenRouter' },
-  { value: 'google/gemma-4-31b-it:free',             label: 'Google Gemma 4 31B',           provider: 'OpenRouter' },
-  { value: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Meta Llama 3.3 70B Instruct', provider: 'OpenRouter' },
+  { value: 'minimax/minimax-m2.5:free',              label: 'MiniMax M2.5',                provider: 'OpenRouter' },
+  { value: 'openai/gpt-oss-120b:free',               label: 'OpenAI GPT-OSS-120b',         provider: 'OpenRouter' },
+  { value: 'qwen/qwen3-next-80b-a3b-instruct:free',  label: 'Qwen3 Next 80B A3B Instruct', provider: 'OpenRouter' },
+  { value: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'NVIDIA Nemotron 3 Super',     provider: 'OpenRouter' },
 ];
 
 function getModelLabel(value: string) {
