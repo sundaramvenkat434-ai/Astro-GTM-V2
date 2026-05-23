@@ -294,42 +294,41 @@ function ChangelogModal({ modelKey, onClose }: { modelKey: string; onClose: () =
 
 // ── Test Modal ───────────────────────────────────────────────────────────────
 
-type TestStep = 'input' | 'payload' | 'generating' | 'result';
-
 function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; modelValue: string; onClose: () => void }) {
   const [input, setInput] = useState('');
-  const [step, setStep] = useState<TestStep>('input');
   const [payload, setPayload] = useState<object | null>(null);
+  const [generating, setGenerating] = useState(false);
   const [result, setResult] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copiedPayload, setCopiedPayload] = useState(false);
+  const [copiedResult, setCopiedResult] = useState(false);
   const [elapsed, setElapsed] = useState<number | null>(null);
   const [showRaw, setShowRaw] = useState(true);
   const [inputTokens, setInputTokens] = useState(0);
   const [outputTokens, setOutputTokens] = useState(0);
-  const [systemPrompt, setSystemPrompt] = useState('');
 
-  async function handleShowPayload() {
+  // Build payload preview live as user types
+  useEffect(() => {
+    if (!input.trim()) { setPayload(null); return; }
+    const timer = setTimeout(async () => {
+      const { data: settingRow } = await supabase.from('admin_settings').select('value').eq('key', promptKey).maybeSingle();
+      const sp = settingRow?.value ?? '(no prompt saved)';
+      setPayload({
+        model: modelValue,
+        messages: [
+          { role: 'system', content: sp },
+          { role: 'user', content: input },
+        ],
+        temperature: 0.7,
+        max_tokens: 4000,
+      });
+      setInputTokens(estimateTokens(sp + input));
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [input, promptKey, modelValue]);
+
+  async function handleGenerate() {
     if (!input.trim()) return;
-    const { data: settingRow } = await supabase.from('admin_settings').select('value').eq('key', promptKey).maybeSingle();
-    const sp = settingRow?.value ?? '(no prompt saved)';
-    setSystemPrompt(sp);
-
-    const p = {
-      model: modelValue,
-      messages: [
-        { role: 'system', content: sp },
-        { role: 'user', content: input },
-      ],
-      temperature: 0.7,
-      max_tokens: 4000,
-    };
-    setPayload(p);
-    setInputTokens(estimateTokens(sp + input));
-    setStep('payload');
-  }
-
-  async function handleGenerateOutput() {
-    setStep('generating');
+    setGenerating(true);
     setResult(null);
     setElapsed(null);
     const start = Date.now();
@@ -346,16 +345,11 @@ function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; mode
           'Authorization': `Bearer ${session?.access_token ?? anonKey}`,
           'apikey': anonKey,
         },
-        body: JSON.stringify({
-          prompt_key: promptKey,
-          model: modelValue,
-          user_input: input,
-        }),
+        body: JSON.stringify({ prompt_key: promptKey, model: modelValue, user_input: input }),
       });
 
       const data = await res.json();
-      const ms = Date.now() - start;
-      setElapsed(ms);
+      setElapsed(Date.now() - start);
 
       if (data.error) {
         setResult(JSON.stringify({ error: data.error }, null, 2));
@@ -368,216 +362,176 @@ function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; mode
       setResult(JSON.stringify({ error: String(err) }, null, 2));
       setElapsed(Date.now() - start);
     } finally {
-      setStep('result');
+      setGenerating(false);
     }
   }
 
-  async function copyText(text: string) {
+  async function copy(text: string, which: 'payload' | 'result') {
     await navigator.clipboard.writeText(text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  function handleReset() {
-    setStep('input');
-    setPayload(null);
-    setResult(null);
-    setElapsed(null);
+    if (which === 'payload') { setCopiedPayload(true); setTimeout(() => setCopiedPayload(false), 2000); }
+    else { setCopiedResult(true); setTimeout(() => setCopiedResult(false), 2000); }
   }
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
-      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl mx-4 max-h-[88vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-slate-100">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 flex items-center justify-center">
-              <FlaskConical className="w-4 h-4 text-white" />
+        <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center">
+              <FlaskConical className="w-3.5 h-3.5 text-white" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900">Prompt Playground</h3>
+              <h3 className="text-[13px] font-bold text-slate-900">Prompt Playground</h3>
               <p className="text-[10px] text-slate-400">{getModelLabel(modelValue)}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            {/* Step indicator */}
-            <div className="flex items-center gap-1.5">
-              {(['input', 'payload', 'result'] as const).map((s, i) => (
-                <div key={s} className="flex items-center gap-1">
-                  <div className={`w-2 h-2 rounded-full transition-colors ${
-                    step === s || (step === 'generating' && s === 'result') ? 'bg-sky-500' :
-                    (['input', 'payload', 'generating', 'result'].indexOf(step) > i) ? 'bg-emerald-400' : 'bg-slate-200'
-                  }`} />
-                  {i < 2 && <div className="w-4 h-px bg-slate-200" />}
-                </div>
-              ))}
-            </div>
-            <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
-              <X className="w-4 h-4 text-slate-400" />
-            </button>
-          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="w-4 h-4 text-slate-500" />
+          </button>
         </div>
 
         {/* Body */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 overflow-hidden min-h-0">
-          {/* Left panel -- always shows input + payload */}
-          <div className="p-5 flex flex-col gap-4 overflow-y-auto">
-            <div>
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider mb-2">User Input</p>
+        <div className="flex-1 grid grid-cols-2 divide-x divide-slate-100 overflow-hidden min-h-0">
+
+          {/* LEFT: input + json payload */}
+          <div className="flex flex-col divide-y divide-slate-100 overflow-hidden">
+            {/* Input box */}
+            <div className="p-4 flex flex-col gap-2 shrink-0">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User Input</p>
               <Textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                rows={6}
-                disabled={step !== 'input'}
-                className="text-xs font-mono border-slate-200 resize-y bg-white disabled:opacity-60"
+                rows={5}
+                className="text-xs font-mono border-slate-200 focus-visible:ring-sky-500/20 focus-visible:border-sky-400 resize-none bg-white"
                 placeholder="Enter the user message to test against the system prompt..."
               />
             </div>
 
-            {/* JSON Payload -- visible after step 1 */}
-            {payload && (
-              <div className="flex-1 min-h-0">
-                <div className="flex items-center justify-between mb-2">
-                  <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">JSON Payload</p>
+            {/* JSON Payload preview */}
+            <div className="flex-1 p-4 flex flex-col gap-2 overflow-hidden min-h-0">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">JSON Payload</p>
+                {payload && (
                   <button
-                    onClick={() => copyText(JSON.stringify(payload, null, 2))}
-                    className="text-[10px] text-slate-400 hover:text-slate-700 flex items-center gap-1 transition-colors"
+                    onClick={() => copy(JSON.stringify(payload, null, 2), 'payload')}
+                    className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-700 transition-colors"
                   >
-                    {copied ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    Copy
+                    {copiedPayload ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                    {copiedPayload ? 'Copied' : 'Copy'}
                   </button>
-                </div>
-                <pre className="text-[10px] font-mono bg-slate-900 text-slate-200 p-4 rounded-xl overflow-auto max-h-[280px] leading-relaxed whitespace-pre-wrap break-words">
+                )}
+              </div>
+              {payload ? (
+                <pre className="flex-1 text-[9.5px] font-mono bg-slate-950 text-slate-300 p-3.5 rounded-xl overflow-auto leading-relaxed whitespace-pre-wrap break-words min-h-0">
                   {JSON.stringify(payload, null, 2)}
                 </pre>
-              </div>
-            )}
+              ) : (
+                <div className="flex-1 flex items-center justify-center bg-slate-50 rounded-xl border border-slate-200 border-dashed min-h-[120px]">
+                  <p className="text-[11px] text-slate-400">Type input above to preview payload</p>
+                </div>
+              )}
+            </div>
 
-            {/* Action buttons */}
-            <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
-              {step === 'input' && (
-                <Button
-                  size="sm"
-                  onClick={handleShowPayload}
-                  disabled={!input.trim()}
-                  className="h-9 text-xs bg-slate-900 hover:bg-slate-800 text-white"
-                >
-                  <Zap className="w-3 h-3 mr-1.5" />
-                  Preview Payload
-                </Button>
-              )}
-              {step === 'payload' && (
-                <Button
-                  size="sm"
-                  onClick={handleGenerateOutput}
-                  className="h-9 text-xs bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white shadow-md"
-                >
-                  <Play className="w-3 h-3 mr-1.5" />
-                  Generate Output
-                </Button>
-              )}
-              {(step === 'payload' || step === 'result') && (
-                <Button variant="outline" size="sm" onClick={handleReset} className="h-9 text-xs">
-                  <RefreshCw className="w-3 h-3 mr-1.5" />
-                  Reset
-                </Button>
-              )}
-              {step === 'input' && (
-                <span className="text-[10px] text-slate-400 ml-2">Step 1: Enter your test input</span>
-              )}
-              {step === 'payload' && (
-                <span className="text-[10px] text-slate-400 ml-2">Step 2: Review payload, then generate</span>
-              )}
+            {/* Generate button */}
+            <div className="p-4 shrink-0">
+              <Button
+                onClick={handleGenerate}
+                disabled={generating || !input.trim()}
+                className="w-full h-9 text-[12px] font-semibold bg-gradient-to-r from-sky-600 to-blue-700 hover:from-sky-700 hover:to-blue-800 text-white shadow-md disabled:opacity-50"
+              >
+                {generating ? <Loader2 className="w-3.5 h-3.5 mr-2 animate-spin" /> : <Play className="w-3.5 h-3.5 mr-2" />}
+                Generate Output
+              </Button>
             </div>
           </div>
 
-          {/* Right panel -- output */}
-          <div className="p-5 flex flex-col gap-3 overflow-y-auto">
-            <div className="flex items-center justify-between">
-              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">AI Output</p>
-              {result && (
-                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
-                  <button onClick={() => setShowRaw(true)} className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ${showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Raw</button>
-                  <button onClick={() => setShowRaw(false)} className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ${!showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Formatted</button>
+          {/* RIGHT: AI output */}
+          <div className="flex flex-col overflow-hidden">
+            {/* Output header */}
+            <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Output</p>
+              <div className="flex items-center gap-2">
+                {result && (
+                  <>
+                    <div className="flex items-center gap-0.5 bg-slate-100 rounded-lg p-0.5">
+                      <button onClick={() => setShowRaw(true)} className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ${showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Raw</button>
+                      <button onClick={() => setShowRaw(false)} className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ${!showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}>Formatted</button>
+                    </div>
+                    <button
+                      onClick={() => copy(result, 'result')}
+                      className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-700 transition-colors"
+                    >
+                      {copiedResult ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                      {copiedResult ? 'Copied' : 'Copy'}
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Output body */}
+            <div className="flex-1 overflow-auto p-4 min-h-0">
+              {generating && (
+                <div className="h-full flex flex-col items-center justify-center gap-4">
+                  <div className="relative">
+                    <div className="w-14 h-14 rounded-full border-[3px] border-sky-100 border-t-sky-500 animate-spin" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <Sparkles className="w-5 h-5 text-sky-500 animate-pulse" />
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-slate-500">Running {getModelLabel(modelValue)}...</p>
                 </div>
+              )}
+
+              {!generating && !result && (
+                <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
+                  <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
+                    <Sparkles className="w-5 h-5 text-slate-300" />
+                  </div>
+                  <p className="text-[11px] text-slate-400">Output will appear here</p>
+                </div>
+              )}
+
+              {!generating && result && (
+                showRaw ? (
+                  <pre className="text-[10px] font-mono bg-slate-950 text-slate-100 p-4 rounded-xl overflow-auto leading-relaxed whitespace-pre-wrap break-words h-full">
+                    {result}
+                  </pre>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-[11px] text-slate-700 whitespace-pre-wrap break-words leading-relaxed overflow-auto h-full">
+                    {(() => { try { return JSON.stringify(JSON.parse(result), null, 2); } catch { return result; } })()}
+                  </div>
+                )
               )}
             </div>
 
-            {step === 'input' && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
-                  <FlaskConical className="w-6 h-6 text-slate-300" />
+            {/* Stats bar */}
+            <div className="px-4 py-3 border-t border-slate-100 shrink-0">
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">In</span>
+                  <span className="text-[12px] font-bold text-slate-700">{inputTokens.toLocaleString()}</span>
+                  <span className="text-[9px] text-slate-400">tokens</span>
                 </div>
-                <p className="text-[12px] text-slate-400 max-w-[200px]">Enter your input and preview the payload first</p>
-              </div>
-            )}
-
-            {step === 'payload' && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12 text-center">
-                <div className="w-14 h-14 rounded-2xl bg-sky-50 border border-sky-100 flex items-center justify-center">
-                  <Play className="w-6 h-6 text-sky-400" />
+                <div className="w-px h-3 bg-slate-200" />
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Out</span>
+                  <span className="text-[12px] font-bold text-slate-700">{outputTokens.toLocaleString()}</span>
+                  <span className="text-[9px] text-slate-400">tokens</span>
                 </div>
-                <p className="text-[12px] text-slate-500 font-medium">Ready to generate</p>
-                <p className="text-[11px] text-slate-400 max-w-[240px]">Click &quot;Generate Output&quot; to send the payload to {getModelLabel(modelValue)}</p>
-              </div>
-            )}
-
-            {step === 'generating' && (
-              <div className="flex-1 flex flex-col items-center justify-center gap-4 py-12">
-                <div className="relative">
-                  <div className="w-16 h-16 rounded-full border-[3px] border-sky-100 border-t-sky-600 animate-spin" />
-                  <div className="absolute inset-0 flex items-center justify-center">
-                    <Sparkles className="w-5 h-5 text-sky-600 animate-pulse" />
-                  </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-[12px] font-medium text-slate-700">Generating with {getModelLabel(modelValue)}</p>
-                  <p className="text-[10px] text-slate-400 mt-1">This may take a moment...</p>
-                </div>
-              </div>
-            )}
-
-            {step === 'result' && result && (
-              <>
-                <div className="relative flex-1 min-h-0">
-                  <button
-                    onClick={() => copyText(result)}
-                    className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-700 bg-white/90 backdrop-blur px-2 py-1 rounded-md border border-slate-200 transition-colors z-10"
-                  >
-                    {copied ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                    {copied ? 'Copied' : 'Copy'}
-                  </button>
-                  {showRaw ? (
-                    <pre className="text-[10px] font-mono bg-slate-900 text-slate-100 p-4 rounded-xl overflow-auto max-h-[420px] leading-relaxed whitespace-pre-wrap break-words">
-                      {result}
-                    </pre>
-                  ) : (
-                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 overflow-auto max-h-[420px]">
-                      <div className="text-[11px] text-slate-700 whitespace-pre-wrap break-words leading-relaxed prose prose-sm max-w-none">
-                        {(() => {
-                          try { return JSON.stringify(JSON.parse(result), null, 2); } catch { return result; }
-                        })()}
-                      </div>
+                {elapsed !== null && (
+                  <>
+                    <div className="w-px h-3 bg-slate-200" />
+                    <div className="flex items-center gap-1.5">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      <span className="text-[12px] font-bold text-slate-700">{formatTime(elapsed)}</span>
+                      <span className="text-[9px] text-slate-400">({elapsed}ms)</span>
                     </div>
-                  )}
-                </div>
-
-                <div className="grid grid-cols-3 gap-3 pt-3 border-t border-slate-100">
-                  <div className="bg-slate-50 rounded-lg px-3 py-2 text-center">
-                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Input Tokens</p>
-                    <p className="text-[13px] font-bold text-slate-800 mt-0.5">{inputTokens.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg px-3 py-2 text-center">
-                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Output Tokens</p>
-                    <p className="text-[13px] font-bold text-slate-800 mt-0.5">{outputTokens.toLocaleString()}</p>
-                  </div>
-                  <div className="bg-slate-50 rounded-lg px-3 py-2 text-center">
-                    <p className="text-[9px] text-slate-400 uppercase font-bold tracking-wider">Processing</p>
-                    <p className="text-[13px] font-bold text-slate-800 mt-0.5">{elapsed !== null ? formatTime(elapsed) : '--:--'}</p>
-                  </div>
-                </div>
-              </>
-            )}
+                  </>
+                )}
+              </div>
+            </div>
           </div>
         </div>
       </div>
