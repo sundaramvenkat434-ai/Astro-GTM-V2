@@ -267,17 +267,14 @@ function TestModal({
   promptKey,
   promptLabel,
   modelValue,
-  backupModel,
   onClose,
 }: {
   promptKey: string;
   promptLabel: string;
   modelValue: string;
-  backupModel: string;
   onClose: () => void;
 }) {
   const [input, setInput] = useState('');
-  const [useBackup, setUseBackup] = useState(false);
   const [running, setRunning] = useState(false);
   const [payload, setPayload] = useState<object | null>(null);
   const [rawOutput, setRawOutput] = useState<string | null>(null);
@@ -286,7 +283,7 @@ function TestModal({
   const [copiedOutput, setCopiedOutput] = useState(false);
   const [outputView, setOutputView] = useState<OutputView>('formatted');
 
-  const activeModel = useBackup ? backupModel : modelValue;
+  const activeModel = modelValue;
 
   async function runTest() {
     if (!input.trim()) return;
@@ -419,28 +416,9 @@ function TestModal({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {/* Model toggle */}
-            <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
-              <button
-                onClick={() => setUseBackup(false)}
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all ${
-                  !useBackup ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Primary
-              </button>
-              <button
-                onClick={() => setUseBackup(true)}
-                className={`text-[10px] font-semibold px-2.5 py-1 rounded-md transition-all ${
-                  useBackup ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                Backup
-              </button>
-            </div>
-            <div className="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1">
+            <div className="flex items-center gap-1.5 bg-slate-100 rounded-lg px-2.5 py-1.5">
               <ArrowLeftRight className="w-3 h-3 text-slate-400" />
-              <span className="text-[11px] font-medium text-slate-600">{getModelLabel(activeModel)}</span>
+              <span className="text-[11px] font-semibold text-slate-700">{getModelLabel(activeModel)}</span>
             </div>
             <button
               onClick={onClose}
@@ -1034,7 +1012,6 @@ export default function PromptsAdmin() {
           promptKey={testModalKey}
           promptLabel={activeTestConfig.label}
           modelValue={activeTestModelValue}
-          backupModel={backupModel}
           onClose={() => setTestModalKey(null)}
         />
       )}
