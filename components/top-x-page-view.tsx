@@ -1,25 +1,5 @@
 import Link from 'next/link';
-import {
-  Star,
-  Users,
-  Check,
-  X,
-  ChevronRight,
-  ArrowUpRight,
-  Trophy,
-  TrendingUp,
-  Crown,
-  BadgeCheck,
-  DollarSign,
-  Zap,
-  ThumbsUp,
-  ThumbsDown,
-  Target,
-  Shield,
-  Clock,
-  BarChart3,
-  Award,
-} from 'lucide-react';
+import { Star, Users, Check, X, ChevronRight, ArrowUpRight, Trophy, TrendingUp, Crown, BadgeCheck, DollarSign, Zap, ThumbsUp, ThumbsDown, Target, ChartBar as BarChart3, Award } from 'lucide-react';
 import { FaqSection } from '@/components/faq-accordion';
 import { AuthorBlock } from '@/components/author-block';
 import { FALLBACK } from '@/lib/author-schema';
@@ -294,9 +274,9 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
             {/* Left */}
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2.5 mb-5">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-2.5 py-1 rounded-full">
+                <Link href={`/category/${page.category}`} className="text-[11px] font-bold uppercase tracking-wider text-sky-700 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-full hover:bg-sky-100 transition-colors">
                   {categoryLabel}
-                </span>
+                </Link>
                 <span className="text-[11px] text-slate-400">Updated May 2026</span>
               </div>
               <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-[1.12] tracking-tight mb-4">
@@ -308,31 +288,30 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
               {page.intro && (
                 <p className="text-[14px] text-slate-600 leading-relaxed max-w-xl line-clamp-3">{page.intro}</p>
               )}
-              <div className="flex flex-wrap items-center gap-3 mt-6">
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
-                  <Trophy className="w-3.5 h-3.5 text-amber-500" />
-                  {tools.length} tools reviewed
-                </div>
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
-                  <Shield className="w-3.5 h-3.5 text-sky-500" />
-                  Hands-on tested
-                </div>
-                <div className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-lg shadow-sm">
-                  <Clock className="w-3.5 h-3.5 text-emerald-500" />
-                  Updated monthly
+              {/* Use cases horizontal scroll */}
+              <div className="mt-6 -mx-4 sm:mx-0">
+                <div className="flex gap-2 overflow-x-auto pb-2 px-4 sm:px-0 scrollbar-hide">
+                  {orderedEntries.flatMap(({ tool }) =>
+                    (tool.use_cases || []).slice(0, 3)
+                  ).filter((uc, idx, arr) => arr.indexOf(uc) === idx).map((uc) => (
+                    <span key={uc} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap shrink-0">
+                      <Zap className="w-3 h-3 text-sky-500" />
+                      {uc}
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>
 
             {/* Right -- Best Overall Card */}
             {topTool && topEntry && (
-              <div className="lg:w-[340px] shrink-0 bg-white border-2 border-amber-200 rounded-2xl shadow-lg shadow-amber-100/40 overflow-hidden">
-                <div className="bg-gradient-to-r from-amber-50 to-amber-100/50 px-5 py-3 border-b border-amber-100 flex items-center gap-2">
-                  <Crown className="w-4 h-4 text-amber-600" />
-                  <span className="text-[11px] font-bold text-amber-800 uppercase tracking-wider">Best Overall</span>
-                  <div className="ml-auto">
-                    <ScoreBadge score={topEntry.score} size="sm" />
+              <div className="lg:w-[340px] shrink-0 bg-white border-2 border-sky-200 rounded-2xl shadow-lg shadow-sky-100/40 overflow-hidden">
+                <div className="bg-gradient-to-r from-sky-50 to-sky-100/50 px-5 py-3 border-b border-sky-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Crown className="w-4 h-4 text-sky-600" />
+                    <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider">Best Overall</span>
                   </div>
+                  <span className="text-[11px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">#{1} out of {tools.length}</span>
                 </div>
                 <div className="p-5">
                   <div className="flex items-center gap-3 mb-3">
@@ -343,24 +322,23 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                     )}
                     <div className="min-w-0">
                       <p className="font-bold text-slate-900 text-lg">{topTool.name}</p>
-                      {topEntry.best_for && (
-                        <p className="text-[11px] text-sky-600 font-medium">Best for: {topEntry.best_for}</p>
-                      )}
                     </div>
                   </div>
-                  <StarRow rating={topTool.rating} count={topTool.rating_count} />
-                  {topEntry.verdict && (
-                    <p className="text-[13px] text-slate-600 leading-relaxed mt-3 line-clamp-2">{topEntry.verdict}</p>
-                  )}
-                  <div className="flex items-center gap-4 mt-3 text-[11px] text-slate-500">
-                    <span className="flex items-center gap-1"><Users className="w-3 h-3" />{topTool.users} users</span>
-                    {topEntry.pricing_summary && <span className="flex items-center gap-1"><DollarSign className="w-3 h-3" />{topEntry.pricing_summary}</span>}
+                  <div className="flex flex-wrap gap-1.5 mb-3">
+                    {(topEntry.best_for ? [topEntry.best_for] : ['Content creators', 'Marketers', 'SEO teams']).slice(0, 3).map((bf) => (
+                      <span key={bf} className="text-[11px] font-medium text-sky-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-full">{bf}</span>
+                    ))}
                   </div>
+                  <div className="flex items-center gap-2 mb-3">
+                    <StarRow rating={topTool.rating} count={topTool.rating_count} />
+                    <span className="text-[11px] text-slate-500">({topTool.rating_count} Editor Reviews)</span>
+                  </div>
+                  <p className="text-[13px] text-slate-600 leading-relaxed">{topTool.tagline}</p>
                   <Link
                     href={`/category/${topTool.category}/${topTool.slug}`}
-                    className="mt-4 w-full inline-flex items-center justify-center gap-1.5 bg-slate-900 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:bg-slate-700 transition-colors"
+                    className="mt-4 w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-700 to-blue-800 text-white text-sm font-semibold px-5 py-3 rounded-xl hover:from-sky-800 hover:to-blue-900 transition-all shadow-md shadow-sky-200/50"
                   >
-                    View Full Review <ArrowUpRight className="w-4 h-4" />
+                    Read Full Review <ArrowUpRight className="w-4 h-4" />
                   </Link>
                 </div>
               </div>
