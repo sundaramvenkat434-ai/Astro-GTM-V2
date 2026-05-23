@@ -41,13 +41,19 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { data: settingRow } = await supabase
+    const { data: formatRows } = await supabase
       .from("admin_settings")
-      .select("value")
-      .eq("key", "seo_format_prompt")
-      .maybeSingle();
+      .select("key, value")
+      .in("key", ["seo_format_prompt", "ai_model_format_seo", "ai_request_count_format_seo"]);
+    const formatSettings: Record<string, string> = {};
+    for (const row of (formatRows || []) as { key: string; value: string }[]) {
+      formatSettings[row.key] = row.value;
+    }
+    const aiModel = formatSettings["ai_model_format_seo"] || "openai/gpt-oss-120b:free";
+    const currentCount = parseInt(formatSettings["ai_request_count_format_seo"] || "0") + 1;
+    supabase.from("admin_settings").upsert({ key: "ai_request_count_format_seo", value: String(currentCount), updated_at: new Date().toISOString() }, { onConflict: "key" });
 
-    const systemPrompt = settingRow?.value || "You are an SEO content expert. Transform the extracted content into an optimized SEO page. Return JSON with fields: title, meta_title, meta_description, focus_keyword, excerpt, content (HTML).";
+    const systemPrompt = formatSettings["seo_format_prompt"] || "You are an SEO content expert. Transform the extracted content into an optimized SEO page. Return JSON with fields: title, meta_title, meta_description, focus_keyword, excerpt, content (HTML).";
 
     const body: FormatRequest = await req.json();
     const { title, description, keywords, content } = body;
@@ -72,7 +78,7 @@ Please produce the SEO-optimized JSON response as instructed.`;
         "X-Title": "SEO Page Formatter",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b:free",
+        model: aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },

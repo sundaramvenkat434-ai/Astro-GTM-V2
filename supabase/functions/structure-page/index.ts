@@ -35,11 +35,21 @@ Deno.serve(async (req: Request) => {
 
     const promptKey = prompt_variant === 'v2' ? 'ai_content_cleanup_prompt_v2' : 'ai_content_cleanup_prompt';
 
-    const { data: settingRow } = await supabase
+    const { data: settingsRows } = await supabase
       .from("admin_settings")
-      .select("value")
-      .eq("key", promptKey)
-      .maybeSingle();
+      .select("key, value")
+      .in("key", [promptKey, "ai_model_structure_page", "ai_model_backup", "ai_request_count_structure_page"]);
+
+    const settingsMap: Record<string, string> = {};
+    for (const row of (settingsRows || []) as { key: string; value: string }[]) {
+      settingsMap[row.key] = row.value;
+    }
+    const settingRow = settingsMap[promptKey] ? { value: settingsMap[promptKey] } : null;
+    const aiModel = settingsMap["ai_model_structure_page"] || "openai/gpt-oss-120b:free";
+
+    // Increment request counter (fire-and-forget)
+    const currentCount = parseInt(settingsMap["ai_request_count_structure_page"] || "0") + 1;
+    supabase.from("admin_settings").upsert({ key: "ai_request_count_structure_page", value: String(currentCount), updated_at: new Date().toISOString() }, { onConflict: "key" });
 
     const defaultPrompt = `You are an expert product content strategist and copywriter specializing in SaaS/tool review pages. Your task is to take raw, unstructured text — notes, bullet points, scraped content, rough ideas, or messy drafts — and transform it into a fully structured, rich tool listing that populates every field of a detailed tool page schema.
 
@@ -115,7 +125,7 @@ Transform this into a complete, production-ready tool listing JSON with every fi
         "X-Title": "AI Content Clean-Up",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b:free",
+        model: aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },

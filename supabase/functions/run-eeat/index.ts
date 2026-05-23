@@ -55,7 +55,23 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    const systemPrompt = `You are an expert SEO analyst specializing in Google's E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) framework. Analyze the provided page content and return a strict JSON object with no markdown, no code fences.
+    // Load model + prompt from admin_settings
+    const { data: modelRows } = await supabase
+      .from("admin_settings")
+      .select("key, value")
+      .in("key", ["eeat_analysis_prompt", "ai_model_run_eeat", "ai_request_count_run_eeat"]);
+    const modelSettings: Record<string, string> = {};
+    for (const row of (modelRows || []) as { key: string; value: string }[]) {
+      modelSettings[row.key] = row.value;
+    }
+    const aiModel = modelSettings["ai_model_run_eeat"] || "openai/gpt-oss-120b:free";
+    const savedPrompt = modelSettings["eeat_analysis_prompt"] || null;
+
+    // Increment request counter (fire-and-forget)
+    const currentCount = parseInt(modelSettings["ai_request_count_run_eeat"] || "0") + 1;
+    supabase.from("admin_settings").upsert({ key: "ai_request_count_run_eeat", value: String(currentCount), updated_at: new Date().toISOString() }, { onConflict: "key" });
+
+    const systemPrompt = savedPrompt || `You are an expert SEO analyst specializing in Google's E-E-A-T (Experience, Expertise, Authoritativeness, Trustworthiness) framework. Analyze the provided page content and return a strict JSON object with no markdown, no code fences.
 
 Return ONLY valid JSON with this exact structure:
 {
@@ -100,7 +116,7 @@ ${content.slice(0, 12000)}`;
         "X-Title": "E-E-A-T Analyzer",
       },
       body: JSON.stringify({
-        model: "openai/gpt-oss-120b:free",
+        model: aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },

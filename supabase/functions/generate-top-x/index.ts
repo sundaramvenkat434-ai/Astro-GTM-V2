@@ -64,16 +64,19 @@ Deno.serve(async (req: Request) => {
       ? "top_x_content_system_prompt_v2"
       : "top_x_content_system_prompt";
 
-    // Load prompts from admin_settings — no fallback for v2 content prompt
+    // Load prompts + model from admin_settings
     const { data: settingsRows } = await supabase
       .from("admin_settings")
       .select("key, value")
-      .in("key", ["top_x_slug_system_prompt", "top_x_content_system_prompt", "top_x_content_system_prompt_v2"]);
+      .in("key", ["top_x_slug_system_prompt", "top_x_content_system_prompt", "top_x_content_system_prompt_v2", "ai_model_generate_top_x", "ai_request_count_generate_top_x"]);
 
     const settings: Record<string, string> = {};
     for (const row of (settingsRows || []) as { key: string; value: string }[]) {
       settings[row.key] = row.value;
     }
+    const aiModel = settings["ai_model_generate_top_x"] || "openai/gpt-4o-mini";
+    const currentCount = parseInt(settings["ai_request_count_generate_top_x"] || "0") + 1;
+    supabase.from("admin_settings").upsert({ key: "ai_request_count_generate_top_x", value: String(currentCount), updated_at: new Date().toISOString() }, { onConflict: "key" });
 
     const categoryLabels: Record<string, string> = {
       seo: "SEO & Content",
@@ -204,7 +207,7 @@ IMPORTANT:
         "X-Title": "ToolKit Admin",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
+        model: aiModel,
         max_tokens: mode === "slug" ? 200 : 3000,
         messages: [
           { role: "system", content: systemPrompt },

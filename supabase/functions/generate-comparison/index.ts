@@ -71,16 +71,19 @@ Deno.serve(async (req: Request) => {
 
     const [toolA, toolB] = tools;
 
-    // Load prompts from admin_settings
+    // Load prompts + model from admin_settings
     const { data: settingsRows } = await supabase
       .from("admin_settings")
       .select("key, value")
-      .in("key", ["comparison_slug_system_prompt", "comparison_content_system_prompt"]);
+      .in("key", ["comparison_slug_system_prompt", "comparison_content_system_prompt", "ai_model_generate_comparison", "ai_request_count_generate_comparison"]);
 
     const settings: Record<string, string> = {};
     for (const row of (settingsRows || []) as { key: string; value: string }[]) {
       settings[row.key] = row.value;
     }
+    const aiModel = settings["ai_model_generate_comparison"] || "openai/gpt-4o-mini";
+    const currentCount = parseInt(settings["ai_request_count_generate_comparison"] || "0") + 1;
+    supabase.from("admin_settings").upsert({ key: "ai_request_count_generate_comparison", value: String(currentCount), updated_at: new Date().toISOString() }, { onConflict: "key" });
 
     const categoryLabel = CATEGORY_LABELS[category] || category;
 
@@ -217,7 +220,7 @@ IMPORTANT:
         "X-Title": "ToolKit Admin",
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini",
+        model: aiModel,
         max_tokens: mode === "slug" ? 300 : 4000,
         messages: [
           { role: "system", content: systemPrompt },
