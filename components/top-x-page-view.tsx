@@ -258,7 +258,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
       {/* ── HERO ── */}
       <section className="bg-white border-b border-slate-200">
         <div className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-          <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-10">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-10">
             <div className="flex-1 min-w-0">
               <div className="flex flex-wrap items-center gap-2.5 mb-4">
                 <div className="w-9 h-9 rounded-xl bg-slate-900 flex items-center justify-center shrink-0">
