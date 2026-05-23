@@ -43,14 +43,13 @@ interface PromptSetting {
 // ── Model catalogue ───────────────────────────────────────────────────────────
 
 const OPENROUTER_MODELS = [
-  { value: 'openai/gpt-oss-120b:free',      label: 'GPT-OSS 120B (Free)',         provider: 'OpenRouter' },
-  { value: 'openai/gpt-4o-mini',            label: 'GPT-4o Mini',                  provider: 'OpenRouter' },
-  { value: 'openai/gpt-4o',                 label: 'GPT-4o',                       provider: 'OpenRouter' },
-  { value: 'google/gemma-4-31b-it:free',   label: 'Gemma 4 31B Instruct (Free)',  provider: 'OpenRouter' },
-  { value: 'meta-llama/llama-3.3-70b-instruct:free', label: 'Llama 3.3 70B (Free)', provider: 'OpenRouter' },
-  { value: 'anthropic/claude-3-haiku',      label: 'Claude 3 Haiku',               provider: 'OpenRouter' },
-  { value: 'anthropic/claude-3.5-sonnet',  label: 'Claude 3.5 Sonnet',            provider: 'OpenRouter' },
-  { value: 'mistralai/mistral-7b-instruct:free', label: 'Mistral 7B (Free)',       provider: 'OpenRouter' },
+  { value: 'minimax/minimax-m2.5:free',                  label: 'MiniMax M2.5',                    provider: 'OpenRouter' },
+  { value: 'openai/gpt-oss-120b:free',                   label: 'OpenAI GPT-OSS-120b',             provider: 'OpenRouter' },
+  { value: 'deepseek/deepseek-v4-flash:free',            label: 'DeepSeek V4 Flash',               provider: 'OpenRouter' },
+  { value: 'qwen/qwen3-next-80b-a3b-instruct:free',      label: 'Qwen3 Next 80B A3B Instruct',     provider: 'OpenRouter' },
+  { value: 'nvidia/nemotron-3-super-120b-a12b:free',     label: 'NVIDIA Nemotron 3 Super',         provider: 'OpenRouter' },
+  { value: 'google/gemma-4-31b-it:free',                 label: 'Google Gemma 4 31B',              provider: 'OpenRouter' },
+  { value: 'meta-llama/llama-3.3-70b-instruct:free',     label: 'Meta Llama 3.3 70B Instruct',    provider: 'OpenRouter' },
 ];
 
 function getModelLabel(value: string) {
