@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { AdminShell } from '@/components/admin-shell';
@@ -30,6 +30,9 @@ import {
   CopyCheck,
   RefreshCw,
   Activity,
+  X,
+  Clock,
+  History,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -40,16 +43,21 @@ interface PromptSetting {
   updated_at: string;
 }
 
+interface ChangelogEntry {
+  id: string;
+  prompt_key: string;
+  model_key: string;
+  model_value: string;
+  model_label: string;
+  changed_at: string;
+}
+
 // ── Model catalogue ───────────────────────────────────────────────────────────
 
 const OPENROUTER_MODELS = [
-  { value: 'minimax/minimax-m2.5:free',                  label: 'MiniMax M2.5',                    provider: 'OpenRouter' },
-  { value: 'openai/gpt-oss-120b:free',                   label: 'OpenAI GPT-OSS-120b',             provider: 'OpenRouter' },
-  { value: 'deepseek/deepseek-v4-flash:free',            label: 'DeepSeek V4 Flash',               provider: 'OpenRouter' },
-  { value: 'qwen/qwen3-next-80b-a3b-instruct:free',      label: 'Qwen3 Next 80B A3B Instruct',     provider: 'OpenRouter' },
-  { value: 'nvidia/nemotron-3-super-120b-a12b:free',     label: 'NVIDIA Nemotron 3 Super',         provider: 'OpenRouter' },
-  { value: 'google/gemma-4-31b-it:free',                 label: 'Google Gemma 4 31B',              provider: 'OpenRouter' },
-  { value: 'meta-llama/llama-3.3-70b-instruct:free',     label: 'Meta Llama 3.3 70B Instruct',    provider: 'OpenRouter' },
+  { value: 'openai/gpt-oss-120b:free', label: 'OpenAI GPT-OSS-120b', provider: 'OpenRouter' },
+  { value: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'NVIDIA Nemotron 3 Super', provider: 'OpenRouter' },
+  { value: 'minimax/minimax-m2.5:free', label: 'MiniMax M2.5', provider: 'OpenRouter' },
 ];
 
 function getModelLabel(value: string) {
@@ -65,8 +73,7 @@ const PROMPT_KEYS = [
     countKey: 'ai_request_count_structure_page',
     defaultModel: 'openai/gpt-oss-120b:free',
     label: 'Tool Page V1 — Content Clean-Up',
-    description:
-      'Used by the structure-page function (Tool Listing flow) to transform raw text into a structured tool-page JSON.',
+    description: 'Used by the structure-page function (Tool Listing flow) to transform raw text into a structured tool-page JSON.',
     icon: Sparkles,
     usedBy: 'structure-page',
     testable: true,
@@ -77,8 +84,7 @@ const PROMPT_KEYS = [
     countKey: 'ai_request_count_structure_page',
     defaultModel: 'openai/gpt-oss-120b:free',
     label: 'Tool Page V2 — Content Clean-Up (A/B Test)',
-    description:
-      'Used by the structure-page function when "Tool Page 2.0" is selected. Same JSON schema as V1 — A/B test variant.',
+    description: 'Used by the structure-page function when "Tool Page 2.0" is selected.',
     icon: Sparkles,
     usedBy: 'structure-page',
     testable: true,
@@ -89,8 +95,7 @@ const PROMPT_KEYS = [
     countKey: 'ai_request_count_run_eeat',
     defaultModel: 'openai/gpt-oss-120b:free',
     label: 'E-E-A-T Analysis',
-    description:
-      "Scores page content against Google's Experience, Expertise, Authoritativeness, and Trustworthiness framework.",
+    description: "Scores page content against Google's E-E-A-T framework.",
     icon: Shield,
     usedBy: 'run-eeat',
     testable: true,
@@ -99,10 +104,9 @@ const PROMPT_KEYS = [
     key: 'top_x_slug_system_prompt',
     modelKey: 'ai_model_generate_top_x',
     countKey: 'ai_request_count_generate_top_x',
-    defaultModel: 'openai/gpt-4o-mini',
+    defaultModel: 'openai/gpt-oss-120b:free',
     label: 'Top X — Slug & Metadata Generation',
-    description:
-      'Generates an SEO-optimised slug, page name, tagline, and focus keyword from the selected tools.',
+    description: 'Generates an SEO-optimised slug, page name, tagline, and focus keyword.',
     icon: Zap,
     usedBy: 'generate-top-x',
     testable: true,
@@ -111,10 +115,9 @@ const PROMPT_KEYS = [
     key: 'top_x_content_system_prompt',
     modelKey: 'ai_model_generate_top_x',
     countKey: 'ai_request_count_generate_top_x',
-    defaultModel: 'openai/gpt-4o-mini',
+    defaultModel: 'openai/gpt-oss-120b:free',
     label: 'Top X — Full Content Generation (V1)',
-    description:
-      'Generates the complete comparison page: entries, comparison table, best-for segments, FAQs, intro, outro, and SEO metadata.',
+    description: 'Generates comparison page content: entries, comparison table, best-for segments, FAQs, intro, outro.',
     icon: Sparkles,
     usedBy: 'generate-top-x',
     testable: true,
@@ -123,55 +126,60 @@ const PROMPT_KEYS = [
     key: 'top_x_content_system_prompt_v2',
     modelKey: 'ai_model_generate_top_x',
     countKey: 'ai_request_count_generate_top_x',
-    defaultModel: 'openai/gpt-4o-mini',
+    defaultModel: 'openai/gpt-oss-120b:free',
     label: 'Top X 2.0 — Full Content Generation (V2)',
-    description:
-      'Used when "Top X 2.0 Page" is selected. Same JSON schema as V1 — A/B test variant.',
+    description: 'Used when "Top X 2.0 Page" is selected. A/B test variant.',
     icon: Sparkles,
     usedBy: 'generate-top-x',
     testable: true,
   },
-  {
-    key: 'pagespeed_api_key',
-    modelKey: null,
-    countKey: null,
-    defaultModel: null,
-    label: 'PageSpeed API Key',
-    description:
-      'Google PageSpeed Insights API key used by run-lighthouse. Required for Lighthouse scoring.',
-    icon: Zap,
-    usedBy: 'run-lighthouse',
-    testable: false,
-  },
 ];
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+function estimateTokens(text: string): number {
+  return Math.ceil(text.length / 4);
+}
+
+function formatTime(ms: number): string {
+  const totalSec = Math.floor(ms / 1000);
+  const min = Math.floor(totalSec / 60);
+  const sec = totalSec % 60;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
 
 // ── Model Switcher ────────────────────────────────────────────────────────────
 
 function ModelSwitcher({
   modelKey,
   countKey,
-  defaultModel,
   value,
   count,
   onChange,
+  onShowChangelog,
 }: {
   modelKey: string;
   countKey: string;
-  defaultModel: string;
   value: string;
   count: number;
   onChange: (key: string, val: string) => void;
+  onShowChangelog: (modelKey: string) => void;
 }) {
   const [open, setOpen] = useState(false);
-  const current = OPENROUTER_MODELS.find((m) => m.value === value) ?? {
-    value,
-    label: value,
-    provider: 'OpenRouter',
-  };
+  const ref = useRef<HTMLDivElement>(null);
+  const current = OPENROUTER_MODELS.find((m) => m.value === value) ?? { value, label: value, provider: 'OpenRouter' };
+
+  useEffect(() => {
+    function handleClick(e: MouseEvent) {
+      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    }
+    if (open) document.addEventListener('mousedown', handleClick);
+    return () => document.removeEventListener('mousedown', handleClick);
+  }, [open]);
 
   return (
     <div className="flex items-center gap-2 flex-wrap mb-4">
-      <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 relative">
+      <div ref={ref} className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 relative">
         <div className="flex items-center gap-2 min-w-0">
           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Model</span>
           <span className="w-px h-3 bg-slate-300" />
@@ -182,28 +190,22 @@ function ModelSwitcher({
           onClick={() => setOpen((o) => !o)}
           className="ml-1 p-0.5 rounded hover:bg-slate-200 transition-colors"
         >
-          <ChevronDown className={`w-3.5 h-3.5 text-slate-500 transition-transform ${open ? 'rotate-180' : ''}`} />
+          {open ? <X className="w-3.5 h-3.5 text-slate-500" /> : <ChevronDown className="w-3.5 h-3.5 text-slate-500" />}
         </button>
 
         {open && (
-          <div className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[300px]">
+          <div className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[280px]">
             <div className="px-3 py-2 border-b border-slate-100">
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Switch Model (OpenRouter)</p>
+              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Switch Model</p>
             </div>
             <div className="max-h-56 overflow-y-auto py-1">
               {OPENROUTER_MODELS.map((m) => (
                 <button
                   key={m.value}
-                  onClick={() => {
-                    onChange(modelKey, m.value);
-                    setOpen(false);
-                  }}
+                  onClick={() => { onChange(modelKey, m.value); setOpen(false); }}
                   className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors ${m.value === value ? 'bg-sky-50' : ''}`}
                 >
-                  <div>
-                    <p className={`text-[12px] font-medium ${m.value === value ? 'text-sky-700' : 'text-slate-800'}`}>{m.label}</p>
-                    <p className="text-[10px] text-slate-400 font-mono mt-px">{m.value}</p>
-                  </div>
+                  <p className={`text-[12px] font-medium ${m.value === value ? 'text-sky-700' : 'text-slate-800'}`}>{m.label}</p>
                   {m.value === value && <CheckCircle2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />}
                 </button>
               ))}
@@ -212,76 +214,109 @@ function ModelSwitcher({
         )}
       </div>
 
-      {/* Request counter */}
       <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2">
         <Activity className="w-3 h-3 text-sky-500" />
         <span className="text-[11px] font-semibold text-slate-800">{count.toLocaleString()}</span>
         <span className="text-[10px] text-slate-400">requests</span>
       </div>
 
-      {/* Exact model name (monospace) */}
-      <div className="flex items-center gap-1.5 bg-slate-900 rounded-xl px-3 py-2 max-w-[240px] overflow-hidden">
-        <span className="text-[10px] font-mono text-slate-300 truncate">{value}</span>
+      <button
+        onClick={() => onShowChangelog(modelKey)}
+        className="flex items-center gap-1 text-[10px] font-medium text-slate-400 hover:text-sky-600 transition-colors px-2 py-1.5 rounded-lg hover:bg-slate-50"
+      >
+        <History className="w-3 h-3" />
+        Changelog
+      </button>
+    </div>
+  );
+}
+
+// ── Changelog Modal ──────────────────────────────────────────────────────────
+
+function ChangelogModal({ modelKey, onClose }: { modelKey: string; onClose: () => void }) {
+  const [entries, setEntries] = useState<ChangelogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    supabase
+      .from('ai_model_usage_log')
+      .select('id, prompt_key, model_key, model_value, model_label, changed_at')
+      .eq('model_key', modelKey)
+      .order('changed_at', { ascending: false })
+      .limit(20)
+      .then(({ data }) => {
+        setEntries((data as ChangelogEntry[]) || []);
+        setLoading(false);
+      });
+  }, [modelKey]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-md mx-4 max-h-[70vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <History className="w-4 h-4 text-sky-600" />
+            <h3 className="text-sm font-bold text-slate-900">Model Changelog</h3>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+            </div>
+          ) : entries.length === 0 ? (
+            <p className="text-center text-sm text-slate-400 py-8">No changes recorded yet.</p>
+          ) : (
+            <div className="space-y-3">
+              {entries.map((e) => (
+                <div key={e.id} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[12px] font-semibold text-slate-800">{e.model_label || getModelLabel(e.model_value)}</span>
+                    <span className="text-[10px] text-slate-400">
+                      {new Date(e.changed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </span>
+                  </div>
+                  <p className="text-[10px] text-slate-500">
+                    {new Date(e.changed_at).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
-// ── Test Panel ────────────────────────────────────────────────────────────────
+// ── Test Modal ───────────────────────────────────────────────────────────────
 
-function TestPanel({
-  promptKey,
-  modelValue,
-  backupModel,
-}: {
-  promptKey: string;
-  modelValue: string;
-  backupModel: string;
-}) {
-  const [open, setOpen] = useState(false);
+function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; modelValue: string; onClose: () => void }) {
   const [input, setInput] = useState('');
-  const [useBackup, setUseBackup] = useState(false);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [elapsed, setElapsed] = useState<number | null>(null);
-
-  const activeModel = useBackup ? backupModel : modelValue;
+  const [showRaw, setShowRaw] = useState(true);
+  const [inputTokens, setInputTokens] = useState(0);
+  const [outputTokens, setOutputTokens] = useState(0);
 
   async function runTest() {
     if (!input.trim()) return;
     setRunning(true);
     setResult(null);
     setElapsed(null);
-
     const start = Date.now();
+
     try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-
-      const { data: { session } } = await supabase.auth.getSession();
-      const authToken = session?.access_token ?? anonKey;
-
-      // Get the current prompt value for the system message
-      const { data: settingRow } = await supabase
-        .from('admin_settings')
-        .select('value')
-        .eq('key', promptKey)
-        .maybeSingle();
-
-      const { data: keyRow } = await supabase
-        .from('admin_settings')
-        .select('value')
-        .eq('key', 'openrouter_api_key')
-        .maybeSingle();
-
-      // Fall back to calling through the edge function proxy approach —
-      // we directly hit OpenRouter from the client with the stored key not available,
-      // so instead we build a test payload to inspect the raw JSON
+      const { data: settingRow } = await supabase.from('admin_settings').select('value').eq('key', promptKey).maybeSingle();
       const systemPrompt = settingRow?.value ?? '(no prompt saved)';
 
       const payload = {
-        model: activeModel,
+        model: modelValue,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: input },
@@ -290,15 +325,16 @@ function TestPanel({
         max_tokens: 1000,
       };
 
-      setElapsed(Date.now() - start);
-
-      // Return the payload as a preview (can't call OpenRouter from client without key exposure)
+      const ms = Date.now() - start;
+      setElapsed(ms);
+      setInputTokens(estimateTokens(systemPrompt + input));
+      setOutputTokens(estimateTokens(JSON.stringify(payload)));
       setResult(JSON.stringify(payload, null, 2));
     } catch (err: unknown) {
       setResult(JSON.stringify({ error: String(err) }, null, 2));
+      setElapsed(Date.now() - start);
     } finally {
       setRunning(false);
-      setElapsed(Date.now() - start);
     }
   }
 
@@ -309,98 +345,126 @@ function TestPanel({
     setTimeout(() => setCopied(false), 2000);
   }
 
-  if (!open) {
-    return (
-      <button
-        onClick={() => setOpen(true)}
-        className="flex items-center gap-1.5 text-[11px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
-      >
-        <FlaskConical className="w-3.5 h-3.5" />
-        Test this prompt
-      </button>
-    );
-  }
-
   return (
-    <div className="border border-sky-200 bg-sky-50/50 rounded-xl p-4 space-y-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FlaskConical className="w-4 h-4 text-sky-600" />
-          <span className="text-[12px] font-bold text-sky-800">Prompt Test</span>
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setUseBackup(false)}
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors ${!useBackup ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-4xl mx-4 max-h-[85vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-sky-600" />
+            <h3 className="text-sm font-bold text-slate-900">Test Prompt</h3>
+            <span className="text-[10px] text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">{getModelLabel(modelValue)}</span>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 divide-y md:divide-y-0 md:divide-x divide-slate-100 overflow-hidden">
+          {/* Left -- Input */}
+          <div className="p-5 flex flex-col gap-3 overflow-y-auto">
+            <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Input</p>
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              rows={8}
+              className="text-xs font-mono border-slate-200 resize-y flex-1"
+              placeholder="Enter test user message..."
+            />
+            <div className="bg-slate-50 border border-slate-200 rounded-lg p-3">
+              <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">JSON Payload Preview</p>
+              <pre className="text-[9px] font-mono text-slate-600 overflow-x-auto max-h-32 leading-relaxed">
+{`{
+  "model": "${modelValue}",
+  "messages": [system + user],
+  "temperature": 0.7,
+  "max_tokens": 1000
+}`}
+              </pre>
+            </div>
+            <Button
+              size="sm"
+              onClick={runTest}
+              disabled={running || !input.trim()}
+              className="h-9 text-xs bg-gradient-to-r from-sky-700 to-blue-800 hover:from-sky-800 hover:to-blue-900 text-white"
             >
-              Primary: {getModelLabel(modelValue)}
-            </button>
-            <button
-              onClick={() => setUseBackup(true)}
-              className={`text-[10px] font-semibold px-2 py-0.5 rounded-md border transition-colors ${useBackup ? 'bg-slate-900 text-white border-slate-900' : 'bg-white text-slate-500 border-slate-200 hover:border-slate-300'}`}
-            >
-              Backup: {getModelLabel(backupModel)}
-            </button>
+              {running ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Play className="w-3 h-3 mr-1.5" />}
+              Run Test
+            </Button>
+          </div>
+
+          {/* Right -- Output */}
+          <div className="p-5 flex flex-col gap-3 overflow-y-auto">
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-bold text-slate-500 uppercase tracking-wider">Output</p>
+              {result && (
+                <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-0.5">
+                  <button onClick={() => setShowRaw(true)} className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>Raw</button>
+                  <button onClick={() => setShowRaw(false)} className={`text-[10px] font-medium px-2 py-0.5 rounded-md transition-colors ${!showRaw ? 'bg-white text-slate-800 shadow-sm' : 'text-slate-500'}`}>Formatted</button>
+                </div>
+              )}
+            </div>
+
+            {running && (
+              <div className="flex-1 flex flex-col items-center justify-center gap-3 py-12">
+                <div className="relative">
+                  <div className="w-12 h-12 rounded-full border-2 border-sky-200 border-t-sky-600 animate-spin" />
+                  <Zap className="w-4 h-4 text-sky-600 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                </div>
+                <p className="text-[11px] text-slate-500 font-medium">Processing with {getModelLabel(modelValue)}...</p>
+              </div>
+            )}
+
+            {!running && !result && (
+              <div className="flex-1 flex items-center justify-center py-12">
+                <p className="text-[12px] text-slate-400">Run a test to see output here</p>
+              </div>
+            )}
+
+            {!running && result && (
+              <>
+                <div className="relative flex-1">
+                  <button
+                    onClick={copyResult}
+                    className="absolute top-2 right-2 flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-700 bg-white/80 backdrop-blur px-2 py-1 rounded-md border border-slate-200 transition-colors z-10"
+                  >
+                    {copied ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                  {showRaw ? (
+                    <pre className="text-[10px] font-mono bg-slate-900 text-slate-100 p-4 rounded-lg overflow-auto max-h-[400px] leading-relaxed whitespace-pre-wrap break-words">
+                      {result}
+                    </pre>
+                  ) : (
+                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 overflow-auto max-h-[400px]">
+                      <pre className="text-[11px] font-mono text-slate-700 whitespace-pre-wrap break-words leading-relaxed">
+                        {result}
+                      </pre>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-4 pt-2 border-t border-slate-100">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-slate-400">Input tokens:</span>
+                    <span className="text-[11px] font-semibold text-slate-700">{inputTokens.toLocaleString()}</span>
+                  </div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[10px] text-slate-400">Output tokens:</span>
+                    <span className="text-[11px] font-semibold text-slate-700">{outputTokens.toLocaleString()}</span>
+                  </div>
+                  {elapsed !== null && (
+                    <div className="flex items-center gap-1.5 ml-auto">
+                      <Clock className="w-3 h-3 text-slate-400" />
+                      <span className="text-[11px] font-semibold text-slate-700">{formatTime(elapsed)}</span>
+                      <span className="text-[10px] text-slate-400">({elapsed}ms)</span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
-        <button onClick={() => setOpen(false)} className="text-[11px] text-slate-400 hover:text-slate-700 transition-colors">
-          Close
-        </button>
       </div>
-
-      <div>
-        <p className="text-[10px] font-medium text-slate-500 mb-1">User input to test</p>
-        <Textarea
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          rows={4}
-          className="text-xs font-mono border-slate-200 focus-visible:ring-sky-500/20 focus-visible:border-sky-400 resize-y bg-white"
-          placeholder="Enter test input for the user message..."
-        />
-      </div>
-
-      <div className="flex items-center gap-2">
-        <Button
-          size="sm"
-          onClick={runTest}
-          disabled={running || !input.trim()}
-          className="h-8 text-xs bg-sky-700 hover:bg-sky-800 text-white"
-        >
-          {running ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Play className="w-3 h-3 mr-1.5" />}
-          Run Test
-        </Button>
-        {result && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => { setResult(null); setInput(''); }}
-            className="h-8 text-xs"
-          >
-            <RefreshCw className="w-3 h-3 mr-1.5" />
-            Clear
-          </Button>
-        )}
-        {elapsed !== null && (
-          <span className="text-[10px] text-slate-400 ml-auto">{elapsed}ms</span>
-        )}
-      </div>
-
-      {result && (
-        <div className="relative">
-          <div className="flex items-center justify-between mb-1.5">
-            <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">Raw JSON Payload (Preview)</p>
-            <button
-              onClick={copyResult}
-              className="flex items-center gap-1 text-[10px] text-slate-400 hover:text-slate-700 transition-colors"
-            >
-              {copied ? <CopyCheck className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-              {copied ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-          <pre className="text-[10px] font-mono bg-slate-900 text-slate-100 p-4 rounded-lg overflow-x-auto max-h-72 leading-relaxed whitespace-pre-wrap break-words">
-            {result}
-          </pre>
-        </div>
-      )}
     </div>
   );
 }
@@ -416,13 +480,13 @@ export default function PromptsAdmin() {
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [modelDrafts, setModelDrafts] = useState<Record<string, string>>({});
   const [requestCounts, setRequestCounts] = useState<Record<string, number>>({});
-  const [backupModel, setBackupModel] = useState('google/gemma-4-31b-it:free');
+  const [changelogKey, setChangelogKey] = useState<string | null>(null);
+  const [testModal, setTestModal] = useState<{ key: string; model: string } | null>(null);
 
   const ALL_SETTINGS_KEYS = [
     ...PROMPT_KEYS.map((p) => p.key),
     ...PROMPT_KEYS.filter((p) => p.modelKey).map((p) => p.modelKey!),
     ...PROMPT_KEYS.filter((p) => p.countKey).map((p) => p.countKey!),
-    'ai_model_backup',
   ];
 
   const fetchPrompts = useCallback(async () => {
@@ -449,12 +513,8 @@ export default function PromptsAdmin() {
         if (row.key.startsWith('ai_request_count_')) {
           countMap[row.key] = parseInt(row.value) || 0;
         }
-        if (row.key === 'ai_model_backup') {
-          setBackupModel(row.value);
-        }
       }
 
-      // Seed model drafts with defaults for any missing keys
       for (const p of PROMPT_KEYS) {
         if (p.modelKey && !modelMap[p.modelKey]) {
           modelMap[p.modelKey] = p.defaultModel ?? 'openai/gpt-oss-120b:free';
@@ -476,10 +536,11 @@ export default function PromptsAdmin() {
     });
   }, [router, fetchPrompts]);
 
+  const totalRequests = Object.values(requestCounts).reduce((a, b) => a + b, 0);
+
   async function handleSave(key: string) {
     const value = drafts[key];
     if (value === undefined) return;
-
     setSaving((prev) => ({ ...prev, [key]: true }));
     setSaved((prev) => ({ ...prev, [key]: false }));
 
@@ -488,7 +549,6 @@ export default function PromptsAdmin() {
       .upsert({ key, value, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 
     setSaving((prev) => ({ ...prev, [key]: false }));
-
     if (!error) {
       setPrompts((prev) => ({ ...prev, [key]: { ...prev[key], value, updated_at: new Date().toISOString() } }));
       setSaved((prev) => ({ ...prev, [key]: true }));
@@ -497,20 +557,27 @@ export default function PromptsAdmin() {
   }
 
   async function handleModelChange(modelKey: string, newModel: string) {
+    const oldModel = modelDrafts[modelKey];
     setModelDrafts((prev) => ({ ...prev, [modelKey]: newModel }));
 
     await supabase
       .from('admin_settings')
       .upsert({ key: modelKey, value: newModel, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 
-    // Also update backup model display if that's what changed
-    if (modelKey === 'ai_model_backup') setBackupModel(newModel);
+    // Log change
+    const { data: { session } } = await supabase.auth.getSession();
+    await supabase.from('ai_model_usage_log').insert({
+      prompt_key: PROMPT_KEYS.find(p => p.modelKey === modelKey)?.key ?? '',
+      model_key: modelKey,
+      model_value: newModel,
+      model_label: getModelLabel(newModel),
+      is_backup: false,
+      changed_by: session?.user?.id ?? null,
+    });
   }
 
   function handleReset(key: string) {
-    if (prompts[key]) {
-      setDrafts((prev) => ({ ...prev, [key]: prompts[key].value }));
-    }
+    if (prompts[key]) setDrafts((prev) => ({ ...prev, [key]: prompts[key].value }));
   }
 
   function hasChanges(key: string): boolean {
@@ -534,34 +601,18 @@ export default function PromptsAdmin() {
           <div>
             <h1 className="text-lg font-bold text-slate-900">AI Prompts</h1>
             <p className="text-sm text-slate-500 mt-1">
-              System instructions and model configuration for each edge function. Changes take effect immediately.
+              System instructions and model configuration for each edge function.
             </p>
           </div>
-          <Badge variant="secondary" className="text-[11px]">
-            {PROMPT_KEYS.length} prompts
-          </Badge>
-        </div>
-
-        {/* Backup model row */}
-        <div className="bg-white border border-slate-200 rounded-xl px-5 py-4 mb-6 flex items-center gap-4 flex-wrap">
-          <div className="flex items-center gap-2">
-            <div className="w-7 h-7 rounded-lg bg-amber-100 flex items-center justify-center">
-              <AlertTriangle className="w-3.5 h-3.5 text-amber-600" />
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-1.5 bg-sky-50 border border-sky-200 rounded-xl px-3 py-2">
+              <Activity className="w-3.5 h-3.5 text-sky-600" />
+              <span className="text-[12px] font-bold text-sky-800">{totalRequests.toLocaleString()}</span>
+              <span className="text-[10px] text-sky-600">total requests</span>
             </div>
-            <div>
-              <p className="text-[12px] font-bold text-slate-800">Backup Model (all functions)</p>
-              <p className="text-[10px] text-slate-500 mt-px">Used automatically when the primary model fails or is rate-limited</p>
-            </div>
-          </div>
-          <div className="ml-auto">
-            <ModelSwitcher
-              modelKey="ai_model_backup"
-              countKey=""
-              defaultModel="google/gemma-4-31b-it:free"
-              value={backupModel}
-              count={0}
-              onChange={handleModelChange}
-            />
+            <Badge variant="secondary" className="text-[11px]">
+              {PROMPT_KEYS.length} prompts
+            </Badge>
           </div>
         </div>
 
@@ -577,6 +628,8 @@ export default function PromptsAdmin() {
               ? (modelDrafts[config.modelKey] ?? config.defaultModel ?? 'openai/gpt-oss-120b:free')
               : null;
             const count = config.countKey ? (requestCounts[config.countKey] ?? 0) : 0;
+            const charLen = draft.length;
+            const tokenLen = estimateTokens(draft);
 
             return (
               <Card key={config.key} className="border-slate-200 shadow-sm overflow-visible">
@@ -624,24 +677,21 @@ export default function PromptsAdmin() {
                 </CardHeader>
 
                 <CardContent className="space-y-3">
-                  {/* Model switcher — only for AI prompt cards */}
                   {config.modelKey && modelValue && (
                     <ModelSwitcher
                       modelKey={config.modelKey}
                       countKey={config.countKey ?? ''}
-                      defaultModel={config.defaultModel ?? 'openai/gpt-oss-120b:free'}
                       value={modelValue}
                       count={count}
                       onChange={handleModelChange}
+                      onShowChangelog={(k) => setChangelogKey(k)}
                     />
                   )}
 
                   <Textarea
                     value={draft}
-                    onChange={(e) =>
-                      setDrafts((prev) => ({ ...prev, [config.key]: e.target.value }))
-                    }
-                    rows={12}
+                    onChange={(e) => setDrafts((prev) => ({ ...prev, [config.key]: e.target.value }))}
+                    rows={10}
                     className="text-xs leading-relaxed font-mono border-slate-200 focus-visible:ring-sky-500/20 focus-visible:border-sky-400 resize-y"
                     placeholder="Prompt content..."
                   />
@@ -649,14 +699,19 @@ export default function PromptsAdmin() {
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-4">
                       <span className="text-[11px] text-slate-400 tabular-nums">
-                        {draft.length.toLocaleString()} characters
+                        {charLen.toLocaleString()} chars
+                      </span>
+                      <span className="text-[11px] text-slate-400 tabular-nums">
+                        ~{tokenLen.toLocaleString()} tokens
                       </span>
                       {config.testable && modelValue && (
-                        <TestPanel
-                          promptKey={config.key}
-                          modelValue={modelValue}
-                          backupModel={backupModel}
-                        />
+                        <button
+                          onClick={() => setTestModal({ key: config.key, model: modelValue })}
+                          className="flex items-center gap-1.5 text-[11px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
+                        >
+                          <FlaskConical className="w-3.5 h-3.5" />
+                          Test
+                        </button>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
@@ -680,7 +735,7 @@ export default function PromptsAdmin() {
                           ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" />
                           : <Save className="w-3 h-3 mr-1.5" />
                         }
-                        Save Changes
+                        Save
                       </Button>
                     </div>
                   </div>
@@ -690,6 +745,10 @@ export default function PromptsAdmin() {
           })}
         </div>
       </div>
+
+      {/* Modals */}
+      {changelogKey && <ChangelogModal modelKey={changelogKey} onClose={() => setChangelogKey(null)} />}
+      {testModal && <TestModal promptKey={testModal.key} modelValue={testModal.model} onClose={() => setTestModal(null)} />}
     </AdminShell>
   );
 }
