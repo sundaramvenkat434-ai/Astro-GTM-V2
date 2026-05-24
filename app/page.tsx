@@ -558,7 +558,10 @@ function TopXRankingsSection({
   const displayPages = expanded ? topXPages : topXPages.slice(0, visibleCount);
 
   return (
-    <section className="border-b border-slate-200 bg-white">
+    <section
+      className="border-b border-sky-100"
+      style={{ background: 'linear-gradient(175deg, #f0f9ff 0%, #f5fbff 40%, #f8fcff 70%, #ffffff 100%)' }}
+    >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
         {/* Section header */}
@@ -573,7 +576,7 @@ function TopXRankingsSection({
             <Link
               key={page.id}
               href={`/category/${page.category}/${page.slug}`}
-              className="group flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-sky-300 hover:shadow-md transition-all duration-200"
+              className="group flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-sky-300 hover:shadow-lg shadow-sm transition-all duration-200"
             >
               <div className="p-5 sm:p-6 flex-1 flex flex-col">
                 {/* Category */}

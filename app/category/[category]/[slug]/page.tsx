@@ -502,9 +502,9 @@ function StarRating({ rating, toolId }: { rating: number; toolId: string }) {
             key={s}
             className={`w-4 h-4 ${
               s <= Math.floor(rating)
-                ? 'fill-amber-400 text-amber-400'
+                ? 'fill-sky-500 text-sky-500'
                 : s - 0.5 <= rating
-                ? 'fill-amber-200 text-amber-300'
+                ? 'fill-sky-200 text-sky-300'
                 : 'text-slate-200 fill-slate-200'
             }`}
           />
@@ -946,9 +946,9 @@ export default async function SlugPage({
                   { label: 'Best Fit', pct: 100, gradient: 'from-sky-500 to-sky-400', badge: 'bg-sky-100 text-sky-700 border-sky-200' },
                   { label: 'Competent', pct: 85, gradient: 'from-sky-400 to-sky-300', badge: 'bg-sky-100 text-sky-600 border-sky-200' },
                   { label: 'Capable', pct: 70, gradient: 'from-sky-300 to-sky-200', badge: 'bg-sky-50 text-sky-600 border-sky-200' },
-                  { label: 'Better Alternatives', pct: 50, gradient: 'from-amber-400 to-amber-300', badge: 'bg-amber-100 text-amber-700 border-amber-200' },
-                  { label: 'Feature Mismatch', pct: 25, gradient: 'from-amber-300 to-amber-200', badge: 'bg-amber-100 text-amber-600 border-amber-200' },
-                  { label: 'Not Suitable', pct: 10, gradient: 'from-amber-200 to-amber-100', badge: 'bg-amber-50 text-amber-600 border-amber-200' },
+                  { label: 'Better Alternatives', pct: 50, gradient: 'from-slate-400 to-slate-300', badge: 'bg-slate-100 text-slate-700 border-slate-200' },
+                  { label: 'Feature Mismatch', pct: 25, gradient: 'from-slate-300 to-slate-200', badge: 'bg-slate-100 text-slate-600 border-slate-200' },
+                  { label: 'Not Suitable', pct: 10, gradient: 'from-slate-200 to-slate-100', badge: 'bg-slate-50 text-slate-500 border-slate-200' },
                 ];
 
                 const topThree = sorted.slice(0, 3);
@@ -957,9 +957,9 @@ export default async function SlugPage({
                 const renderCard = (entry: WhoIsItForEntry, idx: number, isTop: boolean) => {
                   const tierIdx = isTop ? idx : idx + 3;
                   const tier = TIER_CONFIG[tierIdx];
-                  const cardBg = isTop ? 'bg-sky-50/50' : 'bg-amber-50/40';
-                  const cardBorder = isTop ? 'border-sky-100' : 'border-amber-100';
-                  const hoverBorder = isTop ? 'hover:border-sky-200' : 'hover:border-amber-200';
+                  const cardBg = isTop ? 'bg-sky-50/50' : 'bg-slate-50/40';
+                  const cardBorder = isTop ? 'border-sky-100' : 'border-slate-200';
+                  const hoverBorder = isTop ? 'hover:border-sky-200' : 'hover:border-slate-300';
 
                   return (
                     <div

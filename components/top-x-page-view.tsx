@@ -104,9 +104,9 @@ const BADGE_LABELS: Record<string, string> = {
 };
 
 const RANK_MEDAL = [
-  { bg: 'bg-amber-400', text: 'text-white', ring: 'ring-amber-300' },
+  { bg: 'bg-sky-500', text: 'text-white', ring: 'ring-sky-300' },
   { bg: 'bg-slate-400', text: 'text-white', ring: 'ring-slate-300' },
-  { bg: 'bg-orange-400', text: 'text-white', ring: 'ring-orange-300' },
+  { bg: 'bg-slate-500', text: 'text-white', ring: 'ring-slate-300' },
 ];
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -120,9 +120,9 @@ function StarRow({ rating, count }: { rating: number; count: string }) {
             key={s}
             className={`w-4 h-4 ${
               s <= Math.floor(rating)
-                ? 'fill-amber-400 text-amber-400'
+                ? 'fill-sky-500 text-sky-500'
                 : s - 0.5 <= rating
-                ? 'fill-amber-200 text-amber-300'
+                ? 'fill-sky-200 text-sky-300'
                 : 'fill-slate-100 text-slate-200'
             }`}
           />
@@ -362,9 +362,9 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
             const weaknesses = tool.limitations?.slice(0, 3) ?? entry.cons?.slice(0, 3) ?? [];
 
             const rankStyle =
-              i === 0 ? { pill: 'bg-amber-400 text-white ring-2 ring-amber-200/60', label: 'Gold' } :
-              i === 1 ? { pill: 'bg-slate-400 text-white ring-2 ring-slate-200/60', label: 'Silver' } :
-              i === 2 ? { pill: 'bg-orange-400 text-white ring-2 ring-orange-200/60', label: 'Bronze' } :
+              i === 0 ? { pill: 'bg-sky-500 text-white ring-2 ring-sky-200/60', label: '#1' } :
+              i === 1 ? { pill: 'bg-slate-400 text-white ring-2 ring-slate-200/60', label: '#2' } :
+              i === 2 ? { pill: 'bg-slate-500 text-white ring-2 ring-slate-200/60', label: '#3' } :
               { pill: 'bg-slate-100 text-slate-500', label: '' };
 
             return (
@@ -392,7 +392,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                       <div className="flex flex-wrap items-center gap-2 mb-1.5">
                         <h3 className="text-lg font-bold text-slate-900">{tool.name}</h3>
                         {i === 0 && (
-                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold uppercase tracking-wide border border-amber-200">
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 text-xs font-bold uppercase tracking-wide border border-sky-200">
                             <Crown className="w-3 h-3" /> Best Overall
                           </span>
                         )}
@@ -529,7 +529,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                     {page.comparison_table.map((row, i) => {
                       const tool = toolMap[row.tool_id];
                       return (
-                        <tr key={row.tool_id} className={`hover:bg-slate-50/80 transition-colors ${i === 0 ? 'bg-amber-50/30' : ''}`}>
+                        <tr key={row.tool_id} className={`hover:bg-slate-50/80 transition-colors ${i === 0 ? 'bg-sky-50/30' : ''}`}>
                           <td className="px-5 py-3.5">
                             <div className="flex items-center gap-2.5">
                               {tool?.logo_url && (
@@ -710,11 +710,11 @@ function VerdictCard({ label, tool, reason, highlight }: { label: string; tool: 
       href={`/category/${tool.category}/${tool.slug}`}
       className={`group flex flex-col gap-3 rounded-xl p-4 border transition-all hover:shadow-md ${
         highlight
-          ? 'bg-amber-50 border-amber-200 hover:border-amber-300'
+          ? 'bg-sky-50 border-sky-200 hover:border-sky-300'
           : 'bg-white border-slate-200 hover:border-slate-300'
       }`}
     >
-      <span className={`text-[10px] font-bold uppercase tracking-wider ${highlight ? 'text-amber-600' : 'text-slate-400'}`}>
+      <span className={`text-[10px] font-bold uppercase tracking-wider ${highlight ? 'text-sky-600' : 'text-slate-400'}`}>
         {label}
       </span>
       <div className="flex items-center gap-2.5">
@@ -731,7 +731,7 @@ function VerdictCard({ label, tool, reason, highlight }: { label: string; tool: 
         </div>
       </div>
       {reason && (
-        <p className={`text-[11px] leading-relaxed line-clamp-2 ${highlight ? 'text-amber-800' : 'text-slate-500'}`}>
+        <p className={`text-[11px] leading-relaxed line-clamp-2 ${highlight ? 'text-sky-800' : 'text-slate-500'}`}>
           {reason}
         </p>
       )}

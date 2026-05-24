@@ -101,7 +101,7 @@ function MiniStarRating({ rating, toolId }: { rating: number; toolId: string }) 
   const count = seededInt(toolId, 3, 10);
   return (
     <span className="inline-flex items-center gap-1 shrink-0">
-      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
+      <Star className="w-3.5 h-3.5 fill-sky-500 text-sky-500 shrink-0" />
       <span className="text-sm font-bold text-slate-800">{rating}</span>
       <span className="text-xs text-slate-500">({count})</span>
     </span>
