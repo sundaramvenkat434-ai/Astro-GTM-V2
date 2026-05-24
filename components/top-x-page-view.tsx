@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Star, Users, Check, X, ChevronRight, ArrowUpRight, Trophy, Crown, Zap, ThumbsUp, ThumbsDown, Target, ChartBar as BarChart3, Award, DollarSign, Globe, ExternalLink } from 'lucide-react';
+import { Star, Check, X, ChevronRight, ArrowUpRight, Trophy, Crown, Zap, ThumbsUp, ThumbsDown, Target, ChartBar as BarChart3, Award, DollarSign, Globe } from 'lucide-react';
 import { FaqSection } from '@/components/faq-accordion';
 import { AuthorBlock } from '@/components/author-block';
 import { FALLBACK } from '@/lib/author-schema';
@@ -113,12 +113,12 @@ const RANK_MEDAL = [
 
 function StarRow({ rating, count }: { rating: number; count: string }) {
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex items-center gap-2">
       <div className="flex gap-0.5">
         {[1, 2, 3, 4, 5].map((s) => (
           <Star
             key={s}
-            className={`w-3.5 h-3.5 ${
+            className={`w-4 h-4 ${
               s <= Math.floor(rating)
                 ? 'fill-amber-400 text-amber-400'
                 : s - 0.5 <= rating
@@ -129,7 +129,7 @@ function StarRow({ rating, count }: { rating: number; count: string }) {
         ))}
       </div>
       <span className="text-sm font-bold text-slate-800">{rating}</span>
-      <span className="text-xs text-slate-400">({count})</span>
+      <span className="text-sm text-slate-400">({count})</span>
     </div>
   );
 }
@@ -308,143 +308,123 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
 
         {/* ── IN-DEPTH REVIEWS ── */}
         <section className="space-y-4">
-          <div className="mb-2">
-            <div className="flex items-center gap-3 mb-1">
+          <div className="mb-4">
+            <div className="flex items-center gap-3 mb-2">
               <Award className="w-5 h-5 text-slate-700" />
-              <h2 className="text-xl font-bold text-slate-900">In-Depth Reviews</h2>
+              <h2 className="text-2xl font-bold text-slate-900">In-Depth Reviews</h2>
             </div>
-            <p className="text-sm text-slate-500">Detailed analysis of each tool with strengths, limitations, and pricing</p>
+            <p className="text-base text-slate-500">Detailed analysis of each tool with strengths, limitations, and pricing</p>
           </div>
 
           {orderedEntries.map(({ tool, entry }, i) => {
-            const medal = RANK_MEDAL[i];
             const strengths = tool.honest_take?.slice(0, 3) ?? entry.pros?.slice(0, 3) ?? [];
             const weaknesses = tool.limitations?.slice(0, 3) ?? entry.cons?.slice(0, 3) ?? [];
-            const whoFit = (tool.who_is_it_for as WhoIsItForEntry[] | null)?.slice(0, 3) ?? [];
+
+            const rankStyle =
+              i === 0 ? { pill: 'bg-amber-400 text-white ring-2 ring-amber-200/60', label: 'Gold' } :
+              i === 1 ? { pill: 'bg-slate-400 text-white ring-2 ring-slate-200/60', label: 'Silver' } :
+              i === 2 ? { pill: 'bg-orange-400 text-white ring-2 ring-orange-200/60', label: 'Bronze' } :
+              { pill: 'bg-slate-100 text-slate-500', label: '' };
 
             return (
-              <div key={tool.id} id={`tool-${i + 1}`} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-md transition-all">
-                {/* Header: logo left, rank right */}
-                <div className="p-5 sm:p-6">
-                  <div className="flex items-start gap-4">
+              <div key={tool.id} id={`tool-${i + 1}`} className="bg-white border border-slate-200 rounded-2xl overflow-hidden hover:shadow-lg transition-all duration-200">
+
+                {/* ── Card Header ── */}
+                <div className="p-6 sm:p-7">
+                  <div className="flex items-start gap-5">
+
                     {/* Logo */}
                     <div className="shrink-0">
                       {tool.logo_url ? (
-                        <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-100 bg-white flex items-center justify-center shadow-sm">
-                          <img src={tool.logo_url} alt={tool.logo_alt || tool.name} width={48} height={48} className="w-full h-full object-contain" />
+                        <div className="w-14 h-14 rounded-2xl overflow-hidden border border-slate-100 bg-white flex items-center justify-center shadow-sm">
+                          <img src={tool.logo_url} alt={tool.logo_alt || tool.name} width={56} height={56} className="w-full h-full object-contain" />
                         </div>
                       ) : (
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
-                          <span className="text-lg font-bold text-slate-400">{tool.name[0]}</span>
+                        <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center">
+                          <span className="text-xl font-bold text-slate-400">{tool.name[0]}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Content */}
+                    {/* Name / tagline / stars / best-for */}
                     <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1">
-                        <h3 className="text-base font-bold text-slate-900">{tool.name}</h3>
+                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
+                        <h3 className="text-lg font-bold text-slate-900">{tool.name}</h3>
                         {i === 0 && (
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 text-[10px] font-bold uppercase tracking-wide border border-amber-200">
-                            <Crown className="w-2.5 h-2.5" /> Best Overall
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-700 text-xs font-bold uppercase tracking-wide border border-amber-200">
+                            <Crown className="w-3 h-3" /> Best Overall
                           </span>
                         )}
                         {tool.badge && BADGE_STYLES[tool.badge] && (
                           <span
-                            className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wide border"
+                            className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide border"
                             style={{ backgroundColor: BADGE_STYLES[tool.badge].bg, color: BADGE_STYLES[tool.badge].text, borderColor: BADGE_STYLES[tool.badge].border }}
                           >
                             {BADGE_LABELS[tool.badge] ?? tool.badge}
                           </span>
                         )}
                       </div>
-                      <p className="text-slate-500 text-sm leading-relaxed line-clamp-1 mb-2">{tool.tagline}</p>
-                      <div className="flex flex-wrap items-center gap-4">
-                        <StarRow rating={tool.rating} count={tool.rating_count} />
-                        <span className="flex items-center gap-1.5 text-xs text-slate-500">
-                          <Users className="w-3 h-3 text-slate-400" />{tool.users} users
-                        </span>
-                        {entry.best_for && (
-                          <span className="text-[11px] bg-sky-50 text-sky-700 border border-sky-100 px-2 py-0.5 rounded-full font-medium">
-                            {entry.best_for}
+                      <p className="text-[15px] text-slate-500 leading-relaxed mb-2.5">{tool.tagline}</p>
+                      <StarRow rating={tool.rating} count={tool.rating_count} />
+                      {entry.best_for && (
+                        <div className="mt-2.5">
+                          <span className="inline-flex items-center gap-1.5 text-sm font-medium bg-sky-50 text-sky-700 border border-sky-200 px-3 py-1 rounded-full">
+                            <Target className="w-3.5 h-3.5" /> {entry.best_for}
                           </span>
-                        )}
-                      </div>
+                        </div>
+                      )}
                     </div>
 
-                    {/* Rank badge + CTAs — right side */}
-                    <div className="shrink-0 flex flex-col items-end gap-2">
-                      {/* Rank pill */}
-                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-sm ${
-                        i === 0 ? 'bg-amber-400 text-white ring-2 ring-amber-200' :
-                        i === 1 ? 'bg-slate-400 text-white ring-2 ring-slate-200' :
-                        i === 2 ? 'bg-orange-400 text-white ring-2 ring-orange-200' :
-                        'bg-slate-100 text-slate-600'
-                      }`}>
-                        {i === 0 && <Crown className="w-3 h-3" />}
-                        #{i + 1}
-                        {i === 0 && <span className="font-semibold text-amber-100 text-[10px]">Best</span>}
+                    {/* Rank indicator — top right */}
+                    <div className="shrink-0 flex flex-col items-center gap-1 select-none">
+                      <div className={`flex items-center justify-center w-11 h-11 rounded-2xl text-base font-extrabold shadow-sm ${rankStyle.pill}`}>
+                        {i === 0 ? <Crown className="w-5 h-5" /> : `#${i + 1}`}
                       </div>
-                      {/* CTA buttons */}
-                      <div className="hidden sm:flex flex-col gap-1.5 items-end mt-1">
-                        {tool.website_url && (
-                          <a
-                            href={tool.website_url}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap shadow-sm"
-                          >
-                            <Globe className="w-3 h-3" /> Website
-                          </a>
-                        )}
-                        <Link
-                          href={`/category/${tool.category}/${tool.slug}`}
-                          className="inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
-                        >
-                          <ArrowUpRight className="w-3 h-3" /> Review
-                        </Link>
-                      </div>
+                      <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
+                        {i === 0 ? 'Best' : i === 1 ? '2nd' : i === 2 ? '3rd' : `#${i + 1}`}
+                      </span>
                     </div>
                   </div>
 
+                  {/* Verdict */}
                   {entry.verdict && (
-                    <div className="mt-4 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3">
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">Verdict</p>
-                      <p className="text-sm text-slate-700 leading-relaxed">{entry.verdict}</p>
+                    <div className="mt-5 bg-slate-50 border border-slate-100 rounded-xl px-4 py-3.5">
+                      <p className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1.5">Verdict</p>
+                      <p className="text-[15px] text-slate-700 leading-relaxed">{entry.verdict}</p>
                     </div>
                   )}
                 </div>
 
-                {/* Strengths & Limitations */}
+                {/* ── Strengths & Limitations ── */}
                 {(strengths.length > 0 || weaknesses.length > 0) && (
                   <div className="border-t border-slate-100 grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
                     {strengths.length > 0 && (
-                      <div className="px-5 py-3.5">
-                        <div className="flex items-center gap-2 mb-2.5">
-                          <ThumbsUp className="w-3.5 h-3.5 text-emerald-600" />
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-emerald-700">Strengths</p>
+                      <div className="px-6 py-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <ThumbsUp className="w-4 h-4 text-emerald-600" />
+                          <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">Strengths</p>
                         </div>
-                        <ul className="space-y-1.5">
+                        <ul className="space-y-2">
                           {strengths.map((s, j) => (
-                            <li key={j} className="flex items-start gap-2">
-                              <Check className="w-3.5 h-3.5 text-emerald-500 shrink-0 mt-0.5" />
-                              <span className="text-xs text-slate-700 leading-relaxed line-clamp-1">{s}</span>
+                            <li key={j} className="flex items-start gap-2.5">
+                              <Check className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                              <span className="text-sm text-slate-700 leading-relaxed">{s}</span>
                             </li>
                           ))}
                         </ul>
                       </div>
                     )}
                     {weaknesses.length > 0 && (
-                      <div className="px-5 py-3.5">
-                        <div className="flex items-center gap-2 mb-2.5">
-                          <ThumbsDown className="w-3.5 h-3.5 text-amber-500" />
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-amber-600">Limitations</p>
+                      <div className="px-6 py-4">
+                        <div className="flex items-center gap-2 mb-3">
+                          <ThumbsDown className="w-4 h-4 text-amber-500" />
+                          <p className="text-xs font-bold uppercase tracking-wider text-amber-600">Limitations</p>
                         </div>
-                        <ul className="space-y-1.5">
+                        <ul className="space-y-2">
                           {weaknesses.map((w, j) => (
-                            <li key={j} className="flex items-start gap-2">
-                              <X className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
-                              <span className="text-xs text-slate-700 leading-relaxed line-clamp-1">{w}</span>
+                            <li key={j} className="flex items-start gap-2.5">
+                              <X className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                              <span className="text-sm text-slate-700 leading-relaxed">{w}</span>
                             </li>
                           ))}
                         </ul>
@@ -453,62 +433,30 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                   </div>
                 )}
 
-                {/* Features + Pricing */}
-                <div className="border-t border-slate-100 grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-slate-100">
-                  <div className="px-5 py-3.5 sm:col-span-2">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">Key Features</p>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {tool.features?.slice(0, 4).map((f, j) => (
-                        <div key={j} className="flex items-start gap-2">
-                          <div className="w-4 h-4 rounded bg-sky-50 border border-sky-100 flex items-center justify-center shrink-0 mt-0.5">
-                            <Zap className="w-2.5 h-2.5 text-sky-500" />
-                          </div>
-                          <span className="text-[11px] font-medium text-slate-700 line-clamp-1">{f.title}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="px-5 py-3.5">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">Pricing</p>
-                    <PricingDisplay tool={tool} entry={entry} />
-                  </div>
+                {/* ── Pricing ── */}
+                <div className="border-t border-slate-100 px-6 py-4">
+                  <p className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3">Pricing</p>
+                  <PricingDisplay tool={tool} entry={entry} />
                 </div>
 
-                {/* Best For audiences */}
-                {whoFit.length > 0 && (
-                  <div className="border-t border-slate-100 px-5 py-3">
-                    <div className="flex items-center gap-4 flex-wrap">
-                      <div className="flex items-center gap-1.5">
-                        <Target className="w-3 h-3 text-slate-400" />
-                        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Best for:</span>
-                      </div>
-                      {whoFit.map((w, j) => (
-                        <span key={j} className="text-[11px] font-medium text-slate-700 bg-slate-50 border border-slate-200 px-2.5 py-1 rounded-lg">
-                          {w.audience}
-                        </span>
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Mobile CTA */}
-                <div className="border-t border-slate-100 px-5 py-3 sm:hidden flex gap-2">
+                {/* ── Footer: CTA buttons bottom-right ── */}
+                <div className="border-t border-slate-100 px-6 py-4 flex items-center justify-end gap-3">
+                  <Link
+                    href={`/category/${tool.category}/${tool.slug}`}
+                    className="inline-flex items-center gap-2 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 text-sm font-semibold px-4 py-2 rounded-xl transition-colors"
+                  >
+                    <ArrowUpRight className="w-4 h-4" /> Full Review
+                  </Link>
                   {tool.website_url && (
                     <a
                       href={tool.website_url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors"
+                      className="inline-flex items-center gap-2 bg-sky-600 hover:bg-sky-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition-colors shadow-sm"
                     >
-                      <Globe className="w-3.5 h-3.5" /> Website
+                      <Globe className="w-4 h-4" /> Visit Website
                     </a>
                   )}
-                  <Link
-                    href={`/category/${tool.category}/${tool.slug}`}
-                    className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl hover:border-slate-300 transition-colors"
-                  >
-                    <ArrowUpRight className="w-3.5 h-3.5" /> Review
-                  </Link>
                 </div>
               </div>
             );
@@ -518,11 +466,11 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
         {/* ── SIDE-BY-SIDE COMPARISON TABLE ── */}
         {page.comparison_table?.length > 0 && (
           <section>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex items-center gap-3 mb-2">
               <BarChart3 className="w-5 h-5 text-slate-700" />
-              <h2 className="text-xl font-bold text-slate-900">Side-by-Side Comparison</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Side-by-Side Comparison</h2>
             </div>
-            <p className="text-sm text-slate-500 mb-6">Compare pricing, plans, and core capabilities at a glance</p>
+            <p className="text-base text-slate-500 mb-6">Compare pricing, plans, and core capabilities at a glance</p>
             <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
               <div className="overflow-x-auto">
                 <table className="w-full min-w-[600px]">
@@ -592,14 +540,14 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
         {/* ── FINAL VERDICT ── */}
         {(page.outro || page.best_for?.length > 0) && (
           <section>
-            <div className="flex items-center gap-3 mb-1">
+            <div className="flex items-center gap-3 mb-2">
               <Trophy className="w-5 h-5 text-slate-700" />
-              <h2 className="text-xl font-bold text-slate-900">Final Verdict</h2>
+              <h2 className="text-2xl font-bold text-slate-900">Final Verdict</h2>
             </div>
-            <p className="text-sm text-slate-500 mb-6">Our recommendation for different use cases and budgets</p>
+            <p className="text-base text-slate-500 mb-6">Our recommendation for different use cases and budgets</p>
 
             {page.outro && (
-              <p className="text-[14px] text-slate-600 leading-relaxed mb-6 max-w-3xl">{page.outro}</p>
+              <p className="text-base text-slate-600 leading-relaxed mb-6 max-w-3xl">{page.outro}</p>
             )}
 
             {page.best_for?.length > 0 && (
@@ -676,33 +624,37 @@ function PricingDisplay({ tool, entry }: { tool: TopXTool; entry: TopXEntry }) {
   }, null);
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-wrap gap-3">
       {hasFree && (
-        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
-          <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
-            <Check className="w-3 h-3 text-white" />
+        <div className="flex items-center gap-3 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-3 min-w-[180px]">
+          <div className="w-8 h-8 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+            <Check className="w-4 h-4 text-white" />
           </div>
           <div>
-            <p className="text-[11px] font-bold text-emerald-800 leading-none">Free Plan Available</p>
-            <p className="text-[10px] text-emerald-600 mt-0.5">No credit card required</p>
+            <p className="text-sm font-bold text-emerald-800 leading-tight">Free Plan Available</p>
+            <p className="text-xs text-emerald-600 mt-0.5">No credit card required</p>
           </div>
         </div>
       )}
       {lowestPaid && (
-        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 ${hasFree ? 'bg-slate-50 border border-slate-200' : 'bg-sky-50 border border-sky-200'}`}>
-          <DollarSign className={`w-4 h-4 shrink-0 ${hasFree ? 'text-slate-400' : 'text-sky-600'}`} />
+        <div className={`flex items-center gap-3 rounded-xl px-4 py-3 min-w-[180px] ${hasFree ? 'bg-slate-50 border border-slate-200' : 'bg-sky-50 border border-sky-200'}`}>
+          <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${hasFree ? 'bg-slate-200' : 'bg-sky-200'}`}>
+            <DollarSign className={`w-4 h-4 ${hasFree ? 'text-slate-500' : 'text-sky-700'}`} />
+          </div>
           <div>
-            <p className={`text-[11px] font-semibold leading-none ${hasFree ? 'text-slate-600' : 'text-sky-800'}`}>
-              Paid from <span className="font-bold">{lowestPaid.price}</span>
+            <p className={`text-sm font-bold leading-tight ${hasFree ? 'text-slate-700' : 'text-sky-900'}`}>
+              Paid Plans from <span>{lowestPaid.price}</span>
             </p>
-            <p className={`text-[10px] mt-0.5 ${hasFree ? 'text-slate-400' : 'text-sky-600'}`}>{lowestPaid.plan} plan</p>
+            <p className={`text-xs mt-0.5 ${hasFree ? 'text-slate-400' : 'text-sky-600'}`}>{lowestPaid.plan} plan</p>
           </div>
         </div>
       )}
       {!hasFree && !lowestPaid && tool.pricing[0] && (
-        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
-          <DollarSign className="w-4 h-4 text-slate-400 shrink-0" />
-          <span className="text-sm font-semibold text-slate-800">{tool.pricing[0].price}</span>
+        <div className="flex items-center gap-3 bg-slate-50 border border-slate-200 rounded-xl px-4 py-3">
+          <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center shrink-0">
+            <DollarSign className="w-4 h-4 text-slate-500" />
+          </div>
+          <span className="text-sm font-bold text-slate-800">{tool.pricing[0].price}</span>
         </div>
       )}
     </div>
