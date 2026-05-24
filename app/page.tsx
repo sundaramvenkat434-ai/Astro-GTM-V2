@@ -301,7 +301,7 @@ export default function HomePage() {
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(4,13,24,0.95) 0%, transparent 100%)' }} />
 
-        <div className={`relative max-w-3xl mx-auto px-6 sm:px-8 lg:px-10 pt-14 pb-14 sm:pt-22 sm:pb-22 lg:pt-32 lg:pb-32 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+        <div className={`relative max-w-3xl mx-auto px-6 sm:px-8 lg:px-10 pt-14 pb-14 sm:pt-22 sm:pb-22 lg:pt-36 lg:pb-36 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
 
           {/* Eyebrow badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-700/60 bg-slate-800/40 backdrop-blur-sm mb-5 sm:mb-6">
@@ -309,14 +309,15 @@ export default function HomePage() {
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
-            <span className="text-sm text-slate-300 font-medium tracking-wide">
-              20+ Tools <span className="text-emerald-400 font-semibold">This Week</span>
+            <span className="text-[13px] text-slate-300 font-medium tracking-wide">
+              Added This Week — <span className="text-emerald-400 font-semibold">20+ Tools</span>
             </span>
           </div>
 
           {/* Headline */}
-          <h1 className="font-display text-[2.25rem] sm:text-[3.25rem] lg:text-[4rem] font-extrabold text-white leading-[1.08] tracking-[-0.025em] mb-4 sm:mb-6">
-            Stop Shipping Features.<br />
+          <h1 className="font-display text-[2rem] sm:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.08] tracking-[-0.025em] mb-4 sm:mb-5">
+            Stop Shipping Features.
+            <br />
             <span className="bg-clip-text text-transparent"
               style={{ backgroundImage: 'linear-gradient(95deg, #7dd3fc 0%, #38bdf8 30%, #2dd4bf 65%, #34d399 100%)' }}>
               Start Creating Demand.
@@ -324,7 +325,7 @@ export default function HomePage() {
           </h1>
 
           {/* Sub-headline */}
-          <p className="font-sans text-base sm:text-xl lg:text-[1.3rem] font-normal text-slate-400 leading-[1.6] max-w-[600px] mx-auto mb-8 sm:mb-10 tracking-[0.005em]">
+          <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[540px] mx-auto mb-7 sm:mb-8 tracking-[0.005em]">
             Discover new, proven{' '}
             <span className="text-white font-medium">AI growth tools</span>{' '}
             across SEO, lead gen, sales outreach, social media, and more —{' '}
@@ -336,7 +337,7 @@ export default function HomePage() {
             {/* Browse Top Tools */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-lg font-bold tracking-tight text-[15px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative overflow-hidden inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(135deg, #01497c 0%, #0264a0 50%, #0284c7 100%)',
                 boxShadow: '0 0 0 1.5px rgba(2,132,199,0.8), 0 8px 28px rgba(1,73,124,0.5), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -354,7 +355,7 @@ export default function HomePage() {
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
               onMouseEnter={() => setCreditsHover(true)}
               onMouseLeave={() => setCreditsHover(false)}
-              className="relative inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-3.5 rounded-lg font-bold tracking-tight text-[15px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
+              className="relative inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(145deg, #0f1729 0%, #162032 50%, #0f1729 100%)',
                 border: creditsHover ? '1.5px solid rgba(251,191,36,0.6)' : '1.5px solid rgba(251,191,36,0.25)',
