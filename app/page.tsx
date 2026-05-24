@@ -328,7 +328,7 @@ export default function HomePage() {
           <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[540px] mx-auto mb-7 sm:mb-8 tracking-[0.005em]">
             Find <span className="text-white font-medium">AI Growth Tools</span>{' '}
             that actually work — {' '}
-            curated across SEO, lead gen, sales outreach, social media, and more, with reviews from our {' '}
+            curated across SEO, lead gen, sales outreach, social media, and more. Backed by reviews from our {' '}
             <span className="text-emerald-400 font-semibold"> tech community</span>.
           </p>
 
