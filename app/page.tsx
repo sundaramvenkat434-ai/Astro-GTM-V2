@@ -290,32 +290,32 @@ export default function HomePage() {
         <div className="absolute left-0 right-0 top-0 h-px pointer-events-none"
           style={{ background: 'linear-gradient(90deg, transparent 5%, rgba(14,165,233,0.6) 30%, rgba(56,189,248,0.7) 50%, rgba(20,184,166,0.6) 70%, transparent 95%)' }} />
         {/* Upper radial glow */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[450px] pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(14,165,233,0.15) 0%, transparent 70%)' }} />
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[350px] pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 65% 55% at 50% 0%, rgba(14,165,233,0.14) 0%, transparent 70%)' }} />
         {/* Side accent glows */}
-        <div className="absolute top-1/3 left-0 w-[400px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle at 0% 50%, rgba(20,184,166,0.08) 0%, transparent 60%)' }} />
-        <div className="absolute top-1/4 right-0 w-[400px] h-[400px] pointer-events-none"
-          style={{ background: 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.06) 0%, transparent 60%)' }} />
+        <div className="absolute top-1/3 left-0 w-[350px] h-[350px] pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 0% 50%, rgba(20,184,166,0.07) 0%, transparent 60%)' }} />
+        <div className="absolute top-1/4 right-0 w-[350px] h-[350px] pointer-events-none"
+          style={{ background: 'radial-gradient(circle at 100% 50%, rgba(56,189,248,0.05) 0%, transparent 60%)' }} />
         {/* Bottom fade */}
-        <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
+        <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(4,13,24,0.95) 0%, transparent 100%)' }} />
 
-        <div className={`relative max-w-4xl mx-auto px-6 sm:px-8 lg:px-10 pt-16 pb-16 sm:pt-28 sm:pb-28 lg:pt-32 lg:pb-32 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+        <div className={`relative max-w-3xl mx-auto px-6 sm:px-8 lg:px-10 pt-12 pb-12 sm:pt-18 sm:pb-18 lg:pt-22 lg:pb-22 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
 
           {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-slate-700/60 bg-slate-800/40 backdrop-blur-sm mb-7 sm:mb-8">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-700/60 bg-slate-800/40 backdrop-blur-sm mb-5 sm:mb-6">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
-            <span className="text-sm text-slate-300 font-medium tracking-wide">
+            <span className="text-[13px] text-slate-300 font-medium tracking-wide">
               Added This Week — <span className="text-emerald-400 font-semibold">20+ Tools</span>
             </span>
           </div>
 
           {/* Headline */}
-          <h1 className="font-display text-[2.5rem] sm:text-6xl lg:text-7xl font-extrabold text-white leading-[1.05] tracking-[-0.025em] mb-5 sm:mb-7">
+          <h1 className="font-display text-[2rem] sm:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.08] tracking-[-0.025em] mb-4 sm:mb-5">
             Stop Shipping Features.
             <br />
             <span className="bg-clip-text text-transparent"
@@ -325,7 +325,7 @@ export default function HomePage() {
           </h1>
 
           {/* Sub-headline */}
-          <p className="font-sans text-base sm:text-xl font-normal text-slate-400 leading-[1.7] max-w-[580px] mx-auto mb-9 sm:mb-12 tracking-[0.005em]">
+          <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[540px] mx-auto mb-7 sm:mb-8 tracking-[0.005em]">
             Discover new, proven{' '}
             <span className="text-white font-medium">AI growth tools</span>{' '}
             across SEO, lead gen, sales outreach, social media, and more —{' '}
@@ -333,11 +333,11 @@ export default function HomePage() {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-10 sm:mb-12 w-full">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-7 sm:mb-9 w-full">
             {/* Browse Top Tools */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
-              className="group relative overflow-hidden inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-4 rounded-xl font-bold tracking-tight text-[15px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
+              className="group relative overflow-hidden inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] text-white transition-all duration-200 hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(135deg, #01497c 0%, #0264a0 50%, #0284c7 100%)',
                 boxShadow: '0 0 0 1.5px rgba(2,132,199,0.8), 0 8px 28px rgba(1,73,124,0.5), inset 0 1px 0 rgba(255,255,255,0.15)',
@@ -345,9 +345,9 @@ export default function HomePage() {
               }}
             >
               <span className="absolute inset-0 translate-x-[-100%] group-hover:translate-x-[100%] transition-transform duration-700 bg-gradient-to-r from-transparent via-white/20 to-transparent pointer-events-none" />
-              <Zap className="w-4.5 h-4.5 shrink-0 relative" />
+              <Zap className="w-4 h-4 shrink-0 relative" />
               <span className="relative">Browse Top Tools</span>
-              <ArrowRight className="w-4.5 h-4.5 group-hover:translate-x-1 transition-transform duration-200 shrink-0 relative" />
+              <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform duration-200 shrink-0 relative" />
             </button>
 
             {/* FREE $50 Credits */}
@@ -355,7 +355,7 @@ export default function HomePage() {
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
               onMouseEnter={() => setCreditsHover(true)}
               onMouseLeave={() => setCreditsHover(false)}
-              className="relative inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-8 py-4 rounded-xl font-bold tracking-tight text-[15px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
+              className="relative inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(145deg, #0f1729 0%, #162032 50%, #0f1729 100%)',
                 border: creditsHover ? '1.5px solid rgba(251,191,36,0.6)' : '1.5px solid rgba(251,191,36,0.25)',
@@ -368,7 +368,7 @@ export default function HomePage() {
               }}
             >
               <Gift
-                className="w-5 h-5 shrink-0 transition-all duration-300"
+                className="w-4 h-4 shrink-0 transition-all duration-300"
                 style={{
                   color: creditsHover ? '#fde68a' : '#fbbf24',
                   transform: creditsHover ? 'rotate(-12deg) scale(1.15)' : 'none',
@@ -389,18 +389,18 @@ export default function HomePage() {
           </div>
 
           {/* Trust strip */}
-          <div className="flex items-center justify-center gap-5 sm:gap-8 flex-wrap">
+          <div className="flex items-center justify-center gap-4 sm:gap-7 flex-wrap">
             {([
               { label: 'No login required', Icon: LogIn },
               { label: 'Zero ads',          Icon: Scan },
               { label: 'Weekly updates',    Icon: RefreshCw },
             ] as const).map(({ label: item, Icon }, i, arr) => (
-              <span key={item} className="flex items-center gap-2">
-                <span className="flex items-center gap-2 text-[13px] sm:text-sm text-slate-400 tracking-[0.01em]">
-                  <Icon className="w-3.5 h-3.5 text-emerald-500/80 shrink-0" />
+              <span key={item} className="flex items-center gap-1.5">
+                <span className="flex items-center gap-1.5 text-[12.5px] text-slate-500 tracking-[0.01em]">
+                  <Icon className="w-3 h-3 text-emerald-500/80 shrink-0" />
                   {item}
                 </span>
-                {i < arr.length - 1 && <span className="w-px h-4 bg-slate-700/60 ml-3 sm:ml-6" />}
+                {i < arr.length - 1 && <span className="w-px h-3.5 bg-slate-700/70 ml-4 sm:ml-7" />}
               </span>
             ))}
           </div>
@@ -430,7 +430,7 @@ export default function HomePage() {
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Explore Tools</h2>
-                <p className="text-sm text-slate-500 mt-1">
+                <p className="text-sm text-slate-600 mt-1">
                   {loading
                     ? 'Loading...'
                     : `${sortedFiltered.length} tools${activeCategory !== 'all' ? ` in ${SECTION_LABELS[activeCategory]}` : ' across all categories'}`}
@@ -467,7 +467,7 @@ export default function HomePage() {
                     </span>
                     {cat.label}
                     <span className={`text-xs tabular-nums ml-0.5 px-1.5 py-0.5 rounded-full ${
-                      active ? 'bg-white/20 text-white/80' : 'bg-slate-100 text-slate-400'
+                      active ? 'bg-white/20 text-white/80' : 'bg-slate-100 text-slate-500'
                     }`}>{cat.count}</span>
                   </button>
                 );
@@ -505,7 +505,7 @@ export default function HomePage() {
                         </span>
                         <div>
                           <h3 className="text-base font-bold text-slate-900 tracking-tight">{SECTION_LABELS[cat]}</h3>
-                          <span className="text-xs text-slate-400 font-medium">{totalCount} tool{totalCount !== 1 ? 's' : ''}</span>
+                          <span className="text-xs text-slate-500 font-medium">{totalCount} tool{totalCount !== 1 ? 's' : ''}</span>
                         </div>
                       </div>
                       <Link

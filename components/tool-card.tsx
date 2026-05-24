@@ -103,7 +103,7 @@ function MiniStarRating({ rating, toolId }: { rating: number; toolId: string }) 
     <span className="inline-flex items-center gap-1 shrink-0">
       <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400 shrink-0" />
       <span className="text-sm font-bold text-slate-800">{rating}</span>
-      <span className="text-xs text-slate-400">({count})</span>
+      <span className="text-xs text-slate-500">({count})</span>
     </span>
   );
 }
@@ -154,7 +154,7 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
                 </span>
               )}
             </div>
-            <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 mt-1">
+            <p className="text-[13px] text-slate-700 leading-relaxed line-clamp-2 mt-1">
               {tool.tagline || tool.description}
             </p>
           </Link>
@@ -165,7 +165,7 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
               {useCases.map(uc => (
                 <span
                   key={uc}
-                  className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full border bg-slate-50 text-slate-500 border-slate-200 whitespace-nowrap"
+                  className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full border bg-slate-50 text-slate-600 border-slate-200 whitespace-nowrap"
                 >
                   {uc}
                 </span>
@@ -181,7 +181,7 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
           <MiniStarRating rating={tool.rating} toolId={tool.id} />
           <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
           {views !== undefined && views > 0 && (
-            <span className="inline-flex items-center gap-1 text-xs text-slate-400 font-medium shrink-0">
+            <span className="inline-flex items-center gap-1 text-xs text-slate-500 font-medium shrink-0">
               <Eye className="w-3.5 h-3.5 shrink-0" />
               {views >= 1000 ? `${(views / 1000).toFixed(1)}k` : views}
             </span>
@@ -191,7 +191,7 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
           href={`/category/${tool.category}/${tool.slug}`}
           className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] transition-all shadow-sm whitespace-nowrap shrink-0"
         >
-          View Tool <ExternalLink className="w-3 h-3 text-slate-400" />
+          View Tool <ExternalLink className="w-3 h-3 text-slate-500" />
         </Link>
       </div>
     </div>
