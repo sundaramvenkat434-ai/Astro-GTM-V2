@@ -298,7 +298,7 @@ export function SiteHeader() {
               <AstroGTMLogo size={36} />
             </Link>
 
-            <nav className="flex items-center gap-1">
+            <nav className="flex items-center gap-2">
               {/* Submit Tool dropdown */}
               <NavDropdown
                 trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
@@ -351,7 +351,7 @@ export function InnerHeader({ crumbs }: { crumbs: BreadcrumbItem[] }) {
                 </span>
               ))}
             </nav>
-            <nav className="flex items-center gap-1 shrink-0">
+            <nav className="flex items-center gap-2 shrink-0">
               <NavDropdown
                 trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
                 items={SUBMIT_OPTIONS}
