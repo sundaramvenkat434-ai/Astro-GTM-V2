@@ -224,28 +224,25 @@ function EditableField({
 
   return (
     <div className="rounded-lg border border-slate-200 bg-white hover:border-slate-300 transition-colors">
-      <div className="flex items-center justify-between px-3.5 py-2 bg-slate-50/80 border-b border-slate-100">
+      <div className="flex items-center justify-between px-3 py-1.5 bg-slate-50 border-b border-slate-100">
         <div className="flex items-center gap-1.5">
           <span className="text-slate-400">{icon}</span>
-          <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">{label}</span>
+          <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">{label}</span>
         </div>
-        <div className="flex items-center gap-2">
-          {charLimit && (
-            <span className={`text-[10px] font-medium tabular-nums ${isOver ? 'text-red-500' : 'text-slate-400'}`}>
-              {len}/{charLimit.max}
-            </span>
-          )}
-          <Pencil className="w-3 h-3 text-slate-300" />
-        </div>
+        {charLimit && (
+          <span className={`text-[10px] tabular-nums ${isOver ? 'text-red-500' : 'text-slate-400'}`}>
+            {len}/{charLimit.max}
+          </span>
+        )}
       </div>
-      <div className="px-3.5 py-2">
+      <div className="px-3 py-2">
         {multiline ? (
           <textarea
             value={value}
             onChange={(e) => onChange(e.target.value)}
-            rows={3}
+            rows={2}
             placeholder={placeholder}
-            className="w-full text-sm text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300"
+            className="w-full text-xs text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300"
           />
         ) : (
           <input
@@ -253,7 +250,7 @@ function EditableField({
             value={value}
             onChange={(e) => onChange(e.target.value)}
             placeholder={placeholder}
-            className="w-full text-sm text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 placeholder:text-slate-300"
+            className="w-full text-xs text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 placeholder:text-slate-300"
           />
         )}
       </div>
@@ -1061,7 +1058,7 @@ export default function TopXCreatePage() {
                           <EeatPanel draft={draft} />
 
                           {/* Identity */}
-                          <div className="bg-white rounded-xl border border-slate-200 p-5">
+                          <div className="bg-white rounded-xl border border-slate-200 p-4">
                             <SectionHeader icon={<Type className="w-3.5 h-3.5" />} label="Identity" />
                             <div className="space-y-2">
                               <EditableField label="Page Title" icon={<Type className="w-3 h-3" />} value={draft.name}
@@ -1098,52 +1095,49 @@ export default function TopXCreatePage() {
                           </div>
 
                           {/* Introduction */}
-                          <div className="bg-white rounded-xl border border-slate-200 p-5">
+                          <div className="bg-white rounded-xl border border-slate-200 p-4">
                             <SectionHeader icon={<AlignLeft className="w-3.5 h-3.5" />} label="Introduction" />
                             <textarea
                               value={draft.intro}
                               onChange={(e) => setDraft((d) => ({ ...d, intro: e.target.value }))}
                               placeholder="Opening paragraph. Introduce the topic, who it's for, and what readers will find…"
-                              rows={5}
-                              className="w-full text-sm text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300"
+                              rows={3}
+                              className="w-full text-xs text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300"
                             />
                           </div>
 
                           {/* Conclusion */}
-                          <div className="bg-white rounded-xl border border-slate-200 p-5">
+                          <div className="bg-white rounded-xl border border-slate-200 p-4">
                             <SectionHeader icon={<FileText className="w-3.5 h-3.5" />} label="Conclusion" />
                             <textarea
                               value={draft.outro}
                               onChange={(e) => setDraft((d) => ({ ...d, outro: e.target.value }))}
                               placeholder="Closing paragraph with key takeaways and a call to action…"
-                              rows={4}
-                              className="w-full text-sm text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300"
+                              rows={3}
+                              className="w-full text-xs text-slate-800 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300"
                             />
                           </div>
 
                           {/* FAQs */}
-                          <div className="bg-white rounded-xl border border-slate-200 p-5">
+                          <div className="bg-white rounded-xl border border-slate-200 p-4">
                             <SectionHeader
                               icon={<MessageSquare className="w-3.5 h-3.5" />}
                               label="FAQs"
                               count={draft.faqs.length}
                               action={<button onClick={addFaq} className="text-[11px] text-sky-600 hover:text-sky-800 flex items-center gap-0.5"><Plus className="w-3 h-3" /> Add</button>}
                             />
-                            <div className="space-y-2">
+                            <div className="space-y-1.5">
                               {draft.faqs.map((faq, i) => (
-                                <div key={i} className="rounded-lg border border-slate-200 p-3.5 hover:border-slate-300 transition-colors">
+                                <div key={i} className="rounded-lg border border-slate-200 p-3 hover:border-slate-300 transition-colors">
                                   <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1 min-w-0 space-y-1.5">
-                                      <div className="flex items-start gap-1.5">
-                                        <MessageSquare className="w-3 h-3 text-slate-400 mt-0.5 shrink-0" />
-                                        <input type="text" value={faq.q} onChange={(e) => updateFaq(i, 'q', e.target.value)} placeholder="Question"
-                                          className="w-full text-sm font-semibold text-slate-800 bg-transparent border-0 p-0 focus:outline-none focus:ring-0 placeholder:text-slate-300" />
-                                      </div>
+                                    <div className="flex-1 min-w-0 space-y-1">
+                                      <input type="text" value={faq.q} onChange={(e) => updateFaq(i, 'q', e.target.value)} placeholder="Question"
+                                        className="w-full text-xs font-semibold text-slate-800 bg-transparent border-0 p-0 focus:outline-none focus:ring-0 placeholder:text-slate-300" />
                                       <textarea value={faq.a} onChange={(e) => updateFaq(i, 'a', e.target.value)} placeholder="Answer" rows={2}
-                                        className="w-full text-xs text-slate-500 leading-relaxed bg-transparent border-0 p-0 pl-[18px] focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300" />
+                                        className="w-full text-xs text-slate-500 leading-relaxed bg-transparent border-0 p-0 focus:outline-none focus:ring-0 resize-none placeholder:text-slate-300" />
                                     </div>
-                                    <button onClick={() => removeFaq(i)} className="text-slate-300 hover:text-red-500 transition-colors shrink-0 mt-0.5">
-                                      <Trash2 className="w-3.5 h-3.5" />
+                                    <button onClick={() => removeFaq(i)} className="text-slate-300 hover:text-red-500 transition-colors shrink-0">
+                                      <Trash2 className="w-3 h-3" />
                                     </button>
                                   </div>
                                 </div>
@@ -1223,19 +1217,10 @@ export default function TopXCreatePage() {
                             const tool = tools.find((t) => t.id === entry.tool_id) || selectedTools[i];
                             const toolName = tool?.name || `Tool ${i + 1}`;
                             return (
-                              <div key={entry.tool_id || i} className="bg-white rounded-xl border border-slate-200 p-5">
-                                <div className="flex items-center gap-2 mb-4">
-                                  <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                              <div key={entry.tool_id || i} className="bg-white rounded-xl border border-slate-200 p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                                   <h3 className="text-sm font-bold text-slate-900">{toolName}</h3>
-                                  <div className="ml-auto flex items-center gap-2">
-                                    <span className="text-[10px] text-slate-400">Score:</span>
-                                    <input
-                                      type="number" min={0} max={100} value={entry.score}
-                                      onChange={(e) => updateEntry(i, { score: parseInt(e.target.value) || 0 })}
-                                      className="w-12 text-sm font-bold text-slate-900 bg-transparent border border-slate-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-0"
-                                    />
-                                    <span className="text-[10px] text-slate-400">/100</span>
-                                  </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                   <div className="space-y-2">
@@ -1306,23 +1291,17 @@ export default function TopXCreatePage() {
                             const tool = tools.find((t) => t.id === row.tool_id) || selectedTools[i];
                             const toolName = tool?.name || row.tool_name || `Tool ${i + 1}`;
                             return (
-                              <div key={row.tool_id || i} className="bg-white rounded-xl border border-slate-200 p-5">
-                                <div className="flex items-center gap-2 mb-4">
-                                  <span className="w-6 h-6 rounded-full bg-slate-900 text-white text-[11px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
+                              <div key={row.tool_id || i} className="bg-white rounded-xl border border-slate-200 p-4">
+                                <div className="flex items-center gap-2 mb-3">
+                                  <span className="w-5 h-5 rounded-full bg-slate-900 text-white text-[10px] font-bold flex items-center justify-center shrink-0">{i + 1}</span>
                                   <h3 className="text-sm font-bold text-slate-900">{toolName}</h3>
-                                  <div className="ml-auto flex items-center gap-4">
+                                  <div className="ml-auto flex items-center gap-3">
                                     <label className="flex items-center gap-1.5 cursor-pointer">
                                       <input type="checkbox" checked={row.free_plan}
                                         onChange={(e) => updateComparison(i, { free_plan: e.target.checked })}
                                         className="w-3.5 h-3.5 rounded border-slate-300 accent-emerald-500" />
                                       <span className="text-xs text-slate-600">Free plan</span>
                                     </label>
-                                    <div className="flex items-center gap-1.5">
-                                      <Star className="w-3 h-3 text-amber-400" />
-                                      <input type="number" step="0.1" min={0} max={5} value={row.rating}
-                                        onChange={(e) => updateComparison(i, { rating: parseFloat(e.target.value) || 0 })}
-                                        className="w-12 text-sm font-medium text-slate-900 bg-transparent border border-slate-200 rounded px-1.5 py-0.5 text-center focus:outline-none focus:ring-0" />
-                                    </div>
                                   </div>
                                 </div>
                                 <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
@@ -1344,7 +1323,7 @@ export default function TopXCreatePage() {
                     {activeTab === 'seo' && (
                       <>
                         <div className="lg:col-span-2 space-y-4">
-                          <div className="bg-white rounded-xl border border-slate-200 p-5">
+                          <div className="bg-white rounded-xl border border-slate-200 p-4">
                             <SectionHeader icon={<Search className="w-3.5 h-3.5" />} label="SEO Metadata" />
                             <div className="space-y-2">
                               <EditableField label="Meta Title" icon={<Search className="w-3 h-3" />} value={draft.meta_title}
