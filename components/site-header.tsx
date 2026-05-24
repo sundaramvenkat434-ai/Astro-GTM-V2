@@ -225,12 +225,12 @@ function NavDropdown({
   }, []);
 
   const btnClass = highlight
-    ? `inline-flex items-center gap-1.5 text-[13px] font-semibold px-3 py-1.5 rounded-md border transition-colors duration-150 ${
+    ? `inline-flex items-center gap-1.5 text-sm font-semibold px-3.5 py-2 rounded-lg border transition-colors duration-150 ${
         dark
           ? open ? 'bg-sky-900/60 border-sky-600 text-sky-200' : 'bg-sky-900/30 border-sky-700/50 text-sky-300 hover:bg-sky-900/60 hover:border-sky-600 hover:text-sky-200'
           : open ? 'bg-sky-100 border-sky-300 text-sky-800' : 'bg-sky-50 border-sky-200 text-sky-700 hover:bg-sky-100 hover:border-sky-300 hover:text-sky-800'
       }`
-    : `inline-flex items-center gap-1.5 text-[13px] font-medium px-2.5 py-1.5 rounded-md transition-colors duration-150 ${
+    : `inline-flex items-center gap-1.5 text-sm font-medium px-3 py-2 rounded-lg transition-colors duration-150 ${
         dark
           ? open ? 'bg-white/10 text-white' : 'text-slate-300 hover:bg-white/10 hover:text-white'
           : open ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
@@ -246,10 +246,10 @@ function NavDropdown({
 
       {open && (
         <div
-          className="absolute right-0 top-full mt-1 w-60 bg-white rounded-lg z-50 overflow-hidden"
+          className="absolute right-0 top-full mt-2 w-64 bg-white rounded-xl z-50 overflow-hidden"
           style={{
             border: '1px solid #e2e8f0',
-            boxShadow: '0 4px 12px rgba(15,23,42,0.10), 0 1px 3px rgba(15,23,42,0.06)',
+            boxShadow: '0 8px 24px rgba(15,23,42,0.10), 0 2px 6px rgba(15,23,42,0.06)',
             animation: 'dropdownIn 0.12s ease-out',
           }}
         >
@@ -257,19 +257,19 @@ function NavDropdown({
             const row = (
               <button
                 key={opt.label}
-                className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-slate-50 transition-colors text-left group"
+                className="w-full flex items-center gap-3 px-4 py-3 hover:bg-slate-50 transition-colors text-left group"
                 style={{ borderTop: idx > 0 ? '1px solid #f1f5f9' : undefined }}
                 onClick={() => { setOpen(false); onItemClick?.(opt.label); }}
               >
                 <span
-                  className="w-7 h-7 rounded-md flex items-center justify-center shrink-0"
+                  className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0"
                   style={{ background: opt.accent + '15', color: opt.accent }}
                 >
                   {opt.icon}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[13px] font-semibold text-slate-800 leading-snug">{opt.label}</span>
-                  <span className="block text-[11px] text-slate-400 leading-snug">{opt.desc}</span>
+                  <span className="block text-sm font-semibold text-slate-800 leading-snug">{opt.label}</span>
+                  <span className="block text-xs text-slate-400 leading-snug">{opt.desc}</span>
                 </span>
               </button>
             );
@@ -293,12 +293,12 @@ export function SiteHeader() {
     <>
       <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 gap-3">
+          <div className="flex items-center justify-between h-16 gap-4">
             <Link href="/" className="flex items-center group shrink-0">
-              <AstroGTMLogo size={34} />
+              <AstroGTMLogo size={36} />
             </Link>
 
-            <nav className="flex items-center gap-0.5">
+            <nav className="flex items-center gap-1">
               {/* Submit Tool dropdown */}
               <NavDropdown
                 trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
@@ -335,23 +335,23 @@ export function InnerHeader({ crumbs }: { crumbs: BreadcrumbItem[] }) {
     <>
       <header className="bg-white/95 backdrop-blur-xl border-b border-slate-200/80 sticky top-0 z-30 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-14 gap-3">
-            <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 text-sm min-w-0">
+          <div className="flex items-center justify-between h-16 gap-4">
+            <nav aria-label="Breadcrumb" className="flex items-center gap-2 text-sm min-w-0">
               <Link href="/" className="flex items-center text-slate-900 hover:text-sky-600 transition-colors shrink-0">
-                <AstroGTMLogo size={28} />
+                <AstroGTMLogo size={32} />
               </Link>
               {crumbs.map((c, i) => (
-                <span key={i} className="flex items-center gap-1.5 min-w-0">
+                <span key={i} className="flex items-center gap-2 min-w-0">
                   <span className="text-slate-300">/</span>
                   {c.href ? (
                     <Link href={c.href} className="text-slate-500 hover:text-slate-900 transition-colors truncate">{c.label}</Link>
                   ) : (
-                    <span className="text-slate-900 font-medium truncate max-w-[180px]">{c.label}</span>
+                    <span className="text-slate-900 font-medium truncate max-w-[200px]">{c.label}</span>
                   )}
                 </span>
               ))}
             </nav>
-            <nav className="flex items-center gap-0.5 shrink-0">
+            <nav className="flex items-center gap-1 shrink-0">
               <NavDropdown
                 trigger={<><Rocket className="w-3.5 h-3.5 shrink-0 text-slate-500" /><span className="hidden sm:inline">Submit Tool</span></>}
                 items={SUBMIT_OPTIONS}
@@ -381,17 +381,17 @@ export function PageBreadcrumb({ crumbs }: { crumbs: BreadcrumbItem[] }) {
   return (
     <div className="bg-white border-b border-slate-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="flex items-center gap-1 py-2.5 text-[13px] min-w-0 overflow-x-auto scrollbar-none">
+        <nav aria-label="Breadcrumb" className="flex items-center gap-1.5 py-3 text-sm min-w-0 overflow-x-auto scrollbar-none">
           <Link href="/" className="text-slate-500 hover:text-slate-900 transition-colors shrink-0 whitespace-nowrap">Home</Link>
           {crumbs.map((c, i) => (
-            <span key={i} className="flex items-center gap-1 min-w-0 shrink-0">
-              <svg className="w-3 h-3 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+            <span key={i} className="flex items-center gap-1.5 min-w-0 shrink-0">
+              <svg className="w-3.5 h-3.5 text-slate-300 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
               </svg>
               {c.href ? (
-                <Link href={c.href} className="text-slate-500 hover:text-slate-900 transition-colors whitespace-nowrap truncate max-w-[200px]">{c.label}</Link>
+                <Link href={c.href} className="text-slate-500 hover:text-slate-900 transition-colors whitespace-nowrap truncate max-w-[220px]">{c.label}</Link>
               ) : (
-                <span className="text-slate-800 font-semibold whitespace-nowrap truncate max-w-[200px]">{c.label}</span>
+                <span className="text-slate-800 font-semibold whitespace-nowrap truncate max-w-[220px]">{c.label}</span>
               )}
             </span>
           ))}
