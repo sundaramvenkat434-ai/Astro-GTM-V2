@@ -220,24 +220,38 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
       <section className="relative bg-gradient-to-b from-white via-white to-slate-50 border-b border-slate-200 overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(circle_at_80%_20%,rgba(14,165,233,0.03),transparent_50%)]" />
         <div className="relative max-w-6xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
-          <div className="flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-12">
-            {/* Left */}
+          <div className="flex flex-col lg:flex-row lg:items-start gap-8 lg:gap-14">
+
+            {/* ── Left ── */}
             <div className="flex-1 min-w-0">
+              {/* Eyebrow */}
               <div className="flex flex-wrap items-center gap-2.5 mb-5">
-                <Link href={`/category/${page.category}`} className="text-[11px] font-bold uppercase tracking-wider text-sky-700 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-full hover:bg-sky-100 transition-colors">
+                <Link
+                  href={`/category/${page.category}`}
+                  className="text-xs font-bold uppercase tracking-wider text-sky-700 bg-sky-50 border border-sky-100 px-3 py-1 rounded-full hover:bg-sky-100 transition-colors"
+                >
                   {categoryLabel}
                 </Link>
-                <span className="text-[11px] text-slate-400">Updated May 2026</span>
+                <span className="text-xs text-slate-400">Updated May 2026</span>
+                <span className="text-xs text-slate-300">·</span>
+                <span className="text-xs font-medium text-slate-500">{tools.length} tools reviewed</span>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-[2.75rem] font-extrabold text-slate-900 leading-[1.12] tracking-tight mb-4">
+
+              {/* H1 */}
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-slate-900 leading-[1.1] tracking-tight mb-4">
                 {page.name}
               </h1>
+
+              {/* Tagline */}
               {page.tagline && (
-                <p className="text-base sm:text-lg text-slate-500 leading-relaxed max-w-xl mb-5">{page.tagline}</p>
+                <p className="text-lg sm:text-xl text-slate-500 leading-relaxed max-w-xl mb-4">{page.tagline}</p>
               )}
+
+              {/* Intro */}
               {page.intro && (
-                <p className="text-[14px] text-slate-600 leading-relaxed max-w-xl line-clamp-3">{page.intro}</p>
+                <p className="text-base text-slate-600 leading-relaxed max-w-xl line-clamp-3">{page.intro}</p>
               )}
+
               {/* Infinite marquee use-cases strip */}
               {(() => {
                 const allUseCases = orderedEntries
@@ -248,9 +262,9 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                 return (
                   <div className="mt-6 overflow-hidden">
                     <div className="marquee-track">
-                      {doubled.map((uc, i) => (
+                      {doubled.map((uc, idx) => (
                         <span
-                          key={i}
+                          key={idx}
                           className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full shadow-sm whitespace-nowrap shrink-0 mx-1"
                         >
                           <Zap className="w-3 h-3 text-sky-500 shrink-0" />
@@ -263,40 +277,67 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
               })()}
             </div>
 
-            {/* Right -- Best Overall Card */}
+            {/* ── Right — Top Pick card ── */}
             {topTool && topEntry && (
-              <div className="lg:w-[320px] shrink-0 bg-white border-2 border-sky-200 rounded-2xl shadow-lg shadow-sky-100/40 overflow-hidden">
+              <div className="lg:w-[300px] shrink-0 bg-white border-2 border-sky-200 rounded-2xl shadow-lg shadow-sky-100/40 overflow-hidden">
+                {/* Card header */}
                 <div className="bg-gradient-to-r from-sky-50 to-sky-100/50 px-5 py-3 border-b border-sky-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Crown className="w-4 h-4 text-sky-600" />
-                    <span className="text-[11px] font-bold text-sky-800 uppercase tracking-wider">Best Overall</span>
+                    <span className="text-xs font-bold text-sky-800 uppercase tracking-wider">Top Pick</span>
                   </div>
-                  <span className="text-[11px] font-bold text-sky-700 bg-sky-100 px-2 py-0.5 rounded-full">#1 of {tools.length}</span>
+                  <span className="text-xs font-bold text-sky-700 bg-sky-100 px-2.5 py-0.5 rounded-full">#1 of {tools.length}</span>
                 </div>
+
+                {/* Card body */}
                 <div className="p-5">
+                  {/* Logo + name + stars */}
                   <div className="flex items-center gap-3 mb-3">
                     {topTool.logo_url && (
-                      <div className="w-11 h-11 rounded-xl overflow-hidden border border-slate-100 bg-white shrink-0 flex items-center justify-center shadow-sm">
-                        <img src={topTool.logo_url} alt={topTool.logo_alt || topTool.name} width={44} height={44} className="w-full h-full object-contain" />
+                      <div className="w-12 h-12 rounded-xl overflow-hidden border border-slate-100 bg-white shrink-0 flex items-center justify-center shadow-sm">
+                        <img src={topTool.logo_url} alt={topTool.logo_alt || topTool.name} width={48} height={48} className="w-full h-full object-contain" />
                       </div>
                     )}
                     <div className="min-w-0">
-                      <p className="font-bold text-slate-900 text-base">{topTool.name}</p>
+                      <p className="font-bold text-slate-900 text-base leading-snug">{topTool.name}</p>
                       <StarRow rating={topTool.rating} count={topTool.rating_count} />
                     </div>
                   </div>
+
+                  {/* Best for pill */}
                   {topEntry.best_for && (
                     <div className="mb-3">
-                      <span className="text-[11px] font-medium text-sky-700 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-full">{topEntry.best_for}</span>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-medium text-sky-700 bg-sky-50 border border-sky-100 px-2.5 py-1 rounded-full">
+                        <Target className="w-3 h-3" /> {topEntry.best_for}
+                      </span>
                     </div>
                   )}
-                  <p className="text-[13px] text-slate-600 leading-relaxed line-clamp-2">{topTool.tagline}</p>
+
+                  {/* Tagline */}
+                  <p className="text-sm text-slate-600 leading-relaxed line-clamp-2 mb-4">{topTool.tagline}</p>
+
+                  {/* Full Review button */}
                   <Link
                     href={`/category/${topTool.category}/${topTool.slug}`}
-                    className="mt-4 w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-700 to-blue-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:from-sky-800 hover:to-blue-900 transition-all shadow-md shadow-sky-200/50"
+                    className="w-full inline-flex items-center justify-center gap-1.5 bg-gradient-to-r from-sky-700 to-blue-800 text-white text-sm font-semibold px-5 py-2.5 rounded-xl hover:from-sky-800 hover:to-blue-900 transition-all shadow-md shadow-sky-200/50"
                   >
                     Read Full Review <ArrowUpRight className="w-4 h-4" />
                   </Link>
+
+                  {/* Visit website link */}
+                  {topTool.website_url && (
+                    <div className="mt-3 text-center">
+                      <a
+                        href={topTool.website_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1.5 text-sm text-slate-400 hover:text-sky-600 transition-colors"
+                      >
+                        <Globe className="w-3.5 h-3.5" />
+                        Visit website
+                      </a>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
