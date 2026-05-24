@@ -304,7 +304,7 @@ export default function HomePage() {
         <div className={`relative max-w-3xl mx-auto px-6 sm:px-8 lg:px-10 pt-14 pb-14 sm:pt-32 sm:pb-32 lg:pt-32 lg:pb-32 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
 
           {/* Eyebrow badge */}
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-700/60 bg-slate-800/40 backdrop-blur-sm mb-5 sm:mb-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-700/60 bg-slate-800/40 backdrop-blur-sm mb-6 sm:mb-7">
             <span className="relative flex h-2 w-2">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
@@ -315,7 +315,7 @@ export default function HomePage() {
           </div>
 
           {/* Headline */}
-          <h1 className="font-display text-[2rem] sm:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.08] tracking-[-0.025em] mb-4 sm:mb-5">
+          <h1 className="font-display text-[2rem] sm:text-5xl lg:text-[3.5rem] font-extrabold text-white leading-[1.08] tracking-[-0.025em] mb-5 sm:mb-6">
             Stop Shipping Features.
             <br />
             <span className="bg-clip-text text-transparent"
@@ -325,7 +325,7 @@ export default function HomePage() {
           </h1>
 
           {/* Sub-headline */}
-          <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[540px] mx-auto mb-7 sm:mb-8 tracking-[0.005em]">
+          <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[540px] mx-auto mb-8 sm:mb-9 tracking-[0.005em]">
             Find <span className="text-white font-medium">AI Growth Tools</span>{' '}
             that actually work — {' '}
             curated across SEO, lead gen, sales outreach, social media, and more. Backed by reviews from our {' '}
@@ -333,7 +333,7 @@ export default function HomePage() {
           </p>
 
           {/* CTAs */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-7 sm:mb-9 w-full">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mb-8 sm:mb-10 w-full">
             {/* Browse Top Tools */}
             <button
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
