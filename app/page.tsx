@@ -326,10 +326,10 @@ export default function HomePage() {
 
           {/* Sub-headline */}
           <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[540px] mx-auto mb-7 sm:mb-8 tracking-[0.005em]">
-            Find tools that work for you, {' '}
-            <span className="text-white font-medium">fast.</span>{' '}
-            Curated AI tools across SEO, lead gen, sales outreach, social media, and more, {' '}
-            <span className="text-emerald-400 font-semibold">by experts</span>.
+            Find <span className="text-white font-medium">AI Growth Tools</span>{' '}
+            that actually work. {' '}
+            Curated across SEO, lead gen, sales outreach, social media, and more, {' '}
+            <span className="text-emerald-400 font-semibold"> reviewed by experts</span>.
           </p>
 
           {/* CTAs */}
