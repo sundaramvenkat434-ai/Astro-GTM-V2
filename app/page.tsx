@@ -312,9 +312,9 @@ export default function HomePage() {
 
           {/* Sub-headline */}
           <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-7 sm:mb-9 tracking-[0.005em]">
-            Discover new, proven{' '}
+            Discover proven{' '}
             <span className="text-white font-medium">AI growth tools</span>{' '}
-            across SEO, lead gen, sales outreach, social media, and more,{' '}
+            across SEO, lead generation, sales outreach, social media, and more,{' '}
             <span className="text-emerald-400 font-semibold">reviewed by experts</span>.
           </p>
 
