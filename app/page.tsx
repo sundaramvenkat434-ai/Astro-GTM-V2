@@ -559,15 +559,21 @@ function TopXRankingsSection({
 
   return (
     <section
-      className="border-b border-sky-100"
-      style={{ background: 'linear-gradient(175deg, #f0f9ff 0%, #e8f4fd 30%, #f5faff 70%, #ffffff 100%)' }}
+      className="border-b border-slate-700/30 relative overflow-hidden"
+      style={{ background: 'linear-gradient(170deg, #0c1929 0%, #0f2440 30%, #122d4d 60%, #0c1929 100%)' }}
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
+      {/* Decorative background elements */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[700px] h-[300px] pointer-events-none"
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(14,165,233,0.08) 0%, transparent 70%)' }} />
+      <div className="absolute bottom-0 right-0 w-[400px] h-[400px] pointer-events-none"
+        style={{ background: 'radial-gradient(circle at 100% 100%, rgba(56,189,248,0.04) 0%, transparent 60%)' }} />
+
+      <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
         {/* Section header */}
         <div className="mb-8">
-          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Top Rankings</h2>
-          <p className="text-sm text-slate-500 mt-1">Curated comparisons of the best tools</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Top Rankings</h2>
+          <p className="text-sm text-slate-400 mt-1">Curated comparisons of the best tools</p>
         </div>
 
         {/* Cards grid */}
@@ -576,21 +582,22 @@ function TopXRankingsSection({
             <Link
               key={page.id}
               href={`/category/${page.category}/${page.slug}`}
-              className="group flex flex-col bg-white rounded-xl border border-slate-200 overflow-hidden hover:border-sky-200 hover:shadow-md hover:shadow-sky-100/40 transition-all duration-200"
+              className="group flex flex-col rounded-xl border border-slate-700/60 overflow-hidden hover:border-sky-500/40 hover:shadow-lg hover:shadow-sky-900/20 transition-all duration-200"
+              style={{ background: 'linear-gradient(160deg, rgba(15,36,64,0.95) 0%, rgba(12,25,41,0.98) 100%)' }}
             >
               <div className="p-5 sm:p-6 flex-1 flex flex-col">
                 {/* Category */}
                 <div className="flex items-center justify-between gap-2 mb-3">
-                  <span className="text-xs font-bold uppercase tracking-widest text-sky-600">
+                  <span className="text-xs font-bold uppercase tracking-widest text-sky-400">
                     {SECTION_LABELS[page.category] || page.category}
                   </span>
-                  <span className="text-xs font-medium text-slate-400">
+                  <span className="text-xs font-medium text-slate-500">
                     {(page.tool_ids || []).length} tools compared
                   </span>
                 </div>
 
                 {/* Title */}
-                <h3 className="text-base font-bold text-slate-900 leading-snug mb-4 group-hover:text-sky-700 transition-colors line-clamp-2">
+                <h3 className="text-base font-bold text-white leading-snug mb-4 group-hover:text-sky-300 transition-colors line-clamp-2">
                   {page.name}
                 </h3>
 
@@ -601,21 +608,21 @@ function TopXRankingsSection({
                     return (
                       <div key={toolId} className="flex items-start gap-3">
                         <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
-                          idx === 0 ? 'bg-amber-100 text-amber-700' :
-                          idx === 1 ? 'bg-slate-100 text-slate-600' :
-                          'bg-orange-50 text-orange-600'
+                          idx === 0 ? 'bg-sky-500/20 text-sky-300 ring-1 ring-sky-500/30' :
+                          idx === 1 ? 'bg-slate-700/50 text-slate-300 ring-1 ring-slate-600/50' :
+                          'bg-slate-700/30 text-slate-400 ring-1 ring-slate-600/40'
                         }`}>
                           {idx + 1}
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-800 truncate">
+                            <span className="text-sm font-semibold text-slate-200 truncate">
                               {info?.name || '...'}
                             </span>
                             {info?.rating && (
                               <span className="shrink-0 flex items-center gap-0.5">
-                                <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
-                                <span className="text-xs font-bold text-slate-700">{info.rating}</span>
+                                <Star className="w-3.5 h-3.5 fill-sky-400 text-sky-400" />
+                                <span className="text-xs font-bold text-slate-300">{info.rating}</span>
                               </span>
                             )}
                           </div>
@@ -630,11 +637,11 @@ function TopXRankingsSection({
               </div>
 
               {/* Footer */}
-              <div className="px-5 py-3 border-t border-slate-100 flex items-center justify-between">
-                <span className="text-xs text-slate-400 font-medium">
+              <div className="px-5 py-3 border-t border-slate-700/50 flex items-center justify-between">
+                <span className="text-xs text-slate-500 font-medium">
                   {new Date(page.published_at).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })}
                 </span>
-                <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-600 opacity-70 group-hover:opacity-100 transition-opacity">
+                <span className="inline-flex items-center gap-1 text-xs font-semibold text-sky-400 opacity-70 group-hover:opacity-100 transition-opacity">
                   View ranking <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" />
                 </span>
               </div>
@@ -647,7 +654,7 @@ function TopXRankingsSection({
           <div className="mt-6 flex justify-center">
             <button
               onClick={() => setExpanded(!expanded)}
-              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-sky-700 bg-white border border-sky-200 rounded-xl hover:bg-sky-50 hover:border-sky-300 shadow-sm transition-all active:scale-[0.97]"
+              className="inline-flex items-center gap-2 px-5 py-2.5 text-sm font-semibold text-sky-300 bg-slate-800/60 border border-sky-500/30 rounded-xl hover:bg-sky-900/30 hover:border-sky-400/50 shadow-sm transition-all active:scale-[0.97]"
             >
               {expanded ? (
                 <>Show Less <ChevronUp className="w-4 h-4" /></>

@@ -569,6 +569,7 @@ export default async function SlugPage({
 
     const navSections: SidebarSection[] = [
       { id: 'overview', label: 'Overview' },
+      ...(topXMentions.length > 0 ? [{ id: 'featured-in', label: 'Featured In' }] : []),
       ...((tool.screenshots?.length ?? 0) > 0 ? [{ id: 'screenshots', label: 'Screenshots' }] : []),
       { id: 'features', label: 'Features' },
       ...((tool.honest_take?.length ?? 0) > 0 || (tool.limitations?.length ?? 0) > 0 ? [{ id: 'our-opinion', label: 'Our Opinion' }] : []),
@@ -576,7 +577,6 @@ export default async function SlugPage({
       ...(tool.pricing.length > 0 ? [{ id: 'pricing', label: 'Pricing' }] : []),
       ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQs' }] : []),
       ...(similarTools.length > 0 ? [{ id: 'similar-tools', label: 'Similar Tools' }] : []),
-      ...(topXMentions.length > 0 ? [{ id: 'featured-in', label: 'Featured In' }] : []),
       { id: 'editor-details', label: 'Editor Details' },
     ];
 
@@ -724,6 +724,95 @@ export default async function SlugPage({
 
                 </div>
               </div>
+
+              {/* ── Featured In Top X Lists ── */}
+              {topXMentions.length > 0 && (
+                <section id="section-featured-in">
+                  <div
+                    className="rounded-2xl border border-slate-700/50 shadow-lg overflow-hidden relative"
+                    style={{ background: 'linear-gradient(160deg, #0c1929 0%, #0f2440 40%, #132d4a 70%, #0c1929 100%)' }}
+                  >
+                    {/* Subtle glow accent */}
+                    <div className="absolute top-0 right-0 w-[300px] h-[200px] pointer-events-none"
+                      style={{ background: 'radial-gradient(ellipse at 100% 0%, rgba(56,189,248,0.06) 0%, transparent 60%)' }} />
+
+                    {/* Header */}
+                    <div className="relative px-6 py-5 border-b border-slate-700/40 flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-sky-500/20 to-sky-600/10 border border-sky-500/30 flex items-center justify-center shrink-0">
+                        <Trophy className="w-5 h-5 text-sky-400" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h2 className="text-base font-bold text-white leading-none mb-1">
+                          Featured in Top Lists
+                        </h2>
+                        <p className="text-xs text-slate-400">
+                          {tool.name} ranked in {topXMentions.length} curated comparison{topXMentions.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <span className="hidden sm:inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-500/10 text-sky-300 border border-sky-500/20">
+                        <Star className="w-3 h-3 fill-sky-400 text-sky-400" />
+                        {topXMentions.length} {topXMentions.length === 1 ? 'List' : 'Lists'}
+                      </span>
+                    </div>
+
+                    {/* Cards */}
+                    <div className="relative p-5 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {topXMentions.map((mention) => {
+                        const rank = ((mention.tool_ids as string[]) ?? []).indexOf(tool.id);
+                        const entry = (mention.entries ?? []).find((e: { tool_id: string }) => e.tool_id === tool.id);
+                        const totalTools = (mention.tool_ids as string[])?.length ?? 0;
+                        const catLabel = CATEGORY_LABELS[mention.category] || mention.category;
+
+                        return (
+                          <Link
+                            key={mention.id}
+                            href={`/category/${mention.category}/${mention.slug}`}
+                            className="group relative flex items-start gap-4 p-4 rounded-xl border border-slate-700/50 hover:border-sky-500/40 transition-all duration-200 hover:shadow-md hover:shadow-sky-900/20"
+                            style={{ background: 'linear-gradient(145deg, rgba(15,36,64,0.7) 0%, rgba(12,25,41,0.9) 100%)' }}
+                          >
+                            {/* Rank badge */}
+                            {rank >= 0 && (
+                              <div className={`shrink-0 w-11 h-11 rounded-xl flex items-center justify-center text-sm font-extrabold transition-transform group-hover:scale-105 ${
+                                rank === 0 ? 'bg-gradient-to-br from-sky-400 to-sky-600 text-white shadow-md shadow-sky-900/30' :
+                                rank === 1 ? 'bg-gradient-to-br from-slate-400 to-slate-500 text-white shadow-md shadow-slate-900/30' :
+                                rank === 2 ? 'bg-gradient-to-br from-sky-300 to-sky-500 text-white shadow-md shadow-sky-900/20' :
+                                'bg-slate-700/60 text-slate-300 border border-slate-600/50'
+                              }`}>
+                                #{rank + 1}
+                              </div>
+                            )}
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-200 group-hover:text-sky-300 transition-colors leading-snug mb-1.5 line-clamp-1">
+                                {mention.name}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
+                                <span className="text-[11px] text-slate-500 flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
+                                  vs {totalTools - 1} tool{totalTools - 1 !== 1 ? 's' : ''}
+                                </span>
+                                <span className="w-px h-3 bg-slate-700" />
+                                <span className="text-[11px] text-slate-500">{catLabel}</span>
+                                {entry?.best_for && (
+                                  <>
+                                    <span className="w-px h-3 bg-slate-700 hidden sm:block" />
+                                    <span className="inline-flex items-center gap-1 text-[11px] font-medium text-sky-400 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-full">
+                                      <Target className="w-2.5 h-2.5" /> {entry.best_for}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <ChevronRight className="w-4 h-4 text-slate-600 group-hover:text-sky-400 transition-colors shrink-0 mt-1" />
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              )}
 
               {/* ── Screenshots ── */}
               {(tool.screenshots?.length ?? 0) > 0 && (
@@ -1002,82 +1091,6 @@ export default async function SlugPage({
                 </section>
               )}
 
-              {/* ── Featured In Top X Lists ── */}
-              {topXMentions.length > 0 && (
-                <section id="section-featured-in">
-                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
-                    {/* Header */}
-                    <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
-                        <Trophy className="w-4 h-4 text-amber-500" />
-                      </div>
-                      <div>
-                        <h2 className="text-base font-bold text-slate-900 leading-none mb-0.5">
-                          Featured in Top Lists
-                        </h2>
-                        <p className="text-xs text-slate-400">
-                          {tool.name} appears in {topXMentions.length} curated comparison{topXMentions.length > 1 ? 's' : ''}
-                        </p>
-                      </div>
-                    </div>
-
-                    {/* List items */}
-                    <div className="divide-y divide-slate-100">
-                      {topXMentions.map((mention) => {
-                        const rank = ((mention.tool_ids as string[]) ?? []).indexOf(tool.id);
-                        const entry = (mention.entries ?? []).find((e: { tool_id: string }) => e.tool_id === tool.id);
-                        const totalTools = (mention.tool_ids as string[])?.length ?? 0;
-                        const catLabel = CATEGORY_LABELS[mention.category] || mention.category;
-
-                        return (
-                          <Link
-                            key={mention.id}
-                            href={`/category/${mention.category}/${mention.slug}`}
-                            className="group flex items-center gap-5 px-6 py-4 hover:bg-slate-50/70 transition-colors"
-                          >
-                            {/* Rank badge */}
-                            {rank >= 0 && (
-                              <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold shadow-sm ${
-                                rank === 0 ? 'bg-amber-400 text-white ring-2 ring-amber-200/60' :
-                                rank === 1 ? 'bg-slate-400 text-white ring-2 ring-slate-200/60' :
-                                rank === 2 ? 'bg-orange-400 text-white ring-2 ring-orange-200/60' :
-                                'bg-slate-100 text-slate-500'
-                              }`}>
-                                #{rank + 1}
-                              </div>
-                            )}
-
-                            {/* Content */}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-sm font-semibold text-slate-800 group-hover:text-sky-700 transition-colors leading-snug mb-1">
-                                {mention.name}
-                              </p>
-                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                                <span className="text-xs text-slate-400 flex items-center gap-1">
-                                  <Users className="w-3 h-3" />
-                                  vs {totalTools - 1} other tool{totalTools - 1 !== 1 ? 's' : ''}
-                                </span>
-                                <span className="text-slate-200 hidden sm:inline">·</span>
-                                <span className="text-xs text-slate-400">{catLabel}</span>
-                                {entry?.best_for && (
-                                  <>
-                                    <span className="text-slate-200 hidden sm:inline">·</span>
-                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-sky-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-full">
-                                      <Target className="w-2.5 h-2.5" /> {entry.best_for}
-                                    </span>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-
-                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors shrink-0" />
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </div>
-                </section>
-              )}
 
               {/* ── Claimed founder widget ── */}
               {tool.is_claimed && (tool.claimed_founded_by || tool.claimed_founder_names || tool.claimed_about_bio) && (
