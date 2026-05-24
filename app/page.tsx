@@ -329,7 +329,7 @@ export default function HomePage() {
             Find <span className="text-white font-medium">AI Growth Tools</span>{' '}
             that actually work — {' '}
             curated across SEO, lead gen, sales outreach, social media, and more. Backed by reviews from our {' '}
-            <span className="text-emerald-400 font-semibold"> GTM experts</span>.
+            <span className="text-emerald-400 font-semibold"> GTM experts.</span>
           </p>
 
           {/* CTAs */}
