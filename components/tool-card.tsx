@@ -161,11 +161,11 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
 
           {/* Use cases */}
           {useCases.length > 0 && (
-            <div className="flex flex-wrap gap-1.5 mt-2.5">
-              {useCases.slice(0, 2).map(uc => (
+            <div className="flex gap-1.5 mt-2.5 overflow-x-auto scrollbar-none">
+              {useCases.map(uc => (
                 <span
                   key={uc}
-                  className="text-xs font-medium px-2.5 py-0.5 rounded-full border bg-slate-50 text-slate-500 border-slate-200 whitespace-nowrap"
+                  className="shrink-0 text-xs font-medium px-2.5 py-0.5 rounded-full border bg-slate-50 text-slate-500 border-slate-200 whitespace-nowrap"
                 >
                   {uc}
                 </span>
