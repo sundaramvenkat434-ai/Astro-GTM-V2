@@ -295,16 +295,10 @@ export default function HomePage() {
 
         <div className={`relative max-w-3xl mx-auto px-6 sm:px-6 lg:px-8 pt-12 pb-12 sm:pt-20 sm:pb-20 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-5'}`}>
 
-          {/* Eyebrow pill */}
-          <div className="inline-flex items-center gap-2 mb-5 sm:mb-6 px-3.5 py-1.5 rounded-full border border-white/[0.08] bg-white/[0.04]">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
-            </span>
-            <span className="type-eyebrow leading-none">
-              20+ New Tools Added
-            </span>
-          </div>
+          {/* Eyebrow */}
+          <p className="text-[13px] text-slate-400 font-medium tracking-wide mb-5 sm:mb-6">
+            Updated weekly — <span className="text-emerald-400">20+ new tools</span> this month
+          </p>
 
           {/* Headline */}
           <h1 className="font-display text-[2rem] sm:text-5xl lg:text-6xl font-extrabold text-white leading-[1.1] tracking-[-0.02em] mb-4 sm:mb-5">
