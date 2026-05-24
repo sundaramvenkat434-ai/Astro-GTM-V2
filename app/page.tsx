@@ -301,7 +301,7 @@ export default function HomePage() {
         <div className="absolute bottom-0 left-0 right-0 h-24 pointer-events-none"
           style={{ background: 'linear-gradient(to top, rgba(4,13,24,0.95) 0%, transparent 100%)' }} />
 
-        <div className={`relative max-w-3xl mx-auto px-6 sm:px-8 lg:px-10 pt-14 pb-14 sm:pt-22 sm:pb-22 lg:pt-34 lg:pb-34 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
+        <div className={`relative max-w-3xl mx-auto px-6 sm:px-8 lg:px-10 pt-14 pb-14 sm:pt-22 sm:pb-22 lg:pt-35 lg:pb-35 text-center transition-all duration-700 ${heroVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-6'}`}>
 
           {/* Eyebrow badge */}
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-slate-700/60 bg-slate-800/40 backdrop-blur-sm mb-5 sm:mb-6">
