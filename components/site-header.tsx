@@ -164,7 +164,7 @@ const SUBMIT_OPTIONS = [
   },
   {
     label: 'For Expert Review',
-    desc: 'Get detailed feedback from PMs',
+    desc: 'Get feedback reports from PMs',
     href: '/contact',
     icon: <FileSearch className="w-3.5 h-3.5" />,
     accent: '#0d9488',
