@@ -268,8 +268,8 @@ function NavDropdown({
                   {opt.icon}
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-sm font-semibold text-slate-800 leading-snug">{opt.label}</span>
-                  <span className="block text-xs text-slate-400 leading-snug">{opt.desc}</span>
+                  <span className="block text-sm font-bold text-slate-900 leading-snug">{opt.label}</span>
+                  <span className="block text-xs text-slate-500 leading-snug">{opt.desc}</span>
                 </span>
               </button>
             );
