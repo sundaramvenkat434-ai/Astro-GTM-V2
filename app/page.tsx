@@ -391,9 +391,9 @@ export default function HomePage() {
           {/* Trust strip */}
           <div className="flex items-center justify-center gap-4 sm:gap-7 flex-wrap">
             {([
-              { label: 'No login required', Icon: LogIn },
-              { label: 'Zero ads',          Icon: Scan },
-              { label: 'Weekly updates',    Icon: RefreshCw },
+              { label: 'No Sign-up', Icon: LogIn },
+              { label: 'No Ads',          Icon: Scan },
+              { label: 'Regular Updates',    Icon: RefreshCw },
             ] as const).map(({ label: item, Icon }, i, arr) => (
               <span key={item} className="flex items-center gap-1.5">
                 <span className="flex items-center gap-1.5 text-[12.5px] text-slate-500 tracking-[0.01em]">
