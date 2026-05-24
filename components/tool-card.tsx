@@ -187,20 +187,12 @@ export function ToolCard({ tool, views }: { tool: ToolCardData; views?: number }
             </span>
           )}
         </div>
-        <div className="flex items-center gap-2 shrink-0">
-          <Link
-            href={`/category/${tool.category}`}
-            className="hidden lg:inline text-xs font-medium px-2 py-0.5 rounded text-slate-500 bg-slate-100 transition-colors hover:bg-slate-200 whitespace-nowrap"
-          >
-            {SECTION_LABELS[tool.category] ?? tool.category}
-          </Link>
-          <Link
-            href={`/category/${tool.category}/${tool.slug}`}
-            className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] transition-all shadow-sm whitespace-nowrap"
-          >
-            View Tool <ExternalLink className="w-3 h-3 text-slate-400" />
-          </Link>
-        </div>
+        <Link
+          href={`/category/${tool.category}/${tool.slug}`}
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg hover:bg-slate-50 hover:border-slate-300 active:scale-[0.97] transition-all shadow-sm whitespace-nowrap shrink-0"
+        >
+          View Tool <ExternalLink className="w-3 h-3 text-slate-400" />
+        </Link>
       </div>
     </div>
   );
