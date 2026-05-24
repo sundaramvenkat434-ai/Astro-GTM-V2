@@ -246,14 +246,14 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                 if (allUseCases.length === 0) return null;
                 const doubled = [...allUseCases, ...allUseCases];
                 return (
-                  <div className="mt-7 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
+                  <div className="mt-6 overflow-hidden">
                     <div className="marquee-track">
                       {doubled.map((uc, i) => (
                         <span
                           key={i}
-                          className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm whitespace-nowrap shrink-0 mx-1.5"
+                          className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-700 bg-white border border-slate-200 px-3.5 py-1.5 rounded-full shadow-sm whitespace-nowrap shrink-0 mx-1"
                         >
-                          <Zap className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                          <Zap className="w-3 h-3 text-sky-500 shrink-0" />
                           {uc}
                         </span>
                       ))}
