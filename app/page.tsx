@@ -341,21 +341,24 @@ export default function HomePage() {
               onClick={() => document.getElementById('tools-section')?.scrollIntoView({ behavior: 'smooth' })}
               onMouseEnter={() => setCreditsHover(true)}
               onMouseLeave={() => setCreditsHover(false)}
-              className="relative inline-flex items-center justify-center gap-2 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
+              className="relative inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
-                background: 'rgba(15,23,42,0.85)',
-                border: creditsHover ? '1.5px solid rgba(251,191,36,0.55)' : '1.5px solid rgba(255,255,255,0.14)',
+                background: 'linear-gradient(145deg, #0f1729 0%, #162032 50%, #0f1729 100%)',
+                border: creditsHover ? '1.5px solid rgba(251,191,36,0.6)' : '1.5px solid rgba(251,191,36,0.25)',
                 color: 'rgba(255,255,255,0.9)',
-                boxShadow: creditsHover ? '0 0 0 1.5px rgba(251,191,36,0.2), 0 6px 20px rgba(251,191,36,0.12)' : '0 0 0 1.5px rgba(0,0,0,0.4), 0 4px 12px rgba(0,0,0,0.3)',
+                boxShadow: creditsHover
+                  ? '0 0 0 1px rgba(251,191,36,0.3), 0 8px 24px rgba(251,191,36,0.15), inset 0 1px 0 rgba(251,191,36,0.1)'
+                  : '0 0 0 1px rgba(251,191,36,0.1), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
                 letterSpacing: '-0.01em',
                 transition: 'all 0.3s ease',
               }}
             >
               <Gift
-                className="w-4 h-4 shrink-0 transition-all duration-300"
+                className="w-4.5 h-4.5 shrink-0 transition-all duration-300"
                 style={{
-                  color: creditsHover ? '#fbbf24' : '#f59e0b',
-                  transform: creditsHover ? 'rotate(-12deg) scale(1.2)' : 'none',
+                  color: creditsHover ? '#fde68a' : '#fbbf24',
+                  transform: creditsHover ? 'rotate(-12deg) scale(1.15)' : 'none',
+                  filter: creditsHover ? 'drop-shadow(0 0 4px rgba(251,191,36,0.4))' : 'none',
                 }}
               />
               <span className="text-white font-bold">FREE</span>
@@ -366,7 +369,7 @@ export default function HomePage() {
                 $50 Credits
               </span>
               {creditsHover && (
-                <span className="absolute inset-0 translate-x-[-100%] animate-[shimmer_0.8s_ease_forwards] bg-gradient-to-r from-transparent via-amber-300/10 to-transparent pointer-events-none" />
+                <span className="absolute inset-0 translate-x-[-100%] animate-[shimmer_0.8s_ease_forwards] bg-gradient-to-r from-transparent via-amber-300/15 to-transparent pointer-events-none" />
               )}
             </button>
           </div>
@@ -472,7 +475,7 @@ export default function HomePage() {
               <p className="text-slate-400 text-sm">Try a different search or category.</p>
             </div>
           ) : (
-            <div className="space-y-12">
+            <div className="space-y-14">
               {sections.map(cat => {
                 const sectionTools = sortedFiltered.filter(t => t.category === cat);
                 if (!sectionTools.length) return null;
@@ -481,14 +484,19 @@ export default function HomePage() {
                 return (
                   <section key={cat} id={`section-${cat}`}>
                     {/* Section header */}
-                    <div className="flex items-center justify-between gap-3 mb-4">
-                      <div className="flex items-baseline gap-2">
-                        <h3 className="text-[15px] font-bold text-slate-900">{SECTION_LABELS[cat]}</h3>
-                        <span className="text-xs text-slate-400">{totalCount} tool{totalCount !== 1 ? 's' : ''}</span>
+                    <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200/70">
+                      <div className="flex items-center gap-3">
+                        <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100/80 border border-amber-200/60 text-amber-600">
+                          {CATEGORY_ICONS[cat] ?? CATEGORY_ICONS['all']}
+                        </span>
+                        <div>
+                          <h3 className="text-base font-bold text-slate-900 tracking-tight">{SECTION_LABELS[cat]}</h3>
+                          <span className="text-xs text-slate-400 font-medium">{totalCount} tool{totalCount !== 1 ? 's' : ''}</span>
+                        </div>
                       </div>
                       <Link
                         href={`/category/${cat}`}
-                        className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-sky-600 transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         View All <ArrowRight className="w-3 h-3" />
                       </Link>
@@ -498,10 +506,10 @@ export default function HomePage() {
                       {visibleTools.map(tool => <ToolCard key={tool.id} tool={tool} views={viewCounts[tool.id]} />)}
                     </div>
                     {totalCount > 9 && (
-                      <div className="mt-5 flex justify-center">
+                      <div className="mt-6 flex justify-center">
                         <Link
                           href={`/category/${cat}`}
-                          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-slate-600 bg-white border border-slate-200 rounded-lg hover:border-slate-300 hover:shadow-sm transition-all"
+                          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:border-amber-200 hover:bg-amber-50/50 hover:text-amber-800 hover:shadow-sm transition-all"
                         >
                           See all {totalCount} tools in {SECTION_LABELS[cat]} <ChevronRight className="w-4 h-4" />
                         </Link>
