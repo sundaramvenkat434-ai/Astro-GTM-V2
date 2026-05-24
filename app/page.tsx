@@ -412,7 +412,7 @@ export default function HomePage() {
           <div className="mb-8">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5">
               <div>
-                <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Explore Tools</h2>
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Explore Tools</h2>
                 <p className="text-sm text-slate-500 mt-1">
                   {loading
                     ? 'Loading...'
@@ -481,21 +481,16 @@ export default function HomePage() {
                 return (
                   <section key={cat} id={`section-${cat}`}>
                     {/* Section header */}
-                    <div className="flex items-center justify-between gap-3 mb-5">
-                      <div className="flex items-center gap-3">
-                        <span className="w-9 h-9 rounded-lg flex items-center justify-center text-slate-500 bg-white border border-slate-200 shadow-sm">
-                          {CATEGORY_ICONS[cat]}
-                        </span>
-                        <div>
-                          <h3 className="text-lg font-bold text-slate-900 leading-tight">{SECTION_LABELS[cat]}</h3>
-                          <p className="text-xs text-slate-400 font-medium mt-0.5">{totalCount} tool{totalCount !== 1 ? 's' : ''}</p>
-                        </div>
+                    <div className="flex items-center justify-between gap-3 mb-4">
+                      <div className="flex items-baseline gap-2">
+                        <h3 className="text-[15px] font-bold text-slate-900">{SECTION_LABELS[cat]}</h3>
+                        <span className="text-xs text-slate-400">{totalCount} tool{totalCount !== 1 ? 's' : ''}</span>
                       </div>
                       <Link
                         href={`/category/${cat}`}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-1.5 text-xs font-semibold text-sky-600 bg-sky-50 hover:bg-sky-100 border border-sky-200 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1 text-xs font-medium text-slate-500 hover:text-sky-600 transition-colors"
                       >
-                        View All <ArrowRight className="w-3.5 h-3.5" />
+                        View All <ArrowRight className="w-3 h-3" />
                       </Link>
                     </div>
                     {/* Tools grid */}
@@ -548,16 +543,9 @@ function TopXRankingsSection({
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14">
 
         {/* Section header */}
-        <div className="flex items-center justify-between gap-4 mb-8">
-          <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-xl bg-sky-600 flex items-center justify-center shadow-sm">
-              <Trophy className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <h2 className="text-2xl sm:text-3xl font-bold text-slate-900 tracking-tight">Top Rankings</h2>
-              <p className="text-sm text-slate-500 mt-0.5">Curated comparisons of the best tools</p>
-            </div>
-          </div>
+        <div className="mb-8">
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">Top Rankings</h2>
+          <p className="text-sm text-slate-500 mt-1">Curated comparisons of the best tools</p>
         </div>
 
         {/* Cards grid */}
