@@ -297,7 +297,7 @@ export default function HomePage() {
 
           {/* Eyebrow */}
           <p className="text-[13px] text-slate-400 font-medium tracking-wide mb-5 sm:mb-6">
-            Added This Week — <span className="text-emerald-400">20+ New tools</span> this month
+            Added This Week — <span className="text-emerald-400">20+ New Tools</span>
           </p>
 
           {/* Headline */}
