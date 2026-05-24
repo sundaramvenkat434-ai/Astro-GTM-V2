@@ -310,7 +310,7 @@ export default function HomePage() {
               <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-400" />
             </span>
             <span className="text-[13px] text-slate-300 font-medium tracking-wide">
-              20+ Tools<span className="text-emerald-400 font-semibold">This Week</span>
+              20+ Tools <span className="text-emerald-400 font-semibold">This Week</span>
             </span>
           </div>
 
