@@ -114,7 +114,7 @@ export default async function CategoryPage({ params }: { params: { category: str
       </section>
 
       {/* Tool Grid */}
-      <section id="tools" className="max-w-5xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
+      <section id="tools" className="max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-12">
         {items.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-center">
             <div className="w-14 h-14 rounded-2xl bg-slate-100 flex items-center justify-center mb-4">
@@ -126,7 +126,7 @@ export default async function CategoryPage({ params }: { params: { category: str
         ) : (
           <>
             <h2 className="text-xl font-bold text-slate-900 mb-6">{cat.name} Tools</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
               {items.map((tool) => (
                 <ToolCard
                   key={tool.id}

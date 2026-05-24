@@ -994,12 +994,10 @@ export default async function SlugPage({
                       View all <span aria-hidden="true">&rarr;</span>
                     </Link>
                   </div>
-                  <div className="bg-gradient-to-b from-slate-50/40 to-white border border-slate-200/60 rounded-2xl p-2.5 sm:p-3.5">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {similarTools.map((s) => (
-                        <ToolCard key={s.id} tool={s} views={similarViewCounts[s.id]} />
-                      ))}
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {similarTools.map((s) => (
+                      <ToolCard key={s.id} tool={s} views={similarViewCounts[s.id]} />
+                    ))}
                   </div>
                 </section>
               )}
