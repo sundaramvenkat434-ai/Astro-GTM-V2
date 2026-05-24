@@ -32,6 +32,10 @@ import {
   BadgeCheck,
   ShieldCheck,
   Eye,
+  Trophy,
+  Target,
+  Users,
+  ChevronRight,
 } from 'lucide-react';
 import { SiteHeader, PageBreadcrumb } from '@/components/site-header';
 import { UpvoteButton } from '@/components/upvote-button';
@@ -277,6 +281,24 @@ async function getTopXTools(toolIds: string[]): Promise<TopXTool[]> {
     .filter(Boolean) as TopXTool[];
 }
 
+interface TopXMention {
+  id: string;
+  slug: string;
+  name: string;
+  category: string;
+  tool_ids: string[];
+  entries: { tool_id: string; best_for: string; score: number }[];
+}
+
+async function getTopXMentions(toolId: string, toolCategory: string): Promise<TopXMention[]> {
+  const { data } = await supabaseServer
+    .from('top_x_pages')
+    .select('id, slug, name, category, tool_ids, entries')
+    .eq('status', 'published')
+    .contains('tool_ids', JSON.stringify([toolId]));
+  return (data as TopXMention[] | null) ?? [];
+}
+
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
 function parseReviewCount(count: string): number {
@@ -478,7 +500,7 @@ function StarRating({ rating, toolId }: { rating: number; toolId: string }) {
         {[1, 2, 3, 4, 5].map((s) => (
           <Star
             key={s}
-            className={`w-3.5 h-3.5 ${
+            className={`w-4 h-4 ${
               s <= Math.floor(rating)
                 ? 'fill-amber-400 text-amber-400'
                 : s - 0.5 <= rating
@@ -488,8 +510,8 @@ function StarRating({ rating, toolId }: { rating: number; toolId: string }) {
           />
         ))}
       </div>
-      <span className="text-sm font-semibold text-slate-800">{rating}</span>
-      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-[11px] font-medium text-slate-500">
+      <span className="text-sm font-bold text-slate-800">{rating}</span>
+      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-slate-100 border border-slate-200 text-xs font-medium text-slate-500">
         {editorCount} Editor Reviews
       </span>
     </div>
@@ -514,11 +536,11 @@ function SectionHeading({
   };
   return (
     <div className="mb-5">
-      <div className="flex items-center gap-2.5">
-        <div className={`w-1 h-5 rounded-full shrink-0 ${bar[accent]}`} />
-        <h2 className="text-[15px] font-bold text-slate-900 tracking-tight">{children}</h2>
+      <div className="flex items-center gap-3">
+        <div className={`w-1 h-6 rounded-full shrink-0 ${bar[accent]}`} />
+        <h2 className="text-lg font-bold text-slate-900 tracking-tight">{children}</h2>
       </div>
-      {description && <p className="text-[12px] text-slate-400 mt-1 ml-[14px]">{description}</p>}
+      {description && <p className="text-sm text-slate-400 mt-1 ml-4">{description}</p>}
     </div>
   );
 }
@@ -537,10 +559,11 @@ export default async function SlugPage({
     const rawSimilar = await getSimilarTools(tool.category, tool.id);
     const evenCount = Math.min(Math.floor(rawSimilar.length / 2) * 2, 10);
     const similarTools = rawSimilar.slice(0, evenCount);
-    const [author, viewCount, similarViewCounts] = await Promise.all([
+    const [author, viewCount, similarViewCounts, topXMentions] = await Promise.all([
       getAuthor(tool.reviewer_id),
       getViewCount(tool.id),
       getViewCounts(similarTools.map((t) => t.id)),
+      getTopXMentions(tool.id, tool.category),
     ]);
     const jsonLdItems = buildToolJsonLd(tool, author);
 
@@ -553,6 +576,7 @@ export default async function SlugPage({
       ...(tool.pricing.length > 0 ? [{ id: 'pricing', label: 'Pricing' }] : []),
       ...(tool.faqs.length > 0 ? [{ id: 'faq', label: 'FAQs' }] : []),
       ...(similarTools.length > 0 ? [{ id: 'similar-tools', label: 'Similar Tools' }] : []),
+      ...(topXMentions.length > 0 ? [{ id: 'featured-in', label: 'Featured In' }] : []),
       { id: 'editor-details', label: 'Editor Details' },
     ];
 
@@ -627,7 +651,7 @@ export default async function SlugPage({
                             </span>
                           )}
                         </div>
-                        <p className="text-[15px] text-slate-500 leading-snug mb-3">{tool.tagline}</p>
+                        <p className="text-base text-slate-500 leading-relaxed mb-3">{tool.tagline}</p>
 
                         {/* Rating + meta row */}
                         <div className="flex flex-wrap items-center gap-3">
@@ -635,13 +659,13 @@ export default async function SlugPage({
                           <span className="w-px h-4 bg-slate-200" />
                           <Link
                             href={`/category/${tool.category}`}
-                            className="text-[11px] font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1 rounded-full capitalize transition-colors"
+                            className="text-xs font-semibold text-sky-700 bg-sky-50 hover:bg-sky-100 border border-sky-200 px-2.5 py-1 rounded-full capitalize transition-colors"
                           >
                             {categoryLabel}
                           </Link>
                           <UpvoteButton toolId={tool.id} initialCount={tool.upvotes ?? 0} />
                           {viewCount > 0 && (
-                            <span className="inline-flex items-center gap-1.5 text-[11px] text-slate-400 font-medium">
+                            <span className="inline-flex items-center gap-1.5 text-xs text-slate-400 font-medium">
                               <Eye className="w-3.5 h-3.5 shrink-0" />
                               {viewCount >= 1000 ? `${(viewCount / 1000).toFixed(1)}k` : viewCount} views
                             </span>
@@ -651,8 +675,8 @@ export default async function SlugPage({
                         {(() => {
                           const pub = tool.published_date ?? tool.created_at;
                           return (
-                            <p className="text-[11px] text-slate-400 mt-2.5 flex items-center gap-1.5">
-                              <CalendarDays className="w-3 h-3 shrink-0" />
+                            <p className="text-xs text-slate-400 mt-2.5 flex items-center gap-1.5">
+                              <CalendarDays className="w-3.5 h-3.5 shrink-0" />
                               <span>Added {new Date(pub).toLocaleDateString('en-US', { year: 'numeric', month: 'long' })}</span>
                             </p>
                           );
@@ -673,12 +697,12 @@ export default async function SlugPage({
                     {/* Use Cases */}
                     {tool.use_cases.length > 0 && (
                       <div className="mt-5 pt-5 border-t border-slate-200/60">
-                        <p className="text-[10px] font-semibold uppercase tracking-widest text-slate-400 mb-2.5">Use Cases</p>
-                        <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
+                        <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2.5">Use Cases</p>
+                        <div className="flex gap-2 overflow-x-auto scrollbar-none pb-0.5">
                           {tool.use_cases.map((uc: string, idx: number) => (
                             <span
                               key={uc}
-                              className={`shrink-0 inline-flex items-center gap-1.5 text-[12px] font-medium px-3 py-1 rounded-lg transition-colors shadow-sm ${
+                              className={`shrink-0 inline-flex items-center gap-1.5 text-sm font-medium px-3.5 py-1.5 rounded-lg transition-colors shadow-sm ${
                                 idx === 0
                                   ? 'text-sky-800 bg-sky-50 border-2 border-sky-300 font-semibold'
                                   : 'text-slate-600 bg-white/80 border border-slate-200 hover:border-slate-300 hover:bg-white'
@@ -689,7 +713,7 @@ export default async function SlugPage({
                               />
                               {uc}
                               {idx === 0 && (
-                                <span className="ml-0.5 text-[9px] font-bold uppercase tracking-wider text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-md">Primary</span>
+                                <span className="ml-0.5 text-[10px] font-bold uppercase tracking-wider text-sky-600 bg-sky-100 px-1.5 py-0.5 rounded-md">Primary</span>
                               )}
                             </span>
                           ))}
@@ -730,31 +754,31 @@ export default async function SlugPage({
                 <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
                   {/* About text */}
                   <div className="p-6 sm:p-8 border-b border-slate-100">
-                    <h2 className="text-sm font-semibold text-slate-900 mb-3">About {tool.name}</h2>
-                    <p className="text-[14px] text-slate-600 leading-[1.75]">{tool.long_description}</p>
+                    <h2 className="text-base font-semibold text-slate-900 mb-3">About {tool.name}</h2>
+                    <p className="text-[15px] text-slate-600 leading-[1.8]">{tool.long_description}</p>
                   </div>
                   {/* Features grid — always render header, grid only when present */}
                   <div className="px-6 sm:px-8 pt-6 pb-7">
-                    <div className="flex items-center gap-2 mb-5">
-                      <div className="w-1 h-4 rounded-full bg-sky-500 shrink-0" />
-                      <h3 className="text-[13px] font-bold text-slate-900 tracking-tight uppercase">Key Features</h3>
+                    <div className="flex items-center gap-2.5 mb-5">
+                      <div className="w-1 h-5 rounded-full bg-sky-500 shrink-0" />
+                      <h3 className="text-sm font-bold text-slate-900 tracking-tight uppercase">Key Features</h3>
                     </div>
                     {tool.features.length > 0 ? (
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {tool.features.map((f: { title: string; description: string }, i: number) => (
                           <div key={i} className="group flex items-start gap-3 p-4 rounded-xl border border-slate-100 bg-slate-50/50 hover:border-sky-200 hover:bg-sky-50/40 hover:shadow-sm transition-all">
-                            <div className="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 bg-sky-100 text-sky-600 mt-0.5 group-hover:bg-sky-200 transition-colors">
-                              <Check className="w-3.5 h-3.5" />
+                            <div className="w-8 h-8 rounded-lg flex items-center justify-center shrink-0 bg-sky-100 text-sky-600 mt-0.5 group-hover:bg-sky-200 transition-colors">
+                              <Check className="w-4 h-4" />
                             </div>
                             <div>
-                              <p className="font-semibold text-[13px] text-slate-900 mb-0.5">{f.title}</p>
-                              <p className="text-[12px] text-slate-500 leading-relaxed">{f.description}</p>
+                              <p className="font-semibold text-sm text-slate-900 mb-0.5">{f.title}</p>
+                              <p className="text-sm text-slate-500 leading-relaxed">{f.description}</p>
                             </div>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <p className="text-[13px] text-slate-400 italic">No features listed yet.</p>
+                      <p className="text-sm text-slate-400 italic">No features listed yet.</p>
                     )}
                   </div>
                 </div>
@@ -772,7 +796,7 @@ export default async function SlugPage({
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 flex-wrap">
-                            <span className="text-[14px] font-bold text-sky-900 tracking-tight">Our Opinion</span>
+                            <span className="text-base font-bold text-sky-900 tracking-tight">Our Opinion</span>
                             <span className="inline-flex items-center px-1.5 py-0.5 rounded-full text-[10px] font-semibold uppercase tracking-wider bg-sky-100 text-sky-700 border border-sky-200">
                               Editorial
                             </span>
@@ -786,7 +810,7 @@ export default async function SlugPage({
                               </div>
                             </div>
                           </div>
-                          <p className="text-[11px] text-slate-500 mt-0.5">Collective take from our editorial reviewers</p>
+                          <p className="text-xs text-slate-500 mt-0.5">Collective take from our editorial reviewers</p>
                         </div>
                         {/* Reviewer avatar */}
                         <Link href={`/author/${author.slug}`} rel="author" className="flex items-center gap-1.5 shrink-0 group/rev">
@@ -806,10 +830,10 @@ export default async function SlugPage({
                       {(tool.honest_take?.length ?? 0) > 0 && (
                         <div className="p-5 bg-white">
                           <div className="flex items-center gap-2 mb-4">
-                            <div className="w-5 h-5 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
-                              <ThumbsUp className="w-3 h-3 text-white" />
+                            <div className="w-6 h-6 rounded-md bg-sky-600 flex items-center justify-center shrink-0">
+                              <ThumbsUp className="w-3.5 h-3.5 text-white" />
                             </div>
-                            <span className="text-[12px] font-bold text-sky-700 uppercase tracking-wider">Strengths</span>
+                            <span className="text-sm font-bold text-sky-700 uppercase tracking-wider">Strengths</span>
                           </div>
                           <div className="space-y-2.5">
                             {(tool.honest_take ?? []).map((bullet, i) => (
@@ -817,7 +841,7 @@ export default async function SlugPage({
                                 <div className="w-5 h-5 rounded-full bg-sky-600 flex items-center justify-center shrink-0 mt-0.5 shadow-sm group-hover/item:bg-sky-700 transition-colors">
                                   <span className="text-white text-[10px] font-bold leading-none">{i + 1}</span>
                                 </div>
-                                <p className="text-[13px] text-slate-700 leading-relaxed">{bullet}</p>
+                                <p className="text-sm text-slate-700 leading-relaxed">{bullet}</p>
                               </div>
                             ))}
                           </div>
@@ -827,10 +851,10 @@ export default async function SlugPage({
                       {(tool.limitations?.length ?? 0) > 0 && (
                         <div className="p-5 bg-white">
                           <div className="flex items-center gap-2 mb-4">
-                            <div className="w-5 h-5 rounded-md bg-amber-400 flex items-center justify-center shrink-0">
-                              <ThumbsDown className="w-3 h-3 text-white" />
+                            <div className="w-6 h-6 rounded-md bg-amber-400 flex items-center justify-center shrink-0">
+                              <ThumbsDown className="w-3.5 h-3.5 text-white" />
                             </div>
-                            <span className="text-[12px] font-bold text-amber-600 uppercase tracking-wider">Limitations</span>
+                            <span className="text-sm font-bold text-amber-600 uppercase tracking-wider">Limitations</span>
                           </div>
                           <div className="space-y-2.5">
                             {(tool.limitations ?? []).map((bullet, i) => (
@@ -838,7 +862,7 @@ export default async function SlugPage({
                                 <div className="w-5 h-5 rounded-full bg-amber-300/80 flex items-center justify-center shrink-0 mt-0.5">
                                   <span className="text-amber-800 text-[10px] font-bold leading-none">{i + 1}</span>
                                 </div>
-                                <p className="text-[13px] text-slate-600 leading-relaxed">{bullet}</p>
+                                <p className="text-sm text-slate-600 leading-relaxed">{bullet}</p>
                               </div>
                             ))}
                           </div>
@@ -879,12 +903,12 @@ export default async function SlugPage({
                       className={`rounded-xl border ${cardBorder} ${hoverBorder} ${cardBg} px-4 py-4 transition-all hover:shadow-sm group`}
                     >
                       <div className="flex items-start justify-between gap-3 mb-2.5">
-                        <p className="text-[13px] font-semibold text-slate-800 leading-snug">{entry.audience}</p>
+                        <p className="text-sm font-semibold text-slate-800 leading-snug">{entry.audience}</p>
                         <span className={`inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border shrink-0 ${tier.badge}`}>
                           {tier.label}
                         </span>
                       </div>
-                      {entry.note && <p className="text-[11px] text-slate-500 leading-relaxed mb-3 line-clamp-2">{entry.note}</p>}
+                      {entry.note && <p className="text-xs text-slate-500 leading-relaxed mb-3 line-clamp-2">{entry.note}</p>}
                       {!entry.note && <div className="mb-3" />}
                       <div className="w-full h-2 bg-slate-100/80 rounded-full overflow-hidden">
                         <div
@@ -933,13 +957,13 @@ export default async function SlugPage({
                             </div>
                           )}
                           <div className="mb-5">
-                            <p className="text-[10px] font-bold uppercase tracking-widest mb-2 text-slate-400">{plan.plan}</p>
+                            <p className="text-xs font-bold uppercase tracking-widest mb-2 text-slate-400">{plan.plan}</p>
                             <p className={`text-3xl font-bold tracking-tight ${isFree ? 'text-emerald-600' : 'text-slate-900'}`}>{plan.price}</p>
                           </div>
                           <ul className="space-y-2.5 flex-1">
                             {plan.features.map((f: string) => (
-                              <li key={f} className="flex items-start gap-2 text-[13px] text-slate-600">
-                                <Check className={`w-3.5 h-3.5 shrink-0 mt-0.5 ${isFree ? 'text-emerald-500' : 'text-slate-400'}`} />
+                              <li key={f} className="flex items-start gap-2 text-sm text-slate-600">
+                                <Check className={`w-4 h-4 shrink-0 mt-0.5 ${isFree ? 'text-emerald-500' : 'text-slate-400'}`} />
                                 {f}
                               </li>
                             ))}
@@ -960,11 +984,11 @@ export default async function SlugPage({
                 <section id="section-similar-tools">
                   <div className="mb-5 flex items-start justify-between gap-4">
                     <div>
-                      <div className="flex items-center gap-2.5">
-                        <div className="w-1 h-5 rounded-full shrink-0 bg-slate-400" />
-                        <h2 className="text-[15px] font-bold text-slate-900 tracking-tight">Similar Tools</h2>
+                      <div className="flex items-center gap-3">
+                        <div className="w-1 h-6 rounded-full shrink-0 bg-slate-400" />
+                        <h2 className="text-lg font-bold text-slate-900 tracking-tight">Similar Tools</h2>
                       </div>
-                      <p className="text-[12px] text-slate-400 mt-1 ml-[14px]">Other {categoryLabel} tools worth exploring</p>
+                      <p className="text-sm text-slate-400 mt-1 ml-4">Other {categoryLabel} tools worth exploring</p>
                     </div>
                     <Link href={`/category/${tool.category}`} className="inline-flex items-center gap-1 text-xs text-sky-600 hover:text-sky-800 transition-colors font-medium whitespace-nowrap mt-1 px-2.5 py-1 rounded-lg hover:bg-sky-50">
                       View all <span aria-hidden="true">&rarr;</span>
@@ -980,35 +1004,112 @@ export default async function SlugPage({
                 </section>
               )}
 
+              {/* ── Featured In Top X Lists ── */}
+              {topXMentions.length > 0 && (
+                <section id="section-featured-in">
+                  <div className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
+                    {/* Header */}
+                    <div className="px-6 py-4 border-b border-slate-100 flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center shrink-0">
+                        <Trophy className="w-4 h-4 text-amber-500" />
+                      </div>
+                      <div>
+                        <h2 className="text-base font-bold text-slate-900 leading-none mb-0.5">
+                          Featured in Top Lists
+                        </h2>
+                        <p className="text-xs text-slate-400">
+                          {tool.name} appears in {topXMentions.length} curated comparison{topXMentions.length > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                    </div>
+
+                    {/* List items */}
+                    <div className="divide-y divide-slate-100">
+                      {topXMentions.map((mention) => {
+                        const rank = ((mention.tool_ids as string[]) ?? []).indexOf(tool.id);
+                        const entry = (mention.entries ?? []).find((e: { tool_id: string }) => e.tool_id === tool.id);
+                        const totalTools = (mention.tool_ids as string[])?.length ?? 0;
+                        const catLabel = CATEGORY_LABELS[mention.category] || mention.category;
+
+                        return (
+                          <Link
+                            key={mention.id}
+                            href={`/category/${mention.category}/${mention.slug}`}
+                            className="group flex items-center gap-5 px-6 py-4 hover:bg-slate-50/70 transition-colors"
+                          >
+                            {/* Rank badge */}
+                            {rank >= 0 && (
+                              <div className={`shrink-0 w-10 h-10 rounded-xl flex items-center justify-center text-sm font-extrabold shadow-sm ${
+                                rank === 0 ? 'bg-amber-400 text-white ring-2 ring-amber-200/60' :
+                                rank === 1 ? 'bg-slate-400 text-white ring-2 ring-slate-200/60' :
+                                rank === 2 ? 'bg-orange-400 text-white ring-2 ring-orange-200/60' :
+                                'bg-slate-100 text-slate-500'
+                              }`}>
+                                #{rank + 1}
+                              </div>
+                            )}
+
+                            {/* Content */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-slate-800 group-hover:text-sky-700 transition-colors leading-snug mb-1">
+                                {mention.name}
+                              </p>
+                              <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                                <span className="text-xs text-slate-400 flex items-center gap-1">
+                                  <Users className="w-3 h-3" />
+                                  vs {totalTools - 1} other tool{totalTools - 1 !== 1 ? 's' : ''}
+                                </span>
+                                <span className="text-slate-200 hidden sm:inline">·</span>
+                                <span className="text-xs text-slate-400">{catLabel}</span>
+                                {entry?.best_for && (
+                                  <>
+                                    <span className="text-slate-200 hidden sm:inline">·</span>
+                                    <span className="inline-flex items-center gap-1 text-xs font-medium text-sky-700 bg-sky-50 border border-sky-100 px-2 py-0.5 rounded-full">
+                                      <Target className="w-2.5 h-2.5" /> {entry.best_for}
+                                    </span>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+
+                            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-sky-500 transition-colors shrink-0" />
+                          </Link>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </section>
+              )}
+
               {/* ── Claimed founder widget ── */}
               {tool.is_claimed && (tool.claimed_founded_by || tool.claimed_founder_names || tool.claimed_about_bio) && (
                 <section id="section-claimed" className="bg-white border border-slate-200/80 rounded-2xl shadow-sm overflow-hidden">
                   <div className="flex items-center gap-2.5 px-6 py-4 border-b border-slate-100 bg-sky-50/60">
                     <BadgeCheck className="w-4 h-4 text-sky-600 shrink-0" />
                     <div>
-                      <h2 className="text-[13px] font-bold text-slate-900 leading-none mb-0.5">Verified Listing</h2>
-                      <p className="text-[11px] text-sky-600 font-medium">Claimed &amp; verified by the founders</p>
+                      <h2 className="text-sm font-bold text-slate-900 leading-none mb-0.5">Verified Listing</h2>
+                      <p className="text-xs text-sky-600 font-medium">Claimed &amp; verified by the founders</p>
                     </div>
                   </div>
                   <div className="px-6 py-5 space-y-2">
                     {tool.claimed_founded_by && (
-                      <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-widest">{tool.claimed_founded_by}</p>
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{tool.claimed_founded_by}</p>
                     )}
                     {tool.claimed_founder_names && (
                       <div>
                         {tool.claimed_founder_linkedin ? (
                           <a href={tool.claimed_founder_linkedin} target="_blank" rel="noopener noreferrer"
-                            className="text-[13px] font-semibold text-slate-900 hover:text-sky-700 transition-colors flex items-center gap-1.5">
+                            className="text-sm font-semibold text-slate-900 hover:text-sky-700 transition-colors flex items-center gap-1.5">
                             {tool.claimed_founder_names}
                             <Linkedin className="w-3.5 h-3.5 text-sky-500" />
                           </a>
                         ) : (
-                          <p className="text-[13px] font-semibold text-slate-900">{tool.claimed_founder_names}</p>
+                          <p className="text-sm font-semibold text-slate-900">{tool.claimed_founder_names}</p>
                         )}
                       </div>
                     )}
                     {tool.claimed_about_bio && (
-                      <p className="text-[13px] text-slate-600 leading-relaxed">{tool.claimed_about_bio}</p>
+                      <p className="text-sm text-slate-600 leading-relaxed">{tool.claimed_about_bio}</p>
                     )}
                   </div>
                 </section>
