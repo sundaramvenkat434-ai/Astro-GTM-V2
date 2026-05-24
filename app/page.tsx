@@ -297,7 +297,7 @@ export default function HomePage() {
 
           {/* Eyebrow */}
           <p className="text-[13px] text-slate-400 font-medium tracking-wide mb-5 sm:mb-6">
-            Added This Week — <span className="text-emerald-400">20+ New Tools</span>
+            Added This Week — <span className="text-emerald-400">20+ Tools</span>
           </p>
 
           {/* Headline */}
@@ -312,7 +312,7 @@ export default function HomePage() {
 
           {/* Sub-headline */}
           <p className="font-sans text-[15px] sm:text-lg font-normal text-slate-400 leading-[1.65] max-w-[520px] mx-auto mb-7 sm:mb-9 tracking-[0.005em]">
-            Discover proven{' '}
+            Discover new, proven{' '}
             <span className="text-white font-medium">AI growth tools</span>{' '}
             across SEO, lead generation, sales outreach, social media, and more,{' '}
             <span className="text-emerald-400 font-semibold">reviewed by experts</span>.
