@@ -358,11 +358,11 @@ export default function HomePage() {
               className="relative inline-flex items-center justify-center gap-2.5 w-full sm:w-auto px-7 py-3.5 rounded-lg font-bold tracking-tight text-[14px] transition-all duration-300 overflow-hidden hover:scale-[1.03] active:scale-[0.97]"
               style={{
                 background: 'linear-gradient(145deg, #0f1729 0%, #162032 50%, #0f1729 100%)',
-                border: creditsHover ? '1.5px solid rgba(251,191,36,0.6)' : '1.5px solid rgba(251,191,36,0.25)',
+                border: creditsHover ? '1.5px solid rgba(56,189,248,0.6)' : '1.5px solid rgba(56,189,248,0.25)',
                 color: 'rgba(255,255,255,0.9)',
                 boxShadow: creditsHover
-                  ? '0 0 0 1px rgba(251,191,36,0.3), 0 8px 28px rgba(251,191,36,0.15), inset 0 1px 0 rgba(251,191,36,0.1)'
-                  : '0 0 0 1px rgba(251,191,36,0.1), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
+                  ? '0 0 0 1px rgba(56,189,248,0.3), 0 8px 28px rgba(14,165,233,0.15), inset 0 1px 0 rgba(56,189,248,0.1)'
+                  : '0 0 0 1px rgba(56,189,248,0.1), 0 4px 16px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.05)',
                 letterSpacing: '-0.01em',
                 transition: 'all 0.3s ease',
               }}
@@ -370,20 +370,20 @@ export default function HomePage() {
               <Gift
                 className="w-4 h-4 shrink-0 transition-all duration-300"
                 style={{
-                  color: creditsHover ? '#fde68a' : '#fbbf24',
+                  color: creditsHover ? '#7dd3fc' : '#38bdf8',
                   transform: creditsHover ? 'rotate(-12deg) scale(1.15)' : 'none',
-                  filter: creditsHover ? 'drop-shadow(0 0 4px rgba(251,191,36,0.4))' : 'none',
+                  filter: creditsHover ? 'drop-shadow(0 0 4px rgba(56,189,248,0.4))' : 'none',
                 }}
               />
               <span className="text-white font-bold">FREE</span>
               <span
                 className="font-bold transition-all duration-300"
-                style={{ color: creditsHover ? '#fde68a' : '#fbbf24' }}
+                style={{ color: creditsHover ? '#7dd3fc' : '#38bdf8' }}
               >
                 $50 Credits
               </span>
               {creditsHover && (
-                <span className="absolute inset-0 translate-x-[-100%] animate-[shimmer_0.8s_ease_forwards] bg-gradient-to-r from-transparent via-amber-300/15 to-transparent pointer-events-none" />
+                <span className="absolute inset-0 translate-x-[-100%] animate-[shimmer_0.8s_ease_forwards] bg-gradient-to-r from-transparent via-sky-300/15 to-transparent pointer-events-none" />
               )}
             </button>
           </div>
@@ -500,7 +500,7 @@ export default function HomePage() {
                     {/* Section header */}
                     <div className="flex items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200/70">
                       <div className="flex items-center gap-3">
-                        <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-amber-50 to-amber-100/80 border border-amber-200/60 text-amber-600">
+                        <span className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-sky-50 to-sky-100/80 border border-sky-200/60 text-sky-600">
                           {CATEGORY_ICONS[cat] ?? CATEGORY_ICONS['all']}
                         </span>
                         <div>
@@ -510,7 +510,7 @@ export default function HomePage() {
                       </div>
                       <Link
                         href={`/category/${cat}`}
-                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-amber-700 hover:text-amber-900 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 px-3 py-1.5 rounded-lg transition-colors"
+                        className="inline-flex items-center gap-1.5 text-xs font-semibold text-sky-700 hover:text-sky-900 bg-sky-50 hover:bg-sky-100 border border-sky-200/60 px-3 py-1.5 rounded-lg transition-colors"
                       >
                         View All <ArrowRight className="w-3 h-3" />
                       </Link>
@@ -523,7 +523,7 @@ export default function HomePage() {
                       <div className="mt-6 flex justify-center">
                         <Link
                           href={`/category/${cat}`}
-                          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:border-amber-200 hover:bg-amber-50/50 hover:text-amber-800 hover:shadow-sm transition-all"
+                          className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-semibold text-slate-700 bg-white border border-slate-200 rounded-xl hover:border-sky-200 hover:bg-sky-50/50 hover:text-sky-800 hover:shadow-sm transition-all"
                         >
                           See all {totalCount} tools in {SECTION_LABELS[cat]} <ChevronRight className="w-4 h-4" />
                         </Link>
