@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { Star, Users, Check, X, ChevronRight, ArrowUpRight, Trophy, Crown, Zap, ThumbsUp, ThumbsDown, Target, ChartBar as BarChart3, Award, DollarSign } from 'lucide-react';
+import { Star, Users, Check, X, ChevronRight, ArrowUpRight, Trophy, Crown, Zap, ThumbsUp, ThumbsDown, Target, ChartBar as BarChart3, Award, DollarSign, Globe, ExternalLink } from 'lucide-react';
 import { FaqSection } from '@/components/faq-accordion';
 import { AuthorBlock } from '@/components/author-block';
 import { FALLBACK } from '@/lib/author-schema';
@@ -238,18 +238,29 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
               {page.intro && (
                 <p className="text-[14px] text-slate-600 leading-relaxed max-w-xl line-clamp-3">{page.intro}</p>
               )}
-              <div className="mt-6 -mx-4 sm:mx-0">
-                <div className="flex gap-2 overflow-x-auto pb-2 px-4 sm:px-0 scrollbar-hide">
-                  {orderedEntries.flatMap(({ tool }) =>
-                    (tool.use_cases || []).slice(0, 3)
-                  ).filter((uc, idx, arr) => arr.indexOf(uc) === idx).map((uc) => (
-                    <span key={uc} className="inline-flex items-center gap-1.5 text-[11px] font-medium text-slate-600 bg-white border border-slate-200 px-3 py-1.5 rounded-full shadow-sm whitespace-nowrap shrink-0">
-                      <Zap className="w-3 h-3 text-sky-500" />
-                      {uc}
-                    </span>
-                  ))}
-                </div>
-              </div>
+              {/* Infinite marquee use-cases strip */}
+              {(() => {
+                const allUseCases = orderedEntries
+                  .flatMap(({ tool }) => (tool.use_cases || []).slice(0, 3))
+                  .filter((uc, idx, arr) => arr.indexOf(uc) === idx);
+                if (allUseCases.length === 0) return null;
+                const doubled = [...allUseCases, ...allUseCases];
+                return (
+                  <div className="mt-7 -mx-4 sm:-mx-6 lg:-mx-8 overflow-hidden">
+                    <div className="marquee-track">
+                      {doubled.map((uc, i) => (
+                        <span
+                          key={i}
+                          className="inline-flex items-center gap-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 px-4 py-2 rounded-full shadow-sm whitespace-nowrap shrink-0 mx-1.5"
+                        >
+                          <Zap className="w-3.5 h-3.5 text-sky-500 shrink-0" />
+                          {uc}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             {/* Right -- Best Overall Card */}
@@ -361,17 +372,38 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                       </div>
                     </div>
 
-                    {/* Rank badge — right side */}
+                    {/* Rank badge + CTAs — right side */}
                     <div className="shrink-0 flex flex-col items-end gap-2">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center text-sm font-bold ring-2 ${medal ? `${medal.bg} ${medal.text} ${medal.ring}` : 'bg-slate-100 text-slate-600 ring-slate-200'}`}>
+                      {/* Rank pill */}
+                      <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold tracking-wide shadow-sm ${
+                        i === 0 ? 'bg-amber-400 text-white ring-2 ring-amber-200' :
+                        i === 1 ? 'bg-slate-400 text-white ring-2 ring-slate-200' :
+                        i === 2 ? 'bg-orange-400 text-white ring-2 ring-orange-200' :
+                        'bg-slate-100 text-slate-600'
+                      }`}>
+                        {i === 0 && <Crown className="w-3 h-3" />}
                         #{i + 1}
+                        {i === 0 && <span className="font-semibold text-amber-100 text-[10px]">Best</span>}
                       </div>
-                      <Link
-                        href={`/category/${tool.category}/${tool.slug}`}
-                        className="hidden sm:inline-flex items-center gap-1 bg-slate-900 text-white text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-slate-700 transition-colors whitespace-nowrap"
-                      >
-                        Review <ArrowUpRight className="w-3 h-3" />
-                      </Link>
+                      {/* CTA buttons */}
+                      <div className="hidden sm:flex flex-col gap-1.5 items-end mt-1">
+                        {tool.website_url && (
+                          <a
+                            href={tool.website_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap shadow-sm"
+                          >
+                            <Globe className="w-3 h-3" /> Website
+                          </a>
+                        )}
+                        <Link
+                          href={`/category/${tool.category}/${tool.slug}`}
+                          className="inline-flex items-center gap-1.5 bg-white border border-slate-200 hover:border-slate-300 text-slate-700 hover:text-slate-900 text-xs font-semibold px-3.5 py-1.5 rounded-lg transition-colors whitespace-nowrap"
+                        >
+                          <ArrowUpRight className="w-3 h-3" /> Review
+                        </Link>
+                      </div>
                     </div>
                   </div>
 
@@ -438,18 +470,7 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                   </div>
                   <div className="px-5 py-3.5">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2.5">Pricing</p>
-                    {entry.pricing_summary ? (
-                      <p className="text-sm font-semibold text-slate-800">{entry.pricing_summary}</p>
-                    ) : tool.pricing?.length > 0 ? (
-                      <div className="space-y-1">
-                        {tool.pricing.slice(0, 3).map((p, j) => (
-                          <div key={j} className="flex items-center justify-between gap-2">
-                            <span className="text-[11px] text-slate-600">{p.plan}</span>
-                            <span className="text-[11px] font-bold text-slate-800">{p.price}</span>
-                          </div>
-                        ))}
-                      </div>
-                    ) : null}
+                    <PricingDisplay tool={tool} entry={entry} />
                   </div>
                 </div>
 
@@ -471,12 +492,22 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
                 )}
 
                 {/* Mobile CTA */}
-                <div className="border-t border-slate-100 px-5 py-3 sm:hidden">
+                <div className="border-t border-slate-100 px-5 py-3 sm:hidden flex gap-2">
+                  {tool.website_url && (
+                    <a
+                      href={tool.website_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex-1 inline-flex items-center justify-center gap-1.5 bg-sky-600 hover:bg-sky-700 text-white text-xs font-semibold px-4 py-2.5 rounded-xl transition-colors"
+                    >
+                      <Globe className="w-3.5 h-3.5" /> Website
+                    </a>
+                  )}
                   <Link
                     href={`/category/${tool.category}/${tool.slug}`}
-                    className="w-full inline-flex items-center justify-center gap-1 bg-slate-900 text-white text-xs font-semibold px-4 py-2.5 rounded-xl hover:bg-slate-700 transition-colors"
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 bg-white border border-slate-200 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl hover:border-slate-300 transition-colors"
                   >
-                    Full Review <ArrowUpRight className="w-3 h-3" />
+                    <ArrowUpRight className="w-3.5 h-3.5" /> Review
                   </Link>
                 </div>
               </div>
@@ -617,6 +648,63 @@ export function TopXPageView({ page, tools, categoryLabel, siteUrl }: Props) {
           </Link>
         </div>
       </div>
+    </div>
+  );
+}
+
+// ── Pricing Display ───────────────────────────────────────────────────────────
+
+function PricingDisplay({ tool, entry }: { tool: TopXTool; entry: TopXEntry }) {
+  if (entry.pricing_summary) {
+    return <p className="text-sm font-semibold text-slate-800">{entry.pricing_summary}</p>;
+  }
+
+  if (!tool.pricing?.length) return null;
+
+  const hasFree = tool.pricing.some(
+    (p) => p.price === '$0' || /free/i.test(p.price) || /free/i.test(p.plan)
+  );
+
+  const paidTiers = tool.pricing.filter(
+    (p) => p.price !== '$0' && !/free/i.test(p.price) && !/free/i.test(p.plan)
+  );
+
+  const lowestPaid = paidTiers.reduce<{ plan: string; price: string } | null>((acc, p) => {
+    if (!acc) return p;
+    const extractNum = (s: string) => parseFloat(s.replace(/[^0-9.]/g, '')) || Infinity;
+    return extractNum(p.price) < extractNum(acc.price) ? p : acc;
+  }, null);
+
+  return (
+    <div className="space-y-2">
+      {hasFree && (
+        <div className="flex items-center gap-2 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
+          <div className="w-5 h-5 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+            <Check className="w-3 h-3 text-white" />
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-emerald-800 leading-none">Free Plan Available</p>
+            <p className="text-[10px] text-emerald-600 mt-0.5">No credit card required</p>
+          </div>
+        </div>
+      )}
+      {lowestPaid && (
+        <div className={`flex items-center gap-2 rounded-lg px-3 py-2 ${hasFree ? 'bg-slate-50 border border-slate-200' : 'bg-sky-50 border border-sky-200'}`}>
+          <DollarSign className={`w-4 h-4 shrink-0 ${hasFree ? 'text-slate-400' : 'text-sky-600'}`} />
+          <div>
+            <p className={`text-[11px] font-semibold leading-none ${hasFree ? 'text-slate-600' : 'text-sky-800'}`}>
+              Paid from <span className="font-bold">{lowestPaid.price}</span>
+            </p>
+            <p className={`text-[10px] mt-0.5 ${hasFree ? 'text-slate-400' : 'text-sky-600'}`}>{lowestPaid.plan} plan</p>
+          </div>
+        </div>
+      )}
+      {!hasFree && !lowestPaid && tool.pricing[0] && (
+        <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
+          <DollarSign className="w-4 h-4 text-slate-400 shrink-0" />
+          <span className="text-sm font-semibold text-slate-800">{tool.pricing[0].price}</span>
+        </div>
+      )}
     </div>
   );
 }
