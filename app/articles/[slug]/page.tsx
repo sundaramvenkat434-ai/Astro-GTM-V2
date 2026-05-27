@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
-import { ChevronDown, Calendar, Clock, ArrowLeft } from 'lucide-react';
+import { ChevronDown, ArrowLeft, Send } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 /* ─── Gifaa Logo ─────────────────────────────────────────── */
@@ -68,6 +68,11 @@ interface Article {
   faqs: FAQ[];
   related_slugs: string[];
   published_at: string | null;
+  show_toc: boolean;
+  cta_heading: string;
+  cta_description: string;
+  cta_button_text: string;
+  cta_success_message: string;
 }
 
 interface RelatedArticle {
@@ -80,6 +85,25 @@ interface RelatedArticle {
   published_at: string | null;
 }
 
+interface TocItem {
+  id: string;
+  label: string;
+}
+
+function buildToc(sections: Section[], hasFaqs: boolean): TocItem[] {
+  const items: TocItem[] = [];
+  sections.forEach((s, i) => {
+    if (s.type === 'heading' && s.heading) {
+      const id = `section-${i}`;
+      items.push({ id, label: s.heading });
+    }
+  });
+  if (hasFaqs) {
+    items.push({ id: 'faqs', label: 'FAQs' });
+  }
+  return items;
+}
+
 export default function ArticleSlugPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -87,6 +111,9 @@ export default function ArticleSlugPage() {
   const [related, setRelated] = useState<RelatedArticle[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
+  const [activeSection, setActiveSection] = useState('');
+  const [sidebarEmail, setSidebarEmail] = useState('');
+  const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -117,6 +144,24 @@ export default function ArticleSlugPage() {
     load();
   }, [slug]);
 
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        for (const entry of entries) {
+          if (entry.isIntersecting) {
+            setActiveSection(entry.target.id);
+          }
+        }
+      },
+      { rootMargin: '-100px 0px -65% 0px', threshold: 0.1 }
+    );
+    const timer = setTimeout(() => {
+      const sections = document.querySelectorAll('[data-toc-section]');
+      sections.forEach((s) => observer.observe(s));
+    }, 300);
+    return () => { clearTimeout(timer); observer.disconnect(); };
+  }, [article]);
+
   if (loading) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
@@ -136,6 +181,9 @@ export default function ArticleSlugPage() {
     );
   }
 
+  const tocItems = buildToc(article.sections, article.faqs?.length > 0);
+  const showSidebar = article.show_toc && tocItems.length > 0;
+
   return (
     <div className="min-h-screen bg-white">
       {/* Navbar */}
@@ -152,33 +200,28 @@ export default function ArticleSlugPage() {
         </div>
       </header>
 
-      {/* Article Content */}
-      <main className="max-w-[720px] mx-auto px-6 pt-12 pb-24">
-        {/* Back link */}
+      {/* Title Area */}
+      <div className="max-w-[720px] mx-auto px-6 pt-12">
         <Link href="/articles" className="inline-flex items-center gap-1.5 text-[13px] text-gray-400 hover:text-gray-700 transition-colors mb-8">
           <ArrowLeft className="w-3.5 h-3.5" /> All articles
         </Link>
 
-        {/* Meta */}
         <p className="text-[13px] uppercase tracking-[0.08em] text-gray-400 font-medium mb-5">
           {article.category && <>{article.category} &nbsp;&middot;&nbsp; </>}
           {article.published_at && <>{new Date(article.published_at).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })} &nbsp;&middot;&nbsp; </>}
           {article.read_time}
         </p>
 
-        {/* Title */}
         <h1 className="text-[2.25rem] sm:text-[2.75rem] leading-[1.1] font-bold text-gray-900 tracking-[-0.025em] mb-5" style={{ fontFamily: "'Georgia', serif" }}>
           {article.title}
         </h1>
 
-        {/* Excerpt */}
         {article.excerpt && (
           <p className="text-[18px] leading-[1.7] text-gray-500 mb-8">
             {article.excerpt}
           </p>
         )}
 
-        {/* Author */}
         {article.author_name && (
           <div className="flex items-center gap-3 mb-12 pb-8 border-b border-gray-100">
             {article.author_avatar && (
@@ -190,61 +233,137 @@ export default function ArticleSlugPage() {
             </div>
           </div>
         )}
+      </div>
 
-        {/* Hero Image */}
-        {article.hero_image && (
-          <figure className="mb-14">
+      {/* Hero Image */}
+      {article.hero_image && (
+        <div className="max-w-[720px] mx-auto px-6 mb-14">
+          <figure>
             <img src={article.hero_image} alt={article.title} className="w-full rounded-lg" />
           </figure>
-        )}
+        </div>
+      )}
 
-        {/* Sections */}
-        {article.sections.map((section, i) => (
-          <ArticleSection key={i} section={section} />
-        ))}
+      {/* Two Column Layout: Sidebar + Content */}
+      <div className="max-w-6xl mx-auto px-6 pb-24">
+        <div className="flex flex-col lg:flex-row gap-12 lg:gap-16">
 
-        {/* FAQs */}
-        {article.faqs && article.faqs.length > 0 && (
-          <section className="mt-20">
-            <h2 className="text-[1.75rem] font-bold text-gray-900 tracking-[-0.02em] mb-8" style={{ fontFamily: "'Georgia', serif" }}>
-              Frequently asked questions
-            </h2>
-            <div className="border-t border-gray-200">
-              {article.faqs.map((faq, i) => (
-                <FaqItem key={i} q={faq.q} a={faq.a} />
-              ))}
-            </div>
-          </section>
-        )}
+          {/* Left Sidebar (sticky) */}
+          {showSidebar && (
+            <aside className="lg:w-[220px] shrink-0 order-2 lg:order-1">
+              <div className="lg:sticky lg:top-20 space-y-8">
+                {/* Table of Contents */}
+                <nav>
+                  <h4 className="text-[11px] font-semibold uppercase tracking-[0.1em] text-gray-400 mb-4">
+                    On this page
+                  </h4>
+                  <ul className="space-y-0.5">
+                    {tocItems.map((item) => (
+                      <li key={item.id}>
+                        <a
+                          href={`#${item.id}`}
+                          onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById(item.id)?.scrollIntoView({ behavior: 'smooth' });
+                          }}
+                          className={`block text-[13px] py-1.5 transition-colors border-l-2 pl-3 ${
+                            activeSection === item.id
+                              ? 'border-gray-900 text-gray-900 font-medium'
+                              : 'border-transparent text-gray-400 hover:text-gray-700'
+                          }`}
+                        >
+                          {item.label}
+                        </a>
+                      </li>
+                    ))}
+                  </ul>
+                </nav>
 
-        {/* Related Articles */}
-        {related.length > 0 && (
-          <section className="mt-20 pt-12 border-t border-gray-100">
-            <h2 className="text-[1.75rem] font-bold text-gray-900 tracking-[-0.02em] mb-10" style={{ fontFamily: "'Georgia', serif" }}>
-              Continue reading
-            </h2>
-            <div className="space-y-10">
-              {related.map((r) => (
-                <Link key={r.slug} href={`/articles/${r.slug}`} className="block group">
-                  {r.hero_image && (
-                    <div className="overflow-hidden rounded-lg mb-4">
-                      <img src={r.hero_image} alt={r.title} className="w-full h-[200px] sm:h-[240px] object-cover group-hover:scale-[1.02] transition-transform duration-300" />
-                    </div>
-                  )}
-                  <p className="text-[13px] text-gray-400 mb-2">
-                    {r.published_at && new Date(r.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-                    {r.read_time && <> &middot; {r.read_time}</>}
-                  </p>
-                  <h3 className="text-[20px] font-semibold text-gray-900 group-hover:text-gray-600 transition-colors mb-2" style={{ fontFamily: "'Georgia', serif" }}>
-                    {r.title}
-                  </h3>
-                  {r.excerpt && <p className="text-[15px] text-gray-500 leading-[1.7]">{r.excerpt}</p>}
-                </Link>
-              ))}
-            </div>
-          </section>
-        )}
-      </main>
+                {/* Sidebar CTA */}
+                {article.cta_heading && (
+                  <div className="border-t border-gray-100 pt-6">
+                    <h4 className="text-[13px] font-semibold text-gray-900 mb-1.5">{article.cta_heading}</h4>
+                    {article.cta_description && (
+                      <p className="text-[12px] text-gray-400 leading-relaxed mb-4">{article.cta_description}</p>
+                    )}
+                    {sidebarSubmitted ? (
+                      <p className="text-[13px] text-green-700 font-medium">{article.cta_success_message || 'Subscribed!'}</p>
+                    ) : (
+                      <form onSubmit={(e) => { e.preventDefault(); if (sidebarEmail.trim()) setSidebarSubmitted(true); }} className="space-y-2">
+                        <input
+                          type="email"
+                          required
+                          value={sidebarEmail}
+                          onChange={(e) => setSidebarEmail(e.target.value)}
+                          placeholder="you@email.com"
+                          className="w-full px-3 py-2 text-[13px] border border-gray-200 rounded-md focus:outline-none focus:border-gray-400 placeholder-gray-400"
+                        />
+                        <button
+                          type="submit"
+                          className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-white"
+                          style={{ background: '#1a2a4a' }}
+                        >
+                          {article.cta_button_text || 'Subscribe'} <Send className="w-3 h-3" />
+                        </button>
+                      </form>
+                    )}
+                  </div>
+                )}
+              </div>
+            </aside>
+          )}
+
+          {/* Main Article Content */}
+          <article className={`flex-1 min-w-0 max-w-[680px] ${showSidebar ? 'order-1 lg:order-2' : ''}`}>
+            {/* Sections */}
+            {article.sections.map((section, i) => (
+              <ArticleSection key={i} section={section} index={i} />
+            ))}
+
+            {/* FAQs */}
+            {article.faqs && article.faqs.length > 0 && (
+              <section id="faqs" data-toc-section className="mt-20">
+                <h2 className="text-[1.75rem] font-bold text-gray-900 tracking-[-0.02em] mb-8" style={{ fontFamily: "'Georgia', serif" }}>
+                  Frequently asked questions
+                </h2>
+                <div className="border-t border-gray-200">
+                  {article.faqs.map((faq, i) => (
+                    <FaqItem key={i} q={faq.q} a={faq.a} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* Related Articles */}
+            {related.length > 0 && (
+              <section className="mt-20 pt-12 border-t border-gray-100">
+                <h2 className="text-[1.75rem] font-bold text-gray-900 tracking-[-0.02em] mb-10" style={{ fontFamily: "'Georgia', serif" }}>
+                  Continue reading
+                </h2>
+                <div className="space-y-10">
+                  {related.map((r) => (
+                    <Link key={r.slug} href={`/articles/${r.slug}`} className="block group">
+                      {r.hero_image && (
+                        <div className="overflow-hidden rounded-lg mb-4">
+                          <img src={r.hero_image} alt={r.title} className="w-full h-[200px] sm:h-[240px] object-cover group-hover:scale-[1.02] transition-transform duration-300" />
+                        </div>
+                      )}
+                      <p className="text-[13px] text-gray-400 mb-2">
+                        {r.published_at && new Date(r.published_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                        {r.read_time && <> &middot; {r.read_time}</>}
+                      </p>
+                      <h3 className="text-[20px] font-semibold text-gray-900 group-hover:text-gray-600 transition-colors mb-2" style={{ fontFamily: "'Georgia', serif" }}>
+                        {r.title}
+                      </h3>
+                      {r.excerpt && <p className="text-[15px] text-gray-500 leading-[1.7]">{r.excerpt}</p>}
+                    </Link>
+                  ))}
+                </div>
+              </section>
+            )}
+          </article>
+        </div>
+      </div>
 
       {/* Footer */}
       <footer className="border-t border-gray-100 bg-gray-50">
@@ -260,11 +379,16 @@ export default function ArticleSlugPage() {
 }
 
 /* ─── Section Renderer ───────────────────────────────────── */
-function ArticleSection({ section }: { section: Section }) {
+function ArticleSection({ section, index }: { section: Section; index: number }) {
   switch (section.type) {
     case 'heading':
       return (
-        <h2 className="text-[1.75rem] font-bold text-gray-900 tracking-[-0.02em] mt-20 mb-6" style={{ fontFamily: "'Georgia', serif" }}>
+        <h2
+          id={`section-${index}`}
+          data-toc-section
+          className="text-[1.75rem] font-bold text-gray-900 tracking-[-0.02em] mt-20 mb-6"
+          style={{ fontFamily: "'Georgia', serif" }}
+        >
           {section.heading}
         </h2>
       );

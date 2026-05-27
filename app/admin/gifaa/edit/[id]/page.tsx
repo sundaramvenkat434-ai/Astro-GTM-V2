@@ -50,6 +50,11 @@ interface ArticleData {
   meta_description: string;
   status: string;
   published_at: string | null;
+  show_toc: boolean;
+  cta_heading: string;
+  cta_description: string;
+  cta_button_text: string;
+  cta_success_message: string;
 }
 
 const EMPTY_ARTICLE: ArticleData = {
@@ -69,6 +74,11 @@ const EMPTY_ARTICLE: ArticleData = {
   meta_description: '',
   status: 'draft',
   published_at: null,
+  show_toc: true,
+  cta_heading: 'Gifting tips, weekly',
+  cta_description: 'Ideas and inspiration for every celebration. Join 5,000+ readers.',
+  cta_button_text: 'Subscribe',
+  cta_success_message: 'Subscribed!',
 };
 
 const SECTION_TYPES = [
@@ -100,7 +110,7 @@ function GifaaEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'meta' | 'related'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'sidebar' | 'meta' | 'related'>('content');
   const [allArticles, setAllArticles] = useState<{ slug: string; title: string }[]>([]);
 
   useEffect(() => {
@@ -129,6 +139,11 @@ function GifaaEditor() {
               meta_description: data.meta_description,
               status: data.status,
               published_at: data.published_at,
+              show_toc: data.show_toc ?? true,
+              cta_heading: data.cta_heading || '',
+              cta_description: data.cta_description || '',
+              cta_button_text: data.cta_button_text || 'Subscribe',
+              cta_success_message: data.cta_success_message || 'Subscribed!',
             });
           }
           setLoading(false);
@@ -237,7 +252,7 @@ function GifaaEditor() {
 
       {/* Tabs */}
       <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {(['content', 'meta', 'related'] as const).map((tab) => (
+        {(['content', 'sidebar', 'meta', 'related'] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => setActiveTab(tab)}
@@ -247,7 +262,7 @@ function GifaaEditor() {
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {tab === 'content' ? 'Content' : tab === 'meta' ? 'SEO & Meta' : 'Related'}
+            {tab === 'content' ? 'Content' : tab === 'sidebar' ? 'Sidebar & CTA' : tab === 'meta' ? 'SEO & Meta' : 'Related'}
           </button>
         ))}
       </div>
@@ -375,6 +390,70 @@ function GifaaEditor() {
                 </div>
               ))}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ─── Sidebar & CTA Tab ─── */}
+      {activeTab === 'sidebar' && (
+        <div className="space-y-6 max-w-xl">
+          <p className="text-sm text-gray-500">
+            Configure the sticky sidebar that appears alongside article content. The TOC is auto-generated from heading sections.
+          </p>
+
+          {/* TOC Toggle */}
+          <div className="flex items-center gap-3">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={article.show_toc}
+                onChange={(e) => update({ show_toc: e.target.checked })}
+                className="rounded border-gray-300"
+              />
+              <span className="text-sm font-medium text-gray-900">Show Table of Contents sidebar</span>
+            </label>
+          </div>
+          <p className="text-xs text-gray-400 -mt-4">
+            TOC items are automatically generated from &quot;Heading (H2)&quot; sections in your content. Add heading sections to populate the nav.
+          </p>
+
+          {/* CTA Fields */}
+          <div className="border-t border-gray-100 pt-6">
+            <h3 className="text-sm font-semibold text-gray-900 mb-4">Sidebar CTA (newsletter form)</h3>
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">CTA Heading</label>
+                <Input value={article.cta_heading} onChange={(e) => update({ cta_heading: e.target.value })} placeholder="e.g. Gifting tips, weekly" />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">CTA Description</label>
+                <textarea
+                  value={article.cta_description}
+                  onChange={(e) => update({ cta_description: e.target.value })}
+                  placeholder="Short description below the heading..."
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-16"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Button Text</label>
+                  <Input value={article.cta_button_text} onChange={(e) => update({ cta_button_text: e.target.value })} placeholder="Subscribe" />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Success Message</label>
+                  <Input value={article.cta_success_message} onChange={(e) => update({ cta_success_message: e.target.value })} placeholder="Subscribed!" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Preview hint */}
+          <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+            <p className="text-xs font-medium text-gray-600 mb-1">Sidebar preview</p>
+            <p className="text-xs text-gray-400">
+              The sidebar will show a &quot;On this page&quot; nav with {article.sections.filter(s => s.type === 'heading').length} heading item(s) plus FAQs link
+              {article.cta_heading ? `, followed by a CTA titled "${article.cta_heading}"` : ' (no CTA configured)'}.
+            </p>
           </div>
         </div>
       )}
