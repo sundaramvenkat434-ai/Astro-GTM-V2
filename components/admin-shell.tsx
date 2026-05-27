@@ -22,6 +22,7 @@ import {
   ChevronDown,
   Loader as Loader2,
   CalendarCheck,
+  Gift,
 } from 'lucide-react';
 
 interface NavItem {
@@ -56,6 +57,7 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'AI Prompts', href: '/admin/prompts', icon: <MessageSquareCode className="w-4 h-4" /> },
       { label: 'Author Profiles', href: '/admin/authors', icon: <Users2 className="w-4 h-4" /> },
       { label: 'Tool Claims', href: '/admin/claims', icon: <BadgeCheck className="w-4 h-4" /> },
+      { label: 'Gifaa', href: '/admin/gifaa', icon: <Gift className="w-4 h-4" /> },
     ],
   },
 ];
