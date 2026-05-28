@@ -15,7 +15,7 @@ interface PageProps {
 async function loadTenantByKey(tenantKey: string): Promise<TenantConfig | null> {
   const { data } = await supabaseServer
     .from('gifaa_tenants')
-    .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height')
+    .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity')
     .eq('tenant_key', tenantKey)
     .maybeSingle();
   return data;
@@ -147,6 +147,9 @@ export default async function ArticleSlugPage({ params, searchParams }: PageProp
         logoUrl={tenant.logo_url}
         headerLogoHeight={tenant.header_logo_height}
         footerLogoHeight={tenant.footer_logo_height}
+        poweredByEnabled={tenant.powered_by_enabled}
+        poweredByHeight={tenant.powered_by_height}
+        poweredByOpacity={tenant.powered_by_opacity}
         isPreview={true}
       />
     );
@@ -196,6 +199,9 @@ export default async function ArticleSlugPage({ params, searchParams }: PageProp
       logoUrl={tenant.logo_url}
       headerLogoHeight={tenant.header_logo_height}
       footerLogoHeight={tenant.footer_logo_height}
+      poweredByEnabled={tenant.powered_by_enabled}
+      poweredByHeight={tenant.powered_by_height}
+      poweredByOpacity={tenant.powered_by_opacity}
       isPreview={showPreviewBanner}
     />
   );

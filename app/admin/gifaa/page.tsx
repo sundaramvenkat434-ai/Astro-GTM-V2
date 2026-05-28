@@ -23,6 +23,9 @@ interface TenantData {
   logo_url: string | null;
   header_logo_height: number;
   footer_logo_height: number;
+  powered_by_enabled: boolean;
+  powered_by_height: number;
+  powered_by_opacity: number;
   created_at: string;
 }
 
@@ -133,6 +136,9 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
   const [headerLogoHeight, setHeaderLogoHeight] = useState(tenant.header_logo_height);
   const [footerLogoHeight, setFooterLogoHeight] = useState(tenant.footer_logo_height);
+  const [poweredByEnabled, setPoweredByEnabled] = useState(tenant.powered_by_enabled);
+  const [poweredByHeight, setPoweredByHeight] = useState(tenant.powered_by_height);
+  const [poweredByOpacity, setPoweredByOpacity] = useState(tenant.powered_by_opacity);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -147,6 +153,9 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
         logo_url: logoUrl || null,
         header_logo_height: headerLogoHeight,
         footer_logo_height: footerLogoHeight,
+        powered_by_enabled: poweredByEnabled,
+        powered_by_height: poweredByHeight,
+        powered_by_opacity: poweredByOpacity,
       })
       .eq('id', tenant.id);
     setSaving(false);
@@ -250,6 +259,63 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
                   onChange={(e) => setFooterLogoHeight(Number(e.target.value) || 24)}
                   className="text-sm"
                 />
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Powered by AstroGTM */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Powered by AstroGTM</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Badge shown in article page footers with a link back to AstroGTM.</p>
+          </div>
+          <label className="relative inline-flex items-center cursor-pointer">
+            <input
+              type="checkbox"
+              checked={poweredByEnabled}
+              onChange={(e) => setPoweredByEnabled(e.target.checked)}
+              className="sr-only peer"
+            />
+            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gray-900" />
+          </label>
+        </div>
+
+        {poweredByEnabled && (
+          <div className="pt-4 border-t border-gray-100 space-y-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Logo Height (px)</label>
+                <Input
+                  type="number"
+                  min={12}
+                  max={40}
+                  value={poweredByHeight}
+                  onChange={(e) => setPoweredByHeight(Number(e.target.value) || 20)}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Opacity (%)</label>
+                <Input
+                  type="number"
+                  min={10}
+                  max={100}
+                  value={poweredByOpacity}
+                  onChange={(e) => setPoweredByOpacity(Math.min(100, Math.max(10, Number(e.target.value) || 60)))}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+            <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
+              <p className="text-xs text-gray-500 mb-2">Preview</p>
+              <div className="flex items-center gap-2" style={{ opacity: poweredByOpacity / 100 }}>
+                <span className="text-[11px] text-gray-400 font-medium">Powered by</span>
+                <div className="bg-gray-200 rounded px-2 py-0.5" style={{ height: `${poweredByHeight}px`, display: 'flex', alignItems: 'center' }}>
+                  <span className="text-[10px] font-bold text-gray-600">AstroGTM</span>
+                </div>
               </div>
             </div>
           </div>

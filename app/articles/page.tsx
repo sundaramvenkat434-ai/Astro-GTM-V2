@@ -62,6 +62,9 @@ export default async function ArticlesPage() {
       logoUrl={tenant.logo_url}
       headerLogoHeight={tenant.header_logo_height}
       footerLogoHeight={tenant.footer_logo_height}
+      poweredByEnabled={tenant.powered_by_enabled}
+      poweredByHeight={tenant.powered_by_height}
+      poweredByOpacity={tenant.powered_by_opacity}
     />
   );
 }

@@ -96,10 +96,13 @@ interface Props {
   logoUrl?: string | null;
   headerLogoHeight?: number;
   footerLogoHeight?: number;
+  poweredByEnabled?: boolean;
+  poweredByHeight?: number;
+  poweredByOpacity?: number;
   isPreview?: boolean;
 }
 
-export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24, isPreview = false }: Props) {
+export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24, poweredByEnabled = true, poweredByHeight = 20, poweredByOpacity = 60, isPreview = false }: Props) {
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
@@ -329,6 +332,25 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
             )}
             <p className="text-[12px] text-gray-400">&copy; {new Date().getFullYear()} {siteName}. All rights reserved.</p>
           </div>
+          {poweredByEnabled && (
+            <div className="mt-8 pt-6 border-t border-gray-200 flex justify-center">
+              <a
+                href={`https://www.astrogtm.com?utm_source=${encodeURIComponent(siteName)}&utm_medium=Footer&utm_campaign=SEO-Tenant`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 transition-opacity hover:opacity-100"
+                style={{ opacity: poweredByOpacity / 100 }}
+              >
+                <span className="text-[11px] text-gray-400 font-medium">Powered by</span>
+                <img
+                  src="/og-default.png"
+                  alt="AstroGTM"
+                  style={{ height: `${poweredByHeight}px` }}
+                  className="w-auto object-contain"
+                />
+              </a>
+            </div>
+          )}
         </div>
       </footer>
     </div>

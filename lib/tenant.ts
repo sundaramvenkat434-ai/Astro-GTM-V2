@@ -8,6 +8,9 @@ export interface TenantConfig {
   logo_url: string | null;
   header_logo_height: number;
   footer_logo_height: number;
+  powered_by_enabled: boolean;
+  powered_by_height: number;
+  powered_by_opacity: number;
 }
 
 export interface TenantResult {
@@ -38,7 +41,7 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
   if (xSite) {
     const { data } = await supabaseServer
       .from('gifaa_tenants')
-      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height')
+      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity')
       .eq('tenant_key', xSite)
       .maybeSingle();
     tenantConfig = data;
@@ -49,7 +52,7 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
     const domain = hostname.replace(/:\d+$/, '');
     const { data } = await supabaseServer
       .from('gifaa_tenants')
-      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height')
+      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity')
       .eq('public_domain', domain)
       .maybeSingle();
     tenantConfig = data;
