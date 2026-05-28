@@ -21,6 +21,8 @@ interface TenantData {
   site_name: string;
   proxy_secret: string;
   logo_url: string | null;
+  header_logo_height: number;
+  footer_logo_height: number;
   created_at: string;
 }
 
@@ -129,6 +131,8 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
   const [siteName, setSiteName] = useState(tenant.site_name);
   const [publicDomain, setPublicDomain] = useState(tenant.public_domain);
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
+  const [headerLogoHeight, setHeaderLogoHeight] = useState(tenant.header_logo_height);
+  const [footerLogoHeight, setFooterLogoHeight] = useState(tenant.footer_logo_height);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -137,7 +141,13 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
     setSaving(true);
     await supabase
       .from('gifaa_tenants')
-      .update({ site_name: siteName, public_domain: publicDomain, logo_url: logoUrl || null })
+      .update({
+        site_name: siteName,
+        public_domain: publicDomain,
+        logo_url: logoUrl || null,
+        header_logo_height: headerLogoHeight,
+        footer_logo_height: footerLogoHeight,
+      })
       .eq('id', tenant.id);
     setSaving(false);
     setSaved(true);
@@ -213,6 +223,37 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
             </div>
           </div>
         </div>
+
+        {/* Logo Size Controls */}
+        {logoUrl && (
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-500 mb-3">Logo Display Size</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-md">
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Header Height (px)</label>
+                <Input
+                  type="number"
+                  min={16}
+                  max={80}
+                  value={headerLogoHeight}
+                  onChange={(e) => setHeaderLogoHeight(Number(e.target.value) || 32)}
+                  className="text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-500 mb-1">Footer Height (px)</label>
+                <Input
+                  type="number"
+                  min={12}
+                  max={60}
+                  value={footerLogoHeight}
+                  onChange={(e) => setFooterLogoHeight(Number(e.target.value) || 24)}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Tenant Details */}

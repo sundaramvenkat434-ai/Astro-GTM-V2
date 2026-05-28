@@ -94,9 +94,11 @@ interface Props {
   siteName: string;
   publicDomain: string;
   logoUrl?: string | null;
+  headerLogoHeight?: number;
+  footerLogoHeight?: number;
 }
 
-export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl }: Props) {
+export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24 }: Props) {
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
@@ -129,7 +131,7 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
           <Link href="/articles">
             {logoUrl ? (
-              <img src={logoUrl} alt={siteName} className="h-8 w-auto object-contain" />
+              <img src={logoUrl} alt={siteName} style={{ height: `${headerLogoHeight}px` }} className="w-auto object-contain" />
             ) : (
               <span className="text-xl font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
                 {siteName.toLowerCase()}
@@ -312,7 +314,7 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             {logoUrl ? (
-              <img src={logoUrl} alt={siteName} className="h-6 w-auto object-contain" />
+              <img src={logoUrl} alt={siteName} style={{ height: `${footerLogoHeight}px` }} className="w-auto object-contain" />
             ) : (
               <span className="text-lg font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
                 {siteName.toLowerCase()}

@@ -60,6 +60,8 @@ export default async function ArticlesPage() {
       siteName={tenant.site_name}
       publicDomain={tenant.public_domain}
       logoUrl={tenant.logo_url}
+      headerLogoHeight={tenant.header_logo_height}
+      footerLogoHeight={tenant.footer_logo_height}
     />
   );
 }
