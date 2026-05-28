@@ -1,4 +1,5 @@
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getTenantFromRequest, buildCanonicalUrl } from '@/lib/tenant';
 import { ArticlesGrid } from './articles-grid';
@@ -6,7 +7,12 @@ import { ArticlesGrid } from './articles-grid';
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const result = await getTenantFromRequest();
+  const h = headers();
+  const result = await getTenantFromRequest({
+    xSite: h.get('x-site'),
+    xSecret: h.get('x-secret'),
+    host: h.get('host'),
+  });
   if (!result) return {};
 
   const { tenant, isOriginAccess } = result;
@@ -27,7 +33,12 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ArticlesPage() {
-  const result = await getTenantFromRequest();
+  const h = headers();
+  const result = await getTenantFromRequest({
+    xSite: h.get('x-site'),
+    xSecret: h.get('x-secret'),
+    host: h.get('host'),
+  });
 
   if (!result) {
     return (

@@ -1,4 +1,3 @@
-import { headers } from 'next/headers';
 import { supabaseServer } from '@/lib/supabase-server';
 
 export interface TenantConfig {
@@ -13,23 +12,21 @@ export interface TenantResult {
   isOriginAccess: boolean;
 }
 
+export interface TenantRequestHeaders {
+  xSite: string | null;
+  xSecret: string | null;
+  host: string | null;
+}
+
 const ASTROGTM_DOMAIN = 'astrogtm.com';
 
-/**
- * Resolves tenant from request headers. Validates secret BEFORE returning.
- * Returns null if tenant cannot be resolved or secret is invalid.
- */
-export async function getTenantFromRequest(): Promise<TenantResult | null> {
-  const headersList = headers();
-  const xSite = headersList.get('x-site');
-  const xSecret = headersList.get('x-secret');
-  const host = headersList.get('host') || '';
+export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<TenantResult | null> {
+  const { xSite, xSecret, host } = h;
+  const hostname = host || '';
 
-  const isOriginAccess = host.includes(ASTROGTM_DOMAIN) && !xSite;
+  const isOriginAccess = hostname.includes(ASTROGTM_DOMAIN) && !xSite;
 
-  // Direct access to astrogtm.com without proxy headers — serve with noindex
   if (isOriginAccess) {
-    // Fallback: use first available tenant for rendering (noindexed anyway)
     const { data } = await supabaseServer
       .from('gifaa_tenants')
       .select('tenant_key, public_domain, site_name, proxy_secret')
@@ -40,7 +37,6 @@ export async function getTenantFromRequest(): Promise<TenantResult | null> {
     return { tenant: data, isOriginAccess: true };
   }
 
-  // Resolve tenant by x-site header or by host domain
   let tenantConfig: TenantConfig | null = null;
 
   if (xSite) {
@@ -53,7 +49,7 @@ export async function getTenantFromRequest(): Promise<TenantResult | null> {
   }
 
   if (!tenantConfig) {
-    const domain = host.replace(/:\d+$/, '');
+    const domain = hostname.replace(/:\d+$/, '');
     const { data } = await supabaseServer
       .from('gifaa_tenants')
       .select('tenant_key, public_domain, site_name, proxy_secret')
@@ -64,7 +60,6 @@ export async function getTenantFromRequest(): Promise<TenantResult | null> {
 
   if (!tenantConfig) return null;
 
-  // SECRET VALIDATION — must pass before any content queries
   if (tenantConfig.proxy_secret && xSecret !== tenantConfig.proxy_secret) {
     return null;
   }
