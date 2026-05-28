@@ -20,7 +20,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   });
   if (!result) return {};
 
-  const { tenant, isOriginAccess } = result;
+  const { tenant } = result;
 
   const { data: article } = await supabaseServer
     .from('gifaa_articles')
@@ -54,7 +54,6 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description,
       ...(article.hero_image && { images: [article.hero_image] }),
     },
-    ...(isOriginAccess && { robots: { index: false, follow: true } }),
   };
 }
 
@@ -67,14 +66,10 @@ export default async function ArticleSlugPage({ params }: PageProps) {
   });
 
   if (!result) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <p className="text-gray-500 text-lg">403 Forbidden</p>
-      </div>
-    );
+    notFound();
   }
 
-  const { tenant, isOriginAccess } = result;
+  const { tenant } = result;
 
   const { data: article } = await supabaseServer
     .from('gifaa_articles')
@@ -105,7 +100,6 @@ export default async function ArticleSlugPage({ params }: PageProps) {
       relatedArticles={relatedArticles}
       siteName={tenant.site_name}
       publicDomain={tenant.public_domain}
-      noindex={isOriginAccess}
     />
   );
 }

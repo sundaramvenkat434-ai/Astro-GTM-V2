@@ -1,5 +1,6 @@
 import { Metadata } from 'next';
 import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
 import { getTenantFromRequest, buildCanonicalUrl } from '@/lib/tenant';
 import { ArticlesGrid } from './articles-grid';
@@ -15,7 +16,7 @@ export async function generateMetadata(): Promise<Metadata> {
   });
   if (!result) return {};
 
-  const { tenant, isOriginAccess } = result;
+  const { tenant } = result;
   const canonical = buildCanonicalUrl(tenant, '/articles');
 
   return {
@@ -28,7 +29,6 @@ export async function generateMetadata(): Promise<Metadata> {
       url: canonical,
       siteName: tenant.site_name,
     },
-    ...(isOriginAccess && { robots: { index: false, follow: true } }),
   };
 }
 
@@ -41,14 +41,10 @@ export default async function ArticlesPage() {
   });
 
   if (!result) {
-    return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
-        <p className="text-gray-500 text-lg">403 Forbidden</p>
-      </div>
-    );
+    notFound();
   }
 
-  const { tenant, isOriginAccess } = result;
+  const { tenant } = result;
 
   const { data: articles, count } = await supabaseServer
     .from('gifaa_articles')
@@ -63,7 +59,6 @@ export default async function ArticlesPage() {
       totalCount={count || 0}
       siteName={tenant.site_name}
       publicDomain={tenant.public_domain}
-      noindex={isOriginAccess}
     />
   );
 }

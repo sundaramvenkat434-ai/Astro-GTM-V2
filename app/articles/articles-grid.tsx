@@ -21,10 +21,9 @@ interface Props {
   totalCount: number;
   siteName: string;
   publicDomain: string;
-  noindex: boolean;
 }
 
-export function ArticlesGrid({ articles, totalCount, siteName, publicDomain, noindex }: Props) {
+export function ArticlesGrid({ articles, totalCount, siteName, publicDomain }: Props) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -38,8 +37,6 @@ export function ArticlesGrid({ articles, totalCount, siteName, publicDomain, noi
 
   return (
     <div className="min-h-screen bg-white">
-      {noindex && <meta name="robots" content="noindex, follow" />}
-
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">

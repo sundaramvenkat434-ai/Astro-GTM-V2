@@ -9,7 +9,6 @@ export interface TenantConfig {
 
 export interface TenantResult {
   tenant: TenantConfig;
-  isOriginAccess: boolean;
 }
 
 export interface TenantRequestHeaders {
@@ -26,20 +25,9 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
 
   console.log('[tenant] resolve request:', { xSite, xSecret: xSecret ? `${xSecret.slice(0, 4)}...` : null, host });
 
-  const isOriginAccess = hostname.includes(ASTROGTM_DOMAIN) && !xSite;
-
-  if (isOriginAccess) {
-    const { data } = await supabaseServer
-      .from('gifaa_tenants')
-      .select('tenant_key, public_domain, site_name, proxy_secret')
-      .limit(1)
-      .maybeSingle();
-
-    if (!data) {
-      console.log('[tenant] origin access: no tenant found');
-      return null;
-    }
-    return { tenant: data, isOriginAccess: true };
+  if (hostname.includes(ASTROGTM_DOMAIN) && !xSite) {
+    console.log('[tenant] REJECTED: direct origin access without tenant headers');
+    return null;
   }
 
   let tenantConfig: TenantConfig | null = null;
@@ -80,7 +68,7 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
   }
 
   console.log('[tenant] RESOLVED:', { tenant_key: tenantConfig.tenant_key, domain: tenantConfig.public_domain });
-  return { tenant: tenantConfig, isOriginAccess: false };
+  return { tenant: tenantConfig };
 }
 
 export function buildCanonicalUrl(tenant: TenantConfig, path: string): string {
