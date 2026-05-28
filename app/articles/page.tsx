@@ -1,14 +1,15 @@
 import { Metadata } from 'next';
 import { supabaseServer } from '@/lib/supabase-server';
-import { resolveTenant, buildCanonicalUrl } from '@/lib/tenant';
+import { getTenantFromRequest, buildCanonicalUrl } from '@/lib/tenant';
 import { ArticlesGrid } from './articles-grid';
 
 export const dynamic = 'force-dynamic';
 
 export async function generateMetadata(): Promise<Metadata> {
-  const { tenant, isOriginAccess } = await resolveTenant();
-  if (!tenant) return {};
+  const result = await getTenantFromRequest();
+  if (!result) return {};
 
+  const { tenant, isOriginAccess } = result;
   const canonical = buildCanonicalUrl(tenant, '/articles');
 
   return {
@@ -26,9 +27,9 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function ArticlesPage() {
-  const { tenant, isOriginAccess, forbidden } = await resolveTenant();
+  const result = await getTenantFromRequest();
 
-  if (forbidden || !tenant) {
+  if (!result) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <p className="text-gray-500 text-lg">403 Forbidden</p>
@@ -36,9 +37,11 @@ export default async function ArticlesPage() {
     );
   }
 
-  const { data: articles } = await supabaseServer
+  const { tenant, isOriginAccess } = result;
+
+  const { data: articles, count } = await supabaseServer
     .from('gifaa_articles')
-    .select('id, slug, title, excerpt, hero_image, category, author_name, read_time, published_at')
+    .select('id, slug, title, excerpt, hero_image, category, author_name, read_time, published_at', { count: 'exact' })
     .eq('tenant', tenant.tenant_key)
     .eq('status', 'published')
     .order('published_at', { ascending: false });
@@ -46,6 +49,7 @@ export default async function ArticlesPage() {
   return (
     <ArticlesGrid
       articles={articles || []}
+      totalCount={count || 0}
       siteName={tenant.site_name}
       publicDomain={tenant.public_domain}
       noindex={isOriginAccess}

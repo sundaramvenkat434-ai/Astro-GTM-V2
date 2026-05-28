@@ -11,6 +11,7 @@ interface Article {
   id: string;
   slug: string;
   title: string;
+  tenant: string;
   category: string;
   status: string;
   published_at: string | null;
@@ -37,7 +38,7 @@ function GifaaArticlesList() {
   async function loadArticles() {
     const { data } = await supabase
       .from('gifaa_articles')
-      .select('id, slug, title, category, status, published_at, updated_at')
+      .select('id, slug, title, tenant, category, status, published_at, updated_at')
       .order('updated_at', { ascending: false });
     setArticles(data || []);
     setLoading(false);
@@ -78,6 +79,7 @@ function GifaaArticlesList() {
             <thead>
               <tr className="bg-gray-50 border-b border-gray-200">
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Title</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">Tenant</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Category</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">Updated</th>
@@ -92,6 +94,11 @@ function GifaaArticlesList() {
                       <p className="font-medium text-gray-900 line-clamp-1">{article.title || 'Untitled'}</p>
                       <p className="text-xs text-gray-400 mt-0.5">/articles/{article.slug}</p>
                     </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <span className="inline-flex px-2 py-0.5 rounded-full text-xs font-medium bg-gray-100 text-gray-600">
+                      {article.tenant}
+                    </span>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{article.category || '—'}</td>
                   <td className="px-4 py-3">

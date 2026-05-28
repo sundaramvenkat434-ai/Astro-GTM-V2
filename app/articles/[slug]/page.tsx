@@ -1,7 +1,7 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { supabaseServer } from '@/lib/supabase-server';
-import { resolveTenant, buildCanonicalUrl } from '@/lib/tenant';
+import { getTenantFromRequest, buildCanonicalUrl, buildArticleUrl } from '@/lib/tenant';
 import { ArticleView } from './article-view';
 
 export const dynamic = 'force-dynamic';
@@ -11,8 +11,10 @@ interface PageProps {
 }
 
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
-  const { tenant, isOriginAccess } = await resolveTenant();
-  if (!tenant) return {};
+  const result = await getTenantFromRequest();
+  if (!result) return {};
+
+  const { tenant, isOriginAccess } = result;
 
   const { data: article } = await supabaseServer
     .from('gifaa_articles')
@@ -51,9 +53,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 }
 
 export default async function ArticleSlugPage({ params }: PageProps) {
-  const { tenant, isOriginAccess, forbidden } = await resolveTenant();
+  // Secret validation happens inside getTenantFromRequest BEFORE any content queries
+  const result = await getTenantFromRequest();
 
-  if (forbidden || !tenant) {
+  if (!result) {
     return (
       <div className="min-h-screen bg-white flex items-center justify-center">
         <p className="text-gray-500 text-lg">403 Forbidden</p>
@@ -61,6 +64,9 @@ export default async function ArticleSlugPage({ params }: PageProps) {
     );
   }
 
+  const { tenant, isOriginAccess } = result;
+
+  // Tenant-filtered lookup: never query by slug alone
   const { data: article } = await supabaseServer
     .from('gifaa_articles')
     .select('*')
@@ -69,10 +75,12 @@ export default async function ArticleSlugPage({ params }: PageProps) {
     .eq('status', 'published')
     .maybeSingle();
 
+  // Hard 404 — if slug exists for another tenant, this tenant gets 404
   if (!article) {
     notFound();
   }
 
+  // Related articles — MUST be tenant-filtered
   let relatedArticles: any[] = [];
   if (article.related_slugs && article.related_slugs.length > 0) {
     const { data } = await supabaseServer
@@ -90,6 +98,7 @@ export default async function ArticleSlugPage({ params }: PageProps) {
       relatedArticles={relatedArticles}
       siteName={tenant.site_name}
       publicDomain={tenant.public_domain}
+      noindex={isOriginAccess}
     />
   );
 }

@@ -93,9 +93,10 @@ interface Props {
   relatedArticles: RelatedArticle[];
   siteName: string;
   publicDomain: string;
+  noindex: boolean;
 }
 
-export function ArticleView({ article, relatedArticles, siteName, publicDomain }: Props) {
+export function ArticleView({ article, relatedArticles, siteName, publicDomain, noindex }: Props) {
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);

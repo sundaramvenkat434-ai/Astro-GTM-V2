@@ -18,12 +18,13 @@ interface Article {
 
 interface Props {
   articles: Article[];
+  totalCount: number;
   siteName: string;
   publicDomain: string;
   noindex: boolean;
 }
 
-export function ArticlesGrid({ articles, siteName, publicDomain, noindex }: Props) {
+export function ArticlesGrid({ articles, totalCount, siteName, publicDomain, noindex }: Props) {
   const [search, setSearch] = useState('');
   const [activeCategory, setActiveCategory] = useState('All');
 
@@ -37,6 +38,8 @@ export function ArticlesGrid({ articles, siteName, publicDomain, noindex }: Prop
 
   return (
     <div className="min-h-screen bg-white">
+      {noindex && <meta name="robots" content="noindex, follow" />}
+
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
@@ -56,7 +59,7 @@ export function ArticlesGrid({ articles, siteName, publicDomain, noindex }: Prop
           Blog
         </h1>
         <p className="text-[17px] text-gray-500 leading-relaxed max-w-xl mb-10">
-          Ideas, guides, and inspiration from {siteName}. Learn how to create the perfect registry and make gifting effortless.
+          Ideas, guides, and inspiration from {siteName}. {totalCount > 0 && <span className="text-gray-400">({totalCount} articles)</span>}
         </p>
 
         {/* Search + Filter */}

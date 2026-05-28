@@ -8,13 +8,18 @@ export interface TenantConfig {
   proxy_secret: string;
 }
 
+export interface TenantResult {
+  tenant: TenantConfig;
+  isOriginAccess: boolean;
+}
+
 const ASTROGTM_DOMAIN = 'astrogtm.com';
 
-export async function resolveTenant(): Promise<{
-  tenant: TenantConfig | null;
-  isOriginAccess: boolean;
-  forbidden: boolean;
-}> {
+/**
+ * Resolves tenant from request headers. Validates secret BEFORE returning.
+ * Returns null if tenant cannot be resolved or secret is invalid.
+ */
+export async function getTenantFromRequest(): Promise<TenantResult | null> {
   const headersList = headers();
   const xSite = headersList.get('x-site');
   const xSecret = headersList.get('x-secret');
@@ -22,60 +27,55 @@ export async function resolveTenant(): Promise<{
 
   const isOriginAccess = host.includes(ASTROGTM_DOMAIN) && !xSite;
 
+  // Direct access to astrogtm.com without proxy headers — serve with noindex
   if (isOriginAccess) {
-    const { data: tenants } = await supabaseServer
+    // Fallback: use first available tenant for rendering (noindexed anyway)
+    const { data } = await supabaseServer
       .from('gifaa_tenants')
       .select('tenant_key, public_domain, site_name, proxy_secret')
       .limit(1)
       .maybeSingle();
 
-    return {
-      tenant: tenants || { tenant_key: 'gifaa', public_domain: 'gifaa.in', site_name: 'Gifaa', proxy_secret: '' },
-      isOriginAccess: true,
-      forbidden: false,
-    };
+    if (!data) return null;
+    return { tenant: data, isOriginAccess: true };
   }
 
-  const tenantIdentifier = xSite || domainToTenantKey(host);
+  // Resolve tenant by x-site header or by host domain
+  let tenantConfig: TenantConfig | null = null;
 
-  const { data: tenantConfig } = await supabaseServer
-    .from('gifaa_tenants')
-    .select('tenant_key, public_domain, site_name, proxy_secret')
-    .eq('tenant_key', tenantIdentifier)
-    .maybeSingle();
-
-  if (!tenantConfig) {
-    const { data: byDomain } = await supabaseServer
+  if (xSite) {
+    const { data } = await supabaseServer
       .from('gifaa_tenants')
       .select('tenant_key, public_domain, site_name, proxy_secret')
-      .eq('public_domain', host.replace(/:\d+$/, ''))
+      .eq('tenant_key', xSite)
       .maybeSingle();
-
-    if (!byDomain) {
-      return { tenant: null, isOriginAccess: false, forbidden: true };
-    }
-
-    if (byDomain.proxy_secret && xSecret !== byDomain.proxy_secret) {
-      return { tenant: null, isOriginAccess: false, forbidden: true };
-    }
-
-    return { tenant: byDomain, isOriginAccess: false, forbidden: false };
+    tenantConfig = data;
   }
 
+  if (!tenantConfig) {
+    const domain = host.replace(/:\d+$/, '');
+    const { data } = await supabaseServer
+      .from('gifaa_tenants')
+      .select('tenant_key, public_domain, site_name, proxy_secret')
+      .eq('public_domain', domain)
+      .maybeSingle();
+    tenantConfig = data;
+  }
+
+  if (!tenantConfig) return null;
+
+  // SECRET VALIDATION — must pass before any content queries
   if (tenantConfig.proxy_secret && xSecret !== tenantConfig.proxy_secret) {
-    return { tenant: null, isOriginAccess: false, forbidden: true };
+    return null;
   }
 
-  return { tenant: tenantConfig, isOriginAccess: false, forbidden: false };
-}
-
-function domainToTenantKey(host: string): string {
-  const domain = host.replace(/:\d+$/, '');
-  if (domain.includes('gifaa')) return 'gifaa';
-  if (domain.includes('safebox')) return 'safebox';
-  return domain.split('.')[0];
+  return { tenant: tenantConfig, isOriginAccess: false };
 }
 
 export function buildCanonicalUrl(tenant: TenantConfig, path: string): string {
   return `https://${tenant.public_domain}${path}`;
+}
+
+export function buildArticleUrl(tenant: TenantConfig, slug: string): string {
+  return `https://${tenant.public_domain}/articles/${slug}`;
 }
