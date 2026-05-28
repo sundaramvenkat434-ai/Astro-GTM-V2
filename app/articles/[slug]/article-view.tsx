@@ -96,9 +96,10 @@ interface Props {
   logoUrl?: string | null;
   headerLogoHeight?: number;
   footerLogoHeight?: number;
+  isPreview?: boolean;
 }
 
-export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24 }: Props) {
+export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24, isPreview = false }: Props) {
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
@@ -126,8 +127,14 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
 
   return (
     <div className="min-h-screen bg-white">
+      {/* Preview Banner */}
+      {isPreview && (
+        <div className="sticky top-0 z-[60] bg-amber-500 text-white text-center py-2 px-4 text-sm font-medium shadow-sm">
+          Preview Mode — This page is not published and will not be indexed by search engines.
+        </div>
+      )}
       {/* Navbar */}
-      <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
+      <header className={`sticky ${isPreview ? 'top-[40px]' : 'top-0'} z-50 bg-white border-b border-gray-100`}>
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
           <Link href="/articles">
             {logoUrl ? (

@@ -653,7 +653,7 @@ function PagesTab() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => window.open(`/articles/${article.slug}`, '_blank')}
+                      onClick={() => window.open(`/articles/${article.slug}?preview=true`, '_blank')}
                       className="h-8 w-8 p-0"
                       title="Preview"
                     >

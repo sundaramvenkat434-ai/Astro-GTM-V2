@@ -9,9 +9,11 @@ export const dynamic = 'force-dynamic';
 
 interface PageProps {
   params: { slug: string };
+  searchParams: { [key: string]: string | string[] | undefined };
 }
 
-export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+export async function generateMetadata({ params, searchParams }: PageProps): Promise<Metadata> {
+  const isPreview = searchParams.preview === 'true';
   const h = headers();
   const result = await getTenantFromRequest({
     xSite: h.get('x-site'),
@@ -22,13 +24,17 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const { tenant } = result;
 
-  const { data: article } = await supabaseServer
+  const query = supabaseServer
     .from('gifaa_articles')
     .select('title, excerpt, hero_image, meta_title, meta_description')
     .eq('tenant', tenant.tenant_key)
-    .eq('slug', params.slug)
-    .eq('status', 'published')
-    .maybeSingle();
+    .eq('slug', params.slug);
+
+  if (!isPreview) {
+    query.eq('status', 'published');
+  }
+
+  const { data: article } = await query.maybeSingle();
 
   if (!article) return { title: 'Not Found' };
 
@@ -37,9 +43,10 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const description = article.meta_description || article.excerpt;
 
   return {
-    title: { absolute: title },
+    title: { absolute: isPreview ? `[Preview] ${title}` : title },
     description,
-    alternates: { canonical },
+    ...(isPreview && { robots: { index: false, follow: false } }),
+    alternates: { canonical: isPreview ? undefined : canonical },
     openGraph: {
       title,
       description,
@@ -57,7 +64,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function ArticleSlugPage({ params }: PageProps) {
+export default async function ArticleSlugPage({ params, searchParams }: PageProps) {
+  const isPreview = searchParams.preview === 'true';
   const h = headers();
   const result = await getTenantFromRequest({
     xSite: h.get('x-site'),
@@ -71,13 +79,17 @@ export default async function ArticleSlugPage({ params }: PageProps) {
 
   const { tenant } = result;
 
-  const { data: article } = await supabaseServer
+  const query = supabaseServer
     .from('gifaa_articles')
     .select('*')
     .eq('tenant', tenant.tenant_key)
-    .eq('slug', params.slug)
-    .eq('status', 'published')
-    .maybeSingle();
+    .eq('slug', params.slug);
+
+  if (!isPreview) {
+    query.eq('status', 'published');
+  }
+
+  const { data: article } = await query.maybeSingle();
 
   if (!article) {
     notFound();
@@ -103,6 +115,7 @@ export default async function ArticleSlugPage({ params }: PageProps) {
       logoUrl={tenant.logo_url}
       headerLogoHeight={tenant.header_logo_height}
       footerLogoHeight={tenant.footer_logo_height}
+      isPreview={isPreview}
     />
   );
 }
