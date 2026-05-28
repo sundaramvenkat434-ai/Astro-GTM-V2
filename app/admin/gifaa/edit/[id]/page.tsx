@@ -34,6 +34,7 @@ interface FAQ {
 }
 
 interface ArticleData {
+  tenant: string;
   slug: string;
   title: string;
   excerpt: string;
@@ -58,6 +59,7 @@ interface ArticleData {
 }
 
 const EMPTY_ARTICLE: ArticleData = {
+  tenant: 'gifaa',
   slug: '',
   title: '',
   excerpt: '',
@@ -112,6 +114,7 @@ function GifaaEditor() {
   const [saved, setSaved] = useState(false);
   const [activeTab, setActiveTab] = useState<'content' | 'sidebar' | 'meta' | 'related'>('content');
   const [allArticles, setAllArticles] = useState<{ slug: string; title: string }[]>([]);
+  const [tenants, setTenants] = useState<{ tenant_key: string; public_domain: string; site_name: string }[]>([{ tenant_key: 'gifaa', public_domain: 'gifaa.in', site_name: 'Gifaa' }]);
 
   useEffect(() => {
     if (!isNew) {
@@ -123,6 +126,7 @@ function GifaaEditor() {
         .then(({ data }) => {
           if (data) {
             setArticle({
+              tenant: data.tenant || 'gifaa',
               slug: data.slug,
               title: data.title,
               excerpt: data.excerpt,
@@ -154,6 +158,10 @@ function GifaaEditor() {
       .select('slug, title')
       .neq('id', isNew ? '00000000-0000-0000-0000-000000000000' : id)
       .then(({ data }) => setAllArticles(data || []));
+    supabase
+      .from('gifaa_tenants')
+      .select('tenant_key, public_domain, site_name')
+      .then(({ data }) => { if (data && data.length > 0) setTenants(data); });
   }, [id, isNew]);
 
   const update = useCallback((patch: Partial<ArticleData>) => {
@@ -275,6 +283,18 @@ function GifaaEditor() {
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-500 mb-1.5">Title</label>
               <Input value={article.title} onChange={(e) => update({ title: e.target.value })} placeholder="Article title" className="text-base" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Tenant</label>
+              <select
+                value={article.tenant}
+                onChange={(e) => update({ tenant: e.target.value })}
+                className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
+              >
+                {tenants.map((t) => (
+                  <option key={t.tenant_key} value={t.tenant_key}>{t.site_name} ({t.public_domain})</option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">Slug</label>
