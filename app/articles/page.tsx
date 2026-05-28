@@ -59,6 +59,7 @@ export default async function ArticlesPage() {
       totalCount={count || 0}
       siteName={tenant.site_name}
       publicDomain={tenant.public_domain}
+      logoUrl={tenant.logo_url}
     />
   );
 }

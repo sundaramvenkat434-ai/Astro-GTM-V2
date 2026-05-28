@@ -6,7 +6,11 @@ import { supabase } from '@/lib/supabase';
 import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X } from 'lucide-react';
+import {
+  Plus, Pencil, Trash2, Eye, FileText, Copy, Check,
+  RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X,
+  Image as ImageIcon, Upload,
+} from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -16,6 +20,7 @@ interface TenantData {
   public_domain: string;
   site_name: string;
   proxy_secret: string;
+  logo_url: string | null;
   created_at: string;
 }
 
@@ -123,14 +128,16 @@ function GifaaDashboard() {
 function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
   const [siteName, setSiteName] = useState(tenant.site_name);
   const [publicDomain, setPublicDomain] = useState(tenant.public_domain);
+  const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   async function handleSave() {
     setSaving(true);
     await supabase
       .from('gifaa_tenants')
-      .update({ site_name: siteName, public_domain: publicDomain })
+      .update({ site_name: siteName, public_domain: publicDomain, logo_url: logoUrl || null })
       .eq('id', tenant.id);
     setSaving(false);
     setSaved(true);
@@ -138,8 +145,77 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
     setTimeout(() => setSaved(false), 2000);
   }
 
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setUploading(true);
+    const ext = file.name.split('.').pop() || 'png';
+    const path = `tenant-logos/${tenant.tenant_key}-${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from('tool-logos').upload(path, file, {
+      cacheControl: '3600',
+      upsert: true,
+    });
+    if (!error) {
+      const { data: urlData } = supabase.storage.from('tool-logos').getPublicUrl(path);
+      setLogoUrl(urlData.publicUrl);
+    }
+    setUploading(false);
+  }
+
   return (
     <div className="space-y-6">
+      {/* Logo Section */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Client Logo</h2>
+        <p className="text-sm text-gray-500 mb-4">This logo appears in the page header and footer instead of the site name text.</p>
+
+        <div className="flex items-start gap-6">
+          {/* Preview */}
+          <div className="w-48 h-24 border border-gray-200 rounded-lg flex items-center justify-center bg-gray-50 shrink-0 overflow-hidden">
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo preview" className="max-w-full max-h-full object-contain p-2" />
+            ) : (
+              <div className="text-center">
+                <ImageIcon className="w-8 h-8 text-gray-300 mx-auto mb-1" />
+                <span className="text-xs text-gray-400">No logo</span>
+              </div>
+            )}
+          </div>
+
+          {/* Upload + URL */}
+          <div className="flex-1 space-y-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Logo URL</label>
+              <Input
+                value={logoUrl}
+                onChange={(e) => setLogoUrl(e.target.value)}
+                placeholder="https://..."
+                className="text-sm"
+              />
+            </div>
+            <div className="flex items-center gap-3">
+              <label className="inline-flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm text-gray-600 hover:bg-gray-50 cursor-pointer transition-colors">
+                <Upload className="w-4 h-4 text-gray-400" />
+                {uploading ? 'Uploading...' : 'Upload Image'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                  disabled={uploading}
+                />
+              </label>
+              {logoUrl && (
+                <Button variant="ghost" size="sm" onClick={() => setLogoUrl('')} className="text-xs text-red-500 hover:text-red-700">
+                  Remove
+                </Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Tenant Details */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Tenant Details</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

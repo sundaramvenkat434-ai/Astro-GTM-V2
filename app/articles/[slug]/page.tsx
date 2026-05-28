@@ -100,6 +100,7 @@ export default async function ArticleSlugPage({ params }: PageProps) {
       relatedArticles={relatedArticles}
       siteName={tenant.site_name}
       publicDomain={tenant.public_domain}
+      logoUrl={tenant.logo_url}
     />
   );
 }

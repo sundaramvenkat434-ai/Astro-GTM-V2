@@ -93,9 +93,10 @@ interface Props {
   relatedArticles: RelatedArticle[];
   siteName: string;
   publicDomain: string;
+  logoUrl?: string | null;
 }
 
-export function ArticleView({ article, relatedArticles, siteName, publicDomain }: Props) {
+export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl }: Props) {
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
@@ -126,8 +127,14 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain }
       {/* Navbar */}
       <header className="sticky top-0 z-50 bg-white border-b border-gray-100">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-14">
-          <Link href="/articles" className="text-xl font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
-            {siteName.toLowerCase()}
+          <Link href="/articles">
+            {logoUrl ? (
+              <img src={logoUrl} alt={siteName} className="h-8 w-auto object-contain" />
+            ) : (
+              <span className="text-xl font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
+                {siteName.toLowerCase()}
+              </span>
+            )}
           </Link>
           <nav className="hidden sm:flex items-center gap-7 text-[14px] text-gray-500">
             <Link href="/articles" className="hover:text-gray-900 transition-colors">Blog</Link>
@@ -304,9 +311,13 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain }
       <footer className="border-t border-gray-100 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 py-12">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <span className="text-lg font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
-              {siteName.toLowerCase()}
-            </span>
+            {logoUrl ? (
+              <img src={logoUrl} alt={siteName} className="h-6 w-auto object-contain" />
+            ) : (
+              <span className="text-lg font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
+                {siteName.toLowerCase()}
+              </span>
+            )}
             <p className="text-[12px] text-gray-400">&copy; {new Date().getFullYear()} {siteName}. All rights reserved.</p>
           </div>
         </div>
