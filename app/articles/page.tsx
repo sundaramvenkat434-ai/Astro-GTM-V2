@@ -20,7 +20,7 @@ export async function generateMetadata(): Promise<Metadata> {
   const canonical = buildCanonicalUrl(tenant, '/articles');
 
   return {
-    title: `Blog | ${tenant.site_name}`,
+    title: { absolute: `Blog | ${tenant.site_name}` },
     description: `Ideas, guides, and inspiration from ${tenant.site_name}.`,
     alternates: { canonical },
     openGraph: {
