@@ -24,6 +24,8 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
   const { xSite, xSecret, host } = h;
   const hostname = host || '';
 
+  console.log('[tenant] resolve request:', { xSite, xSecret: xSecret ? `${xSecret.slice(0, 4)}...` : null, host });
+
   const isOriginAccess = hostname.includes(ASTROGTM_DOMAIN) && !xSite;
 
   if (isOriginAccess) {
@@ -33,7 +35,10 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
       .limit(1)
       .maybeSingle();
 
-    if (!data) return null;
+    if (!data) {
+      console.log('[tenant] origin access: no tenant found');
+      return null;
+    }
     return { tenant: data, isOriginAccess: true };
   }
 
@@ -46,6 +51,7 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
       .eq('tenant_key', xSite)
       .maybeSingle();
     tenantConfig = data;
+    console.log('[tenant] lookup by tenant_key:', { xSite, found: !!data });
   }
 
   if (!tenantConfig) {
@@ -56,14 +62,24 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
       .eq('public_domain', domain)
       .maybeSingle();
     tenantConfig = data;
+    console.log('[tenant] lookup by domain:', { domain, found: !!data });
   }
 
-  if (!tenantConfig) return null;
-
-  if (tenantConfig.proxy_secret && xSecret !== tenantConfig.proxy_secret) {
+  if (!tenantConfig) {
+    console.log('[tenant] REJECTED: no tenant matched', { xSite, host });
     return null;
   }
 
+  if (tenantConfig.proxy_secret && xSecret !== tenantConfig.proxy_secret) {
+    console.log('[tenant] REJECTED: secret mismatch', {
+      xSite,
+      expectedSecret: `${tenantConfig.proxy_secret.slice(0, 4)}...`,
+      receivedSecret: xSecret ? `${xSecret.slice(0, 4)}...` : null,
+    });
+    return null;
+  }
+
+  console.log('[tenant] RESOLVED:', { tenant_key: tenantConfig.tenant_key, domain: tenantConfig.public_domain });
   return { tenant: tenantConfig, isOriginAccess: false };
 }
 
