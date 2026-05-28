@@ -50,7 +50,7 @@ export default async function ArticlesPage() {
     .from('gifaa_articles')
     .select('id, slug, title, excerpt, hero_image, category, author_name, read_time, published_at', { count: 'exact' })
     .eq('tenant', tenant.tenant_key)
-    .eq('status', 'published')
+    .in('status', ['published', 'approved'])
     .order('published_at', { ascending: false });
 
   return (

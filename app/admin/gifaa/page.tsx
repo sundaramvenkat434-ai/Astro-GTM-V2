@@ -638,9 +638,13 @@ function PagesTab() {
                 <td className="px-4 py-3 text-gray-600">{article.category || '\u2014'}</td>
                 <td className="px-4 py-3">
                   <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                    article.status === 'published'
-                      ? 'bg-green-50 text-green-700'
-                      : 'bg-amber-50 text-amber-700'
+                    article.status === 'approved'
+                      ? 'bg-emerald-50 text-emerald-700'
+                      : article.status === 'published'
+                      ? 'bg-blue-50 text-blue-700'
+                      : article.status === 'preview'
+                      ? 'bg-amber-50 text-amber-700'
+                      : 'bg-gray-100 text-gray-600'
                   }`}>
                     {article.status}
                   </span>

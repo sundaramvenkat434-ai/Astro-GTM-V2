@@ -174,7 +174,7 @@ function GifaaEditor() {
     const payload = {
       ...article,
       updated_at: new Date().toISOString(),
-      published_at: article.status === 'published' && !article.published_at ? new Date().toISOString() : article.published_at,
+      published_at: (article.status === 'published' || article.status === 'approved') && !article.published_at ? new Date().toISOString() : article.published_at,
     };
 
     if (isNew) {
@@ -247,7 +247,7 @@ function GifaaEditor() {
         </div>
         <div className="flex items-center gap-2">
           {article.slug && (
-            <Button variant="outline" size="sm" onClick={() => window.open(`/articles/${article.slug}`, '_blank')} className="gap-1.5">
+            <Button variant="outline" size="sm" onClick={() => window.open(`/articles/${article.slug}?preview=true`, '_blank')} className="gap-1.5">
               <Eye className="w-4 h-4" /> Preview
             </Button>
           )}
@@ -332,8 +332,16 @@ function GifaaEditor() {
                 className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
               >
                 <option value="draft">Draft</option>
-                <option value="published">Published</option>
+                <option value="preview">Preview</option>
+                <option value="published">Published (noindex)</option>
+                <option value="approved">Approved (indexed)</option>
               </select>
+              <p className="text-xs mt-1.5" style={{ color: article.status === 'draft' ? '#6b7280' : article.status === 'preview' ? '#d97706' : article.status === 'published' ? '#2563eb' : '#059669' }}>
+                {article.status === 'draft' && 'Not visible to anyone. Save your work in progress.'}
+                {article.status === 'preview' && 'Visible via preview link only. Not indexed.'}
+                {article.status === 'published' && 'Live on tenant domain. Search engines blocked (noindex).'}
+                {article.status === 'approved' && 'Live and indexed by search engines.'}
+              </p>
             </div>
           </div>
 
