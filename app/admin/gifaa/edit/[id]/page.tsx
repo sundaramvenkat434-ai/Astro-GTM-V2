@@ -10,6 +10,7 @@ import {
   ArrowLeft, Save, Eye, Plus, Trash2, GripVertical,
   ChevronDown, ChevronUp, Type, Image as ImageIcon,
   List, Table, MessageSquare, FileText, Loader as Loader2, Globe,
+  Sparkles, Activity, Shield, ChevronRight,
 } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -112,7 +113,7 @@ function GifaaEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'sidebar' | 'meta' | 'related'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'sidebar' | 'meta' | 'related' | 'ai-writer' | 'benchmark'>('content');
   const [allArticles, setAllArticles] = useState<{ slug: string; title: string }[]>([]);
   const [tenants, setTenants] = useState<{ tenant_key: string; public_domain: string; site_name: string }[]>([{ tenant_key: 'gifaa', public_domain: 'gifaa.in', site_name: 'Gifaa' }]);
 
@@ -259,18 +260,25 @@ function GifaaEditor() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-1 mb-6 border-b border-gray-200">
-        {(['content', 'sidebar', 'meta', 'related'] as const).map((tab) => (
+      <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
+        {([
+          { id: 'content', label: 'Content' },
+          { id: 'sidebar', label: 'Sidebar & CTA' },
+          { id: 'meta', label: 'SEO & Meta' },
+          { id: 'related', label: 'Related' },
+          { id: 'ai-writer', label: 'AI Writer' },
+          { id: 'benchmark', label: 'Benchmark' },
+        ] as const).map((tab) => (
           <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              activeTab === tab
+            key={tab.id}
+            onClick={() => setActiveTab(tab.id)}
+            className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px whitespace-nowrap ${
+              activeTab === tab.id
                 ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-500 hover:text-gray-700'
             }`}
           >
-            {tab === 'content' ? 'Content' : tab === 'sidebar' ? 'Sidebar & CTA' : tab === 'meta' ? 'SEO & Meta' : 'Related'}
+            {tab.label}
           </button>
         ))}
       </div>
@@ -551,6 +559,553 @@ function GifaaEditor() {
           )}
         </div>
       )}
+
+      {/* ─── AI Writer Tab ─── */}
+      {activeTab === 'ai-writer' && (
+        <AiWriterTab article={article} onApply={(generated) => {
+          update({
+            sections: generated.sections || article.sections,
+            faqs: generated.faqs || article.faqs,
+            excerpt: generated.excerpt || article.excerpt,
+            read_time: generated.read_time || article.read_time,
+            meta_title: generated.meta_title || article.meta_title,
+            meta_description: generated.meta_description || article.meta_description,
+          });
+          setActiveTab('content');
+        }} />
+      )}
+
+      {/* ─── Benchmark Tab ─── */}
+      {activeTab === 'benchmark' && (
+        <BenchmarkTab articleId={isNew ? null : id} article={article} tenants={tenants} />
+      )}
+    </div>
+  );
+}
+
+/* ─── AI Writer Tab ─────────────────────────────────────── */
+interface AiWriterProps {
+  article: ArticleData;
+  onApply: (generated: {
+    sections?: Section[];
+    faqs?: FAQ[];
+    excerpt?: string;
+    read_time?: string;
+    meta_title?: string;
+    meta_description?: string;
+  }) => void;
+}
+
+function AiWriterTab({ article, onApply }: AiWriterProps) {
+  const [contextDump, setContextDump] = useState('');
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState('');
+  const [preview, setPreview] = useState<any>(null);
+
+  async function handleGenerate() {
+    if (!article.title.trim()) {
+      setError('Please set an article title in the Content tab first.');
+      return;
+    }
+    setGenerating(true);
+    setError('');
+    setPreview(null);
+
+    try {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-gifaa-article`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: article.title,
+          context_dump: contextDump,
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (res.status === 429) {
+          setError(`Rate limited. Please wait ${data.retry_after || 60}s and try again.`);
+        } else {
+          setError(data.error || `Failed (${res.status})`);
+        }
+        return;
+      }
+
+      setPreview(data);
+    } catch (err: any) {
+      setError(err.message || 'Network error');
+    } finally {
+      setGenerating(false);
+    }
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Sparkles className="w-5 h-5 text-amber-500" />
+          <h2 className="text-lg font-semibold text-gray-900">AI Content Writer</h2>
+        </div>
+        <p className="text-sm text-gray-500 mb-6">
+          Generate original, E-E-A-T optimized article content. The AI uses the article title as main context
+          and your pasted reference material to produce unique content (not copied from the dump).
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Article Title (from Content tab)</label>
+            <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
+              {article.title || <span className="text-gray-400 italic">No title set — go to Content tab first</span>}
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+              Context Dump (paste reference text — used as factual source, not copied)
+            </label>
+            <textarea
+              value={contextDump}
+              onChange={(e) => setContextDump(e.target.value)}
+              rows={10}
+              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-y font-mono"
+              placeholder="Paste reference articles, research, product info, competitor content, etc. The AI will use facts from this but generate entirely original writing..."
+            />
+            <p className="mt-1 text-xs text-gray-400">{contextDump.length.toLocaleString()} characters</p>
+          </div>
+
+          {error && (
+            <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+              {error}
+            </div>
+          )}
+
+          <Button
+            onClick={handleGenerate}
+            disabled={generating || !article.title.trim()}
+            className="gap-2"
+          >
+            {generating ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+            ) : (
+              <><Sparkles className="w-4 h-4" /> Generate Article Content</>
+            )}
+          </Button>
+        </div>
+      </div>
+
+      {/* Preview & Apply */}
+      {preview && (
+        <div className="bg-white border border-gray-200 rounded-xl p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900">Generated Content Preview</h3>
+            <Button onClick={() => onApply(preview)} className="gap-2">
+              <Save className="w-4 h-4" /> Apply to Article
+            </Button>
+          </div>
+
+          {preview.excerpt && (
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs font-medium text-gray-500 mb-1">Excerpt</p>
+              <p className="text-sm text-gray-700">{preview.excerpt}</p>
+            </div>
+          )}
+
+          {preview.meta_title && (
+            <div className="p-3 bg-gray-50 rounded-lg">
+              <p className="text-xs font-medium text-gray-500 mb-1">Meta Title</p>
+              <p className="text-sm text-gray-700">{preview.meta_title}</p>
+            </div>
+          )}
+
+          {preview.sections && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">Sections ({preview.sections.length})</p>
+              <div className="space-y-2 max-h-[400px] overflow-y-auto border border-gray-100 rounded-lg p-3">
+                {preview.sections.map((s: Section, i: number) => (
+                  <div key={i} className="flex items-start gap-2 py-1.5 border-b border-gray-50 last:border-0">
+                    <span className="text-[10px] px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono shrink-0">{s.type}</span>
+                    <span className="text-sm text-gray-700 truncate">
+                      {s.heading || s.content?.slice(0, 80) || s.review_text?.slice(0, 80) || s.image_caption || (s.items ? `${s.items.length} items` : '...')}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {preview.faqs && preview.faqs.length > 0 && (
+            <div>
+              <p className="text-xs font-medium text-gray-500 mb-2">FAQs ({preview.faqs.length})</p>
+              <div className="space-y-1">
+                {preview.faqs.map((f: FAQ, i: number) => (
+                  <p key={i} className="text-sm text-gray-600 truncate">Q: {f.q}</p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ─── Benchmark Tab ─────────────────────────────────────── */
+interface BenchmarkProps {
+  articleId: string | null;
+  article: ArticleData;
+  tenants: { tenant_key: string; public_domain: string; site_name: string }[];
+}
+
+function BenchmarkTab({ articleId, article, tenants }: BenchmarkProps) {
+  const [lighthouseLoading, setLighthouseLoading] = useState(false);
+  const [lighthouseResult, setLighthouseResult] = useState<any>(null);
+  const [lighthouseExpanded, setLighthouseExpanded] = useState(false);
+  const [eeatLoading, setEeatLoading] = useState(false);
+  const [eeatResult, setEeatResult] = useState<any>(null);
+  const [eeatExpanded, setEeatExpanded] = useState(false);
+  const [error, setError] = useState('');
+
+  const canBenchmark = articleId && ['preview', 'published', 'approved'].includes(article.status);
+  const tenant = tenants.find((t) => t.tenant_key === article.tenant);
+  const pageUrl = tenant ? `https://${tenant.public_domain}/articles/${article.slug}` : '';
+
+  // Load existing scores on mount
+  useEffect(() => {
+    if (!articleId) return;
+    supabase
+      .from('lighthouse_scores')
+      .select('*')
+      .eq('page_id', articleId)
+      .eq('strategy', 'mobile')
+      .maybeSingle()
+      .then(({ data }) => { if (data) setLighthouseResult(data); });
+    supabase
+      .from('eeat_scores')
+      .select('*')
+      .eq('page_id', articleId)
+      .maybeSingle()
+      .then(({ data }) => { if (data) setEeatResult(data); });
+  }, [articleId]);
+
+  async function runLighthouse() {
+    if (!articleId || !tenant) return;
+    setLighthouseLoading(true);
+    setError('');
+    try {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/run-lighthouse`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          page_id: articleId,
+          slug: `articles/${article.slug}`,
+          base_url: `https://${tenant.public_domain}`,
+          strategy: 'mobile',
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || `Lighthouse failed (${res.status})`);
+      } else {
+        setLighthouseResult(data);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLighthouseLoading(false);
+    }
+  }
+
+  async function runEeat() {
+    if (!articleId) return;
+    setEeatLoading(true);
+    setError('');
+    try {
+      const contentParts: string[] = [];
+      for (const s of article.sections) {
+        if (s.heading) contentParts.push(`## ${s.heading}`);
+        if (s.content) contentParts.push(s.content);
+        if (s.items) contentParts.push(s.items.map((i) => `- ${i}`).join('\n'));
+        if (s.review_text) contentParts.push(`"${s.review_text}" — ${s.reviewer_name || ''}`);
+      }
+      for (const f of article.faqs) {
+        contentParts.push(`Q: ${f.q}\nA: ${f.a}`);
+      }
+
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/run-eeat`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          page_id: articleId,
+          title: article.title,
+          content: contentParts.join('\n\n'),
+          meta_description: article.meta_description || article.excerpt,
+          focus_keyword: article.category,
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        if (res.status === 429) {
+          setError(`Rate limited. Wait ${data.retry_after || 60}s.`);
+        } else {
+          setError(data.error || `EEAT failed (${res.status})`);
+        }
+      } else {
+        setEeatResult(data);
+      }
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setEeatLoading(false);
+    }
+  }
+
+  function scoreColor(score: number, max: number) {
+    const pct = score / max;
+    if (pct >= 0.9) return 'text-green-600 bg-green-50 border-green-200';
+    if (pct >= 0.5) return 'text-amber-600 bg-amber-50 border-amber-200';
+    return 'text-red-600 bg-red-50 border-red-200';
+  }
+
+  if (!canBenchmark) {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+        <Shield className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+        <p className="text-sm text-gray-500 mb-1">Benchmark unavailable</p>
+        <p className="text-xs text-gray-400">
+          Save the article and set status to <span className="font-medium">Preview</span>, <span className="font-medium">Published</span>, or <span className="font-medium">Approved</span> to run benchmarks.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {error && (
+        <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg text-sm text-red-700">
+          {error}
+        </div>
+      )}
+
+      {pageUrl && (
+        <div className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-lg flex items-center gap-2">
+          <Globe className="w-4 h-4 text-gray-400 shrink-0" />
+          <span className="text-xs text-gray-500 truncate">{pageUrl}</span>
+        </div>
+      )}
+
+      {/* Lighthouse */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Activity className="w-5 h-5 text-blue-500" />
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">Lighthouse (Mobile)</h3>
+              {lighthouseResult?.fetched_at && (
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Last scan: {new Date(lighthouseResult.fetched_at).toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            onClick={runLighthouse}
+            disabled={lighthouseLoading}
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+          >
+            {lighthouseLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Activity className="w-3.5 h-3.5" />}
+            {lighthouseResult ? 'Rescan' : 'Run Scan'}
+          </Button>
+        </div>
+
+        {lighthouseResult && (
+          <>
+            <div className="px-5 pb-4 grid grid-cols-4 gap-3">
+              {[
+                { key: 'performance', label: 'Performance' },
+                { key: 'accessibility', label: 'Accessibility' },
+                { key: 'best_practices', label: 'Best Practices' },
+                { key: 'seo', label: 'SEO' },
+              ].map(({ key, label }) => {
+                const score = lighthouseResult[key];
+                return (
+                  <div key={key} className={`text-center p-3 rounded-lg border ${score != null ? scoreColor(score, 100) : 'bg-gray-50 border-gray-200 text-gray-400'}`}>
+                    <p className="text-2xl font-bold">{score ?? '—'}</p>
+                    <p className="text-[10px] mt-0.5 opacity-75">{label}</p>
+                  </div>
+                );
+              })}
+            </div>
+
+            {lighthouseResult.raw_report?.key_audits && (
+              <div className="border-t border-gray-100">
+                <button
+                  onClick={() => setLighthouseExpanded(!lighthouseExpanded)}
+                  className="w-full px-5 py-3 flex items-center justify-between text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+                >
+                  <span>Detailed Audits ({Object.keys(lighthouseResult.raw_report.key_audits).length})</span>
+                  <ChevronDown className={`w-4 h-4 transition-transform ${lighthouseExpanded ? 'rotate-180' : ''}`} />
+                </button>
+                {lighthouseExpanded && (
+                  <div className="px-5 pb-4 space-y-1.5">
+                    {Object.entries(lighthouseResult.raw_report.key_audits).map(([auditId, audit]: [string, any]) => (
+                      <div key={auditId} className="flex items-center justify-between py-1.5 border-b border-gray-50 last:border-0">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <span className={`w-2 h-2 rounded-full shrink-0 ${
+                            audit.score === null ? 'bg-gray-300' : audit.score >= 0.9 ? 'bg-green-500' : audit.score >= 0.5 ? 'bg-amber-500' : 'bg-red-500'
+                          }`} />
+                          <span className="text-xs text-gray-700 truncate">{audit.title}</span>
+                        </div>
+                        {audit.displayValue && (
+                          <span className="text-xs text-gray-500 shrink-0 ml-2">{audit.displayValue}</span>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </div>
+
+      {/* E-E-A-T */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="p-5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Shield className="w-5 h-5 text-emerald-500" />
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">E-E-A-T Score</h3>
+              {eeatResult?.analyzed_at && (
+                <p className="text-[11px] text-gray-400 mt-0.5">
+                  Last analysis: {new Date(eeatResult.analyzed_at).toLocaleString()}
+                </p>
+              )}
+            </div>
+          </div>
+          <Button
+            onClick={runEeat}
+            disabled={eeatLoading}
+            size="sm"
+            variant="outline"
+            className="gap-1.5"
+          >
+            {eeatLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Shield className="w-3.5 h-3.5" />}
+            {eeatResult ? 'Re-analyze' : 'Analyze'}
+          </Button>
+        </div>
+
+        {eeatResult && (
+          <>
+            <div className="px-5 pb-4">
+              <div className="flex items-center gap-5 mb-4">
+                <div className={`w-16 h-16 rounded-full flex items-center justify-center border-2 ${scoreColor(eeatResult.overall_score, 100)}`}>
+                  <span className="text-xl font-bold">{eeatResult.overall_score}</span>
+                </div>
+                <div className="grid grid-cols-2 gap-x-6 gap-y-1.5">
+                  {[
+                    { key: 'experience_score', label: 'Experience' },
+                    { key: 'expertise_score', label: 'Expertise' },
+                    { key: 'authoritativeness_score', label: 'Authority' },
+                    { key: 'trustworthiness_score', label: 'Trust' },
+                  ].map(({ key, label }) => (
+                    <div key={key} className="flex items-center gap-2">
+                      <span className="text-xs text-gray-500 w-16">{label}</span>
+                      <div className="flex-1 h-1.5 bg-gray-100 rounded-full w-20">
+                        <div
+                          className={`h-full rounded-full ${eeatResult[key] >= 20 ? 'bg-green-500' : eeatResult[key] >= 13 ? 'bg-amber-500' : 'bg-red-500'}`}
+                          style={{ width: `${(eeatResult[key] / 25) * 100}%` }}
+                        />
+                      </div>
+                      <span className="text-xs font-medium text-gray-700 w-7 text-right">{eeatResult[key]}/25</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="border-t border-gray-100">
+              <button
+                onClick={() => setEeatExpanded(!eeatExpanded)}
+                className="w-full px-5 py-3 flex items-center justify-between text-sm text-gray-600 hover:bg-gray-50 transition-colors"
+              >
+                <span>Detailed Report</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${eeatExpanded ? 'rotate-180' : ''}`} />
+              </button>
+              {eeatExpanded && (
+                <div className="px-5 pb-5 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {eeatResult.strengths?.length > 0 && (
+                    <div className="p-3 bg-green-50 border border-green-100 rounded-lg">
+                      <p className="text-xs font-semibold text-green-800 mb-2">Strengths</p>
+                      <ul className="space-y-1">
+                        {eeatResult.strengths.map((s: string, i: number) => (
+                          <li key={i} className="text-xs text-green-700 flex items-start gap-1.5">
+                            <ChevronRight className="w-3 h-3 shrink-0 mt-0.5" />
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {eeatResult.weaknesses?.length > 0 && (
+                    <div className="p-3 bg-red-50 border border-red-100 rounded-lg">
+                      <p className="text-xs font-semibold text-red-800 mb-2">Weaknesses</p>
+                      <ul className="space-y-1">
+                        {eeatResult.weaknesses.map((s: string, i: number) => (
+                          <li key={i} className="text-xs text-red-700 flex items-start gap-1.5">
+                            <ChevronRight className="w-3 h-3 shrink-0 mt-0.5" />
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {eeatResult.missing_signals?.length > 0 && (
+                    <div className="p-3 bg-amber-50 border border-amber-100 rounded-lg">
+                      <p className="text-xs font-semibold text-amber-800 mb-2">Missing Signals</p>
+                      <ul className="space-y-1">
+                        {eeatResult.missing_signals.map((s: string, i: number) => (
+                          <li key={i} className="text-xs text-amber-700 flex items-start gap-1.5">
+                            <ChevronRight className="w-3 h-3 shrink-0 mt-0.5" />
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {eeatResult.improvements?.length > 0 && (
+                    <div className="p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                      <p className="text-xs font-semibold text-blue-800 mb-2">Improvements</p>
+                      <ul className="space-y-1">
+                        {eeatResult.improvements.map((s: string, i: number) => (
+                          <li key={i} className="text-xs text-blue-700 flex items-start gap-1.5">
+                            <ChevronRight className="w-3 h-3 shrink-0 mt-0.5" />
+                            <span>{s}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

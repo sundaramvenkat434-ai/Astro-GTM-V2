@@ -33,6 +33,7 @@ import {
   X,
   Clock,
   History,
+  FileText,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -131,6 +132,17 @@ const PROMPT_KEYS = [
     description: 'Used when "Top X 2.0 Page" is selected. A/B test variant.',
     icon: Sparkles,
     usedBy: 'generate-top-x',
+    testable: true,
+  },
+  {
+    key: 'gifaa_article_generation_prompt',
+    modelKey: 'ai_model_generate_gifaa_article',
+    countKey: 'ai_request_count_generate_gifaa_article',
+    defaultModel: 'openai/gpt-oss-120b:free',
+    label: 'Gifaa Article — AI Content Writer',
+    description: 'Generates full article content from title and context dump. Produces original, E-E-A-T optimized content.',
+    icon: FileText,
+    usedBy: 'generate-gifaa-article',
     testable: true,
   },
 ];
