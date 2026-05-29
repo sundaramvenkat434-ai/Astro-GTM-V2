@@ -24,12 +24,21 @@ export default function AdminLogin() {
     setError('');
     setLoading(true);
 
-    const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+    const { error: authError, data: authData } = await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
       setError(authError.message === 'Invalid login credentials' ? 'Invalid email or password. Please try again.' : authError.message);
       setLoading(false);
       return;
+    }
+
+    // Update last_login_at
+    if (authData.user) {
+      supabase
+        .from('admin_users')
+        .update({ last_login_at: new Date().toISOString() })
+        .eq('auth_user_id', authData.user.id)
+        .then(() => {});
     }
 
     if (keepToday) {
