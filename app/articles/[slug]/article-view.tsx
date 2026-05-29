@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ArrowLeft, Send } from 'lucide-react';
 
@@ -106,16 +106,23 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
+  const tracked = useRef(false);
 
   // Track page view
   useEffect(() => {
-    if (isPreview || !article.id) return;
-    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`;
-    fetch(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ article_id: article.id, event_type: 'view' }),
-    }).catch(() => {});
+    if (tracked.current || isPreview || !article.id) return;
+    tracked.current = true;
+    fetch(
+      `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({ article_id: article.id, event_type: 'view' }),
+      }
+    ).catch(() => {});
   }, [article.id, isPreview]);
 
   useEffect(() => {
@@ -260,12 +267,17 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
                         if (sidebarEmail.trim()) {
                           setSidebarSubmitted(true);
                           if (article.id) {
-                            const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`;
-                            fetch(url, {
-                              method: 'POST',
-                              headers: { 'Content-Type': 'application/json' },
-                              body: JSON.stringify({ article_id: article.id, event_type: 'cta_click' }),
-                            }).catch(() => {});
+                            fetch(
+                              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`,
+                              {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                                },
+                                body: JSON.stringify({ article_id: article.id, event_type: 'cta_click' }),
+                              }
+                            ).catch(() => {});
                           }
                         }
                       }} className="space-y-2">

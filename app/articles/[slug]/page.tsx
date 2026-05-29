@@ -43,8 +43,9 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   if (!tenant && isPreview) {
     const { data: article } = await supabaseServer
       .from('gifaa_articles')
-      .select('tenant, title, excerpt, hero_image, meta_title, meta_description')
+      .select('tenant, title, excerpt, hero_image, meta_title, meta_description, status')
       .eq('slug', params.slug)
+      .eq('status', 'preview')
       .maybeSingle();
 
     if (!article) return { title: 'Not Found' };
@@ -134,6 +135,7 @@ export default async function ArticleSlugPage({ params, searchParams }: PageProp
       .from('gifaa_articles')
       .select('*')
       .eq('slug', params.slug)
+      .eq('status', 'preview')
       .maybeSingle();
 
     if (!article) notFound();
@@ -180,8 +182,11 @@ export default async function ArticleSlugPage({ params, searchParams }: PageProp
     .eq('tenant', tenant.tenant_key)
     .eq('slug', params.slug);
 
-  // Only approved and published are visible without preview flag
-  if (!isPreview) {
+  // Preview mode: only show articles with 'preview' status
+  // Normal mode: only show 'published' and 'approved'
+  if (isPreview) {
+    query.eq('status', 'preview');
+  } else {
     query.in('status', ['published', 'approved']);
   }
 
