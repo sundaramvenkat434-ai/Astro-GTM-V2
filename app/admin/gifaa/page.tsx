@@ -310,12 +310,15 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
               </div>
             </div>
             <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
-              <p className="text-xs text-gray-500 mb-2">Preview</p>
-              <div className="flex items-center gap-2" style={{ opacity: poweredByOpacity / 100 }}>
+              <p className="text-xs text-gray-500 mb-2">Preview (exactly as shown in footer)</p>
+              <div className="inline-flex items-center gap-1.5" style={{ opacity: poweredByOpacity / 100 }}>
                 <span className="text-[11px] text-gray-400 font-medium">Powered by</span>
-                <div className="bg-gray-200 rounded px-2 py-0.5" style={{ height: `${poweredByHeight}px`, display: 'flex', alignItems: 'center' }}>
-                  <span className="text-[10px] font-bold text-gray-600">AstroGTM</span>
-                </div>
+                <span
+                  className="inline-flex items-center px-2 py-0.5 bg-gray-200 rounded text-gray-600 font-bold"
+                  style={{ fontSize: `${Math.max(10, poweredByHeight * 0.55)}px`, height: `${poweredByHeight}px` }}
+                >
+                  AstroGTM
+                </span>
               </div>
             </div>
           </div>
