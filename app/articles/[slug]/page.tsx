@@ -25,10 +25,17 @@ export async function generateMetadata({ params, searchParams }: PageProps): Pro
   const isPreview = searchParams.preview === 'true';
 
   const h = headers();
+  const host = h.get('host') || '';
+
+  // Direct origin access without preview: return empty metadata (page will 404)
+  if (host.includes('astrogtm.com') && !h.get('x-site') && !isPreview) {
+    return { title: 'Not Found' };
+  }
+
   const result = await getTenantFromRequest({
     xSite: h.get('x-site'),
     xSecret: h.get('x-secret'),
-    host: h.get('host'),
+    host,
   });
 
   let tenant: TenantConfig | null = result?.tenant || null;
@@ -106,10 +113,17 @@ export default async function ArticleSlugPage({ params, searchParams }: PageProp
   const isPreview = searchParams.preview === 'true';
 
   const h = headers();
+  const host = h.get('host') || '';
+
+  // Direct access to origin domain without preview must always 404
+  if (host.includes('astrogtm.com') && !h.get('x-site') && !isPreview) {
+    notFound();
+  }
+
   const result = await getTenantFromRequest({
     xSite: h.get('x-site'),
     xSecret: h.get('x-secret'),
-    host: h.get('host'),
+    host,
   });
 
   let tenant: TenantConfig | null = result?.tenant || null;

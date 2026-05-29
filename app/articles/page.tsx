@@ -34,10 +34,17 @@ export async function generateMetadata(): Promise<Metadata> {
 
 export default async function ArticlesPage() {
   const h = headers();
+  const host = h.get('host') || '';
+
+  // Direct access to origin domain must always 404
+  if (host.includes('astrogtm.com') && !h.get('x-site')) {
+    notFound();
+  }
+
   const result = await getTenantFromRequest({
     xSite: h.get('x-site'),
     xSecret: h.get('x-secret'),
-    host: h.get('host'),
+    host,
   });
 
   if (!result) {
