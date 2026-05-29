@@ -22,11 +22,12 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const { page_id } = await req.json();
+    const body = await req.json();
+    const { page_id, article_id, event_type } = body;
 
-    if (!page_id) {
+    if (!page_id && !article_id) {
       return new Response(
-        JSON.stringify({ error: "page_id is required" }),
+        JSON.stringify({ error: "page_id or article_id is required" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -43,6 +44,30 @@ Deno.serve(async (req: Request) => {
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!
     );
 
+    // Gifaa article tracking
+    if (article_id) {
+      const { error } = await supabase
+        .from("gifaa_page_views")
+        .insert({
+          article_id,
+          visitor_hash,
+          event_type: event_type || "view",
+        });
+
+      if (error) {
+        return new Response(
+          JSON.stringify({ error: error.message }),
+          { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      return new Response(
+        JSON.stringify({ ok: true }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Tool page tracking (original behavior)
     const { error } = await supabase
       .from("page_views")
       .insert({ page_id, visitor_hash });

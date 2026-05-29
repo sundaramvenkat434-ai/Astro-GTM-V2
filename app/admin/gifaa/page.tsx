@@ -636,9 +636,16 @@ function SecurityTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
 
 /* ─── Pages Tab (existing articles list) ─────────────────── */
 
+interface ArticleAnalytics {
+  views: number;
+  unique_users: number;
+  cta_clicks: number;
+}
+
 function PagesTab() {
   const router = useRouter();
   const [articles, setArticles] = useState<Article[]>([]);
+  const [analytics, setAnalytics] = useState<Record<string, ArticleAnalytics>>({});
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -651,8 +658,47 @@ function PagesTab() {
       .select('id, slug, title, tenant, category, status, published_at, updated_at')
       .eq('tenant', 'gifaa')
       .order('updated_at', { ascending: false });
-    setArticles(data || []);
+    const articleList = data || [];
+    setArticles(articleList);
     setLoading(false);
+
+    if (articleList.length > 0) {
+      loadAnalytics(articleList.map((a) => a.id));
+    }
+  }
+
+  async function loadAnalytics(articleIds: string[]) {
+    const { data } = await supabase
+      .from('gifaa_page_views')
+      .select('article_id, visitor_hash, event_type')
+      .in('article_id', articleIds);
+
+    if (!data) return;
+
+    const map: Record<string, ArticleAnalytics> = {};
+    for (const id of articleIds) {
+      map[id] = { views: 0, unique_users: 0, cta_clicks: 0 };
+    }
+
+    const uniqueVisitors: Record<string, Set<string>> = {};
+    for (const row of data) {
+      if (!map[row.article_id]) continue;
+      if (row.event_type === 'view') {
+        map[row.article_id].views++;
+        if (!uniqueVisitors[row.article_id]) uniqueVisitors[row.article_id] = new Set();
+        uniqueVisitors[row.article_id].add(row.visitor_hash);
+      } else if (row.event_type === 'cta_click') {
+        map[row.article_id].cta_clicks++;
+      }
+    }
+
+    for (const id of articleIds) {
+      if (uniqueVisitors[id]) {
+        map[id].unique_users = uniqueVisitors[id].size;
+      }
+    }
+
+    setAnalytics(map);
   }
 
   async function handleDelete(id: string, title: string) {
@@ -691,69 +737,84 @@ function PagesTab() {
               <th className="text-left px-4 py-3 font-medium text-gray-600">Title</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Category</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Status</th>
+              <th className="text-center px-3 py-3 font-medium text-gray-600">Views</th>
+              <th className="text-center px-3 py-3 font-medium text-gray-600">Users</th>
+              <th className="text-center px-3 py-3 font-medium text-gray-600">CTA</th>
               <th className="text-left px-4 py-3 font-medium text-gray-600">Updated</th>
               <th className="text-right px-4 py-3 font-medium text-gray-600">Actions</th>
             </tr>
           </thead>
           <tbody>
-            {articles.map((article) => (
-              <tr key={article.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3">
-                  <div>
-                    <p className="font-medium text-gray-900 line-clamp-1">{article.title || 'Untitled'}</p>
-                    <p className="text-xs text-gray-400 mt-0.5">/articles/{article.slug}</p>
-                  </div>
-                </td>
-                <td className="px-4 py-3 text-gray-600">{article.category || '\u2014'}</td>
-                <td className="px-4 py-3">
-                  <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
-                    article.status === 'approved'
-                      ? 'bg-emerald-50 text-emerald-700'
-                      : article.status === 'published'
-                      ? 'bg-blue-50 text-blue-700'
-                      : article.status === 'preview'
-                      ? 'bg-amber-50 text-amber-700'
-                      : 'bg-gray-100 text-gray-600'
-                  }`}>
-                    {article.status}
-                  </span>
-                </td>
-                <td className="px-4 py-3 text-gray-500 text-xs">
-                  {new Date(article.updated_at).toLocaleDateString()}
-                </td>
-                <td className="px-4 py-3">
-                  <div className="flex items-center justify-end gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => window.open(`/articles/${article.slug}?preview=true`, '_blank')}
-                      className="h-8 w-8 p-0"
-                      title="Preview"
-                    >
-                      <Eye className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => router.push(`/admin/gifaa/edit/${article.id}`)}
-                      className="h-8 w-8 p-0"
-                      title="Edit"
-                    >
-                      <Pencil className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => handleDelete(article.id, article.title)}
-                      className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
-                      title="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))}
+            {articles.map((article) => {
+              const stats = analytics[article.id];
+              return (
+                <tr key={article.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
+                  <td className="px-4 py-3">
+                    <div>
+                      <p className="font-medium text-gray-900 line-clamp-1">{article.title || 'Untitled'}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">/articles/{article.slug}</p>
+                    </div>
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">{article.category || '\u2014'}</td>
+                  <td className="px-4 py-3">
+                    <span className={`inline-flex px-2 py-0.5 rounded-full text-xs font-medium ${
+                      article.status === 'approved'
+                        ? 'bg-emerald-50 text-emerald-700'
+                        : article.status === 'published'
+                        ? 'bg-blue-50 text-blue-700'
+                        : article.status === 'preview'
+                        ? 'bg-amber-50 text-amber-700'
+                        : 'bg-gray-100 text-gray-600'
+                    }`}>
+                      {article.status}
+                    </span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="text-xs font-medium text-gray-700">{stats?.views ?? '\u2014'}</span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="text-xs font-medium text-gray-700">{stats?.unique_users ?? '\u2014'}</span>
+                  </td>
+                  <td className="px-3 py-3 text-center">
+                    <span className="text-xs font-medium text-gray-700">{stats?.cta_clicks ?? '\u2014'}</span>
+                  </td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {new Date(article.updated_at).toLocaleDateString()}
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center justify-end gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => window.open(`/articles/${article.slug}?preview=true`, '_blank')}
+                        className="h-8 w-8 p-0"
+                        title="Preview"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => router.push(`/admin/gifaa/edit/${article.id}`)}
+                        className="h-8 w-8 p-0"
+                        title="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDelete(article.id, article.title)}
+                        className="h-8 w-8 p-0 text-red-500 hover:text-red-700"
+                        title="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
       </div>

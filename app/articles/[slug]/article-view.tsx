@@ -107,6 +107,17 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
 
+  // Track page view
+  useEffect(() => {
+    if (isPreview || !article.id) return;
+    const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`;
+    fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ article_id: article.id, event_type: 'view' }),
+    }).catch(() => {});
+  }, [article.id, isPreview]);
+
   useEffect(() => {
     const observer = new IntersectionObserver(
       (entries) => {
@@ -244,7 +255,20 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
                     {sidebarSubmitted ? (
                       <p className="text-[13px] text-green-700 font-medium">{article.cta_success_message || 'Subscribed!'}</p>
                     ) : (
-                      <form onSubmit={(e) => { e.preventDefault(); if (sidebarEmail.trim()) setSidebarSubmitted(true); }} className="space-y-2">
+                      <form onSubmit={(e) => {
+                        e.preventDefault();
+                        if (sidebarEmail.trim()) {
+                          setSidebarSubmitted(true);
+                          if (article.id) {
+                            const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`;
+                            fetch(url, {
+                              method: 'POST',
+                              headers: { 'Content-Type': 'application/json' },
+                              body: JSON.stringify({ article_id: article.id, event_type: 'cta_click' }),
+                            }).catch(() => {});
+                          }
+                        }
+                      }} className="space-y-2">
                         <input
                           type="email"
                           required
