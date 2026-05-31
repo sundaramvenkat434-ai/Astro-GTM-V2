@@ -63,12 +63,20 @@ export default function RootLayout({
           }}
         />
       </head>
-<Script src="https://www.googletagmanager.com/gtag/js?id=G-S7J68DJQKE" strategy="afterInteractive" />
-      <Script id="gtag-init" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `
-        window.dataLayer = window.dataLayer || [];
-        function gtag(){dataLayer.push(arguments);}
-        gtag('js', new Date());
-        gtag('config', 'G-S7J68DJQKE');
+<Script id="ga-loader" strategy="afterInteractive" dangerouslySetInnerHTML={{ __html: `
+        (function(){
+          var p = window.location.pathname;
+          if (p === '/admin' || p.startsWith('/admin/') || p === '/articles' || p.startsWith('/articles/')) return;
+          var s = document.createElement('script');
+          s.src = 'https://www.googletagmanager.com/gtag/js?id=G-S7J68DJQKE';
+          s.async = true;
+          document.head.appendChild(s);
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          window.gtag = gtag;
+          gtag('js', new Date());
+          gtag('config', 'G-S7J68DJQKE');
+        })();
       ` }} />
       <body className={`${inter.variable} ${dmSans.variable} ${dmSans.className} flex flex-col min-h-screen`}>
         <GlobalLoader />
