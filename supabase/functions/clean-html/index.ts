@@ -1,6 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { Readability } from "npm:@mozilla/readability@0.5.0";
-import { JSDOM } from "npm:jsdom@24.0.0";
+import { parseHTML } from "npm:linkedom@0.16.11";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -27,8 +27,17 @@ Deno.serve(async (req: Request) => {
 
     const trimmed = html.length > MAX_INPUT_BYTES ? html.slice(0, MAX_INPUT_BYTES) : html;
 
-    const dom = new JSDOM(trimmed, { url: typeof url === "string" && url ? url : undefined });
-    const doc = dom.window.document;
+    const { document } = parseHTML(trimmed);
+
+    if (typeof url === "string" && url) {
+      try {
+        const base = document.createElement("base");
+        base.setAttribute("href", url);
+        document.head.appendChild(base);
+      } catch {
+        // ignore if head doesn't exist
+      }
+    }
 
     const removeSelectors = [
       "script", "style", "noscript", "iframe", "svg",
@@ -51,10 +60,14 @@ Deno.serve(async (req: Request) => {
       "[class*='modal' i]",
     ];
     for (const sel of removeSelectors) {
-      doc.querySelectorAll(sel).forEach((el) => el.remove());
+      try {
+        document.querySelectorAll(sel).forEach((el: any) => el.remove());
+      } catch {
+        // linkedom may not support case-insensitive attribute selectors
+      }
     }
 
-    const reader = new Readability(doc);
+    const reader = new Readability(document);
     const parsed = reader.parse();
 
     if (!parsed) {
@@ -64,7 +77,10 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    let textContent = (parsed.textContent || "").replace(/\s+\n/g, "\n").replace(/\n{3,}/g, "\n\n").trim();
+    let textContent = (parsed.textContent || "")
+      .replace(/\s+\n/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
     if (textContent.length > MAX_TEXT_BYTES) {
       textContent = textContent.slice(0, MAX_TEXT_BYTES);
     }
