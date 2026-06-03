@@ -10,7 +10,7 @@ import {
   ArrowLeft, Save, Eye, Plus, Trash2, GripVertical,
   ChevronDown, ChevronUp, Type, Image as ImageIcon,
   List, Table, MessageSquare, FileText, Loader as Loader2, Globe,
-  Sparkles, Activity, Shield, ChevronRight,
+  Sparkles, Activity, Shield, ChevronRight, Link as LinkIcon, Wand2, Check,
 } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
@@ -597,16 +597,101 @@ interface AiWriterProps {
 }
 
 function AiWriterTab({ article, onApply }: AiWriterProps) {
-  const [contextDump, setContextDump] = useState('');
+  const [sourceUrl, setSourceUrl] = useState('');
+  const [rawHtml, setRawHtml] = useState('');
+  const [scrapedFrom, setScrapedFrom] = useState('');
+  const [cleaned, setCleaned] = useState<{ title: string; excerpt: string; textContent: string } | null>(null);
+  const [scraping, setScraping] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<any>(null);
+
+  async function handleScrape() {
+    setError('');
+    setRawHtml('');
+    setScrapedFrom('');
+    setCleaned(null);
+    setPreview(null);
+
+    const trimmed = sourceUrl.trim();
+    if (!trimmed) {
+      setError('Enter a URL to scrape.');
+      return;
+    }
+
+    setScraping(true);
+    try {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scrape-raw-html`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ url: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || `Scrape failed (${res.status})`);
+        return;
+      }
+      setRawHtml(data.html || '');
+      setScrapedFrom(data.url || trimmed);
+    } catch (err: any) {
+      setError(err.message || 'Network error');
+    } finally {
+      setScraping(false);
+    }
+  }
+
+  async function handleClean() {
+    setError('');
+    setCleaned(null);
+    setPreview(null);
+    if (!rawHtml) {
+      setError('Scrape a URL before cleaning.');
+      return;
+    }
+
+    setCleaning(true);
+    try {
+      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/clean-html`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ html: rawHtml, url: scrapedFrom || undefined }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || `Cleanup failed (${res.status})`);
+        return;
+      }
+      setCleaned({
+        title: data.title || '',
+        excerpt: data.excerpt || '',
+        textContent: data.textContent || '',
+      });
+    } catch (err: any) {
+      setError(err.message || 'Network error');
+    } finally {
+      setCleaning(false);
+    }
+  }
 
   async function handleGenerate() {
     if (!article.title.trim()) {
       setError('Please set an article title in the Content tab first.');
       return;
     }
+    if (!cleaned || !cleaned.textContent.trim()) {
+      setError('Run "Clean Content" before generating.');
+      return;
+    }
+
     setGenerating(true);
     setError('');
     setPreview(null);
@@ -621,7 +706,7 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
         },
         body: JSON.stringify({
           title: article.title,
-          context_dump: contextDump,
+          context_dump: cleaned.textContent,
         }),
       });
 
@@ -644,6 +729,9 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
     }
   }
 
+  const cleanReady = Boolean(cleaned && cleaned.textContent.trim());
+  const canGenerate = !generating && Boolean(article.title.trim()) && cleanReady;
+
   return (
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 rounded-xl p-6">
@@ -652,11 +740,11 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
           <h2 className="text-lg font-semibold text-gray-900">AI Content Writer</h2>
         </div>
         <p className="text-sm text-gray-500 mb-6">
-          Generate original, E-E-A-T optimized article content. The AI uses the article title as main context
-          and your pasted reference material to produce unique content (not copied from the dump).
+          Three steps: scrape a source URL, clean the page using Mozilla Readability, then generate
+          an original article. Only the cleaned text is sent to the AI.
         </p>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Article Title (from Content tab)</label>
             <div className="px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700">
@@ -664,18 +752,92 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
             </div>
           </div>
 
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">
-              Context Dump (paste reference text — used as factual source, not copied)
-            </label>
-            <textarea
-              value={contextDump}
-              onChange={(e) => setContextDump(e.target.value)}
-              rows={10}
-              className="w-full px-3 py-2.5 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-y font-mono"
-              placeholder="Paste reference articles, research, product info, competitor content, etc. The AI will use facts from this but generate entirely original writing..."
-            />
-            <p className="mt-1 text-xs text-gray-400">{contextDump.length.toLocaleString()} characters</p>
+          {/* Step 1: Scrape */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/40">
+            <div className="flex items-center gap-2 mb-2">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-[10px] font-bold">1</span>
+              <span className="text-sm font-semibold text-gray-900">Scrape URL</span>
+              {rawHtml && <Check className="w-4 h-4 text-green-600" />}
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="flex-1 relative">
+                <LinkIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  value={sourceUrl}
+                  onChange={(e) => setSourceUrl(e.target.value)}
+                  placeholder="https://example.com/article"
+                  className="pl-9 text-sm"
+                />
+              </div>
+              <Button onClick={handleScrape} disabled={scraping || !sourceUrl.trim()} className="gap-2 shrink-0">
+                {scraping ? <><Loader2 className="w-4 h-4 animate-spin" /> Scraping...</> : <><Globe className="w-4 h-4" /> Scrape URL</>}
+              </Button>
+            </div>
+            {rawHtml && (
+              <p className="mt-2 text-xs text-gray-500">
+                Scraped <span className="font-mono">{rawHtml.length.toLocaleString()}</span> bytes from{' '}
+                <span className="font-mono break-all">{scrapedFrom}</span>
+              </p>
+            )}
+          </div>
+
+          {/* Step 2: Clean Content */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/40">
+            <div className="flex items-center gap-2 mb-2">
+              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${rawHtml ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>2</span>
+              <span className="text-sm font-semibold text-gray-900">Clean Content</span>
+              {cleanReady && <Check className="w-4 h-4 text-green-600" />}
+            </div>
+            <p className="text-xs text-gray-500 mb-3">
+              Strips navigation, login, comments, ads, recommendations, and footer noise via Mozilla Readability.
+            </p>
+            <Button onClick={handleClean} disabled={cleaning || !rawHtml} className="gap-2">
+              {cleaning ? <><Loader2 className="w-4 h-4 animate-spin" /> Cleaning...</> : <><Wand2 className="w-4 h-4" /> Clean Content</>}
+            </Button>
+
+            {cleaned && (
+              <div className="mt-4 space-y-3">
+                {cleaned.title && (
+                  <div className="p-3 bg-white border border-gray-200 rounded-lg">
+                    <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-1">Title</p>
+                    <p className="text-sm text-gray-800">{cleaned.title}</p>
+                  </div>
+                )}
+                {cleaned.excerpt && (
+                  <div className="p-3 bg-white border border-gray-200 rounded-lg">
+                    <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-1">Excerpt</p>
+                    <p className="text-sm text-gray-700">{cleaned.excerpt}</p>
+                  </div>
+                )}
+                <div className="p-3 bg-white border border-gray-200 rounded-lg">
+                  <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-1">
+                    Text Content ({cleaned.textContent.length.toLocaleString()} chars)
+                  </p>
+                  <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto leading-relaxed">
+                    {cleaned.textContent.slice(0, 4000)}
+                    {cleaned.textContent.length > 4000 ? '\n...' : ''}
+                  </pre>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Step 3: Generate */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/40">
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${cleanReady ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>3</span>
+              <span className="text-sm font-semibold text-gray-900">Generate Article</span>
+            </div>
+            <Button onClick={handleGenerate} disabled={!canGenerate} className="gap-2">
+              {generating ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> Generate Article Content</>
+              )}
+            </Button>
+            {!cleanReady && (
+              <p className="mt-2 text-xs text-gray-400">Disabled until cleanup is complete.</p>
+            )}
           </div>
 
           {error && (
@@ -683,18 +845,6 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
               {error}
             </div>
           )}
-
-          <Button
-            onClick={handleGenerate}
-            disabled={generating || !article.title.trim()}
-            className="gap-2"
-          >
-            {generating ? (
-              <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-            ) : (
-              <><Sparkles className="w-4 h-4" /> Generate Article Content</>
-            )}
-          </Button>
         </div>
       </div>
 
