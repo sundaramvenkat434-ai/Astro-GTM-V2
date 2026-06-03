@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { ChevronDown, ArrowLeft, Send } from 'lucide-react';
+import { TenantGa } from '@/components/tenant-ga';
 
 /* ─── FAQ Accordion ──────────────────────────────────────── */
 function FaqItem({ q, a }: { q: string; a: string }) {
@@ -100,9 +101,10 @@ interface Props {
   poweredByHeight?: number;
   poweredByOpacity?: number;
   isPreview?: boolean;
+  gaMeasurementId?: string | null;
 }
 
-export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24, poweredByEnabled = true, poweredByHeight = 20, poweredByOpacity = 60, isPreview = false }: Props) {
+export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24, poweredByEnabled = true, poweredByHeight = 20, poweredByOpacity = 60, isPreview = false, gaMeasurementId = null }: Props) {
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
@@ -148,6 +150,7 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
 
   return (
     <div className="min-h-screen bg-white">
+      {gaMeasurementId && <TenantGa measurementId={gaMeasurementId} />}
       {/* Preview Banner */}
       {isPreview && (
         <div className="sticky top-0 z-[60] bg-amber-500 text-white text-center py-2 px-4 text-sm font-medium shadow-sm">

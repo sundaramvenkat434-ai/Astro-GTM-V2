@@ -6,11 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  Plus, Pencil, Trash2, Eye, FileText, Copy, Check,
-  RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X,
-  Image as ImageIcon, Upload,
-} from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3 } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -26,6 +22,7 @@ interface TenantData {
   powered_by_enabled: boolean;
   powered_by_height: number;
   powered_by_opacity: number;
+  ga_measurement_id: string | null;
   created_at: string;
 }
 
@@ -48,12 +45,13 @@ interface Article {
   updated_at: string;
 }
 
-type Tab = 'overview' | 'domains' | 'security' | 'pages';
+type Tab = 'overview' | 'domains' | 'security' | 'analytics' | 'pages';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'overview', label: 'Overview', icon: <Globe className="w-4 h-4" /> },
   { key: 'domains', label: 'Domains', icon: <Server className="w-4 h-4" /> },
   { key: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
+  { key: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
   { key: 'pages', label: 'Pages', icon: <FileText className="w-4 h-4" /> },
 ];
 
@@ -123,6 +121,7 @@ function GifaaDashboard() {
       {activeTab === 'overview' && <OverviewTab tenant={tenant} onUpdate={loadTenant} />}
       {activeTab === 'domains' && <DomainsTab tenant={tenant} onUpdate={loadTenant} />}
       {activeTab === 'security' && <SecurityTab tenant={tenant} onUpdate={loadTenant} />}
+      {activeTab === 'analytics' && <AnalyticsTab tenant={tenant} onUpdate={loadTenant} />}
       {activeTab === 'pages' && <PagesTab />}
     </div>
   );
@@ -628,6 +627,103 @@ function SecurityTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
         <div className="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg">
           <p className="text-xs text-sky-800 font-medium mb-1">Route this worker to:</p>
           <p className="text-xs text-sky-700 font-mono">{tenant.public_domain}/*</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Analytics Tab ──────────────────────────────────────── */
+
+function AnalyticsTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [measurementId, setMeasurementId] = useState(tenant.ga_measurement_id || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const trimmed = measurementId.trim();
+  const isValid = trimmed === '' || /^G-[A-Z0-9]+$/.test(trimmed);
+
+  async function handleSave() {
+    if (!isValid) {
+      setError('Measurement ID must look like G-XXXXXXXXXX (uppercase letters and digits only).');
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({ ga_measurement_id: trimmed === '' ? null : trimmed })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleRemove() {
+    setError(null);
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({ ga_measurement_id: null })
+      .eq('id', tenant.id);
+    setMeasurementId('');
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Google Analytics</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Track tenant pages with your own GA4 property.
+            </p>
+          </div>
+        </div>
+
+        <div className="space-y-4 max-w-md">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">
+              GA4 Measurement ID
+            </label>
+            <Input
+              value={measurementId}
+              onChange={(e) => {
+                setMeasurementId(e.target.value);
+                setError(null);
+              }}
+              placeholder="G-XXXXXXXXXX"
+              className="text-sm font-mono"
+            />
+            {error && <p className="text-xs text-red-600 mt-1.5">{error}</p>}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button onClick={handleSave} disabled={saving || !isValid} className="gap-2">
+              {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save'}
+            </Button>
+            {tenant.ga_measurement_id && (
+              <Button variant="ghost" onClick={handleRemove} disabled={saving} className="text-red-600 hover:text-red-700">
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 pt-5 border-t border-gray-100">
+          <div className="flex items-start gap-2 text-xs text-gray-500">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+            <p>
+              The GA script is injected only on pages with <span className="font-mono font-semibold">status = approved</span>.
+              Drafts, previews, and published pages are not tracked.
+            </p>
+          </div>
         </div>
       </div>
     </div>
