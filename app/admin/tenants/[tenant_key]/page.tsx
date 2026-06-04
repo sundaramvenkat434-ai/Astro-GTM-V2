@@ -7,7 +7,7 @@ import { AdminShell } from '@/components/admin-shell';
 import { TenantProvider, useTenant, type TenantData } from '@/components/tenant-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3, Menu, GripVertical, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3, Menu, GripVertical, ExternalLink, ChevronUp, ChevronDown, Palette, Tag, BookOpen } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -30,11 +30,14 @@ interface Article {
   updated_at: string;
 }
 
-type Tab = 'overview' | 'navigation' | 'domains' | 'security' | 'analytics' | 'pages';
+type Tab = 'overview' | 'navigation' | 'domains' | 'security' | 'analytics' | 'articles-page' | 'categories' | 'theme' | 'pages';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'overview', label: 'Overview', icon: <Globe className="w-4 h-4" /> },
   { key: 'navigation', label: 'Navigation', icon: <Menu className="w-4 h-4" /> },
+  { key: 'articles-page', label: 'Articles Page', icon: <BookOpen className="w-4 h-4" /> },
+  { key: 'categories', label: 'Categories', icon: <Tag className="w-4 h-4" /> },
+  { key: 'theme', label: 'Theme', icon: <Palette className="w-4 h-4" /> },
   { key: 'domains', label: 'Domains', icon: <Server className="w-4 h-4" /> },
   { key: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
   { key: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
@@ -103,6 +106,9 @@ function TenantDashboard() {
       {/* Tab Content */}
       {activeTab === 'overview' && <OverviewTab tenant={tenant} onUpdate={reload} />}
       {activeTab === 'navigation' && <NavigationTab tenant={tenant} onUpdate={reload} />}
+      {activeTab === 'articles-page' && <ArticlesPageTab tenant={tenant} onUpdate={reload} />}
+      {activeTab === 'categories' && <CategoriesTab tenant={tenant} onUpdate={reload} />}
+      {activeTab === 'theme' && <ThemeTab tenant={tenant} onUpdate={reload} />}
       {activeTab === 'domains' && <DomainsTab tenant={tenant} onUpdate={reload} />}
       {activeTab === 'security' && <SecurityTab tenant={tenant} onUpdate={reload} />}
       {activeTab === 'analytics' && <AnalyticsTab tenant={tenant} onUpdate={reload} />}
@@ -372,6 +378,391 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
             {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Changes'}
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Articles Page Tab ──────────────────────────────────── */
+
+function ArticlesPageTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [metaTitle, setMetaTitle] = useState(tenant.articles_meta_title || '');
+  const [metaDescription, setMetaDescription] = useState(tenant.articles_meta_description || '');
+  const [pageHeading, setPageHeading] = useState(tenant.articles_page_heading || '');
+  const [pageSubtitle, setPageSubtitle] = useState(tenant.articles_page_subtitle || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({
+        articles_meta_title: metaTitle.trim() || null,
+        articles_meta_description: metaDescription.trim() || null,
+        articles_page_heading: pageHeading.trim() || null,
+        articles_page_subtitle: pageSubtitle.trim() || null,
+      })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Articles Page Appearance</h2>
+        <p className="text-sm text-gray-500 mb-5">Control the heading and subtitle shown on your /articles listing page.</p>
+
+        <div className="space-y-4 max-w-lg">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Page Heading</label>
+            <Input value={pageHeading} onChange={(e) => setPageHeading(e.target.value)} placeholder="e.g. Our Blog" />
+            <p className="text-xs text-gray-400 mt-1">Displayed as the main H1 heading on the articles page. Defaults to &quot;Articles&quot; if empty.</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Page Subtitle</label>
+            <Input value={pageSubtitle} onChange={(e) => setPageSubtitle(e.target.value)} placeholder="e.g. Insights, guides, and stories from our team" />
+            <p className="text-xs text-gray-400 mt-1">Short description shown below the heading.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Articles Page SEO</h2>
+        <p className="text-sm text-gray-500 mb-5">Meta tags for the /articles listing page. Shown in search results and social shares.</p>
+
+        <div className="space-y-4 max-w-lg">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Meta Title</label>
+            <Input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="e.g. Blog | Company Name" />
+            <p className="text-xs text-gray-400 mt-1">{metaTitle.length}/60 characters</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Meta Description</label>
+            <textarea
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+              placeholder="e.g. Read our latest articles on..."
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-20"
+            />
+            <p className="text-xs text-gray-400 mt-1">{metaDescription.length}/155 characters</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Preview</h2>
+        <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+          <h1 className="text-2xl font-bold text-gray-900 mb-1">{pageHeading || 'Articles'}</h1>
+          {(pageSubtitle || 'Your subtitle appears here') && (
+            <p className="text-sm text-gray-500">{pageSubtitle || 'Your subtitle appears here'}</p>
+          )}
+        </div>
+        {(metaTitle || metaDescription) && (
+          <div className="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-lg">
+            <p className="text-xs font-medium text-gray-400 mb-2">Search Engine Result Preview</p>
+            <p className="text-blue-700 text-sm font-medium truncate">{metaTitle || tenant.site_name}</p>
+            <p className="text-green-700 text-xs truncate">https://{tenant.public_domain}/articles</p>
+            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{metaDescription || 'No description set'}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Articles Page Settings'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Categories Tab ─────────────────────────────────────── */
+
+function CategoriesTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [categories, setCategories] = useState<string[]>(tenant.default_categories || []);
+  const [newCategory, setNewCategory] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  function addCategory() {
+    const trimmed = newCategory.trim();
+    if (!trimmed || categories.includes(trimmed)) return;
+    setCategories([...categories, trimmed]);
+    setNewCategory('');
+  }
+
+  function removeCategory(index: number) {
+    setCategories(categories.filter((_, i) => i !== index));
+  }
+
+  function moveCategory(index: number, dir: -1 | 1) {
+    const arr = [...categories];
+    const target = index + dir;
+    if (target < 0 || target >= arr.length) return;
+    [arr[index], arr[target]] = [arr[target], arr[index]];
+    setCategories(arr);
+  }
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({ default_categories: categories })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Default Categories</h2>
+        <p className="text-sm text-gray-500 mb-5">
+          Define default categories for this tenant. These appear as suggestions in the article editor category field. Authors can still type custom categories.
+        </p>
+
+        <div className="space-y-2 mb-5">
+          {categories.length === 0 ? (
+            <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
+              <Tag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 mb-1">No categories defined</p>
+              <p className="text-xs text-gray-400">Add categories below to give article authors quick suggestions.</p>
+            </div>
+          ) : (
+            categories.map((cat, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 group">
+                <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
+                <span className="flex-1 text-sm text-gray-800">{cat}</span>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => moveCategory(i, -1)} disabled={i === 0} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded">
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => moveCategory(i, 1)} disabled={i === categories.length - 1} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded">
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => removeCategory(i)} className="p-1 text-red-400 hover:text-red-600 rounded">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Input
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="e.g. Wedding Gifts"
+            className="text-sm max-w-xs"
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }}
+          />
+          <Button onClick={addCategory} disabled={!newCategory.trim()} variant="outline" className="gap-2 text-sm">
+            <Plus className="w-4 h-4" />
+            Add Category
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Categories'}
+        </Button>
+        <p className="text-xs text-gray-400">{categories.length} categor{categories.length === 1 ? 'y' : 'ies'} configured</p>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Theme Tab ──────────────────────────────────────────── */
+
+const FONT_OPTIONS = [
+  { value: '', label: 'System Default' },
+  { value: "'Inter', sans-serif", label: 'Inter' },
+  { value: "'Georgia', serif", label: 'Georgia' },
+  { value: "'Merriweather', serif", label: 'Merriweather' },
+  { value: "'Roboto', sans-serif", label: 'Roboto' },
+  { value: "'Lora', serif", label: 'Lora' },
+  { value: "'Playfair Display', serif", label: 'Playfair Display' },
+  { value: "'Source Sans Pro', sans-serif", label: 'Source Sans Pro' },
+  { value: "'DM Sans', sans-serif", label: 'DM Sans' },
+  { value: "'Nunito', sans-serif", label: 'Nunito' },
+];
+
+function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [bgColor, setBgColor] = useState(tenant.theme_bg_color || '');
+  const [fontFamily, setFontFamily] = useState(tenant.theme_font_family || '');
+  const [fontSizeBody, setFontSizeBody] = useState(tenant.theme_font_size_body);
+  const [fontSizeHeading, setFontSizeHeading] = useState(tenant.theme_font_size_heading);
+  const [headerBgColor, setHeaderBgColor] = useState(tenant.theme_header_bg_color || '');
+  const [headerTextColor, setHeaderTextColor] = useState(tenant.theme_header_text_color || '');
+  const [footerBgColor, setFooterBgColor] = useState(tenant.theme_footer_bg_color || '');
+  const [footerTextColor, setFooterTextColor] = useState(tenant.theme_footer_text_color || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({
+        theme_bg_color: bgColor.trim() || null,
+        theme_font_family: fontFamily || null,
+        theme_font_size_body: fontSizeBody,
+        theme_font_size_heading: fontSizeHeading,
+        theme_header_bg_color: headerBgColor.trim() || null,
+        theme_header_text_color: headerTextColor.trim() || null,
+        theme_footer_bg_color: footerBgColor.trim() || null,
+        theme_footer_text_color: footerTextColor.trim() || null,
+      })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Typography */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Typography</h2>
+        <p className="text-sm text-gray-500 mb-5">Control the fonts and sizes used on tenant pages.</p>
+
+        <div className="space-y-4 max-w-lg">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Font Family</label>
+            <select
+              value={fontFamily}
+              onChange={(e) => setFontFamily(e.target.value)}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
+            >
+              {FONT_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Body Font Size (px)</label>
+              <Input type="number" min={12} max={24} value={fontSizeBody} onChange={(e) => setFontSizeBody(Number(e.target.value) || 16)} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Heading Font Size (px)</label>
+              <Input type="number" min={20} max={64} value={fontSizeHeading} onChange={(e) => setFontSizeHeading(Number(e.target.value) || 32)} />
+            </div>
+          </div>
+
+          {/* Typography Preview */}
+          <div className="border border-gray-200 rounded-lg p-5 bg-gray-50">
+            <p className="text-xs font-medium text-gray-400 mb-3">Preview</p>
+            <h3 style={{ fontFamily: fontFamily || 'inherit', fontSize: `${fontSizeHeading}px`, lineHeight: 1.2 }} className="font-bold text-gray-900 mb-2">
+              Heading Preview
+            </h3>
+            <p style={{ fontFamily: fontFamily || 'inherit', fontSize: `${fontSizeBody}px`, lineHeight: 1.6 }} className="text-gray-700">
+              This is how body text will appear on your tenant pages. The font family and size are applied globally across all articles and listing pages.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Colors */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Page Colors</h2>
+        <p className="text-sm text-gray-500 mb-5">Customize the background color for your homepage and articles listing.</p>
+
+        <div className="space-y-4 max-w-lg">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Background Color</label>
+            <div className="flex items-center gap-3">
+              <input type="color" value={bgColor || '#ffffff'} onChange={(e) => setBgColor(e.target.value)} className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5" />
+              <Input value={bgColor} onChange={(e) => setBgColor(e.target.value)} placeholder="#ffffff (default)" className="max-w-[160px] font-mono text-sm" />
+              {bgColor && (
+                <Button variant="ghost" size="sm" onClick={() => setBgColor('')} className="text-xs text-gray-500">Clear</Button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Header */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Header Colors</h2>
+        <p className="text-sm text-gray-500 mb-5">Customize the header bar appearance on tenant pages.</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mb-5">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Background</label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={headerBgColor || '#ffffff'} onChange={(e) => setHeaderBgColor(e.target.value)} className="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0.5" />
+              <Input value={headerBgColor} onChange={(e) => setHeaderBgColor(e.target.value)} placeholder="#ffffff" className="font-mono text-sm" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Text Color</label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={headerTextColor || '#111827'} onChange={(e) => setHeaderTextColor(e.target.value)} className="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0.5" />
+              <Input value={headerTextColor} onChange={(e) => setHeaderTextColor(e.target.value)} placeholder="#111827" className="font-mono text-sm" />
+            </div>
+          </div>
+        </div>
+
+        {/* Header Preview */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-5 py-3 flex items-center justify-between" style={{ backgroundColor: headerBgColor || '#ffffff', color: headerTextColor || '#111827' }}>
+            <span className="text-sm font-bold">{tenant.site_name || 'Site Name'}</span>
+            <div className="flex items-center gap-4">
+              <span className="text-xs opacity-80">Home</span>
+              <span className="text-xs opacity-80">About</span>
+              <span className="text-xs opacity-80">Contact</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Footer Colors</h2>
+        <p className="text-sm text-gray-500 mb-5">Customize the footer appearance on tenant pages.</p>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-lg mb-5">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Background</label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={footerBgColor || '#111827'} onChange={(e) => setFooterBgColor(e.target.value)} className="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0.5" />
+              <Input value={footerBgColor} onChange={(e) => setFooterBgColor(e.target.value)} placeholder="#111827" className="font-mono text-sm" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Text Color</label>
+            <div className="flex items-center gap-2">
+              <input type="color" value={footerTextColor || '#ffffff'} onChange={(e) => setFooterTextColor(e.target.value)} className="w-8 h-8 rounded border border-gray-200 cursor-pointer p-0.5" />
+              <Input value={footerTextColor} onChange={(e) => setFooterTextColor(e.target.value)} placeholder="#ffffff" className="font-mono text-sm" />
+            </div>
+          </div>
+        </div>
+
+        {/* Footer Preview */}
+        <div className="border border-gray-200 rounded-lg overflow-hidden">
+          <div className="px-5 py-4" style={{ backgroundColor: footerBgColor || '#111827', color: footerTextColor || '#ffffff' }}>
+            <span className="text-xs font-medium opacity-80">{tenant.site_name || 'Site Name'}</span>
+            <p className="text-[10px] mt-1 opacity-60">All rights reserved.</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Theme Settings'}
+        </Button>
       </div>
     </div>
   );

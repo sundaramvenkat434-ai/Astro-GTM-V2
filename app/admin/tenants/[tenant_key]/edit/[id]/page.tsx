@@ -308,7 +308,34 @@ function TenantArticleEditor() {
             </div>
             <div>
               <label className="block text-xs font-medium text-gray-500 mb-1.5">Category</label>
-              <Input value={article.category} onChange={(e) => update({ category: e.target.value })} placeholder="e.g. Wedding, Baby Shower" />
+              <div className="relative">
+                <Input value={article.category} onChange={(e) => update({ category: e.target.value })} placeholder="e.g. Wedding, Baby Shower" list="category-suggestions" />
+                {tenant && tenant.default_categories.length > 0 && (
+                  <datalist id="category-suggestions">
+                    {tenant.default_categories.map((cat) => (
+                      <option key={cat} value={cat} />
+                    ))}
+                  </datalist>
+                )}
+              </div>
+              {tenant && tenant.default_categories.length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-2">
+                  {tenant.default_categories.map((cat) => (
+                    <button
+                      key={cat}
+                      type="button"
+                      onClick={() => update({ category: cat })}
+                      className={`px-2 py-0.5 rounded text-xs transition-colors ${
+                        article.category === cat
+                          ? 'bg-gray-900 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      {cat}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-500 mb-1.5">Excerpt</label>

@@ -11,6 +11,19 @@ export const DEFAULT_TENANT_CONFIG = {
   header_menu_items: [] as { label: string; url: string }[],
   footer_links: [] as { heading: string; text: string; url: string }[],
   status: 'active',
+  articles_meta_title: null as string | null,
+  articles_meta_description: null as string | null,
+  articles_page_heading: null as string | null,
+  articles_page_subtitle: null as string | null,
+  default_categories: [] as string[],
+  theme_bg_color: null as string | null,
+  theme_font_family: null as string | null,
+  theme_font_size_body: 16,
+  theme_font_size_heading: 32,
+  theme_header_bg_color: null as string | null,
+  theme_header_text_color: null as string | null,
+  theme_footer_bg_color: null as string | null,
+  theme_footer_text_color: null as string | null,
 } as const;
 
 export type TenantConfig = typeof DEFAULT_TENANT_CONFIG;

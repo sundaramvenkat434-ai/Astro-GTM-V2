@@ -20,6 +20,19 @@ export interface TenantData {
   footer_links: { heading: string; text: string; url: string }[];
   status: string;
   created_at: string;
+  articles_meta_title: string | null;
+  articles_meta_description: string | null;
+  articles_page_heading: string | null;
+  articles_page_subtitle: string | null;
+  default_categories: string[];
+  theme_bg_color: string | null;
+  theme_font_family: string | null;
+  theme_font_size_body: number;
+  theme_font_size_heading: number;
+  theme_header_bg_color: string | null;
+  theme_header_text_color: string | null;
+  theme_footer_bg_color: string | null;
+  theme_footer_text_color: string | null;
 }
 
 interface TenantContextValue {
