@@ -59,6 +59,11 @@ interface Article {
   cta_description: string;
   cta_button_text: string;
   cta_success_message: string;
+  cta_button_color: string;
+  cta_redirect_url: string;
+  cta_show_sidebar: boolean;
+  cta_show_end: boolean;
+  cta_inline_after_section: number;
 }
 
 interface RelatedArticle {
@@ -256,13 +261,38 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
                 </nav>
 
                 {/* Sidebar CTA */}
-                {article.cta_heading && (
+                {article.cta_show_sidebar && article.cta_heading && (
                   <div className="border-t border-gray-100 pt-6">
                     <h4 className="text-[13px] font-semibold text-gray-900 mb-1.5">{article.cta_heading}</h4>
                     {article.cta_description && (
                       <p className="text-[12px] text-gray-400 leading-relaxed mb-4">{article.cta_description}</p>
                     )}
-                    {sidebarSubmitted ? (
+                    {article.cta_redirect_url ? (
+                      <a
+                        href={article.cta_redirect_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => {
+                          if (article.id) {
+                            fetch(
+                              `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`,
+                              {
+                                method: 'POST',
+                                headers: {
+                                  'Content-Type': 'application/json',
+                                  Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+                                },
+                                body: JSON.stringify({ article_id: article.id, event_type: 'cta_click' }),
+                              }
+                            ).catch(() => {});
+                          }
+                        }}
+                        className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-white transition-opacity hover:opacity-90"
+                        style={{ background: article.cta_button_color || '#1a2a4a' }}
+                      >
+                        {article.cta_button_text || 'Subscribe'} <Send className="w-3 h-3" />
+                      </a>
+                    ) : sidebarSubmitted ? (
                       <p className="text-[13px] text-green-700 font-medium">{article.cta_success_message || 'Subscribed!'}</p>
                     ) : (
                       <form onSubmit={(e) => {
@@ -295,7 +325,7 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
                         <button
                           type="submit"
                           className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-[13px] font-medium text-white"
-                          style={{ background: '#1a2a4a' }}
+                          style={{ background: article.cta_button_color || '#1a2a4a' }}
                         >
                           {article.cta_button_text || 'Subscribe'} <Send className="w-3 h-3" />
                         </button>
@@ -310,8 +340,18 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
           {/* Main Article Content */}
           <article className={`flex-1 min-w-0 max-w-[680px] ${showSidebar ? 'order-1 lg:order-2' : ''}`}>
             {article.sections.map((section, i) => (
-              <ArticleSection key={i} section={section} index={i} />
+              <div key={i}>
+                <ArticleSection section={section} index={i} />
+                {article.cta_inline_after_section === i && article.cta_heading && (
+                  <InlineCta article={article} />
+                )}
+              </div>
             ))}
+
+            {/* End of Article CTA */}
+            {article.cta_show_end && article.cta_heading && (
+              <EndCta article={article} />
+            )}
 
             {/* FAQs */}
             {article.faqs && article.faqs.length > 0 && (
@@ -499,4 +539,144 @@ function ArticleSection({ section, index }: { section: Section; index: number })
     default:
       return null;
   }
+}
+
+/* ─── Inline CTA ────────────────────────────────────────── */
+function InlineCta({ article }: { article: Article }) {
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const color = article.cta_button_color || '#1a2a4a';
+
+  function trackClick() {
+    if (article.id) {
+      fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ article_id: article.id, event_type: 'cta_click' }),
+        }
+      ).catch(() => {});
+    }
+  }
+
+  return (
+    <div className="my-14 rounded-2xl p-8 text-center" style={{ backgroundColor: `${color}06`, border: `1px solid ${color}18` }}>
+      <h4 className="text-[20px] font-bold text-gray-900 mb-2" style={{ fontFamily: "'Georgia', serif" }}>
+        {article.cta_heading}
+      </h4>
+      {article.cta_description && (
+        <p className="text-[15px] text-gray-600 mb-5 max-w-md mx-auto leading-relaxed">{article.cta_description}</p>
+      )}
+      {article.cta_redirect_url ? (
+        <a
+          href={article.cta_redirect_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={trackClick}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-[14px] font-semibold text-white shadow-sm transition-opacity hover:opacity-90"
+          style={{ backgroundColor: color }}
+        >
+          {article.cta_button_text || 'Subscribe'}
+        </a>
+      ) : submitted ? (
+        <p className="text-[14px] text-green-700 font-medium">{article.cta_success_message || 'Subscribed!'}</p>
+      ) : (
+        <form onSubmit={(e) => {
+          e.preventDefault();
+          if (email.trim()) { setSubmitted(true); trackClick(); }
+        }} className="flex items-center gap-2 max-w-sm mx-auto">
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="you@email.com"
+            className="flex-1 px-4 py-2.5 text-[14px] border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 placeholder-gray-400"
+          />
+          <button
+            type="submit"
+            className="px-5 py-2.5 rounded-lg text-[14px] font-semibold text-white transition-opacity hover:opacity-90"
+            style={{ backgroundColor: color }}
+          >
+            {article.cta_button_text || 'Subscribe'}
+          </button>
+        </form>
+      )}
+    </div>
+  );
+}
+
+/* ─── End CTA ───────────────────────────────────────────── */
+function EndCta({ article }: { article: Article }) {
+  const [email, setEmail] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const color = article.cta_button_color || '#1a2a4a';
+
+  function trackClick() {
+    if (article.id) {
+      fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/track-pageview`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          },
+          body: JSON.stringify({ article_id: article.id, event_type: 'cta_click' }),
+        }
+      ).catch(() => {});
+    }
+  }
+
+  return (
+    <section className="mt-20 mb-10">
+      <div className="rounded-2xl px-8 py-12 text-center" style={{ backgroundColor: `${color}08`, border: `1px solid ${color}20` }}>
+        <h3 className="text-[1.5rem] font-bold text-gray-900 mb-3" style={{ fontFamily: "'Georgia', serif" }}>
+          {article.cta_heading}
+        </h3>
+        {article.cta_description && (
+          <p className="text-[16px] text-gray-600 mb-6 max-w-lg mx-auto leading-relaxed">{article.cta_description}</p>
+        )}
+        {article.cta_redirect_url ? (
+          <a
+            href={article.cta_redirect_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={trackClick}
+            className="inline-flex items-center gap-2 px-8 py-3.5 rounded-xl text-[15px] font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
+            style={{ backgroundColor: color }}
+          >
+            {article.cta_button_text || 'Subscribe'}
+          </a>
+        ) : submitted ? (
+          <p className="text-[15px] text-green-700 font-medium">{article.cta_success_message || 'Subscribed!'}</p>
+        ) : (
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (email.trim()) { setSubmitted(true); trackClick(); }
+          }} className="flex items-center gap-3 max-w-md mx-auto">
+            <input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="you@email.com"
+              className="flex-1 px-4 py-3 text-[15px] border border-gray-200 rounded-xl focus:outline-none focus:border-gray-400 placeholder-gray-400"
+            />
+            <button
+              type="submit"
+              className="px-7 py-3 rounded-xl text-[15px] font-semibold text-white shadow-md transition-all hover:shadow-lg hover:scale-[1.02]"
+              style={{ backgroundColor: color }}
+            >
+              {article.cta_button_text || 'Subscribe'}
+            </button>
+          </form>
+        )}
+      </div>
+    </section>
+  );
 }

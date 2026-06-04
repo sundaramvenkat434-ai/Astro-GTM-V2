@@ -6,12 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-  ArrowLeft, Save, Eye, Plus, Trash2, GripVertical,
-  ChevronDown, ChevronUp, Type, Image as ImageIcon,
-  List, Table, MessageSquare, FileText, Loader as Loader2, Globe,
-  Sparkles, Activity, Shield, ChevronRight, Link as LinkIcon, Wand2, Check,
-} from 'lucide-react';
+import { ArrowLeft, Save, Eye, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Type, Image as ImageIcon, List, Table, MessageSquare, FileText, Loader as Loader2, Globe, Sparkles, Activity, Shield, ChevronRight, Link as LinkIcon, Wand as Wand2, Check } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
 interface Section {
@@ -57,6 +52,11 @@ interface ArticleData {
   cta_description: string;
   cta_button_text: string;
   cta_success_message: string;
+  cta_button_color: string;
+  cta_redirect_url: string;
+  cta_show_sidebar: boolean;
+  cta_show_end: boolean;
+  cta_inline_after_section: number;
 }
 
 const EMPTY_ARTICLE: ArticleData = {
@@ -82,6 +82,11 @@ const EMPTY_ARTICLE: ArticleData = {
   cta_description: 'Ideas and inspiration for every celebration. Join 5,000+ readers.',
   cta_button_text: 'Subscribe',
   cta_success_message: 'Subscribed!',
+  cta_button_color: '#1a2a4a',
+  cta_redirect_url: '',
+  cta_show_sidebar: true,
+  cta_show_end: false,
+  cta_inline_after_section: -1,
 };
 
 const SECTION_TYPES = [
@@ -113,7 +118,7 @@ function GifaaEditor() {
   const [loading, setLoading] = useState(!isNew);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
-  const [activeTab, setActiveTab] = useState<'content' | 'sidebar' | 'meta' | 'related' | 'ai-writer' | 'benchmark'>('content');
+  const [activeTab, setActiveTab] = useState<'content' | 'sidebar' | 'cta' | 'meta' | 'related' | 'ai-writer' | 'benchmark'>('content');
   const [allArticles, setAllArticles] = useState<{ slug: string; title: string }[]>([]);
   const [tenants, setTenants] = useState<{ tenant_key: string; public_domain: string; site_name: string }[]>([{ tenant_key: 'gifaa', public_domain: 'gifaa.in', site_name: 'Gifaa' }]);
 
@@ -149,6 +154,11 @@ function GifaaEditor() {
               cta_description: data.cta_description || '',
               cta_button_text: data.cta_button_text || 'Subscribe',
               cta_success_message: data.cta_success_message || 'Subscribed!',
+              cta_button_color: data.cta_button_color || '#1a2a4a',
+              cta_redirect_url: data.cta_redirect_url || '',
+              cta_show_sidebar: data.cta_show_sidebar ?? true,
+              cta_show_end: data.cta_show_end ?? false,
+              cta_inline_after_section: data.cta_inline_after_section ?? -1,
             });
           }
           setLoading(false);
@@ -263,7 +273,8 @@ function GifaaEditor() {
       <div className="flex gap-1 mb-6 border-b border-gray-200 overflow-x-auto">
         {([
           { id: 'content', label: 'Content' },
-          { id: 'sidebar', label: 'Sidebar & CTA' },
+          { id: 'sidebar', label: 'Sidebar' },
+          { id: 'cta', label: 'CTA' },
           { id: 'meta', label: 'SEO & Meta' },
           { id: 'related', label: 'Related' },
           { id: 'ai-writer', label: 'AI Writer' },
@@ -430,7 +441,7 @@ function GifaaEditor() {
         </div>
       )}
 
-      {/* ─── Sidebar & CTA Tab ─── */}
+      {/* ─── Sidebar Tab ─── */}
       {activeTab === 'sidebar' && (
         <div className="space-y-6 max-w-xl">
           <p className="text-sm text-gray-500">
@@ -453,45 +464,20 @@ function GifaaEditor() {
             TOC items are automatically generated from &quot;Heading (H2)&quot; sections in your content. Add heading sections to populate the nav.
           </p>
 
-          {/* CTA Fields */}
-          <div className="border-t border-gray-100 pt-6">
-            <h3 className="text-sm font-semibold text-gray-900 mb-4">Sidebar CTA (newsletter form)</h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">CTA Heading</label>
-                <Input value={article.cta_heading} onChange={(e) => update({ cta_heading: e.target.value })} placeholder="e.g. Gifting tips, weekly" />
-              </div>
-              <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1.5">CTA Description</label>
-                <textarea
-                  value={article.cta_description}
-                  onChange={(e) => update({ cta_description: e.target.value })}
-                  placeholder="Short description below the heading..."
-                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-16"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Button Text</label>
-                  <Input value={article.cta_button_text} onChange={(e) => update({ cta_button_text: e.target.value })} placeholder="Subscribe" />
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-500 mb-1.5">Success Message</label>
-                  <Input value={article.cta_success_message} onChange={(e) => update({ cta_success_message: e.target.value })} placeholder="Subscribed!" />
-                </div>
-              </div>
-            </div>
-          </div>
-
           {/* Preview hint */}
           <div className="bg-gray-50 rounded-lg p-4 border border-gray-100">
             <p className="text-xs font-medium text-gray-600 mb-1">Sidebar preview</p>
             <p className="text-xs text-gray-400">
               The sidebar will show a &quot;On this page&quot; nav with {article.sections.filter(s => s.type === 'heading').length} heading item(s) plus FAQs link
-              {article.cta_heading ? `, followed by a CTA titled "${article.cta_heading}"` : ' (no CTA configured)'}.
+              {article.cta_show_sidebar && article.cta_heading ? `, followed by a CTA titled "${article.cta_heading}"` : ' (sidebar CTA disabled or not configured)'}.
             </p>
           </div>
         </div>
+      )}
+
+      {/* ─── CTA Tab ─── */}
+      {activeTab === 'cta' && (
+        <CtaTab article={article} update={update} />
       )}
 
       {/* ─── Meta Tab ─── */}
@@ -583,7 +569,245 @@ function GifaaEditor() {
   );
 }
 
-/* ─── AI Writer Tab ─────────────────────────────────────── */
+/* ─── CTA Tab ──────────────────────────────────────────── */
+function CtaTab({ article, update }: { article: ArticleData; update: (patch: Partial<ArticleData>) => void }) {
+  const inlineEnabled = article.cta_inline_after_section >= 0;
+  const headingSections = article.sections
+    .map((s, i) => ({ index: i, heading: s.heading || `Section ${i + 1}` }))
+    .filter((_, i) => article.sections[i].type === 'heading');
+
+  return (
+    <div className="space-y-8 max-w-2xl">
+      {/* CTA Content Card */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="text-base font-semibold text-gray-900">CTA Content</h3>
+          <p className="text-sm text-gray-500 mt-0.5">Configure the call-to-action block shown to readers.</p>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Heading</label>
+            <Input value={article.cta_heading} onChange={(e) => update({ cta_heading: e.target.value })} placeholder="e.g. Get our weekly gift guide" />
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Description</label>
+            <textarea
+              value={article.cta_description}
+              onChange={(e) => update({ cta_description: e.target.value })}
+              placeholder="Short description to entice readers..."
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-20"
+            />
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Button Text</label>
+              <Input value={article.cta_button_text} onChange={(e) => update({ cta_button_text: e.target.value })} placeholder="Subscribe" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Success Message</label>
+              <Input value={article.cta_success_message} onChange={(e) => update({ cta_success_message: e.target.value })} placeholder="Subscribed!" />
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Redirect URL (optional)</label>
+            <Input value={article.cta_redirect_url} onChange={(e) => update({ cta_redirect_url: e.target.value })} placeholder="https://example.com/signup" />
+            <p className="text-xs text-gray-400 mt-1">If set, the button links to this URL instead of showing an email form.</p>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Appearance Card */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="text-base font-semibold text-gray-900">Appearance</h3>
+          <p className="text-sm text-gray-500 mt-0.5">Style the CTA button across all placements.</p>
+        </div>
+        <div className="p-6">
+          <div className="flex items-end gap-6">
+            <div className="flex-1">
+              <label className="block text-xs font-medium text-gray-500 mb-1.5">Button Color</label>
+              <div className="flex items-center gap-3">
+                <input
+                  type="color"
+                  value={article.cta_button_color}
+                  onChange={(e) => update({ cta_button_color: e.target.value })}
+                  className="w-10 h-10 rounded-lg border border-gray-200 cursor-pointer p-0.5"
+                />
+                <Input
+                  value={article.cta_button_color}
+                  onChange={(e) => update({ cta_button_color: e.target.value })}
+                  placeholder="#1a2a4a"
+                  className="max-w-[140px] font-mono text-sm"
+                />
+              </div>
+            </div>
+            <div className="pb-1">
+              <p className="text-xs text-gray-500 mb-2">Preview</p>
+              <button
+                className="px-5 py-2.5 rounded-lg text-sm font-medium text-white shadow-sm transition-transform hover:scale-105"
+                style={{ backgroundColor: article.cta_button_color || '#1a2a4a' }}
+              >
+                {article.cta_button_text || 'Subscribe'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* CTA Placement Card */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+          <h3 className="text-base font-semibold text-gray-900">Placement</h3>
+          <p className="text-sm text-gray-500 mt-0.5">Choose where the CTA appears on the article page.</p>
+        </div>
+        <div className="p-6 space-y-4">
+          {/* Sidebar */}
+          <label className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+            <input
+              type="checkbox"
+              checked={article.cta_show_sidebar}
+              onChange={(e) => update({ cta_show_sidebar: e.target.checked })}
+              className="mt-0.5 rounded border-gray-300"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-900">Left Sidebar</span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-emerald-50 text-emerald-700 rounded font-medium">Recommended</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">Sticky CTA below the table of contents. Always visible as users scroll.</p>
+            </div>
+            <div className="w-16 h-10 border border-gray-200 rounded bg-gray-50 relative overflow-hidden shrink-0">
+              <div className="absolute left-0.5 top-1 w-4 h-8 bg-gray-200 rounded-sm" />
+              <div className="absolute left-1 bottom-1.5 w-3 h-2 rounded-sm" style={{ backgroundColor: article.cta_button_color || '#1a2a4a' }} />
+              <div className="absolute left-6 top-1 right-0.5 space-y-0.5">
+                <div className="h-1 bg-gray-200 rounded-full w-full" />
+                <div className="h-1 bg-gray-200 rounded-full w-4/5" />
+                <div className="h-1 bg-gray-200 rounded-full w-full" />
+                <div className="h-1 bg-gray-200 rounded-full w-3/5" />
+              </div>
+            </div>
+          </label>
+
+          {/* End of Article */}
+          <label className="flex items-start gap-4 p-4 border border-gray-200 rounded-xl cursor-pointer hover:bg-gray-50 transition-colors">
+            <input
+              type="checkbox"
+              checked={article.cta_show_end}
+              onChange={(e) => update({ cta_show_end: e.target.checked })}
+              className="mt-0.5 rounded border-gray-300"
+            />
+            <div className="flex-1">
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-gray-900">End of Article</span>
+                <span className="text-[10px] px-1.5 py-0.5 bg-sky-50 text-sky-700 rounded font-medium">High visibility</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-0.5">Full-width CTA banner after the article content, before FAQs and related articles.</p>
+            </div>
+            <div className="w-16 h-10 border border-gray-200 rounded bg-gray-50 relative overflow-hidden shrink-0">
+              <div className="absolute left-1 top-1 right-1 space-y-0.5">
+                <div className="h-1 bg-gray-200 rounded-full w-full" />
+                <div className="h-1 bg-gray-200 rounded-full w-3/4" />
+              </div>
+              <div className="absolute left-1 bottom-1 right-1 h-4 rounded-sm flex items-center justify-center" style={{ backgroundColor: `${article.cta_button_color || '#1a2a4a'}20` }}>
+                <div className="w-6 h-1.5 rounded-sm" style={{ backgroundColor: article.cta_button_color || '#1a2a4a' }} />
+              </div>
+            </div>
+          </label>
+
+          {/* Inline */}
+          <div className={`p-4 border rounded-xl transition-colors ${inlineEnabled ? 'border-gray-300 bg-gray-50/50' : 'border-gray-200'}`}>
+            <div className="flex items-start gap-4">
+              <input
+                type="checkbox"
+                checked={inlineEnabled}
+                onChange={(e) => update({ cta_inline_after_section: e.target.checked ? (headingSections[0]?.index ?? 0) : -1 })}
+                className="mt-0.5 rounded border-gray-300 cursor-pointer"
+              />
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-gray-900">Inline (between sections)</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-0.5">Insert a CTA block between article sections. Position is managed below.</p>
+              </div>
+              <div className="w-16 h-10 border border-gray-200 rounded bg-gray-50 relative overflow-hidden shrink-0">
+                <div className="absolute left-1 top-0.5 right-1 space-y-0.5">
+                  <div className="h-1 bg-gray-200 rounded-full w-full" />
+                  <div className="h-1 bg-gray-200 rounded-full w-2/3" />
+                </div>
+                <div className="absolute left-1 top-[14px] right-1 h-3 rounded-sm flex items-center justify-center" style={{ backgroundColor: `${article.cta_button_color || '#1a2a4a'}15` }}>
+                  <div className="w-5 h-1 rounded-sm" style={{ backgroundColor: article.cta_button_color || '#1a2a4a' }} />
+                </div>
+                <div className="absolute left-1 bottom-0.5 right-1 space-y-0.5">
+                  <div className="h-1 bg-gray-200 rounded-full w-full" />
+                  <div className="h-1 bg-gray-200 rounded-full w-4/5" />
+                </div>
+              </div>
+            </div>
+
+            {inlineEnabled && (
+              <div className="mt-4 ml-8">
+                <label className="block text-xs font-medium text-gray-500 mb-1.5">Insert after section index</label>
+                <select
+                  value={article.cta_inline_after_section}
+                  onChange={(e) => update({ cta_inline_after_section: Number(e.target.value) })}
+                  className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400"
+                >
+                  {article.sections.map((s, i) => (
+                    <option key={i} value={i}>
+                      After #{i + 1}: {s.type === 'heading' ? s.heading || 'Heading' : s.type === 'text' ? (s.content?.slice(0, 40) || 'Text block') : s.type}
+                    </option>
+                  ))}
+                  {article.sections.length === 0 && <option value={0}>No sections yet</option>}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">The CTA will appear after this section in the article body.</p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Live Preview */}
+      {article.cta_heading && (
+        <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50">
+            <h3 className="text-base font-semibold text-gray-900">Live Preview</h3>
+            <p className="text-sm text-gray-500 mt-0.5">How the end-of-article CTA will look to readers.</p>
+          </div>
+          <div className="p-6">
+            <div className="rounded-2xl p-8 text-center" style={{ backgroundColor: `${article.cta_button_color || '#1a2a4a'}08`, border: `1px solid ${article.cta_button_color || '#1a2a4a'}20` }}>
+              <h4 className="text-xl font-bold text-gray-900 mb-2">{article.cta_heading}</h4>
+              {article.cta_description && (
+                <p className="text-sm text-gray-600 mb-5 max-w-md mx-auto">{article.cta_description}</p>
+              )}
+              {article.cta_redirect_url ? (
+                <span
+                  className="inline-flex items-center gap-2 px-6 py-3 rounded-lg text-sm font-semibold text-white shadow-sm"
+                  style={{ backgroundColor: article.cta_button_color || '#1a2a4a' }}
+                >
+                  {article.cta_button_text || 'Subscribe'}
+                </span>
+              ) : (
+                <div className="flex items-center gap-2 max-w-sm mx-auto">
+                  <div className="flex-1 px-4 py-2.5 border border-gray-200 rounded-lg text-sm text-gray-400 text-left bg-white">
+                    you@email.com
+                  </div>
+                  <span
+                    className="px-5 py-2.5 rounded-lg text-sm font-semibold text-white"
+                    style={{ backgroundColor: article.cta_button_color || '#1a2a4a' }}
+                  >
+                    {article.cta_button_text || 'Subscribe'}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 interface AiWriterProps {
   article: ArticleData;
   onApply: (generated: {
