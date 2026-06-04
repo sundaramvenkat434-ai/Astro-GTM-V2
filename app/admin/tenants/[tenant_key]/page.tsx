@@ -7,7 +7,7 @@ import { AdminShell } from '@/components/admin-shell';
 import { TenantProvider, useTenant, type TenantData } from '@/components/tenant-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3, Menu, GripVertical, ExternalLink, ChevronUp, ChevronDown, Palette, Tag, BookOpen } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3, Menu, GripVertical, ExternalLink, ChevronUp, ChevronDown, Palette, Tag, BookOpen, Settings, Brush, LayoutGrid as Layout } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -30,18 +30,34 @@ interface Article {
   updated_at: string;
 }
 
-type Tab = 'overview' | 'navigation' | 'domains' | 'security' | 'analytics' | 'articles-page' | 'categories' | 'theme' | 'pages';
+type MainTab = 'integration' | 'design' | 'content' | 'pages';
+type IntegrationSubTab = 'client-settings' | 'cdn-settings' | 'analytics';
+type DesignSubTab = 'logo' | 'typography' | 'colors';
+type ContentSubTab = 'articles-page' | 'navigation' | 'categories';
 
-const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
-  { key: 'overview', label: 'Overview', icon: <Globe className="w-4 h-4" /> },
-  { key: 'navigation', label: 'Navigation', icon: <Menu className="w-4 h-4" /> },
-  { key: 'articles-page', label: 'Articles Page', icon: <BookOpen className="w-4 h-4" /> },
-  { key: 'categories', label: 'Categories', icon: <Tag className="w-4 h-4" /> },
-  { key: 'theme', label: 'Theme', icon: <Palette className="w-4 h-4" /> },
-  { key: 'domains', label: 'Domains', icon: <Server className="w-4 h-4" /> },
-  { key: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
-  { key: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
+const MAIN_TABS: { key: MainTab; label: string; icon: React.ReactNode }[] = [
+  { key: 'integration', label: 'Integration', icon: <Settings className="w-4 h-4" /> },
+  { key: 'design', label: 'Design', icon: <Brush className="w-4 h-4" /> },
+  { key: 'content', label: 'Content', icon: <Layout className="w-4 h-4" /> },
   { key: 'pages', label: 'Pages', icon: <FileText className="w-4 h-4" /> },
+];
+
+const INTEGRATION_SUB_TABS: { key: IntegrationSubTab; label: string }[] = [
+  { key: 'client-settings', label: 'Client Settings' },
+  { key: 'cdn-settings', label: 'CDN Settings' },
+  { key: 'analytics', label: 'Analytics' },
+];
+
+const DESIGN_SUB_TABS: { key: DesignSubTab; label: string }[] = [
+  { key: 'logo', label: 'Logo' },
+  { key: 'typography', label: 'Typography' },
+  { key: 'colors', label: 'Colors' },
+];
+
+const CONTENT_SUB_TABS: { key: ContentSubTab; label: string }[] = [
+  { key: 'articles-page', label: 'Articles Page' },
+  { key: 'navigation', label: 'Navigation' },
+  { key: 'categories', label: 'Categories' },
 ];
 
 export default function TenantDashboardPage() {
@@ -57,11 +73,36 @@ export default function TenantDashboardPage() {
   );
 }
 
+/* ─── Sub-Tab Bar ────────────────────────────────────────── */
+
+function SubTabBar<T extends string>({ tabs, active, onChange }: { tabs: { key: T; label: string }[]; active: T; onChange: (key: T) => void }) {
+  return (
+    <div className="flex items-center gap-1 mb-6">
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          onClick={() => onChange(tab.key)}
+          className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${
+            active === tab.key
+              ? 'bg-gray-900 text-white shadow-sm'
+              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+          }`}
+        >
+          {tab.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 /* ─── Main Dashboard ─────────────────────────────────────── */
 
 function TenantDashboard() {
   const { tenant, loading, reload } = useTenant();
-  const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [mainTab, setMainTab] = useState<MainTab>('integration');
+  const [integrationSubTab, setIntegrationSubTab] = useState<IntegrationSubTab>('client-settings');
+  const [designSubTab, setDesignSubTab] = useState<DesignSubTab>('logo');
+  const [contentSubTab, setContentSubTab] = useState<ContentSubTab>('articles-page');
 
   if (loading) {
     return <p className="p-6 text-gray-400 text-sm">Loading...</p>;
@@ -85,15 +126,15 @@ function TenantDashboard() {
         <p className="text-sm text-gray-500 mt-1">Manage tenant settings and content</p>
       </div>
 
-      {/* Tab Bar */}
+      {/* Main Tab Bar */}
       <div className="flex items-center gap-1 border-b border-gray-200 mb-6">
-        {TABS.map((tab) => (
+        {MAIN_TABS.map((tab) => (
           <button
             key={tab.key}
-            onClick={() => setActiveTab(tab.key)}
+            onClick={() => setMainTab(tab.key)}
             className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
-              activeTab === tab.key
-                ? 'border-sky-500 text-sky-700'
+              mainTab === tab.key
+                ? 'border-gray-900 text-gray-900'
                 : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
             }`}
           >
@@ -103,25 +144,455 @@ function TenantDashboard() {
         ))}
       </div>
 
-      {/* Tab Content */}
-      {activeTab === 'overview' && <OverviewTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'navigation' && <NavigationTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'articles-page' && <ArticlesPageTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'categories' && <CategoriesTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'theme' && <ThemeTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'domains' && <DomainsTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'security' && <SecurityTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'analytics' && <AnalyticsTab tenant={tenant} onUpdate={reload} />}
-      {activeTab === 'pages' && <PagesTab />}
+      {/* Integration Tab */}
+      {mainTab === 'integration' && (
+        <div>
+          <SubTabBar tabs={INTEGRATION_SUB_TABS} active={integrationSubTab} onChange={setIntegrationSubTab} />
+          {integrationSubTab === 'client-settings' && <ClientSettingsSubTab tenant={tenant} onUpdate={reload} />}
+          {integrationSubTab === 'cdn-settings' && <CDNSettingsSubTab tenant={tenant} onUpdate={reload} />}
+          {integrationSubTab === 'analytics' && <AnalyticsSubTab tenant={tenant} onUpdate={reload} />}
+        </div>
+      )}
+
+      {/* Design Tab */}
+      {mainTab === 'design' && (
+        <div>
+          <SubTabBar tabs={DESIGN_SUB_TABS} active={designSubTab} onChange={setDesignSubTab} />
+          {designSubTab === 'logo' && <LogoSubTab tenant={tenant} onUpdate={reload} />}
+          {designSubTab === 'typography' && <TypographySubTab tenant={tenant} onUpdate={reload} />}
+          {designSubTab === 'colors' && <ColorsSubTab tenant={tenant} onUpdate={reload} />}
+        </div>
+      )}
+
+      {/* Content Tab */}
+      {mainTab === 'content' && (
+        <div>
+          <SubTabBar tabs={CONTENT_SUB_TABS} active={contentSubTab} onChange={setContentSubTab} />
+          {contentSubTab === 'articles-page' && <ArticlesPageSubTab tenant={tenant} onUpdate={reload} />}
+          {contentSubTab === 'navigation' && <NavigationSubTab tenant={tenant} onUpdate={reload} />}
+          {contentSubTab === 'categories' && <CategoriesSubTab tenant={tenant} onUpdate={reload} />}
+        </div>
+      )}
+
+      {/* Pages Tab */}
+      {mainTab === 'pages' && <PagesTab />}
     </div>
   );
 }
 
-/* ─── Overview Tab ───────────────────────────────────────── */
+/* ─── Integration > Client Settings ─────────────────────── */
 
-function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+function ClientSettingsSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
   const [siteName, setSiteName] = useState(tenant.site_name);
   const [publicDomain, setPublicDomain] = useState(tenant.public_domain);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  const [domains, setDomains] = useState<Domain[]>([]);
+  const [domainsLoading, setDomainsLoading] = useState(true);
+  const [newDomain, setNewDomain] = useState('');
+  const [adding, setAdding] = useState(false);
+
+  const loadDomains = useCallback(async () => {
+    const { data } = await supabase
+      .from('gifaa_tenant_domains')
+      .select('*')
+      .eq('tenant_id', tenant.id)
+      .order('is_primary', { ascending: false });
+    setDomains(data || []);
+    setDomainsLoading(false);
+  }, [tenant.id]);
+
+  useEffect(() => {
+    loadDomains();
+  }, [loadDomains]);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({
+        site_name: siteName,
+        public_domain: publicDomain,
+      })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleAddDomain() {
+    const trimmed = newDomain.trim().toLowerCase();
+    if (!trimmed) return;
+    setAdding(true);
+    await supabase.from('gifaa_tenant_domains').insert({
+      tenant_id: tenant.id,
+      domain: trimmed,
+      is_primary: false,
+    });
+    setNewDomain('');
+    setAdding(false);
+    loadDomains();
+  }
+
+  async function handleSetPrimary(domainId: string) {
+    await supabase
+      .from('gifaa_tenant_domains')
+      .update({ is_primary: false })
+      .eq('tenant_id', tenant.id);
+    await supabase
+      .from('gifaa_tenant_domains')
+      .update({ is_primary: true })
+      .eq('id', domainId);
+    const domain = domains.find((d) => d.id === domainId);
+    if (domain) {
+      await supabase
+        .from('gifaa_tenants')
+        .update({ public_domain: domain.domain })
+        .eq('id', tenant.id);
+    }
+    loadDomains();
+    onUpdate();
+  }
+
+  async function handleRemoveDomain(domainId: string) {
+    const domain = domains.find((d) => d.id === domainId);
+    if (domain?.is_primary) {
+      alert('Cannot remove the primary domain. Set another domain as primary first.');
+      return;
+    }
+    if (!confirm(`Remove "${domain?.domain}"?`)) return;
+    await supabase.from('gifaa_tenant_domains').delete().eq('id', domainId);
+    loadDomains();
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Tenant Configuration */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Tenant Configuration</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Tenant Key</label>
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <Lock className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-sm font-mono text-gray-700">{tenant.tenant_key}</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">ID</label>
+            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <Lock className="w-3.5 h-3.5 text-gray-400" />
+              <span className="text-sm font-mono text-gray-600 truncate">{tenant.id}</span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Site Name</label>
+            <Input
+              value={siteName}
+              onChange={(e) => setSiteName(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Public Domain</label>
+            <Input
+              value={publicDomain}
+              onChange={(e) => setPublicDomain(e.target.value)}
+              className="text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Created At</label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className="text-sm text-gray-700">
+                {new Date(tenant.created_at).toLocaleDateString('en-US', {
+                  year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                })}
+              </span>
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Status</label>
+            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
+              <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${
+                tenant.status === 'active' ? 'text-green-700' : 'text-gray-500'
+              }`}>
+                <span className={`w-2 h-2 rounded-full ${tenant.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
+                {tenant.status === 'active' ? 'Active' : tenant.status}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-6 flex items-center gap-3">
+          <Button onClick={handleSave} disabled={saving} className="gap-2">
+            {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Changes'}
+          </Button>
+        </div>
+      </div>
+
+      {/* Domain Configuration */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-4">Domain Configuration</h2>
+
+        {domainsLoading ? (
+          <p className="text-gray-400 text-sm">Loading domains...</p>
+        ) : (
+          <>
+            <div className="space-y-2 mb-6">
+              {domains.map((d) => (
+                <div
+                  key={d.id}
+                  className="flex items-center justify-between px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50"
+                >
+                  <div className="flex items-center gap-3">
+                    <Globe className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm font-medium text-gray-800">{d.domain}</span>
+                    {d.is_primary && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 text-sky-700 text-xs font-medium rounded-full">
+                        <Star className="w-3 h-3" /> Primary
+                      </span>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {!d.is_primary && (
+                      <Button variant="ghost" size="sm" onClick={() => handleSetPrimary(d.id)} className="text-xs h-7">
+                        Set Primary
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleRemoveDomain(d.id)}
+                      className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
+                      disabled={d.is_primary}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+              {domains.length === 0 && (
+                <p className="text-sm text-gray-400 py-4 text-center">No domains configured.</p>
+              )}
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Input
+                value={newDomain}
+                onChange={(e) => setNewDomain(e.target.value)}
+                placeholder="e.g. blog.example.com"
+                className="text-sm max-w-xs"
+                onKeyDown={(e) => e.key === 'Enter' && handleAddDomain()}
+              />
+              <Button onClick={handleAddDomain} disabled={adding || !newDomain.trim()} variant="outline" className="gap-2 text-sm">
+                <Plus className="w-4 h-4" />
+                Add Domain
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Integration > CDN Settings ─────────────────────────── */
+
+function CDNSettingsSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [copied, setCopied] = useState(false);
+  const [workerCopied, setWorkerCopied] = useState(false);
+  const [regenerating, setRegenerating] = useState(false);
+  const [revealed, setRevealed] = useState(false);
+
+  function handleCopySecret() {
+    navigator.clipboard.writeText(tenant.proxy_secret);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  async function handleRegenerate() {
+    if (!confirm('Regenerate proxy secret? This will break existing CDN worker configs until updated.')) return;
+    setRegenerating(true);
+    const newSecret = `gs_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
+    await supabase
+      .from('gifaa_tenants')
+      .update({ proxy_secret: newSecret })
+      .eq('id', tenant.id);
+    setRegenerating(false);
+    onUpdate();
+  }
+
+  const workerCode = generateWorkerCode(tenant.tenant_key, tenant.proxy_secret, tenant.public_domain);
+
+  function handleCopyWorker() {
+    navigator.clipboard.writeText(workerCode);
+    setWorkerCopied(true);
+    setTimeout(() => setWorkerCopied(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Cloudflare Worker Setup */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">CDN (Cloudflare) Setup</h2>
+            <p className="text-sm text-gray-500 mt-0.5">
+              Deploy this worker to Cloudflare and route it to your domain(s).
+            </p>
+          </div>
+          <Button onClick={handleCopyWorker} className="gap-2">
+            {workerCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            {workerCopied ? 'Copied' : 'Copy Worker Code'}
+          </Button>
+        </div>
+
+        <div className="relative rounded-lg overflow-hidden border border-gray-200">
+          <pre className="bg-gray-900 text-gray-100 text-xs leading-relaxed p-5 overflow-x-auto max-h-[480px]">
+            <code>{workerCode}</code>
+          </pre>
+        </div>
+
+        <div className="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg">
+          <p className="text-xs text-sky-800 font-medium mb-1">Route this worker to:</p>
+          <p className="text-xs text-sky-700 font-mono">{tenant.public_domain}/*</p>
+        </div>
+      </div>
+
+      {/* Proxy Secret */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Proxy Secret</h2>
+        <p className="text-sm text-gray-500 mb-4">Used by Cloudflare Workers to authenticate requests to the origin.</p>
+
+        <div className="flex items-center gap-2 mb-4">
+          <div className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-gray-700 truncate">
+            {revealed ? tenant.proxy_secret : '\u2022'.repeat(20)}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => setRevealed(!revealed)} className="text-xs shrink-0">
+            {revealed ? 'Hide' : 'Reveal'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleCopySecret} className="gap-1.5 shrink-0">
+            {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
+            {copied ? 'Copied' : 'Copy'}
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleRegenerate} disabled={regenerating} className="gap-1.5 shrink-0">
+            <RefreshCw className={`w-3.5 h-3.5 ${regenerating ? 'animate-spin' : ''}`} />
+            Regenerate
+          </Button>
+        </div>
+
+        <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-800">
+            Rotating the secret will break existing CDN worker configs until updated.
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Integration > Analytics ────────────────────────────── */
+
+function AnalyticsSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [measurementId, setMeasurementId] = useState(tenant.ga_measurement_id || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const trimmed = measurementId.trim();
+  const isValid = trimmed === '' || /^G-[A-Z0-9]+$/.test(trimmed);
+
+  async function handleSave() {
+    if (!isValid) {
+      setError('Measurement ID must look like G-XXXXXXXXXX (uppercase letters and digits only).');
+      return;
+    }
+    setError(null);
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({ ga_measurement_id: trimmed === '' ? null : trimmed })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  async function handleRemove() {
+    setError(null);
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({ ga_measurement_id: null })
+      .eq('id', tenant.id);
+    setMeasurementId('');
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Google Analytics</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Track tenant pages with your own GA4 property.</p>
+          </div>
+        </div>
+
+        <div className="space-y-4 max-w-md">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">GA4 Measurement ID</label>
+            <Input
+              value={measurementId}
+              onChange={(e) => { setMeasurementId(e.target.value); setError(null); }}
+              placeholder="G-XXXXXXXXXX"
+              className="text-sm font-mono"
+            />
+            {error && <p className="text-xs text-red-600 mt-1.5">{error}</p>}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Button onClick={handleSave} disabled={saving || !isValid} className="gap-2">
+              {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save'}
+            </Button>
+            {tenant.ga_measurement_id && (
+              <Button variant="ghost" onClick={handleRemove} disabled={saving} className="text-red-600 hover:text-red-700">
+                Remove
+              </Button>
+            )}
+          </div>
+        </div>
+
+        <div className="mt-6 pt-5 border-t border-gray-100">
+          <div className="flex items-start gap-2 text-xs text-gray-500">
+            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
+            <p>
+              The GA script is injected only on pages with <span className="font-mono font-semibold">status = approved</span>.
+              Drafts, previews, and published pages are not tracked.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Design > Logo ──────────────────────────────────────── */
+
+function LogoSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
   const [logoUrl, setLogoUrl] = useState(tenant.logo_url || '');
   const [headerLogoHeight, setHeaderLogoHeight] = useState(tenant.header_logo_height);
   const [footerLogoHeight, setFooterLogoHeight] = useState(tenant.footer_logo_height);
@@ -137,8 +608,6 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
     await supabase
       .from('gifaa_tenants')
       .update({
-        site_name: siteName,
-        public_domain: publicDomain,
         logo_url: logoUrl || null,
         header_logo_height: headerLogoHeight,
         footer_logo_height: footerLogoHeight,
@@ -172,7 +641,7 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
 
   return (
     <div className="space-y-6">
-      {/* Logo Section */}
+      {/* Client Logo */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-4">Client Logo</h2>
         <p className="text-sm text-gray-500 mb-4">This logo appears in the page header and footer instead of the site name text.</p>
@@ -311,277 +780,16 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
         )}
       </div>
 
-      {/* Tenant Details */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Tenant Details</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Tenant Key</label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-              <Lock className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-sm font-mono text-gray-700">{tenant.tenant_key}</span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">ID</label>
-            <div className="flex items-center gap-2 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-              <Lock className="w-3.5 h-3.5 text-gray-400" />
-              <span className="text-sm font-mono text-gray-600 truncate">{tenant.id}</span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Site Name</label>
-            <Input
-              value={siteName}
-              onChange={(e) => setSiteName(e.target.value)}
-              className="text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Public Domain</label>
-            <Input
-              value={publicDomain}
-              onChange={(e) => setPublicDomain(e.target.value)}
-              className="text-sm"
-            />
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Created At</label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-              <span className="text-sm text-gray-700">
-                {new Date(tenant.created_at).toLocaleDateString('en-US', {
-                  year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit',
-                })}
-              </span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Status</label>
-            <div className="px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg">
-              <span className={`inline-flex items-center gap-1.5 text-sm font-medium ${
-                tenant.status === 'active' ? 'text-green-700' : 'text-gray-500'
-              }`}>
-                <span className={`w-2 h-2 rounded-full ${tenant.status === 'active' ? 'bg-green-500' : 'bg-gray-400'}`} />
-                {tenant.status === 'active' ? 'Active' : tenant.status}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="mt-6 flex items-center gap-3">
-          <Button onClick={handleSave} disabled={saving} className="gap-2">
-            {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Changes'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Articles Page Tab ──────────────────────────────────── */
-
-function ArticlesPageTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
-  const [metaTitle, setMetaTitle] = useState(tenant.articles_meta_title || '');
-  const [metaDescription, setMetaDescription] = useState(tenant.articles_meta_description || '');
-  const [pageHeading, setPageHeading] = useState(tenant.articles_page_heading || '');
-  const [pageSubtitle, setPageSubtitle] = useState(tenant.articles_page_subtitle || '');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  async function handleSave() {
-    setSaving(true);
-    await supabase
-      .from('gifaa_tenants')
-      .update({
-        articles_meta_title: metaTitle.trim() || null,
-        articles_meta_description: metaDescription.trim() || null,
-        articles_page_heading: pageHeading.trim() || null,
-        articles_page_subtitle: pageSubtitle.trim() || null,
-      })
-      .eq('id', tenant.id);
-    setSaving(false);
-    setSaved(true);
-    onUpdate();
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Articles Page Appearance</h2>
-        <p className="text-sm text-gray-500 mb-5">Control the heading and subtitle shown on your /articles listing page.</p>
-
-        <div className="space-y-4 max-w-lg">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Page Heading</label>
-            <Input value={pageHeading} onChange={(e) => setPageHeading(e.target.value)} placeholder="e.g. Our Blog" />
-            <p className="text-xs text-gray-400 mt-1">Displayed as the main H1 heading on the articles page. Defaults to &quot;Articles&quot; if empty.</p>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Page Subtitle</label>
-            <Input value={pageSubtitle} onChange={(e) => setPageSubtitle(e.target.value)} placeholder="e.g. Insights, guides, and stories from our team" />
-            <p className="text-xs text-gray-400 mt-1">Short description shown below the heading.</p>
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Articles Page SEO</h2>
-        <p className="text-sm text-gray-500 mb-5">Meta tags for the /articles listing page. Shown in search results and social shares.</p>
-
-        <div className="space-y-4 max-w-lg">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Meta Title</label>
-            <Input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="e.g. Blog | Company Name" />
-            <p className="text-xs text-gray-400 mt-1">{metaTitle.length}/60 characters</p>
-          </div>
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">Meta Description</label>
-            <textarea
-              value={metaDescription}
-              onChange={(e) => setMetaDescription(e.target.value)}
-              placeholder="e.g. Read our latest articles on..."
-              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-20"
-            />
-            <p className="text-xs text-gray-400 mt-1">{metaDescription.length}/155 characters</p>
-          </div>
-        </div>
-      </div>
-
-      {/* Preview */}
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Preview</h2>
-        <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
-          <h1 className="text-2xl font-bold text-gray-900 mb-1">{pageHeading || 'Articles'}</h1>
-          {(pageSubtitle || 'Your subtitle appears here') && (
-            <p className="text-sm text-gray-500">{pageSubtitle || 'Your subtitle appears here'}</p>
-          )}
-        </div>
-        {(metaTitle || metaDescription) && (
-          <div className="mt-4 p-4 bg-gray-50 border border-gray-100 rounded-lg">
-            <p className="text-xs font-medium text-gray-400 mb-2">Search Engine Result Preview</p>
-            <p className="text-blue-700 text-sm font-medium truncate">{metaTitle || tenant.site_name}</p>
-            <p className="text-green-700 text-xs truncate">https://{tenant.public_domain}/articles</p>
-            <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{metaDescription || 'No description set'}</p>
-          </div>
-        )}
-      </div>
-
       <div className="flex items-center gap-3">
         <Button onClick={handleSave} disabled={saving} className="gap-2">
-          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Articles Page Settings'}
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Logo Settings'}
         </Button>
       </div>
     </div>
   );
 }
 
-/* ─── Categories Tab ─────────────────────────────────────── */
-
-function CategoriesTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
-  const [categories, setCategories] = useState<string[]>(tenant.default_categories || []);
-  const [newCategory, setNewCategory] = useState('');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-
-  function addCategory() {
-    const trimmed = newCategory.trim();
-    if (!trimmed || categories.includes(trimmed)) return;
-    setCategories([...categories, trimmed]);
-    setNewCategory('');
-  }
-
-  function removeCategory(index: number) {
-    setCategories(categories.filter((_, i) => i !== index));
-  }
-
-  function moveCategory(index: number, dir: -1 | 1) {
-    const arr = [...categories];
-    const target = index + dir;
-    if (target < 0 || target >= arr.length) return;
-    [arr[index], arr[target]] = [arr[target], arr[index]];
-    setCategories(arr);
-  }
-
-  async function handleSave() {
-    setSaving(true);
-    await supabase
-      .from('gifaa_tenants')
-      .update({ default_categories: categories })
-      .eq('id', tenant.id);
-    setSaving(false);
-    setSaved(true);
-    onUpdate();
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Default Categories</h2>
-        <p className="text-sm text-gray-500 mb-5">
-          Define default categories for this tenant. These appear as suggestions in the article editor category field. Authors can still type custom categories.
-        </p>
-
-        <div className="space-y-2 mb-5">
-          {categories.length === 0 ? (
-            <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
-              <Tag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-              <p className="text-sm text-gray-500 mb-1">No categories defined</p>
-              <p className="text-xs text-gray-400">Add categories below to give article authors quick suggestions.</p>
-            </div>
-          ) : (
-            categories.map((cat, i) => (
-              <div key={i} className="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 group">
-                <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
-                <span className="flex-1 text-sm text-gray-800">{cat}</span>
-                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onClick={() => moveCategory(i, -1)} disabled={i === 0} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded">
-                    <ChevronUp className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => moveCategory(i, 1)} disabled={i === categories.length - 1} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded">
-                    <ChevronDown className="w-3.5 h-3.5" />
-                  </button>
-                  <button onClick={() => removeCategory(i)} className="p-1 text-red-400 hover:text-red-600 rounded">
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Input
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="e.g. Wedding Gifts"
-            className="text-sm max-w-xs"
-            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }}
-          />
-          <Button onClick={addCategory} disabled={!newCategory.trim()} variant="outline" className="gap-2 text-sm">
-            <Plus className="w-4 h-4" />
-            Add Category
-          </Button>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-3">
-        <Button onClick={handleSave} disabled={saving} className="gap-2">
-          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Categories'}
-        </Button>
-        <p className="text-xs text-gray-400">{categories.length} categor{categories.length === 1 ? 'y' : 'ies'} configured</p>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Theme Tab ──────────────────────────────────────────── */
+/* ─── Design > Typography ────────────────────────────────── */
 
 const FONT_OPTIONS = [
   { value: '', label: 'System Default' },
@@ -596,15 +804,10 @@ const FONT_OPTIONS = [
   { value: "'Nunito', sans-serif", label: 'Nunito' },
 ];
 
-function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
-  const [bgColor, setBgColor] = useState(tenant.theme_bg_color || '');
+function TypographySubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
   const [fontFamily, setFontFamily] = useState(tenant.theme_font_family || '');
   const [fontSizeBody, setFontSizeBody] = useState(tenant.theme_font_size_body);
   const [fontSizeHeading, setFontSizeHeading] = useState(tenant.theme_font_size_heading);
-  const [headerBgColor, setHeaderBgColor] = useState(tenant.theme_header_bg_color || '');
-  const [headerTextColor, setHeaderTextColor] = useState(tenant.theme_header_text_color || '');
-  const [footerBgColor, setFooterBgColor] = useState(tenant.theme_footer_bg_color || '');
-  const [footerTextColor, setFooterTextColor] = useState(tenant.theme_footer_text_color || '');
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
@@ -613,14 +816,9 @@ function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => vo
     await supabase
       .from('gifaa_tenants')
       .update({
-        theme_bg_color: bgColor.trim() || null,
         theme_font_family: fontFamily || null,
         theme_font_size_body: fontSizeBody,
         theme_font_size_heading: fontSizeHeading,
-        theme_header_bg_color: headerBgColor.trim() || null,
-        theme_header_text_color: headerTextColor.trim() || null,
-        theme_footer_bg_color: footerBgColor.trim() || null,
-        theme_footer_text_color: footerTextColor.trim() || null,
       })
       .eq('id', tenant.id);
     setSaving(false);
@@ -631,7 +829,6 @@ function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => vo
 
   return (
     <div className="space-y-6">
-      {/* Typography */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Typography</h2>
         <p className="text-sm text-gray-500 mb-5">Control the fonts and sizes used on tenant pages.</p>
@@ -674,7 +871,47 @@ function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => vo
         </div>
       </div>
 
-      {/* Colors */}
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Typography'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Design > Colors ────────────────────────────────────── */
+
+function ColorsSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [bgColor, setBgColor] = useState(tenant.theme_bg_color || '');
+  const [headerBgColor, setHeaderBgColor] = useState(tenant.theme_header_bg_color || '');
+  const [headerTextColor, setHeaderTextColor] = useState(tenant.theme_header_text_color || '');
+  const [footerBgColor, setFooterBgColor] = useState(tenant.theme_footer_bg_color || '');
+  const [footerTextColor, setFooterTextColor] = useState(tenant.theme_footer_text_color || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({
+        theme_bg_color: bgColor.trim() || null,
+        theme_header_bg_color: headerBgColor.trim() || null,
+        theme_header_text_color: headerTextColor.trim() || null,
+        theme_footer_bg_color: footerBgColor.trim() || null,
+        theme_footer_text_color: footerTextColor.trim() || null,
+      })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Page Colors */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Page Colors</h2>
         <p className="text-sm text-gray-500 mb-5">Customize the background color for your homepage and articles listing.</p>
@@ -693,7 +930,7 @@ function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => vo
         </div>
       </div>
 
-      {/* Header */}
+      {/* Header Colors */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Header Colors</h2>
         <p className="text-sm text-gray-500 mb-5">Customize the header bar appearance on tenant pages.</p>
@@ -728,7 +965,7 @@ function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => vo
         </div>
       </div>
 
-      {/* Footer */}
+      {/* Footer Colors */}
       <div className="bg-white border border-gray-200 rounded-xl p-6">
         <h2 className="text-lg font-semibold text-gray-900 mb-1">Footer Colors</h2>
         <p className="text-sm text-gray-500 mb-5">Customize the footer appearance on tenant pages.</p>
@@ -761,14 +998,115 @@ function ThemeTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => vo
 
       <div className="flex items-center gap-3">
         <Button onClick={handleSave} disabled={saving} className="gap-2">
-          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Theme Settings'}
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Colors'}
         </Button>
       </div>
     </div>
   );
 }
 
-/* ─── Navigation Tab ────────────────────────────────────── */
+/* ─── Content > Articles Page ────────────────────────────── */
+
+function ArticlesPageSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [metaTitle, setMetaTitle] = useState(tenant.articles_meta_title || '');
+  const [metaDescription, setMetaDescription] = useState(tenant.articles_meta_description || '');
+  const [pageHeading, setPageHeading] = useState(tenant.articles_page_heading || '');
+  const [pageSubtitle, setPageSubtitle] = useState(tenant.articles_page_subtitle || '');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({
+        articles_meta_title: metaTitle.trim() || null,
+        articles_meta_description: metaDescription.trim() || null,
+        articles_page_heading: pageHeading.trim() || null,
+        articles_page_subtitle: pageSubtitle.trim() || null,
+      })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Articles Page Appearance */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Articles Page Appearance</h2>
+        <p className="text-sm text-gray-500 mb-5">Control the heading and subtitle shown on your /articles listing page.</p>
+
+        <div className="space-y-4 max-w-lg">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Page Heading</label>
+            <Input value={pageHeading} onChange={(e) => setPageHeading(e.target.value)} placeholder="e.g. Our Blog" />
+            <p className="text-xs text-gray-400 mt-1">Displayed as the main H1 heading on the articles page. Defaults to &quot;Articles&quot; if empty.</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Page Subtitle</label>
+            <Input value={pageSubtitle} onChange={(e) => setPageSubtitle(e.target.value)} placeholder="e.g. Insights, guides, and stories from our team" />
+            <p className="text-xs text-gray-400 mt-1">Short description shown below the heading.</p>
+          </div>
+        </div>
+
+        {/* Inline Preview */}
+        <div className="mt-5 pt-5 border-t border-gray-100">
+          <p className="text-xs font-medium text-gray-400 mb-3">Preview</p>
+          <div className="border border-gray-200 rounded-lg p-6 bg-gray-50">
+            <h1 className="text-2xl font-bold text-gray-900 mb-1">{pageHeading || 'Articles'}</h1>
+            <p className="text-sm text-gray-500">{pageSubtitle || 'Your subtitle appears here'}</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Articles Page SEO */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Articles Page SEO</h2>
+        <p className="text-sm text-gray-500 mb-5">Meta tags for the /articles listing page. Shown in search results and social shares.</p>
+
+        <div className="space-y-4 max-w-lg">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Meta Title</label>
+            <Input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="e.g. Blog | Company Name" />
+            <p className="text-xs text-gray-400 mt-1">{metaTitle.length}/60 characters</p>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Meta Description</label>
+            <textarea
+              value={metaDescription}
+              onChange={(e) => setMetaDescription(e.target.value)}
+              placeholder="e.g. Read our latest articles on..."
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-20"
+            />
+            <p className="text-xs text-gray-400 mt-1">{metaDescription.length}/155 characters</p>
+          </div>
+        </div>
+
+        {(metaTitle || metaDescription) && (
+          <div className="mt-5 pt-5 border-t border-gray-100">
+            <p className="text-xs font-medium text-gray-400 mb-2">Search Engine Result Preview</p>
+            <div className="p-4 bg-gray-50 border border-gray-100 rounded-lg">
+              <p className="text-blue-700 text-sm font-medium truncate">{metaTitle || tenant.site_name}</p>
+              <p className="text-green-700 text-xs truncate">https://{tenant.public_domain}/articles</p>
+              <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{metaDescription || 'No description set'}</p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Articles Page Settings'}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Content > Navigation ───────────────────────────────── */
 
 interface HeaderMenuItem {
   label: string;
@@ -781,7 +1119,7 @@ interface FooterLink {
   url: string;
 }
 
-function NavigationTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+function NavigationSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
   const [headerItems, setHeaderItems] = useState<HeaderMenuItem[]>(tenant.header_menu_items || []);
   const [footerLinks, setFooterLinks] = useState<FooterLink[]>(tenant.footer_links || []);
   const [saving, setSaving] = useState(false);
@@ -962,315 +1300,101 @@ function NavigationTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () 
   );
 }
 
-/* ─── Domains Tab ────────────────────────────────────────── */
+/* ─── Content > Categories ───────────────────────────────── */
 
-function DomainsTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
-  const [domains, setDomains] = useState<Domain[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [newDomain, setNewDomain] = useState('');
-  const [adding, setAdding] = useState(false);
+function CategoriesSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [categories, setCategories] = useState<string[]>(tenant.default_categories || []);
+  const [newCategory, setNewCategory] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
 
-  const loadDomains = useCallback(async () => {
-    const { data } = await supabase
-      .from('gifaa_tenant_domains')
-      .select('*')
-      .eq('tenant_id', tenant.id)
-      .order('is_primary', { ascending: false });
-    setDomains(data || []);
-    setLoading(false);
-  }, [tenant.id]);
-
-  useEffect(() => {
-    loadDomains();
-  }, [loadDomains]);
-
-  async function handleAdd() {
-    const trimmed = newDomain.trim().toLowerCase();
-    if (!trimmed) return;
-    setAdding(true);
-    await supabase.from('gifaa_tenant_domains').insert({
-      tenant_id: tenant.id,
-      domain: trimmed,
-      is_primary: false,
-    });
-    setNewDomain('');
-    setAdding(false);
-    loadDomains();
+  function addCategory() {
+    const trimmed = newCategory.trim();
+    if (!trimmed || categories.includes(trimmed)) return;
+    setCategories([...categories, trimmed]);
+    setNewCategory('');
   }
 
-  async function handleSetPrimary(domainId: string) {
+  function removeCategory(index: number) {
+    setCategories(categories.filter((_, i) => i !== index));
+  }
+
+  function moveCategory(index: number, dir: -1 | 1) {
+    const arr = [...categories];
+    const target = index + dir;
+    if (target < 0 || target >= arr.length) return;
+    [arr[index], arr[target]] = [arr[target], arr[index]];
+    setCategories(arr);
+  }
+
+  async function handleSave() {
+    setSaving(true);
     await supabase
-      .from('gifaa_tenant_domains')
-      .update({ is_primary: false })
-      .eq('tenant_id', tenant.id);
-    await supabase
-      .from('gifaa_tenant_domains')
-      .update({ is_primary: true })
-      .eq('id', domainId);
-    const domain = domains.find((d) => d.id === domainId);
-    if (domain) {
-      await supabase
-        .from('gifaa_tenants')
-        .update({ public_domain: domain.domain })
-        .eq('id', tenant.id);
-    }
-    loadDomains();
+      .from('gifaa_tenants')
+      .update({ default_categories: categories })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
     onUpdate();
+    setTimeout(() => setSaved(false), 2000);
   }
-
-  async function handleRemove(domainId: string) {
-    const domain = domains.find((d) => d.id === domainId);
-    if (domain?.is_primary) {
-      alert('Cannot remove the primary domain. Set another domain as primary first.');
-      return;
-    }
-    if (!confirm(`Remove "${domain?.domain}"?`)) return;
-    await supabase.from('gifaa_tenant_domains').delete().eq('id', domainId);
-    loadDomains();
-  }
-
-  if (loading) return <p className="text-gray-400 text-sm">Loading domains...</p>;
 
   return (
     <div className="space-y-6">
       <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">Configured Domains</h2>
+        <h2 className="text-lg font-semibold text-gray-900 mb-1">Default Categories</h2>
+        <p className="text-sm text-gray-500 mb-5">
+          Define default categories for this tenant. These appear as suggestions in the article editor category field. Authors can still type custom categories.
+        </p>
 
-        <div className="space-y-2 mb-6">
-          {domains.map((d) => (
-            <div
-              key={d.id}
-              className="flex items-center justify-between px-4 py-3 border border-gray-100 rounded-lg bg-gray-50/50"
-            >
-              <div className="flex items-center gap-3">
-                <Globe className="w-4 h-4 text-gray-400" />
-                <span className="text-sm font-medium text-gray-800">{d.domain}</span>
-                {d.is_primary && (
-                  <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-sky-50 text-sky-700 text-xs font-medium rounded-full">
-                    <Star className="w-3 h-3" /> Primary
-                  </span>
-                )}
-              </div>
-              <div className="flex items-center gap-1">
-                {!d.is_primary && (
-                  <Button variant="ghost" size="sm" onClick={() => handleSetPrimary(d.id)} className="text-xs h-7">
-                    Set Primary
-                  </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleRemove(d.id)}
-                  className="h-7 w-7 p-0 text-red-400 hover:text-red-600"
-                  disabled={d.is_primary}
-                >
-                  <X className="w-3.5 h-3.5" />
-                </Button>
-              </div>
+        <div className="space-y-2 mb-5">
+          {categories.length === 0 ? (
+            <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
+              <Tag className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 mb-1">No categories defined</p>
+              <p className="text-xs text-gray-400">Add categories below to give article authors quick suggestions.</p>
             </div>
-          ))}
-          {domains.length === 0 && (
-            <p className="text-sm text-gray-400 py-4 text-center">No domains configured.</p>
+          ) : (
+            categories.map((cat, i) => (
+              <div key={i} className="flex items-center gap-2 px-3 py-2.5 border border-gray-200 rounded-lg bg-gray-50/50 group">
+                <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
+                <span className="flex-1 text-sm text-gray-800">{cat}</span>
+                <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => moveCategory(i, -1)} disabled={i === 0} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded">
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => moveCategory(i, 1)} disabled={i === categories.length - 1} className="p-1 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded">
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  </button>
+                  <button onClick={() => removeCategory(i)} className="p-1 text-red-400 hover:text-red-600 rounded">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            ))
           )}
         </div>
 
         <div className="flex items-center gap-2">
           <Input
-            value={newDomain}
-            onChange={(e) => setNewDomain(e.target.value)}
-            placeholder="e.g. blog.example.com"
+            value={newCategory}
+            onChange={(e) => setNewCategory(e.target.value)}
+            placeholder="e.g. Wedding Gifts"
             className="text-sm max-w-xs"
-            onKeyDown={(e) => e.key === 'Enter' && handleAdd()}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCategory(); } }}
           />
-          <Button onClick={handleAdd} disabled={adding || !newDomain.trim()} variant="outline" className="gap-2 text-sm">
+          <Button onClick={addCategory} disabled={!newCategory.trim()} variant="outline" className="gap-2 text-sm">
             <Plus className="w-4 h-4" />
-            Add Domain
+            Add Category
           </Button>
         </div>
       </div>
-    </div>
-  );
-}
 
-/* ─── Security Tab ───────────────────────────────────────── */
-
-function SecurityTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
-  const [copied, setCopied] = useState(false);
-  const [workerCopied, setWorkerCopied] = useState(false);
-  const [regenerating, setRegenerating] = useState(false);
-  const [revealed, setRevealed] = useState(false);
-
-  function handleCopySecret() {
-    navigator.clipboard.writeText(tenant.proxy_secret);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  }
-
-  async function handleRegenerate() {
-    if (!confirm('Regenerate proxy secret? This will break existing CDN worker configs until updated.')) return;
-    setRegenerating(true);
-    const newSecret = `gs_${crypto.randomUUID().replace(/-/g, '').slice(0, 24)}`;
-    await supabase
-      .from('gifaa_tenants')
-      .update({ proxy_secret: newSecret })
-      .eq('id', tenant.id);
-    setRegenerating(false);
-    onUpdate();
-  }
-
-  const workerCode = generateWorkerCode(tenant.tenant_key, tenant.proxy_secret, tenant.public_domain);
-
-  function handleCopyWorker() {
-    navigator.clipboard.writeText(workerCode);
-    setWorkerCopied(true);
-    setTimeout(() => setWorkerCopied(false), 2000);
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <h2 className="text-lg font-semibold text-gray-900 mb-1">Proxy Secret</h2>
-        <p className="text-sm text-gray-500 mb-4">Used by Cloudflare Workers to authenticate requests to the origin.</p>
-
-        <div className="flex items-center gap-2 mb-4">
-          <div className="flex-1 px-3 py-2.5 bg-gray-50 border border-gray-200 rounded-lg font-mono text-sm text-gray-700 truncate">
-            {revealed ? tenant.proxy_secret : '\u2022'.repeat(20)}
-          </div>
-          <Button variant="outline" size="sm" onClick={() => setRevealed(!revealed)} className="text-xs shrink-0">
-            {revealed ? 'Hide' : 'Reveal'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleCopySecret} className="gap-1.5 shrink-0">
-            {copied ? <Check className="w-3.5 h-3.5 text-green-600" /> : <Copy className="w-3.5 h-3.5" />}
-            {copied ? 'Copied' : 'Copy'}
-          </Button>
-          <Button variant="outline" size="sm" onClick={handleRegenerate} disabled={regenerating} className="gap-1.5 shrink-0">
-            <RefreshCw className={`w-3.5 h-3.5 ${regenerating ? 'animate-spin' : ''}`} />
-            Regenerate
-          </Button>
-        </div>
-
-        <div className="flex items-start gap-2.5 p-3 bg-amber-50 border border-amber-200 rounded-lg">
-          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800">
-            Rotating the secret will break existing CDN worker configs until updated.
-          </p>
-        </div>
-      </div>
-
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Cloudflare Worker Setup</h2>
-            <p className="text-sm text-gray-500 mt-0.5">
-              Deploy this worker to Cloudflare and route it to your domain(s).
-            </p>
-          </div>
-          <Button onClick={handleCopyWorker} className="gap-2">
-            {workerCopied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-            {workerCopied ? 'Copied' : 'Copy Worker Code'}
-          </Button>
-        </div>
-
-        <div className="relative rounded-lg overflow-hidden border border-gray-200">
-          <pre className="bg-gray-900 text-gray-100 text-xs leading-relaxed p-5 overflow-x-auto max-h-[480px]">
-            <code>{workerCode}</code>
-          </pre>
-        </div>
-
-        <div className="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg">
-          <p className="text-xs text-sky-800 font-medium mb-1">Route this worker to:</p>
-          <p className="text-xs text-sky-700 font-mono">{tenant.public_domain}/*</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ─── Analytics Tab ──────────────────────────────────────── */
-
-function AnalyticsTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
-  const [measurementId, setMeasurementId] = useState(tenant.ga_measurement_id || '');
-  const [saving, setSaving] = useState(false);
-  const [saved, setSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const trimmed = measurementId.trim();
-  const isValid = trimmed === '' || /^G-[A-Z0-9]+$/.test(trimmed);
-
-  async function handleSave() {
-    if (!isValid) {
-      setError('Measurement ID must look like G-XXXXXXXXXX (uppercase letters and digits only).');
-      return;
-    }
-    setError(null);
-    setSaving(true);
-    await supabase
-      .from('gifaa_tenants')
-      .update({ ga_measurement_id: trimmed === '' ? null : trimmed })
-      .eq('id', tenant.id);
-    setSaving(false);
-    setSaved(true);
-    onUpdate();
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  async function handleRemove() {
-    setError(null);
-    setSaving(true);
-    await supabase
-      .from('gifaa_tenants')
-      .update({ ga_measurement_id: null })
-      .eq('id', tenant.id);
-    setMeasurementId('');
-    setSaving(false);
-    setSaved(true);
-    onUpdate();
-    setTimeout(() => setSaved(false), 2000);
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="bg-white border border-gray-200 rounded-xl p-6">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h2 className="text-lg font-semibold text-gray-900">Google Analytics</h2>
-            <p className="text-sm text-gray-500 mt-0.5">Track tenant pages with your own GA4 property.</p>
-          </div>
-        </div>
-
-        <div className="space-y-4 max-w-md">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1.5">GA4 Measurement ID</label>
-            <Input
-              value={measurementId}
-              onChange={(e) => { setMeasurementId(e.target.value); setError(null); }}
-              placeholder="G-XXXXXXXXXX"
-              className="text-sm font-mono"
-            />
-            {error && <p className="text-xs text-red-600 mt-1.5">{error}</p>}
-          </div>
-
-          <div className="flex items-center gap-3">
-            <Button onClick={handleSave} disabled={saving || !isValid} className="gap-2">
-              {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save'}
-            </Button>
-            {tenant.ga_measurement_id && (
-              <Button variant="ghost" onClick={handleRemove} disabled={saving} className="text-red-600 hover:text-red-700">
-                Remove
-              </Button>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-6 pt-5 border-t border-gray-100">
-          <div className="flex items-start gap-2 text-xs text-gray-500">
-            <AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
-            <p>
-              The GA script is injected only on pages with <span className="font-mono font-semibold">status = approved</span>.
-              Drafts, previews, and published pages are not tracked.
-            </p>
-          </div>
-        </div>
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Categories'}
+        </Button>
+        <p className="text-xs text-gray-400">{categories.length} categor{categories.length === 1 ? 'y' : 'ies'} configured</p>
       </div>
     </div>
   );
@@ -1290,6 +1414,8 @@ function PagesTab() {
   const [articles, setArticles] = useState<Article[]>([]);
   const [analytics, setAnalytics] = useState<Record<string, ArticleAnalytics>>({});
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
     loadArticles();
@@ -1364,9 +1490,40 @@ function PagesTab() {
     );
   }
 
+  const statuses = ['all', ...Array.from(new Set(articles.map(a => a.status)))];
+  const filtered = articles.filter(a => {
+    const matchesStatus = filterStatus === 'all' || a.status === filterStatus;
+    const matchesSearch = !searchQuery || a.title?.toLowerCase().includes(searchQuery.toLowerCase()) || a.slug?.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
+
   return (
     <div>
-      <div className="flex items-center justify-end mb-4">
+      {/* Toolbar */}
+      <div className="flex items-center justify-between mb-4 gap-3">
+        <div className="flex items-center gap-3 flex-1">
+          <Input
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search articles..."
+            className="text-sm max-w-xs"
+          />
+          <div className="flex items-center gap-1">
+            {statuses.map((status) => (
+              <button
+                key={status}
+                onClick={() => setFilterStatus(status)}
+                className={`px-2.5 py-1.5 text-xs font-medium rounded-md transition-colors ${
+                  filterStatus === status
+                    ? 'bg-gray-900 text-white'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                {status === 'all' ? 'All' : status}
+              </button>
+            ))}
+          </div>
+        </div>
         <Button onClick={() => router.push(`/admin/tenants/${tenantKey}/edit/new`)} className="gap-2">
           <Plus className="w-4 h-4" />
           New Article
@@ -1388,7 +1545,7 @@ function PagesTab() {
             </tr>
           </thead>
           <tbody>
-            {articles.map((article) => {
+            {filtered.map((article) => {
               const stats = analytics[article.id];
               return (
                 <tr key={article.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50 transition-colors">
@@ -1440,9 +1597,17 @@ function PagesTab() {
                 </tr>
               );
             })}
+            {filtered.length === 0 && (
+              <tr>
+                <td colSpan={8} className="px-4 py-8 text-center text-sm text-gray-400">
+                  No articles match your filter.
+                </td>
+              </tr>
+            )}
           </tbody>
         </table>
       </div>
+      <p className="text-xs text-gray-400 mt-3">{filtered.length} of {articles.length} articles shown</p>
     </div>
   );
 }
