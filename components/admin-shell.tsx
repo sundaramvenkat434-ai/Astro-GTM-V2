@@ -60,7 +60,6 @@ const NAV_SECTIONS: NavSection[] = [
       { label: 'Author Profiles', href: '/admin/authors', icon: <Users2 className="w-4 h-4" /> },
       { label: 'Categories', href: '/admin/categories', icon: <Tag className="w-4 h-4" /> },
       { label: 'Tool Claims', href: '/admin/claims', icon: <BadgeCheck className="w-4 h-4" /> },
-      { label: 'Gifaa', href: '/admin/gifaa', icon: <Gift className="w-4 h-4" /> },
     ],
   },
   {
@@ -89,6 +88,7 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [profileOpen, setProfileOpen] = useState(false);
   const [sessionExpiresAt, setSessionExpiresAt] = useState<number | null>(null);
+  const [tenants, setTenants] = useState<{ tenant_key: string; site_name: string }[]>([]);
 
   async function doSignOut() {
     localStorage.removeItem(SESSION_EXPIRY_KEY);
@@ -112,6 +112,13 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
       setUserEmail(session.user.email || '');
       setLoading(false);
     });
+
+    supabase
+      .from('gifaa_tenants')
+      .select('tenant_key, site_name')
+      .eq('status', 'active')
+      .order('created_at')
+      .then(({ data }) => { if (data) setTenants(data); });
   }, [router]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Schedule automatic sign-out at midnight when day-session is active
@@ -187,6 +194,42 @@ export function AdminShell({ children }: { children: React.ReactNode }) {
               </div>
             </div>
           ))}
+
+          {/* Dynamic Tenants Section */}
+          <div>
+            <p className="px-3 mb-1.5 text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Tenants</p>
+            <div className="space-y-0.5">
+              {tenants.map((t) => {
+                const href = `/admin/tenants/${t.tenant_key}`;
+                const isActive = pathname.startsWith(href);
+                return (
+                  <Link
+                    key={t.tenant_key}
+                    href={href}
+                    className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                      isActive
+                        ? 'bg-sky-50 text-sky-700 font-semibold'
+                        : 'text-slate-600 hover:bg-slate-50 hover:text-slate-900'
+                    }`}
+                  >
+                    <span className={isActive ? 'text-sky-600' : 'text-slate-400'}><Gift className="w-4 h-4" /></span>
+                    {t.site_name || t.tenant_key}
+                  </Link>
+                );
+              })}
+              <Link
+                href="/admin/tenants/new"
+                className={`flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm transition-colors ${
+                  pathname === '/admin/tenants/new'
+                    ? 'bg-sky-50 text-sky-700 font-semibold'
+                    : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900'
+                }`}
+              >
+                <span className={pathname === '/admin/tenants/new' ? 'text-sky-600' : 'text-slate-400'}><Plus className="w-4 h-4" /></span>
+                Add Tenant
+              </Link>
+            </div>
+          </div>
         </nav>
 
         {/* Day-session badge */}
