@@ -107,9 +107,11 @@ interface Props {
   poweredByOpacity?: number;
   isPreview?: boolean;
   gaMeasurementId?: string | null;
+  headerMenuItems?: { label: string; url: string }[];
+  footerLinks?: { heading: string; text: string; url: string }[];
 }
 
-export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24, poweredByEnabled = true, poweredByHeight = 20, poweredByOpacity = 60, isPreview = false, gaMeasurementId = null }: Props) {
+export function ArticleView({ article, relatedArticles, siteName, publicDomain, logoUrl, headerLogoHeight = 32, footerLogoHeight = 24, poweredByEnabled = true, poweredByHeight = 20, poweredByOpacity = 60, isPreview = false, gaMeasurementId = null, headerMenuItems = [], footerLinks = [] }: Props) {
   const [activeSection, setActiveSection] = useState('');
   const [sidebarEmail, setSidebarEmail] = useState('');
   const [sidebarSubmitted, setSidebarSubmitted] = useState(false);
@@ -175,8 +177,16 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
             )}
           </Link>
           <nav className="hidden sm:flex items-center gap-7 text-[14px] text-gray-500">
-            <Link href="/articles" className="hover:text-gray-900 transition-colors">Blog</Link>
-            <a href={`https://${publicDomain}`} className="text-gray-900 font-medium">Home</a>
+            {headerMenuItems.length > 0 ? (
+              headerMenuItems.map((item, i) => (
+                <a key={i} href={item.url} className="hover:text-gray-900 transition-colors">{item.label}</a>
+              ))
+            ) : (
+              <>
+                <Link href="/articles" className="hover:text-gray-900 transition-colors">Blog</Link>
+                <a href={`https://${publicDomain}`} className="text-gray-900 font-medium">Home</a>
+              </>
+            )}
           </nav>
         </div>
       </header>
@@ -401,6 +411,28 @@ export function ArticleView({ article, relatedArticles, siteName, publicDomain, 
       {/* Footer */}
       <footer className="border-t border-gray-100 bg-gray-50">
         <div className="max-w-6xl mx-auto px-6 py-12">
+          {/* Footer Links */}
+          {footerLinks.length > 0 && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10 pb-10 border-b border-gray-200">
+              {footerLinks.map((link, i) => (
+                <a
+                  key={i}
+                  href={link.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group"
+                >
+                  {link.heading && (
+                    <p className="text-[13px] font-semibold text-gray-900 group-hover:text-gray-600 transition-colors mb-0.5">{link.heading}</p>
+                  )}
+                  {link.text && (
+                    <p className="text-[12px] text-gray-500 leading-relaxed">{link.text}</p>
+                  )}
+                </a>
+              ))}
+            </div>
+          )}
+
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             {logoUrl ? (
               <img src={logoUrl} alt={siteName} style={{ height: `${footerLogoHeight}px` }} className="w-auto object-contain" />

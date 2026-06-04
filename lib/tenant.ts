@@ -12,6 +12,8 @@ export interface TenantConfig {
   powered_by_height: number;
   powered_by_opacity: number;
   ga_measurement_id: string | null;
+  header_menu_items: { label: string; url: string }[];
+  footer_links: { heading: string; text: string; url: string }[];
 }
 
 export interface TenantResult {
@@ -42,7 +44,7 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
   if (xSite) {
     const { data } = await supabaseServer
       .from('gifaa_tenants')
-      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity, ga_measurement_id')
+      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity, ga_measurement_id, header_menu_items, footer_links')
       .eq('tenant_key', xSite)
       .maybeSingle();
     tenantConfig = data;
@@ -53,7 +55,7 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
     const domain = hostname.replace(/:\d+$/, '');
     const { data } = await supabaseServer
       .from('gifaa_tenants')
-      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity, ga_measurement_id')
+      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity, ga_measurement_id, header_menu_items, footer_links')
       .eq('public_domain', domain)
       .maybeSingle();
     tenantConfig = data;

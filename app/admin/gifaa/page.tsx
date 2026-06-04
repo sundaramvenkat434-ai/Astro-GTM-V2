@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3, Menu, GripVertical, ExternalLink, ChevronUp, ChevronDown } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -23,6 +23,8 @@ interface TenantData {
   powered_by_height: number;
   powered_by_opacity: number;
   ga_measurement_id: string | null;
+  header_menu_items: { label: string; url: string }[];
+  footer_links: { heading: string; text: string; url: string }[];
   created_at: string;
 }
 
@@ -45,10 +47,11 @@ interface Article {
   updated_at: string;
 }
 
-type Tab = 'overview' | 'domains' | 'security' | 'analytics' | 'pages';
+type Tab = 'overview' | 'navigation' | 'domains' | 'security' | 'analytics' | 'pages';
 
 const TABS: { key: Tab; label: string; icon: React.ReactNode }[] = [
   { key: 'overview', label: 'Overview', icon: <Globe className="w-4 h-4" /> },
+  { key: 'navigation', label: 'Navigation', icon: <Menu className="w-4 h-4" /> },
   { key: 'domains', label: 'Domains', icon: <Server className="w-4 h-4" /> },
   { key: 'security', label: 'Security', icon: <Shield className="w-4 h-4" /> },
   { key: 'analytics', label: 'Analytics', icon: <BarChart3 className="w-4 h-4" /> },
@@ -119,6 +122,7 @@ function GifaaDashboard() {
 
       {/* Tab Content */}
       {activeTab === 'overview' && <OverviewTab tenant={tenant} onUpdate={loadTenant} />}
+      {activeTab === 'navigation' && <NavigationTab tenant={tenant} onUpdate={loadTenant} />}
       {activeTab === 'domains' && <DomainsTab tenant={tenant} onUpdate={loadTenant} />}
       {activeTab === 'security' && <SecurityTab tenant={tenant} onUpdate={loadTenant} />}
       {activeTab === 'analytics' && <AnalyticsTab tenant={tenant} onUpdate={loadTenant} />}
@@ -395,6 +399,277 @@ function OverviewTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () =>
             {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Changes'}
           </Button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Navigation Tab ────────────────────────────────────── */
+
+interface HeaderMenuItem {
+  label: string;
+  url: string;
+}
+
+interface FooterLink {
+  heading: string;
+  text: string;
+  url: string;
+}
+
+function NavigationTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: () => void }) {
+  const [headerItems, setHeaderItems] = useState<HeaderMenuItem[]>(tenant.header_menu_items || []);
+  const [footerLinks, setFooterLinks] = useState<FooterLink[]>(tenant.footer_links || []);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  async function handleSave() {
+    setSaving(true);
+    await supabase
+      .from('gifaa_tenants')
+      .update({
+        header_menu_items: headerItems,
+        footer_links: footerLinks,
+      })
+      .eq('id', tenant.id);
+    setSaving(false);
+    setSaved(true);
+    onUpdate();
+    setTimeout(() => setSaved(false), 2000);
+  }
+
+  // Header menu helpers
+  function addHeaderItem() {
+    setHeaderItems([...headerItems, { label: '', url: '' }]);
+  }
+  function updateHeaderItem(index: number, patch: Partial<HeaderMenuItem>) {
+    const items = [...headerItems];
+    items[index] = { ...items[index], ...patch };
+    setHeaderItems(items);
+  }
+  function removeHeaderItem(index: number) {
+    setHeaderItems(headerItems.filter((_, i) => i !== index));
+  }
+  function moveHeaderItem(index: number, dir: -1 | 1) {
+    const items = [...headerItems];
+    const target = index + dir;
+    if (target < 0 || target >= items.length) return;
+    [items[index], items[target]] = [items[target], items[index]];
+    setHeaderItems(items);
+  }
+
+  // Footer link helpers
+  function addFooterLink() {
+    setFooterLinks([...footerLinks, { heading: '', text: '', url: '' }]);
+  }
+  function updateFooterLink(index: number, patch: Partial<FooterLink>) {
+    const links = [...footerLinks];
+    links[index] = { ...links[index], ...patch };
+    setFooterLinks(links);
+  }
+  function removeFooterLink(index: number) {
+    setFooterLinks(footerLinks.filter((_, i) => i !== index));
+  }
+  function moveFooterLink(index: number, dir: -1 | 1) {
+    const links = [...footerLinks];
+    const target = index + dir;
+    if (target < 0 || target >= links.length) return;
+    [links[index], links[target]] = [links[target], links[index]];
+    setFooterLinks(links);
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header Menu Items */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Header Menu</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Navigation links shown in the site header. Displayed on all article pages.</p>
+          </div>
+          <Button onClick={addHeaderItem} variant="outline" size="sm" className="gap-1.5">
+            <Plus className="w-3.5 h-3.5" /> Add Item
+          </Button>
+        </div>
+        <div className="p-6">
+          {headerItems.length === 0 ? (
+            <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
+              <Menu className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 mb-1">No menu items configured</p>
+              <p className="text-xs text-gray-400">Add navigation links that appear in the header alongside the logo.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {headerItems.map((item, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 border border-gray-200 rounded-lg bg-gray-50/30 group">
+                  <GripVertical className="w-4 h-4 text-gray-300 shrink-0" />
+                  <div className="flex-1 grid grid-cols-2 gap-3">
+                    <Input
+                      value={item.label}
+                      onChange={(e) => updateHeaderItem(i, { label: e.target.value })}
+                      placeholder="Label (e.g. Home)"
+                      className="text-sm"
+                    />
+                    <Input
+                      value={item.url}
+                      onChange={(e) => updateHeaderItem(i, { url: e.target.value })}
+                      placeholder="URL (e.g. https://gifaa.in)"
+                      className="text-sm font-mono"
+                    />
+                  </div>
+                  <div className="flex items-center gap-0.5 shrink-0">
+                    <button
+                      onClick={() => moveHeaderItem(i, -1)}
+                      disabled={i === 0}
+                      className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded"
+                    >
+                      <ChevronUp className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      onClick={() => moveHeaderItem(i, 1)}
+                      disabled={i === headerItems.length - 1}
+                      className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded"
+                    >
+                      <ChevronDown className="w-3.5 h-3.5" />
+                    </button>
+                    <button onClick={() => removeHeaderItem(i)} className="p-1.5 text-red-400 hover:text-red-600 rounded">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Header Preview */}
+          {headerItems.length > 0 && (
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-3">Preview</p>
+              <div className="border border-gray-200 rounded-lg px-4 py-3 bg-white flex items-center justify-between">
+                <span className="text-sm font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
+                  {tenant.site_name.toLowerCase()}
+                </span>
+                <nav className="flex items-center gap-5">
+                  {headerItems.filter(i => i.label).map((item, i) => (
+                    <span key={i} className="text-[13px] text-gray-500 hover:text-gray-900 transition-colors cursor-default">
+                      {item.label}
+                    </span>
+                  ))}
+                </nav>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer Links */}
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/50 flex items-center justify-between">
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Footer Links</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Links displayed in the page footer. Each can have a heading, description, and URL.</p>
+          </div>
+          <Button onClick={addFooterLink} variant="outline" size="sm" className="gap-1.5">
+            <Plus className="w-3.5 h-3.5" /> Add Link
+          </Button>
+        </div>
+        <div className="p-6">
+          {footerLinks.length === 0 ? (
+            <div className="text-center py-8 border border-dashed border-gray-200 rounded-lg">
+              <ExternalLink className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+              <p className="text-sm text-gray-500 mb-1">No footer links configured</p>
+              <p className="text-xs text-gray-400">Add links with headings and descriptions for the site footer.</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {footerLinks.map((link, i) => (
+                <div key={i} className="p-4 border border-gray-200 rounded-lg bg-gray-50/30 group">
+                  <div className="flex items-start gap-3">
+                    <GripVertical className="w-4 h-4 text-gray-300 shrink-0 mt-2" />
+                    <div className="flex-1 space-y-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wide font-medium text-gray-400 mb-1">Heading</label>
+                          <Input
+                            value={link.heading}
+                            onChange={(e) => updateFooterLink(i, { heading: e.target.value })}
+                            placeholder="e.g. About Us"
+                            className="text-sm"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[10px] uppercase tracking-wide font-medium text-gray-400 mb-1">URL</label>
+                          <Input
+                            value={link.url}
+                            onChange={(e) => updateFooterLink(i, { url: e.target.value })}
+                            placeholder="https://..."
+                            className="text-sm font-mono"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] uppercase tracking-wide font-medium text-gray-400 mb-1">Description (optional)</label>
+                        <Input
+                          value={link.text}
+                          onChange={(e) => updateFooterLink(i, { text: e.target.value })}
+                          placeholder="Short description for this link..."
+                          className="text-sm"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-col items-center gap-0.5 shrink-0">
+                      <button
+                        onClick={() => moveFooterLink(i, -1)}
+                        disabled={i === 0}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => moveFooterLink(i, 1)}
+                        disabled={i === footerLinks.length - 1}
+                        className="p-1.5 text-gray-400 hover:text-gray-700 disabled:opacity-30 rounded"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                      <button onClick={() => removeFooterLink(i)} className="p-1.5 text-red-400 hover:text-red-600 rounded">
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Footer Preview */}
+          {footerLinks.length > 0 && (
+            <div className="mt-5 pt-5 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-3">Preview</p>
+              <div className="border border-gray-200 rounded-lg p-5 bg-gray-50">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {footerLinks.filter(l => l.heading || l.url).map((link, i) => (
+                    <div key={i} className="space-y-1">
+                      {link.heading && <p className="text-xs font-semibold text-gray-900">{link.heading}</p>}
+                      {link.text && <p className="text-[11px] text-gray-500 leading-relaxed">{link.text}</p>}
+                      {link.url && (
+                        <p className="text-[11px] text-sky-600 font-mono truncate">{link.url}</p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Save Button */}
+      <div className="flex items-center gap-3">
+        <Button onClick={handleSave} disabled={saving} className="gap-2">
+          {saving ? 'Saving...' : saved ? <><Check className="w-4 h-4" /> Saved</> : 'Save Navigation'}
+        </Button>
+        <p className="text-xs text-gray-400">Changes affect all article pages for this tenant.</p>
       </div>
     </div>
   );
