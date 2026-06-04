@@ -6,7 +6,7 @@ import { supabase } from '@/lib/supabase';
 import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Save, Eye, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Type, Image as ImageIcon, List, Table, MessageSquare, FileText, Loader as Loader2, Globe, Sparkles, Activity, Shield, ChevronRight, Link as LinkIcon, Wand as Wand2, Check } from 'lucide-react';
+import { ArrowLeft, Save, Eye, Plus, Trash2, GripVertical, ChevronDown, ChevronUp, Type, Image as ImageIcon, List, Table, MessageSquare, FileText, Loader as Loader2, Globe, Sparkles, Activity, Shield, ChevronRight, Check } from 'lucide-react';
 
 /* ─── Types ──────────────────────────────────────────────── */
 interface Section {
@@ -820,90 +820,135 @@ interface AiWriterProps {
   }) => void;
 }
 
+interface ScrapeResult {
+  url: string;
+  status: 'pending' | 'scraping' | 'cleaning' | 'done' | 'error';
+  error?: string;
+  textContent?: string;
+  title?: string;
+  wordCount?: number;
+}
+
 function AiWriterTab({ article, onApply }: AiWriterProps) {
-  const [sourceUrl, setSourceUrl] = useState('');
-  const [rawHtml, setRawHtml] = useState('');
-  const [scrapedFrom, setScrapedFrom] = useState('');
-  const [cleaned, setCleaned] = useState<{ title: string; excerpt: string; textContent: string } | null>(null);
-  const [scraping, setScraping] = useState(false);
-  const [cleaning, setCleaning] = useState(false);
+  const [urlInput, setUrlInput] = useState('');
+  const [results, setResults] = useState<ScrapeResult[]>([]);
+  const [processing, setProcessing] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [error, setError] = useState('');
   const [preview, setPreview] = useState<any>(null);
 
-  async function handleScrape() {
-    setError('');
-    setRawHtml('');
-    setScrapedFrom('');
-    setCleaned(null);
-    setPreview(null);
+  const stats = {
+    total: results.length,
+    processed: results.filter(r => r.status === 'done' || r.status === 'error').length,
+    success: results.filter(r => r.status === 'done').length,
+    failed: results.filter(r => r.status === 'error').length,
+    words: results.reduce((sum, r) => sum + (r.wordCount || 0), 0),
+  };
 
-    const trimmed = sourceUrl.trim();
-    if (!trimmed) {
-      setError('Enter a URL to scrape.');
-      return;
-    }
+  const combinedText = results
+    .filter(r => r.status === 'done' && r.textContent)
+    .map(r => r.textContent!)
+    .join('\n\n---\n\n');
 
-    setScraping(true);
+  const cleanReady = combinedText.trim().length > 0;
+  const canGenerate = !generating && Boolean(article.title.trim()) && cleanReady;
+
+  function parseUrls(): string[] {
+    return urlInput
+      .split(/[\n,]+/)
+      .map(u => u.trim())
+      .filter(u => u.length > 0 && (u.startsWith('http://') || u.startsWith('https://')))
+      .slice(0, 10);
+  }
+
+  async function scrapeAndCleanUrl(targetUrl: string, index: number) {
+    // Scrape
+    setResults(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], status: 'scraping' };
+      return copy;
+    });
+
+    let html = '';
     try {
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scrape-raw-html`;
-      const res = await fetch(url, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/scrape-raw-html`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ url: trimmed }),
+        body: JSON.stringify({ url: targetUrl }),
       });
       const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || `Scrape failed (${res.status})`);
-        return;
-      }
-      setRawHtml(data.html || '');
-      setScrapedFrom(data.url || trimmed);
+      if (!res.ok) throw new Error(data.error || `Scrape failed (${res.status})`);
+      html = data.html || '';
+      if (!html) throw new Error('Empty response');
     } catch (err: any) {
-      setError(err.message || 'Network error');
-    } finally {
-      setScraping(false);
+      setResults(prev => {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], status: 'error', error: `Scrape: ${err.message}` };
+        return copy;
+      });
+      return;
+    }
+
+    // Clean
+    setResults(prev => {
+      const copy = [...prev];
+      copy[index] = { ...copy[index], status: 'cleaning' };
+      return copy;
+    });
+
+    try {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/clean-html`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ html, url: targetUrl }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Clean failed (${res.status})`);
+      const text = data.textContent || '';
+      const words = text.split(/\s+/).filter(Boolean).length;
+      setResults(prev => {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], status: 'done', textContent: text, title: data.title || '', wordCount: words };
+        return copy;
+      });
+    } catch (err: any) {
+      setResults(prev => {
+        const copy = [...prev];
+        copy[index] = { ...copy[index], status: 'error', error: `Clean: ${err.message}` };
+        return copy;
+      });
     }
   }
 
-  async function handleClean() {
-    setError('');
-    setCleaned(null);
-    setPreview(null);
-    if (!rawHtml) {
-      setError('Scrape a URL before cleaning.');
+  async function handleProcessAll() {
+    const urls = parseUrls();
+    if (urls.length === 0) {
+      setError('Enter at least one valid URL (starting with http:// or https://).');
       return;
     }
+    setError('');
+    setPreview(null);
+    setProcessing(true);
 
-    setCleaning(true);
-    try {
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/clean-html`;
-      const res = await fetch(url, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ html: rawHtml, url: scrapedFrom || undefined }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || `Cleanup failed (${res.status})`);
-        return;
-      }
-      setCleaned({
-        title: data.title || '',
-        excerpt: data.excerpt || '',
-        textContent: data.textContent || '',
-      });
-    } catch (err: any) {
-      setError(err.message || 'Network error');
-    } finally {
-      setCleaning(false);
+    const initial: ScrapeResult[] = urls.map(u => ({ url: u, status: 'pending' }));
+    setResults(initial);
+
+    // Process in batches of 3 to avoid overwhelming edge functions
+    const BATCH_SIZE = 3;
+    for (let i = 0; i < urls.length; i += BATCH_SIZE) {
+      const batch = urls.slice(i, i + BATCH_SIZE);
+      await Promise.all(
+        batch.map((u, bi) => scrapeAndCleanUrl(u, i + bi))
+      );
     }
+
+    setProcessing(false);
   }
 
   async function handleGenerate() {
@@ -911,8 +956,8 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
       setError('Please set an article title in the Content tab first.');
       return;
     }
-    if (!cleaned || !cleaned.textContent.trim()) {
-      setError('Run "Clean Content" before generating.');
+    if (!cleanReady) {
+      setError('Process URLs first to get content for generation.');
       return;
     }
 
@@ -921,8 +966,7 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
     setPreview(null);
 
     try {
-      const url = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-gifaa-article`;
-      const res = await fetch(url, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/generate-gifaa-article`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
@@ -930,7 +974,7 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
         },
         body: JSON.stringify({
           title: article.title,
-          context_dump: cleaned.textContent,
+          context_dump: combinedText.slice(0, 60000),
         }),
       });
 
@@ -953,8 +997,7 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
     }
   }
 
-  const cleanReady = Boolean(cleaned && cleaned.textContent.trim());
-  const canGenerate = !generating && Boolean(article.title.trim()) && cleanReady;
+  const urlCount = parseUrls().length;
 
   return (
     <div className="space-y-6">
@@ -964,8 +1007,8 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
           <h2 className="text-lg font-semibold text-gray-900">AI Content Writer</h2>
         </div>
         <p className="text-sm text-gray-500 mb-6">
-          Three steps: scrape a source URL, clean the page using Mozilla Readability, then generate
-          an original article. Only the cleaned text is sent to the AI.
+          Scrape up to 10 source URLs, extract clean text via Mozilla Readability, then generate an
+          original article from the combined context. Failed URLs are skipped automatically.
         </p>
 
         <div className="space-y-5">
@@ -976,82 +1019,104 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
             </div>
           </div>
 
-          {/* Step 1: Scrape */}
-          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/40">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-[10px] font-bold">1</span>
-              <span className="text-sm font-semibold text-gray-900">Scrape URL</span>
-              {rawHtml && <Check className="w-4 h-4 text-green-600" />}
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex-1 relative">
-                <LinkIcon className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
-                <Input
-                  value={sourceUrl}
-                  onChange={(e) => setSourceUrl(e.target.value)}
-                  placeholder="https://example.com/article"
-                  className="pl-9 text-sm"
-                />
-              </div>
-              <Button onClick={handleScrape} disabled={scraping || !sourceUrl.trim()} className="gap-2 shrink-0">
-                {scraping ? <><Loader2 className="w-4 h-4 animate-spin" /> Scraping...</> : <><Globe className="w-4 h-4" /> Scrape URL</>}
-              </Button>
-            </div>
-            {rawHtml && (
-              <p className="mt-2 text-xs text-gray-500">
-                Scraped <span className="font-mono">{rawHtml.length.toLocaleString()}</span> bytes from{' '}
-                <span className="font-mono break-all">{scrapedFrom}</span>
-              </p>
-            )}
-          </div>
-
-          {/* Step 2: Clean Content */}
-          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/40">
-            <div className="flex items-center gap-2 mb-2">
-              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${rawHtml ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>2</span>
-              <span className="text-sm font-semibold text-gray-900">Clean Content</span>
-              {cleanReady && <Check className="w-4 h-4 text-green-600" />}
-            </div>
-            <p className="text-xs text-gray-500 mb-3">
-              Strips navigation, login, comments, ads, recommendations, and footer noise via Mozilla Readability.
-            </p>
-            <Button onClick={handleClean} disabled={cleaning || !rawHtml} className="gap-2">
-              {cleaning ? <><Loader2 className="w-4 h-4 animate-spin" /> Cleaning...</> : <><Wand2 className="w-4 h-4" /> Clean Content</>}
-            </Button>
-
-            {cleaned && (
-              <div className="mt-4 space-y-3">
-                {cleaned.title && (
-                  <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                    <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-1">Title</p>
-                    <p className="text-sm text-gray-800">{cleaned.title}</p>
-                  </div>
-                )}
-                {cleaned.excerpt && (
-                  <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                    <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-1">Excerpt</p>
-                    <p className="text-sm text-gray-700">{cleaned.excerpt}</p>
-                  </div>
-                )}
-                <div className="p-3 bg-white border border-gray-200 rounded-lg">
-                  <p className="text-[10px] uppercase tracking-wide font-semibold text-gray-400 mb-1">
-                    Text Content ({cleaned.textContent.length.toLocaleString()} chars)
-                  </p>
-                  <pre className="text-xs text-gray-600 whitespace-pre-wrap font-mono max-h-64 overflow-y-auto leading-relaxed">
-                    {cleaned.textContent.slice(0, 4000)}
-                    {cleaned.textContent.length > 4000 ? '\n...' : ''}
-                  </pre>
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Step 3: Generate */}
+          {/* Step 1: URLs Input */}
           <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/40">
             <div className="flex items-center gap-2 mb-3">
-              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${cleanReady ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>3</span>
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-900 text-white text-[10px] font-bold">1</span>
+              <span className="text-sm font-semibold text-gray-900">Source URLs</span>
+              {stats.success > 0 && <Check className="w-4 h-4 text-green-600" />}
+              {urlCount > 0 && !processing && stats.total === 0 && (
+                <span className="text-xs text-gray-400 ml-auto">{urlCount} URL{urlCount !== 1 ? 's' : ''} ready</span>
+              )}
+            </div>
+            <textarea
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder={"Paste URLs (one per line or comma-separated, up to 10):\nhttps://example.com/article-1\nhttps://example.com/article-2"}
+              className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-28 font-mono placeholder-gray-400"
+              disabled={processing}
+            />
+            <div className="flex items-center justify-between mt-3">
+              <p className="text-xs text-gray-400">
+                {urlCount === 0 ? 'No valid URLs detected' : `${urlCount} valid URL${urlCount !== 1 ? 's' : ''} detected (max 10)`}
+              </p>
+              <Button onClick={handleProcessAll} disabled={processing || urlCount === 0} className="gap-2">
+                {processing ? (
+                  <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+                ) : (
+                  <><Globe className="w-4 h-4" /> Scrape & Clean All</>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Processing Stats */}
+          {results.length > 0 && (
+            <div className="border border-gray-200 rounded-lg overflow-hidden">
+              {/* Stats Header */}
+              <div className="grid grid-cols-4 divide-x divide-gray-200 bg-gray-50 border-b border-gray-200">
+                <div className="px-4 py-3 text-center">
+                  <p className="text-lg font-bold text-gray-900">{stats.processed}/{stats.total}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium">Processed</p>
+                </div>
+                <div className="px-4 py-3 text-center">
+                  <p className="text-lg font-bold text-green-600">{stats.success}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium">Success</p>
+                </div>
+                <div className="px-4 py-3 text-center">
+                  <p className="text-lg font-bold text-red-600">{stats.failed}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium">Failed</p>
+                </div>
+                <div className="px-4 py-3 text-center">
+                  <p className="text-lg font-bold text-sky-600">{stats.words.toLocaleString()}</p>
+                  <p className="text-[10px] uppercase tracking-wide text-gray-500 font-medium">Words</p>
+                </div>
+              </div>
+
+              {/* Per-URL Status */}
+              <div className="divide-y divide-gray-100 max-h-[280px] overflow-y-auto">
+                {results.map((r, i) => (
+                  <div key={i} className="flex items-center gap-3 px-4 py-2.5">
+                    <div className="shrink-0">
+                      {r.status === 'done' && <div className="w-2.5 h-2.5 rounded-full bg-green-500" />}
+                      {r.status === 'error' && <div className="w-2.5 h-2.5 rounded-full bg-red-500" />}
+                      {r.status === 'pending' && <div className="w-2.5 h-2.5 rounded-full bg-gray-300" />}
+                      {(r.status === 'scraping' || r.status === 'cleaning') && (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-sky-500" />
+                      )}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs text-gray-800 font-mono truncate">{r.url}</p>
+                      {r.status === 'done' && r.title && (
+                        <p className="text-[11px] text-gray-500 truncate mt-0.5">{r.title} — {r.wordCount?.toLocaleString()} words</p>
+                      )}
+                      {r.status === 'error' && (
+                        <p className="text-[11px] text-red-600 mt-0.5">{r.error}</p>
+                      )}
+                      {r.status === 'scraping' && (
+                        <p className="text-[11px] text-sky-600 mt-0.5">Scraping page...</p>
+                      )}
+                      {r.status === 'cleaning' && (
+                        <p className="text-[11px] text-sky-600 mt-0.5">Cleaning with Readability...</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Generate */}
+          <div className="border border-gray-200 rounded-lg p-4 bg-gray-50/40">
+            <div className="flex items-center gap-2 mb-3">
+              <span className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${cleanReady ? 'bg-gray-900 text-white' : 'bg-gray-200 text-gray-400'}`}>2</span>
               <span className="text-sm font-semibold text-gray-900">Generate Article</span>
             </div>
+            <p className="text-xs text-gray-500 mb-3">
+              {cleanReady
+                ? `Ready to generate from ${stats.success} source${stats.success !== 1 ? 's' : ''} (${stats.words.toLocaleString()} words of context).`
+                : 'Process URLs above to collect source content for generation.'}
+            </p>
             <Button onClick={handleGenerate} disabled={!canGenerate} className="gap-2">
               {generating ? (
                 <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
@@ -1059,9 +1124,6 @@ function AiWriterTab({ article, onApply }: AiWriterProps) {
                 <><Sparkles className="w-4 h-4" /> Generate Article Content</>
               )}
             </Button>
-            {!cleanReady && (
-              <p className="mt-2 text-xs text-gray-400">Disabled until cleanup is complete.</p>
-            )}
           </div>
 
           {error && (
