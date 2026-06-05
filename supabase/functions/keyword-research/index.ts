@@ -253,9 +253,17 @@ CRITICAL REQUIREMENTS:
 
       let userMessage = "";
 
+      userMessage += `## STRICT OUTPUT CONSTRAINTS (non-negotiable)\n`;
+      userMessage += `You MUST return EXACTLY:\n`;
+      userMessage += `- ${themesCount} themes (no more, no less)\n`;
+      userMessage += `- ${keywordsCount} total keywords across ALL themes combined (not per theme)\n`;
+      userMessage += `- ${pagesCount} total suggested pages across ALL themes combined (not per theme)\n`;
+      userMessage += `Count carefully before returning. If your JSON has more or fewer items than specified above, regenerate.\n\n`;
+
       if (brand_intelligence) {
-        userMessage += `## Brand Intelligence\n`;
-        userMessage += `This is the analyzed brand profile. Use it to ensure keyword recommendations align with the brand's identity, audience, and offerings.\n\n`;
+        userMessage += `## Brand Intelligence (CONTEXT ONLY — do NOT copy keywords from here)\n`;
+        userMessage += `The following brand profile is provided as BACKGROUND CONTEXT to help you understand the brand's identity, audience, and market positioning. Use it to inform your strategy direction ONLY.\n`;
+        userMessage += `DO NOT copy, reuse, or include keywords listed in this section in your output. Generate FRESH, NEW keywords based on your analysis.\n\n`;
         userMessage += JSON.stringify(brand_intelligence, null, 2);
         userMessage += "\n\n";
       }
