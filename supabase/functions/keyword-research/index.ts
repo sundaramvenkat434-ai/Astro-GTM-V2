@@ -203,7 +203,7 @@ Deno.serve(async (req: Request) => {
       const keywordsCount = num_keywords || 20;
       const pagesCount = num_pages || 10;
 
-      const systemPrompt = `You are an expert SEO strategist. Analyze the provided brand intelligence, Google SERP research, and competitor page content to generate a comprehensive keyword strategy.
+      const systemPrompt = `You are an expert SEO strategist and keyword researcher. Your job is to analyze brand data, Google SERP competition, and competitor page content to produce a comprehensive, actionable keyword strategy.
 
 Return a JSON object with this exact structure:
 {
@@ -211,36 +211,55 @@ Return a JSON object with this exact structure:
     {
       "name": "Theme Name",
       "opportunity_score": 85,
-      "opportunity_reason": "Brief explanation of why this is an opportunity",
+      "opportunity_reason": "Brief explanation of why this is an opportunity based on the data",
       "keywords": ["keyword 1", "keyword 2", "keyword 3"],
       "suggested_pages": [
-        { "title": "Page Title", "keyword": "target keyword" }
+        { "title": "SEO-Optimized Page Title", "keyword": "target keyword" }
       ]
     }
   ]
 }
 
-Requirements:
-- Generate exactly ${themesCount} content themes
-- Distribute approximately ${keywordsCount} keywords across all themes
-- Generate approximately ${pagesCount} suggested page titles total
-- Opportunity scores should be 0-100 based on search volume potential, competition level, and brand relevance
-- Keywords should be specific, actionable, and relevant to the brand
-- Page titles should be SEO-optimized and compelling
-- Focus on gaps and opportunities the brand is NOT currently ranking for`;
+PARAMETER RATIONALIZATION:
+The user has requested approximately ${themesCount} content themes, ${keywordsCount} keywords total, and ${pagesCount} page ideas.
+Use your judgment: if these numbers don't make practical sense together (e.g. 50 pages across 2 themes, or 100 keywords for 1 page), adjust proportionally to produce a COHERENT and FEASIBLE strategy. Quality over quantity. The numbers are guidelines, not hard constraints.
 
-      let userMessage = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}\n\n`;
-      userMessage += `## Google SERP Results for "${primary_search_term}"\n${JSON.stringify(serp_results, null, 2)}\n\n`;
+CRITICAL REQUIREMENTS:
+- Opportunity scores must be 0-100 based on: estimated search volume, competition difficulty from SERP analysis, and brand relevance
+- Keywords must be SPECIFIC and ACTIONABLE - no vague single-word terms. Long-tail is preferred.
+- Every keyword should map to clear search intent (informational, transactional, navigational, or commercial)
+- Page titles must be SEO-optimized, compelling, and distinct from each other
+- Focus on GAPS and OPPORTUNITIES the brand is NOT currently ranking for
+- Use the scraped competitor content to understand what topics are already well-covered vs. where there are gaps
+- If brand intelligence is provided, align themes with the brand's audience segments, pain points, and value proposition
+- Prioritize keywords where the brand has a realistic chance of ranking (avoid head terms dominated by massive sites)`;
+
+      let userMessage = "";
+
+      if (brand_intelligence) {
+        userMessage += `## Brand Intelligence\n`;
+        userMessage += `This is the analyzed brand profile. Use it to ensure keyword recommendations align with the brand's identity, audience, and offerings.\n\n`;
+        userMessage += JSON.stringify(brand_intelligence, null, 2);
+        userMessage += "\n\n";
+      }
+
+      userMessage += `## Google SERP Results for "${primary_search_term}"\n`;
+      userMessage += `These are the actual Google rankings. Use position data to assess competition difficulty.\n\n`;
+      userMessage += JSON.stringify(serp_results, null, 2);
+      userMessage += "\n\n";
 
       if (scraped_content && scraped_content.length > 0) {
-        userMessage += `## Top Ranking Pages Content\n`;
+        userMessage += `## Scraped Competitor Page Content\n`;
+        userMessage += `These are the actual page contents from top-ranking competitor sites. Analyze their keyword usage, content gaps, and topical coverage to identify opportunities.\n\n`;
         for (const page of scraped_content) {
-          userMessage += `### ${page.url}\n${page.content?.slice(0, 4000) || "No content"}\n\n`;
+          if (page.content && page.content.length > 0) {
+            userMessage += `### ${page.url}\n${page.content.slice(0, 5000)}\n\n`;
+          }
         }
       }
 
       if (additional_instructions) {
-        userMessage += `\n## Additional Instructions\n${additional_instructions}\n`;
+        userMessage += `\n## User Instructions & Keyword Focus\n${additional_instructions}\n`;
       }
 
       const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -258,7 +277,7 @@ Requirements:
             { role: "user", content: userMessage },
           ],
           temperature: 0.7,
-          max_tokens: 6000,
+          max_tokens: 8000,
           response_format: { type: "json_object" },
         }),
       });

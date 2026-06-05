@@ -655,6 +655,24 @@ function ChipList({ label, items, onChange, color }: { label: string; items: str
 
 /* ─── Keywords Tab ──────────────────────────────────────── */
 
+const GENERIC_DOMAINS = [
+  'reddit.com', 'quora.com', 'wikipedia.org', 'youtube.com',
+  'facebook.com', 'twitter.com', 'x.com', 'instagram.com',
+  'linkedin.com', 'pinterest.com', 'tiktok.com',
+  'amazon.com', 'amazon.in', 'flipkart.com',
+  'vogue.com', 'forbes.com', 'medium.com',
+  'nytimes.com', 'bbc.com', 'cnn.com',
+];
+
+function isGenericDomain(url: string): boolean {
+  try {
+    const hostname = new URL(url).hostname.replace('www.', '');
+    return GENERIC_DOMAINS.some((d) => hostname === d || hostname.endsWith('.' + d));
+  } catch {
+    return false;
+  }
+}
+
 interface KeywordStrategy {
   id: string;
   tenant_id: string;
@@ -700,8 +718,15 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
   const [scraping, setScraping] = useState(false);
   const [scrapedContent, setScrapedContent] = useState<{ url: string; content: string }[]>([]);
   const [generating, setGenerating] = useState(false);
-  const [additionalInstructions, setAdditionalInstructions] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [debugInfo, setDebugInfo] = useState<unknown>(null);
+
+  // Strategy generation params
+  const [numThemes, setNumThemes] = useState(5);
+  const [numKeywords, setNumKeywords] = useState(20);
+  const [numPages, setNumPages] = useState(10);
+  const [keywordFocus, setKeywordFocus] = useState('');
+  const [additionalInstructions, setAdditionalInstructions] = useState('');
 
   useEffect(() => {
     async function load() {
@@ -740,6 +765,7 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
   async function handleSearch() {
     if (!searchTerm.trim()) return;
     setError(null);
+    setDebugInfo(null);
     setSearching(true);
     try {
       const res = await fetch(
@@ -765,8 +791,22 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
         return;
       }
       const data = await res.json();
-      setSerpResults(data.results || []);
-      setSelectedUrls((data.results || []).slice(0, 5).map((r: SerpResult) => r.url));
+      const results: SerpResult[] = data.results || [];
+
+      if (results.length === 0 && data.debug) {
+        setDebugInfo(data.debug);
+        setError(`0 results found. The SERP API returned ${data.debug?.items_count || 0} items but none matched the expected format.`);
+        setSearching(false);
+        return;
+      }
+
+      setSerpResults(results);
+      // Auto-select competitor sites (non-generic), preserving original position order
+      const competitorUrls = results
+        .filter((r) => !isGenericDomain(r.url))
+        .slice(0, 5)
+        .map((r) => r.url);
+      setSelectedUrls(competitorUrls);
       setStep('review-serp');
     } catch (err) {
       setError(String(err));
@@ -808,6 +848,16 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
     setGenerating(true);
     setStep('generating');
 
+    // Build combined instructions for AI
+    let combinedInstructions = '';
+    if (keywordFocus) {
+      combinedInstructions += `Keyword Focus: ${keywordFocus}\n`;
+    }
+    if (additionalInstructions) {
+      combinedInstructions += `${additionalInstructions}\n`;
+    }
+    combinedInstructions += `\nIMPORTANT: Rationalize the following parameters - if the numbers don't make sense together (e.g. too many pages for too few themes), adjust proportionally to produce a coherent strategy. Use your judgment on what is feasible.\n`;
+
     try {
       const res = await fetch(
         `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keyword-research`,
@@ -822,15 +872,20 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
             tenant_id: tenantId,
             primary_search_term: searchTerm.trim(),
             country_code: countryCode,
+            num_themes: numThemes,
+            num_keywords: numKeywords,
+            num_pages: numPages,
             brand_intelligence: brandProfile ? {
               brand: brandProfile.brand,
               audience: brandProfile.audience,
               offerings: brandProfile.offerings,
               seo: brandProfile.seo,
+              market_discovery: brandProfile.market_discovery,
+              content_opportunities: brandProfile.content_opportunities,
             } : null,
             serp_results: serpResults,
             scraped_content: scraped,
-            additional_instructions: additionalInstructions || undefined,
+            additional_instructions: combinedInstructions.trim() || undefined,
           }),
         }
       );
@@ -856,6 +911,7 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
     setSerpResults([]);
     setSelectedUrls([]);
     setScrapedContent([]);
+    setDebugInfo(null);
     setStep('search');
   }
 
@@ -863,12 +919,10 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
     return <p className="text-gray-400 text-sm py-10 text-center">Loading keyword strategies...</p>;
   }
 
-  // Show results if we have a saved strategy
   if (step === 'results' && strategy) {
     return <KeywordStrategyView strategy={strategy} onNewStrategy={handleNewStrategy} />;
   }
 
-  // Generating state
   if (step === 'generating') {
     return (
       <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
@@ -881,64 +935,191 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
     );
   }
 
-  // SERP review step
+  // SERP review + strategy config step
   if (step === 'review-serp') {
+    const competitorResults = serpResults.filter((r) => !isGenericDomain(r.url));
+    const genericResults = serpResults.filter((r) => isGenericDomain(r.url));
+    const selectedCount = selectedUrls.length;
+
     return (
       <div className="space-y-6">
+        {/* SERP Results */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold text-gray-900">SERP Results for "{searchTerm}"</h3>
-              <p className="text-xs text-gray-500 mt-0.5">{serpResults.length} results found. Select pages to scrape for deeper analysis.</p>
+              <p className="text-xs text-gray-500 mt-0.5">
+                {serpResults.length} results found: {competitorResults.length} competitor sites, {genericResults.length} generic/public sites.
+                Select actual competitors to scrape.
+              </p>
             </div>
             <Button variant="outline" size="sm" onClick={() => setStep('search')} className="text-xs">
               Back
             </Button>
           </div>
 
-          <div className="space-y-2 max-h-[400px] overflow-y-auto">
-            {serpResults.map((result, i) => (
-              <label
-                key={i}
-                className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
-                  selectedUrls.includes(result.url) ? 'border-sky-300 bg-sky-50/50' : 'border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <input
-                  type="checkbox"
-                  checked={selectedUrls.includes(result.url)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedUrls([...selectedUrls, result.url]);
-                    } else {
-                      setSelectedUrls(selectedUrls.filter((u) => u !== result.url));
-                    }
-                  }}
-                  className="mt-0.5 rounded border-gray-300"
-                />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-mono text-gray-400">#{result.rank}</span>
-                    <p className="text-sm font-medium text-gray-900 truncate">{result.title}</p>
-                  </div>
-                  <p className="text-xs text-sky-600 truncate mt-0.5">{result.url}</p>
-                  {result.description && (
-                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{result.description}</p>
-                  )}
-                </div>
-              </label>
-            ))}
-          </div>
+          {/* Competitor results first */}
+          {competitorResults.length > 0 && (
+            <div className="mb-4">
+              <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1.5">
+                <Target className="w-3.5 h-3.5 text-emerald-600" />
+                Competitor Sites ({competitorResults.length})
+              </p>
+              <div className="space-y-2 max-h-[280px] overflow-y-auto">
+                {competitorResults.map((result, i) => (
+                  <label
+                    key={`comp-${i}`}
+                    className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                      selectedUrls.includes(result.url) ? 'border-emerald-300 bg-emerald-50/50' : 'border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedUrls.includes(result.url)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedUrls([...selectedUrls, result.url]);
+                        } else {
+                          setSelectedUrls(selectedUrls.filter((u) => u !== result.url));
+                        }
+                      }}
+                      className="mt-0.5 rounded border-gray-300"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded bg-gray-100 text-gray-600 border border-gray-200 shrink-0">
+                          {result.rank}
+                        </span>
+                        <p className="text-sm font-medium text-gray-900 truncate">{result.title}</p>
+                      </div>
+                      <p className="text-xs text-sky-600 truncate mt-0.5">{result.url}</p>
+                      {result.description && (
+                        <p className="text-xs text-gray-500 mt-1 line-clamp-2">{result.description}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Generic sites shown separately */}
+          {genericResults.length > 0 && (
+            <div>
+              <p className="text-xs font-semibold text-gray-400 mb-2 flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5" />
+                Public / Generic Sites ({genericResults.length}) - usually not direct competitors
+              </p>
+              <div className="space-y-1.5 max-h-[160px] overflow-y-auto opacity-70">
+                {genericResults.map((result, i) => (
+                  <label
+                    key={`gen-${i}`}
+                    className={`flex items-start gap-3 p-2.5 border rounded-lg cursor-pointer transition-colors ${
+                      selectedUrls.includes(result.url) ? 'border-sky-300 bg-sky-50/50' : 'border-gray-100 hover:bg-gray-50'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={selectedUrls.includes(result.url)}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedUrls([...selectedUrls, result.url]);
+                        } else {
+                          setSelectedUrls(selectedUrls.filter((u) => u !== result.url));
+                        }
+                      }}
+                      className="mt-0.5 rounded border-gray-300"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="inline-flex items-center justify-center w-5 h-5 text-[10px] font-bold rounded bg-gray-50 text-gray-400 border border-gray-100 shrink-0">
+                          {result.rank}
+                        </span>
+                        <p className="text-sm text-gray-600 truncate">{result.title}</p>
+                      </div>
+                      <p className="text-xs text-gray-400 truncate mt-0.5">{result.url}</p>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* Strategy Configuration */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <label className="block text-xs font-medium text-gray-500 mb-1.5">Additional Instructions (optional)</label>
-          <Textarea
-            value={additionalInstructions}
-            onChange={(e) => setAdditionalInstructions(e.target.value)}
-            placeholder="e.g. Focus on long-tail keywords, prioritize local terms..."
-            className="text-sm h-20 resize-none"
-          />
+          <h3 className="text-sm font-semibold text-gray-900 mb-1">Strategy Configuration</h3>
+          <p className="text-xs text-gray-500 mb-4">
+            Tell the AI what you need. It will rationalize your inputs -- if numbers don't add up (e.g. 1 page across 5 themes), it will adjust to produce something coherent.
+          </p>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Content Themes</label>
+              <Input
+                type="number"
+                min={1}
+                max={20}
+                value={numThemes}
+                onChange={(e) => setNumThemes(Math.max(1, Math.min(20, Number(e.target.value) || 1)))}
+                className="text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-0.5">Topical clusters to group keywords into</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Total Keywords</label>
+              <Input
+                type="number"
+                min={5}
+                max={100}
+                value={numKeywords}
+                onChange={(e) => setNumKeywords(Math.max(5, Math.min(100, Number(e.target.value) || 5)))}
+                className="text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-0.5">Keywords distributed across all themes</p>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Page Ideas</label>
+              <Input
+                type="number"
+                min={1}
+                max={50}
+                value={numPages}
+                onChange={(e) => setNumPages(Math.max(1, Math.min(50, Number(e.target.value) || 1)))}
+                className="text-sm"
+              />
+              <p className="text-[10px] text-gray-400 mt-0.5">Suggested page titles to generate</p>
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-xs font-medium text-gray-500 mb-1">Keyword Focus (what are you looking for?)</label>
+            <Input
+              value={keywordFocus}
+              onChange={(e) => setKeywordFocus(e.target.value)}
+              placeholder="e.g. Long-tail transactional keywords for product pages, informational how-to queries, local service keywords..."
+              className="text-sm"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Additional Instructions (optional)</label>
+            <Textarea
+              value={additionalInstructions}
+              onChange={(e) => setAdditionalInstructions(e.target.value)}
+              placeholder="e.g. Exclude brand terms, focus on queries with purchase intent, prioritize low-competition terms, avoid keywords we already rank for..."
+              className="text-sm h-20 resize-none"
+            />
+          </div>
+
+          {brandProfile && (
+            <div className="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg flex items-start gap-2">
+              <Brain className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-sky-700">
+                Brand Intelligence will be included: <span className="font-medium">{brandProfile.brand?.name || 'Brand'}</span> ({brandProfile.brand?.category || 'uncategorized'}) with {brandProfile.seo?.primary_keywords?.length || 0} primary keywords, {brandProfile.audience?.segments?.length || 0} audience segments, and {brandProfile.content_opportunities?.length || 0} content opportunities.
+              </p>
+            </div>
+          )}
         </div>
 
         {error && (
@@ -948,12 +1129,12 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
         )}
 
         <div className="flex items-center justify-between">
-          <p className="text-xs text-gray-500">{selectedUrls.length} page(s) selected for scraping</p>
+          <p className="text-xs text-gray-500">{selectedCount} competitor page(s) selected for scraping</p>
           <Button onClick={handleScrapeAndGenerate} disabled={scraping || generating} className="gap-2">
             {scraping || generating ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
             ) : (
-              <><Sparkles className="w-4 h-4" /> Generate Strategy</>
+              <><Sparkles className="w-4 h-4" /> Scrape & Generate Strategy</>
             )}
           </Button>
         </div>
@@ -982,6 +1163,15 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
           </div>
         )}
 
+        {brandProfile && (
+          <div className="mb-5 p-3 bg-sky-50 border border-sky-100 rounded-lg flex items-start gap-2">
+            <Brain className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-sky-700">
+              Brand profile loaded: <span className="font-medium">{brandProfile.brand?.name || 'Unknown'}</span>. Keywords and audience data will be used to improve research quality.
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-medium text-gray-500 mb-1.5">Search Term</label>
@@ -1001,12 +1191,13 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
                 onChange={(e) => setCountryCode(e.target.value.toLowerCase())}
                 placeholder="us"
                 className="text-sm w-16 text-center"
+                title="Country code (us, in, uk, etc.)"
               />
             </div>
             <p className="text-xs text-gray-400 mt-1.5">
               {brandProfile?.market_discovery?.primary_search_keyword
                 ? `Suggested from brand analysis: "${brandProfile.market_discovery.primary_search_keyword}"`
-                : 'Enter the primary keyword you want to rank for.'
+                : 'Enter the primary keyword your competitors would rank for. This discovers who is ranking in your space.'
               }
             </p>
           </div>
@@ -1015,6 +1206,14 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
         {error && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-xs text-red-700">{error}</p>
+            {debugInfo ? (
+              <details className="mt-2">
+                <summary className="text-xs text-red-500 cursor-pointer">Debug info</summary>
+                <pre className="text-[10px] text-red-600 mt-1 whitespace-pre-wrap break-all">
+                  {JSON.stringify(debugInfo, null, 2)}
+                </pre>
+              </details>
+            ) : null}
           </div>
         )}
 
@@ -1037,9 +1236,6 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
 function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStrategy; onNewStrategy: () => void }) {
   const totalKeywords = strategy.themes.reduce((acc, t) => acc + (t.keywords?.length || 0), 0);
   const totalPages = strategy.themes.reduce((acc, t) => acc + (t.suggested_pages?.length || 0), 0);
-  const avgScore = strategy.themes.length > 0
-    ? Math.round(strategy.themes.reduce((acc, t) => acc + (t.opportunity_score || 0), 0) / strategy.themes.length)
-    : 0;
 
   return (
     <div className="space-y-6">
@@ -1071,6 +1267,12 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
             <p className="text-xs text-amber-600 mt-0.5">Page Ideas</p>
           </div>
         </div>
+
+        {strategy.generation_params && (
+          <p className="text-xs text-gray-400 mt-3">
+            Config: {strategy.generation_params.num_themes || '?'} themes, {strategy.generation_params.num_keywords || '?'} keywords, {strategy.generation_params.num_pages || '?'} pages requested
+          </p>
+        )}
       </div>
 
       {/* Themes */}
