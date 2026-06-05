@@ -34,6 +34,8 @@ import {
   Clock,
   History,
   FileText,
+  Brain,
+  Key,
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -143,6 +145,28 @@ const PROMPT_KEYS = [
     description: 'Generates full article content from title and context dump. Produces original, E-E-A-T optimized content.',
     icon: FileText,
     usedBy: 'generate-gifaa-article',
+    testable: true,
+  },
+  {
+    key: 'brand_analyzer_prompt',
+    modelKey: 'ai_model_brand_analyzer',
+    countKey: 'ai_request_count_brand_analyzer',
+    defaultModel: 'openai/gpt-oss-120b:free',
+    label: 'AI Researcher — Brand Analyzer',
+    description: 'Analyzes a website or pasted text to extract brand intelligence: audience, offerings, keywords, market positioning, and content opportunities.',
+    icon: Brain,
+    usedBy: 'analyze-brand',
+    testable: true,
+  },
+  {
+    key: 'ai_keyword_research_prompt',
+    modelKey: 'ai_model_keyword_research',
+    countKey: 'ai_request_count_keyword_research',
+    defaultModel: 'openai/gpt-oss-120b:free',
+    label: 'AI Researcher — Keyword Strategy',
+    description: 'Generates keyword strategy with content themes, keywords, and page ideas from SERP data, scraped competitor content, and brand intelligence.',
+    icon: Key,
+    usedBy: 'keyword-research',
     testable: true,
   },
 ];

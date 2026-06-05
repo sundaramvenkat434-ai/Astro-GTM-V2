@@ -203,7 +203,14 @@ Deno.serve(async (req: Request) => {
       const keywordsCount = num_keywords || 20;
       const pagesCount = num_pages || 10;
 
-      const systemPrompt = `You are an expert SEO strategist and keyword researcher. Your job is to analyze brand data, Google SERP competition, and competitor page content to produce a comprehensive, actionable keyword strategy.
+      // Load custom prompt from admin settings if available
+      const { data: promptRow } = await supabase
+        .from("admin_settings")
+        .select("value")
+        .eq("key", "ai_keyword_research_prompt")
+        .maybeSingle();
+
+      const systemPrompt = promptRow?.value || `You are an expert SEO strategist and keyword researcher. Your job is to analyze brand data, Google SERP competition, and competitor page content to produce a comprehensive, actionable keyword strategy.
 
 Return a JSON object with this exact structure:
 {
@@ -220,9 +227,19 @@ Return a JSON object with this exact structure:
   ]
 }
 
-PARAMETER RATIONALIZATION:
-The user has requested approximately ${themesCount} content themes, ${keywordsCount} keywords total, and ${pagesCount} page ideas.
-Use your judgment: if these numbers don't make practical sense together (e.g. 50 pages across 2 themes, or 100 keywords for 1 page), adjust proportionally to produce a COHERENT and FEASIBLE strategy. Quality over quantity. The numbers are guidelines, not hard constraints.
+EXACT OUTPUT REQUIREMENTS:
+- Generate EXACTLY ${themesCount} content themes
+- Generate EXACTLY ${keywordsCount} keywords distributed across all themes
+- Generate EXACTLY ${pagesCount} suggested page titles distributed across all themes
+- Do NOT generate fewer items than requested. The user explicitly chose these numbers.
+- If the ratio seems unusual (e.g. 50 pages across 3 themes), distribute them proportionally — ~17 pages per theme. Do NOT reduce the total count.
+
+PAGE TITLE UNIQUENESS RULES:
+- Every single page title MUST be completely distinct and unique
+- No two page titles may cover the same topic from a slightly different angle
+- No titles should be synonyms or paraphrases of each other (e.g. "Best X for Y" and "Top X for Y" are too similar)
+- Each page must target a genuinely different search intent or user need
+- Verify uniqueness: if you removed any page title, would the remaining set lose coverage of a topic? If not, it's redundant.
 
 CRITICAL REQUIREMENTS:
 - Opportunity scores must be 0-100 based on: estimated search volume, competition difficulty from SERP analysis, and brand relevance
@@ -277,7 +294,7 @@ CRITICAL REQUIREMENTS:
             { role: "user", content: userMessage },
           ],
           temperature: 0.7,
-          max_tokens: 8000,
+          max_tokens: Math.max(8000, pagesCount * 200 + keywordsCount * 50 + themesCount * 500),
           response_format: { type: "json_object" },
         }),
       });

@@ -79,15 +79,15 @@ export default function TenantDashboardPage() {
 
 function SubTabBar<T extends string>({ tabs, active, onChange }: { tabs: { key: T; label: string }[]; active: T; onChange: (key: T) => void }) {
   return (
-    <div className="flex items-center gap-1 mb-6">
+    <div className="flex items-center gap-0.5 p-1 bg-gray-100/80 rounded-lg w-fit mb-8">
       {tabs.map((tab) => (
         <button
           key={tab.key}
           onClick={() => onChange(tab.key)}
-          className={`px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${
+          className={`px-4 py-1.5 text-[13px] font-medium rounded-md transition-all ${
             active === tab.key
-              ? 'bg-gray-900 text-white shadow-sm'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+              ? 'bg-white text-gray-900 shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
           }`}
         >
           {tab.label}
@@ -122,22 +122,23 @@ function TenantDashboard() {
   }
 
   return (
-    <div className="p-6 max-w-5xl">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">{tenant.site_name || tenant.tenant_key}</h1>
-        <p className="text-sm text-gray-500 mt-1">Manage tenant settings and content</p>
+    <div className="p-6 lg:p-8 max-w-6xl">
+      {/* Header */}
+      <div className="mb-8">
+        <h1 className="text-2xl font-bold text-gray-900 tracking-tight">{tenant.site_name || tenant.tenant_key}</h1>
+        <p className="text-sm text-gray-500 mt-1">Manage settings, design, content, and AI research for this tenant.</p>
       </div>
 
       {/* Main Tab Bar */}
-      <div className="flex items-center gap-1 border-b border-gray-200 mb-6">
+      <div className="flex items-center gap-1 border-b border-gray-200 mb-8">
         {MAIN_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setMainTab(tab.key)}
-            className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px ${
+            className={`flex items-center gap-2 px-4 py-3 text-sm font-medium border-b-2 transition-all -mb-px ${
               mainTab === tab.key
                 ? 'border-gray-900 text-gray-900'
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                : 'border-transparent text-gray-400 hover:text-gray-600 hover:border-gray-200'
             }`}
           >
             {tab.icon}

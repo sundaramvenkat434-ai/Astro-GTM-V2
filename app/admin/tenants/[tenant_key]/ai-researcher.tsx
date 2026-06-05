@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info } from 'lucide-react';
+import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info, Download } from 'lucide-react';
 
 type AIResearcherSubTab = 'brand' | 'competitors' | 'keywords' | 'page-ideas' | 'interlinking';
 
@@ -65,15 +65,15 @@ export function AIResearcherModule({ tenantId, tenantKey }: { tenantId: string; 
   return (
     <div>
       {/* Sub-Tab Navigation */}
-      <div className="flex items-center gap-1 mb-6">
+      <div className="flex items-center gap-0.5 p-1 bg-gray-100/80 rounded-lg w-fit mb-8">
         {SUB_TABS.map((tab) => (
           <button
             key={tab.key}
             onClick={() => setActiveTab(tab.key)}
-            className={`flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-lg transition-colors ${
+            className={`flex items-center gap-2 px-4 py-2 text-[13px] font-medium rounded-md transition-all ${
               activeTab === tab.key
-                ? 'bg-gray-900 text-white shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100'
+                ? 'bg-white text-gray-900 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700'
             }`}
           >
             {tab.icon}
@@ -1237,6 +1237,77 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
   const totalKeywords = strategy.themes.reduce((acc, t) => acc + (t.keywords?.length || 0), 0);
   const totalPages = strategy.themes.reduce((acc, t) => acc + (t.suggested_pages?.length || 0), 0);
 
+  function downloadPDF() {
+    const lines: string[] = [];
+    lines.push(`KEYWORD STRATEGY REPORT`);
+    lines.push(`${'='.repeat(60)}`);
+    lines.push(`Search Term: ${strategy.search_term}`);
+    lines.push(`Country: ${strategy.country_code?.toUpperCase() || 'US'}`);
+    lines.push(`Generated: ${new Date(strategy.created_at).toLocaleDateString()}`);
+    lines.push(`Themes: ${strategy.themes.length} | Keywords: ${totalKeywords} | Page Ideas: ${totalPages}`);
+    lines.push('');
+
+    strategy.themes.forEach((theme, i) => {
+      lines.push(`${'─'.repeat(60)}`);
+      lines.push(`THEME ${i + 1}: ${theme.name}`);
+      lines.push(`Opportunity Score: ${theme.opportunity_score}/100`);
+      if (theme.opportunity_reason) lines.push(`Reason: ${theme.opportunity_reason}`);
+      lines.push('');
+      lines.push(`  Keywords:`);
+      (theme.keywords || []).forEach((kw) => lines.push(`    - ${kw}`));
+      lines.push('');
+      if (theme.suggested_pages && theme.suggested_pages.length > 0) {
+        lines.push(`  Suggested Pages:`);
+        theme.suggested_pages.forEach((p, pi) => {
+          lines.push(`    ${pi + 1}. ${p.title}`);
+          lines.push(`       Target keyword: ${p.keyword}`);
+        });
+      }
+      lines.push('');
+    });
+
+    lines.push(`${'='.repeat(60)}`);
+    lines.push(`End of Report`);
+
+    // Create downloadable text file (universal, no extra dependencies)
+    const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `keyword-strategy-${strategy.search_term.replace(/\s+/g, '-').toLowerCase()}-${new Date(strategy.created_at).toISOString().slice(0, 10)}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
+  function downloadCSV() {
+    const rows: string[][] = [['Theme', 'Opportunity Score', 'Page Title', 'Target Keyword']];
+    strategy.themes.forEach((theme) => {
+      if (theme.suggested_pages && theme.suggested_pages.length > 0) {
+        theme.suggested_pages.forEach((p) => {
+          rows.push([theme.name, String(theme.opportunity_score), p.title, p.keyword]);
+        });
+      }
+      (theme.keywords || []).forEach((kw) => {
+        if (!theme.suggested_pages?.some((p) => p.keyword === kw)) {
+          rows.push([theme.name, String(theme.opportunity_score), '', kw]);
+        }
+      });
+    });
+
+    const csv = rows.map((r) => r.map((c) => `"${c.replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `keyword-strategy-${strategy.search_term.replace(/\s+/g, '-').toLowerCase()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="space-y-6">
       {/* Overview */}
@@ -1248,9 +1319,17 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
               Generated for "{strategy.search_term}" on {new Date(strategy.created_at).toLocaleDateString()}
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={onNewStrategy} className="gap-1.5 text-xs">
-            <Sparkles className="w-3.5 h-3.5" /> New Research
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={downloadCSV} className="gap-1.5 text-xs">
+              <FileText className="w-3.5 h-3.5" /> CSV
+            </Button>
+            <Button variant="outline" size="sm" onClick={downloadPDF} className="gap-1.5 text-xs">
+              <Download className="w-3.5 h-3.5" /> Report
+            </Button>
+            <Button variant="outline" size="sm" onClick={onNewStrategy} className="gap-1.5 text-xs">
+              <Sparkles className="w-3.5 h-3.5" /> New Research
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -1294,7 +1373,7 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
             )}
 
             <div className="mb-4">
-              <label className="block text-xs font-medium text-gray-500 mb-2">Keywords</label>
+              <label className="block text-xs font-medium text-gray-500 mb-2">Keywords ({(theme.keywords || []).length})</label>
               <div className="flex flex-wrap gap-1.5">
                 {(theme.keywords || []).map((kw, ki) => (
                   <span key={ki} className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 border border-gray-200">
@@ -1306,11 +1385,11 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
 
             {theme.suggested_pages && theme.suggested_pages.length > 0 && (
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-2">Suggested Pages</label>
+                <label className="block text-xs font-medium text-gray-500 mb-2">Suggested Pages ({theme.suggested_pages.length})</label>
                 <div className="space-y-1.5">
                   {theme.suggested_pages.map((page, pi) => (
                     <div key={pi} className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg">
-                      <ArrowRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <span className="text-[10px] font-bold text-gray-400 w-5 text-center shrink-0">{pi + 1}</span>
                       <span className="text-sm text-gray-700">{page.title}</span>
                       <span className="text-xs text-gray-400 ml-auto font-mono">{page.keyword}</span>
                     </div>
@@ -1491,3 +1570,6 @@ function MarketDiscoverySection({
     </EditableSection>
   );
 }
+
+
+export { AIResearcherModule }
