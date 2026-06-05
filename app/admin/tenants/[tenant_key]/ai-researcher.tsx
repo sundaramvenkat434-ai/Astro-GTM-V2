@@ -653,6 +653,476 @@ function ChipList({ label, items, onChange, color }: { label: string; items: str
   );
 }
 
+/* ─── Keywords Tab ──────────────────────────────────────── */
+
+interface KeywordStrategy {
+  id: string;
+  tenant_id: string;
+  search_term: string;
+  country_code: string;
+  serp_data: SerpResult[];
+  scraped_urls: string[];
+  themes: {
+    name: string;
+    opportunity_score: number;
+    opportunity_reason: string;
+    keywords: string[];
+    suggested_pages: { title: string; keyword: string }[];
+  }[];
+  generation_params: {
+    num_themes?: number;
+    num_keywords?: number;
+    num_pages?: number;
+    additional_instructions?: string;
+  };
+  created_at: string;
+}
+
+interface SerpResult {
+  rank: number;
+  title: string;
+  url: string;
+  description: string;
+}
+
+function KeywordsTab({ tenantId }: { tenantId: string }) {
+  const [strategy, setStrategy] = useState<KeywordStrategy | null>(null);
+  const [brandProfile, setBrandProfile] = useState<BrandIntelligence | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  // Wizard state
+  const [step, setStep] = useState<'search' | 'review-serp' | 'generating' | 'results'>('search');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [countryCode, setCountryCode] = useState('us');
+  const [searching, setSearching] = useState(false);
+  const [serpResults, setSerpResults] = useState<SerpResult[]>([]);
+  const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
+  const [scraping, setScraping] = useState(false);
+  const [scrapedContent, setScrapedContent] = useState<{ url: string; content: string }[]>([]);
+  const [generating, setGenerating] = useState(false);
+  const [additionalInstructions, setAdditionalInstructions] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function load() {
+      const [strategyRes, brandRes] = await Promise.all([
+        supabase
+          .from('gifaa_keyword_strategies')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('gifaa_brand_intelligence')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (strategyRes.data) {
+        setStrategy(strategyRes.data);
+        setStep('results');
+      }
+      if (brandRes.data) {
+        setBrandProfile(brandRes.data);
+        if (brandRes.data.market_discovery?.primary_search_keyword) {
+          setSearchTerm(brandRes.data.market_discovery.primary_search_keyword);
+        }
+      }
+      setLoading(false);
+    }
+    load();
+  }, [tenantId]);
+
+  async function handleSearch() {
+    if (!searchTerm.trim()) return;
+    setError(null);
+    setSearching(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keyword-research`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'search',
+            tenant_id: tenantId,
+            primary_search_term: searchTerm.trim(),
+            country_code: countryCode,
+          }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError((data as { error?: string }).error || `Error ${res.status}`);
+        setSearching(false);
+        return;
+      }
+      const data = await res.json();
+      setSerpResults(data.results || []);
+      setSelectedUrls((data.results || []).slice(0, 5).map((r: SerpResult) => r.url));
+      setStep('review-serp');
+    } catch (err) {
+      setError(String(err));
+    }
+    setSearching(false);
+  }
+
+  async function handleScrapeAndGenerate() {
+    setError(null);
+    setScraping(true);
+
+    let scraped: { url: string; content: string }[] = [];
+    if (selectedUrls.length > 0) {
+      try {
+        const res = await fetch(
+          `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keyword-research`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              action: 'scrape',
+              tenant_id: tenantId,
+              urls: selectedUrls,
+            }),
+          }
+        );
+        if (res.ok) {
+          const data = await res.json();
+          scraped = data.results || [];
+          setScrapedContent(scraped);
+        }
+      } catch { /* continue without scraped content */ }
+    }
+
+    setScraping(false);
+    setGenerating(true);
+    setStep('generating');
+
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keyword-research`,
+        {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'generate',
+            tenant_id: tenantId,
+            primary_search_term: searchTerm.trim(),
+            country_code: countryCode,
+            brand_intelligence: brandProfile ? {
+              brand: brandProfile.brand,
+              audience: brandProfile.audience,
+              offerings: brandProfile.offerings,
+              seo: brandProfile.seo,
+            } : null,
+            serp_results: serpResults,
+            scraped_content: scraped,
+            additional_instructions: additionalInstructions || undefined,
+          }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError((data as { error?: string }).error || `Error ${res.status}`);
+        setGenerating(false);
+        setStep('review-serp');
+        return;
+      }
+      const data = await res.json();
+      setStrategy(data.data);
+      setStep('results');
+    } catch (err) {
+      setError(String(err));
+      setStep('review-serp');
+    }
+    setGenerating(false);
+  }
+
+  function handleNewStrategy() {
+    setStrategy(null);
+    setSerpResults([]);
+    setSelectedUrls([]);
+    setScrapedContent([]);
+    setStep('search');
+  }
+
+  if (loading) {
+    return <p className="text-gray-400 text-sm py-10 text-center">Loading keyword strategies...</p>;
+  }
+
+  // Show results if we have a saved strategy
+  if (step === 'results' && strategy) {
+    return <KeywordStrategyView strategy={strategy} onNewStrategy={handleNewStrategy} />;
+  }
+
+  // Generating state
+  if (step === 'generating') {
+    return (
+      <div className="bg-white border border-gray-200 rounded-xl p-10 text-center">
+        <Loader2 className="w-8 h-8 text-sky-500 animate-spin mx-auto mb-3" />
+        <p className="text-sm font-medium text-gray-700">
+          {scraping ? 'Scraping competitor pages...' : 'Generating keyword strategy...'}
+        </p>
+        <p className="text-xs text-gray-400 mt-1">This may take 30-60 seconds.</p>
+      </div>
+    );
+  }
+
+  // SERP review step
+  if (step === 'review-serp') {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-sm font-semibold text-gray-900">SERP Results for "{searchTerm}"</h3>
+              <p className="text-xs text-gray-500 mt-0.5">{serpResults.length} results found. Select pages to scrape for deeper analysis.</p>
+            </div>
+            <Button variant="outline" size="sm" onClick={() => setStep('search')} className="text-xs">
+              Back
+            </Button>
+          </div>
+
+          <div className="space-y-2 max-h-[400px] overflow-y-auto">
+            {serpResults.map((result, i) => (
+              <label
+                key={i}
+                className={`flex items-start gap-3 p-3 border rounded-lg cursor-pointer transition-colors ${
+                  selectedUrls.includes(result.url) ? 'border-sky-300 bg-sky-50/50' : 'border-gray-200 hover:bg-gray-50'
+                }`}
+              >
+                <input
+                  type="checkbox"
+                  checked={selectedUrls.includes(result.url)}
+                  onChange={(e) => {
+                    if (e.target.checked) {
+                      setSelectedUrls([...selectedUrls, result.url]);
+                    } else {
+                      setSelectedUrls(selectedUrls.filter((u) => u !== result.url));
+                    }
+                  }}
+                  className="mt-0.5 rounded border-gray-300"
+                />
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-gray-400">#{result.rank}</span>
+                    <p className="text-sm font-medium text-gray-900 truncate">{result.title}</p>
+                  </div>
+                  <p className="text-xs text-sky-600 truncate mt-0.5">{result.url}</p>
+                  {result.description && (
+                    <p className="text-xs text-gray-500 mt-1 line-clamp-2">{result.description}</p>
+                  )}
+                </div>
+              </label>
+            ))}
+          </div>
+        </div>
+
+        <div className="bg-white border border-gray-200 rounded-xl p-6">
+          <label className="block text-xs font-medium text-gray-500 mb-1.5">Additional Instructions (optional)</label>
+          <Textarea
+            value={additionalInstructions}
+            onChange={(e) => setAdditionalInstructions(e.target.value)}
+            placeholder="e.g. Focus on long-tail keywords, prioritize local terms..."
+            className="text-sm h-20 resize-none"
+          />
+        </div>
+
+        {error && (
+          <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs text-red-700">{error}</p>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between">
+          <p className="text-xs text-gray-500">{selectedUrls.length} page(s) selected for scraping</p>
+          <Button onClick={handleScrapeAndGenerate} disabled={scraping || generating} className="gap-2">
+            {scraping || generating ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Processing...</>
+            ) : (
+              <><Sparkles className="w-4 h-4" /> Generate Strategy</>
+            )}
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Search step (default)
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center">
+            <Key className="w-5 h-5 text-amber-600" />
+          </div>
+          <div>
+            <h2 className="text-lg font-semibold text-gray-900">Keyword Research</h2>
+            <p className="text-sm text-gray-500">Search Google, analyze competitors, and generate a keyword strategy.</p>
+          </div>
+        </div>
+
+        {!brandProfile && (
+          <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2">
+            <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+            <p className="text-xs text-amber-700">Run Brand Intelligence first for better keyword recommendations.</p>
+          </div>
+        )}
+
+        <div className="space-y-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1.5">Search Term</label>
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <Input
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  placeholder="e.g. best gift registry india"
+                  className="pl-9 text-sm"
+                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); handleSearch(); } }}
+                />
+              </div>
+              <Input
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value.toLowerCase())}
+                placeholder="us"
+                className="text-sm w-16 text-center"
+              />
+            </div>
+            <p className="text-xs text-gray-400 mt-1.5">
+              {brandProfile?.market_discovery?.primary_search_keyword
+                ? `Suggested from brand analysis: "${brandProfile.market_discovery.primary_search_keyword}"`
+                : 'Enter the primary keyword you want to rank for.'
+              }
+            </p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs text-red-700">{error}</p>
+          </div>
+        )}
+
+        <div className="mt-6">
+          <Button onClick={handleSearch} disabled={searching || !searchTerm.trim()} className="gap-2">
+            {searching ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Searching Google...</>
+            ) : (
+              <><Search className="w-4 h-4" /> Search SERP</>
+            )}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Keyword Strategy Results View ─────────────────────── */
+
+function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStrategy; onNewStrategy: () => void }) {
+  const totalKeywords = strategy.themes.reduce((acc, t) => acc + (t.keywords?.length || 0), 0);
+  const totalPages = strategy.themes.reduce((acc, t) => acc + (t.suggested_pages?.length || 0), 0);
+  const avgScore = strategy.themes.length > 0
+    ? Math.round(strategy.themes.reduce((acc, t) => acc + (t.opportunity_score || 0), 0) / strategy.themes.length)
+    : 0;
+
+  return (
+    <div className="space-y-6">
+      {/* Overview */}
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Keyword Strategy</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              Generated for "{strategy.search_term}" on {new Date(strategy.created_at).toLocaleDateString()}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={onNewStrategy} className="gap-1.5 text-xs">
+            <Sparkles className="w-3.5 h-3.5" /> New Research
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-3 gap-4">
+          <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg text-center">
+            <p className="text-2xl font-bold text-sky-700">{strategy.themes.length}</p>
+            <p className="text-xs text-sky-600 mt-0.5">Themes</p>
+          </div>
+          <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg text-center">
+            <p className="text-2xl font-bold text-teal-700">{totalKeywords}</p>
+            <p className="text-xs text-teal-600 mt-0.5">Keywords</p>
+          </div>
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+            <p className="text-2xl font-bold text-amber-700">{totalPages}</p>
+            <p className="text-xs text-amber-600 mt-0.5">Page Ideas</p>
+          </div>
+        </div>
+      </div>
+
+      {/* Themes */}
+      {strategy.themes.map((theme, i) => {
+        const scoreColor = theme.opportunity_score >= 80 ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
+          : theme.opportunity_score >= 60 ? 'text-amber-600 bg-amber-50 border-amber-200'
+          : 'text-red-500 bg-red-50 border-red-200';
+
+        return (
+          <div key={i} className="bg-white border border-gray-200 rounded-xl p-6">
+            <div className="flex items-center justify-between mb-3">
+              <h4 className="text-sm font-semibold text-gray-900">{theme.name}</h4>
+              <span className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${scoreColor}`}>
+                {theme.opportunity_score}/100
+              </span>
+            </div>
+            {theme.opportunity_reason && (
+              <p className="text-xs text-gray-600 mb-4">{theme.opportunity_reason}</p>
+            )}
+
+            <div className="mb-4">
+              <label className="block text-xs font-medium text-gray-500 mb-2">Keywords</label>
+              <div className="flex flex-wrap gap-1.5">
+                {(theme.keywords || []).map((kw, ki) => (
+                  <span key={ki} className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 border border-gray-200">
+                    {kw}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {theme.suggested_pages && theme.suggested_pages.length > 0 && (
+              <div>
+                <label className="block text-xs font-medium text-gray-500 mb-2">Suggested Pages</label>
+                <div className="space-y-1.5">
+                  {theme.suggested_pages.map((page, pi) => (
+                    <div key={pi} className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg">
+                      <ArrowRight className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <span className="text-sm text-gray-700">{page.title}</span>
+                      <span className="text-xs text-gray-400 ml-auto font-mono">{page.keyword}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 /* ─── Market Discovery Section ───────────────────────────── */
 
 interface MarketDiscoveryData {

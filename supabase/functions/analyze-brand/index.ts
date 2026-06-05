@@ -1,5 +1,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { Readability } from "npm:@mozilla/readability@0.5.0";
+import { parseHTML } from "npm:linkedom@0.16.11";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -83,7 +85,11 @@ Deno.serve(async (req: Request) => {
     if (source_url && !source_text) {
       try {
         const pageResponse = await fetch(source_url, {
-          headers: { "User-Agent": "AstroGTM-BrandAnalyzer/1.0" },
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+          },
+          redirect: "follow",
         });
         if (!pageResponse.ok) {
           return new Response(
@@ -92,14 +98,46 @@ Deno.serve(async (req: Request) => {
           );
         }
         const html = await pageResponse.text();
-        // Strip HTML tags and extract text content
-        contentToAnalyze = html
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/\s+/g, " ")
-          .trim()
-          .slice(0, 15000);
+        const trimmed = html.length > 1_500_000 ? html.slice(0, 1_500_000) : html;
+        const { document } = parseHTML(trimmed);
+
+        if (source_url) {
+          try {
+            const base = document.createElement("base");
+            base.setAttribute("href", source_url);
+            document.head.appendChild(base);
+          } catch { /* ignore */ }
+        }
+
+        const removeSelectors = [
+          "script", "style", "noscript", "iframe", "svg",
+          "nav", "header", "footer", "aside",
+          "[role='navigation']", "[role='banner']", "[role='contentinfo']",
+        ];
+        for (const sel of removeSelectors) {
+          try {
+            document.querySelectorAll(sel).forEach((el: any) => el.remove());
+          } catch { /* linkedom may not support all selectors */ }
+        }
+
+        const reader = new Readability(document);
+        const parsed = reader.parse();
+
+        if (parsed?.textContent) {
+          contentToAnalyze = parsed.textContent
+            .replace(/\s+\n/g, "\n")
+            .replace(/\n{3,}/g, "\n\n")
+            .trim()
+            .slice(0, 30000);
+        } else {
+          contentToAnalyze = html
+            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+            .replace(/<[^>]+>/g, " ")
+            .replace(/\s+/g, " ")
+            .trim()
+            .slice(0, 15000);
+        }
       } catch (fetchErr) {
         return new Response(
           JSON.stringify({ error: `Failed to fetch URL: ${String(fetchErr)}` }),
