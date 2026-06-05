@@ -7,7 +7,8 @@ import { AdminShell } from '@/components/admin-shell';
 import { TenantProvider, useTenant, type TenantData } from '@/components/tenant-provider';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3, Menu, GripVertical, ExternalLink, ChevronUp, ChevronDown, Palette, Tag, BookOpen, Settings, Brush, LayoutGrid as Layout } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, FileText, Copy, Check, RefreshCw, Lock, Globe, Shield, Server, TriangleAlert as AlertTriangle, Star, X, Image as ImageIcon, Upload, ChartBar as BarChart3, Menu, GripVertical, ExternalLink, ChevronUp, ChevronDown, Palette, Tag, BookOpen, Settings, Brush, LayoutGrid as Layout, Sparkles } from 'lucide-react';
+import { AIResearcherModule } from './ai-researcher';
 
 /* ─── Types ──────────────────────────────────────────────── */
 
@@ -30,7 +31,7 @@ interface Article {
   updated_at: string;
 }
 
-type MainTab = 'integration' | 'design' | 'content' | 'pages';
+type MainTab = 'integration' | 'design' | 'content' | 'pages' | 'ai-researcher';
 type IntegrationSubTab = 'client-settings' | 'cdn-settings' | 'analytics';
 type DesignSubTab = 'logo' | 'typography' | 'colors';
 type ContentSubTab = 'articles-page' | 'navigation' | 'categories';
@@ -40,6 +41,7 @@ const MAIN_TABS: { key: MainTab; label: string; icon: React.ReactNode }[] = [
   { key: 'design', label: 'Design', icon: <Brush className="w-4 h-4" /> },
   { key: 'content', label: 'Content', icon: <Layout className="w-4 h-4" /> },
   { key: 'pages', label: 'Pages', icon: <FileText className="w-4 h-4" /> },
+  { key: 'ai-researcher', label: 'AI Researcher', icon: <Sparkles className="w-4 h-4" /> },
 ];
 
 const INTEGRATION_SUB_TABS: { key: IntegrationSubTab; label: string }[] = [
@@ -176,6 +178,9 @@ function TenantDashboard() {
 
       {/* Pages Tab */}
       {mainTab === 'pages' && <PagesTab />}
+
+      {/* AI Researcher Tab */}
+      {mainTab === 'ai-researcher' && <AIResearcherTab tenant={tenant} />}
     </div>
   );
 }
@@ -1610,6 +1615,12 @@ function PagesTab() {
       <p className="text-xs text-gray-400 mt-3">{filtered.length} of {articles.length} articles shown</p>
     </div>
   );
+}
+
+/* ─── AI Researcher Tab ──────────────────────────────────── */
+
+function AIResearcherTab({ tenant }: { tenant: TenantData }) {
+  return <AIResearcherModule tenantId={tenant.id} tenantKey={tenant.tenant_key} />;
 }
 
 /* ─── Worker Code Generator ──────────────────────────────── */
