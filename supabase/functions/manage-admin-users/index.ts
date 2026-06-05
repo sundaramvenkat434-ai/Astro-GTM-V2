@@ -101,6 +101,20 @@ Deno.serve(async (req: Request) => {
         );
       }
 
+      // Prevent editing super admins
+      const { data: targetUser } = await supabase
+        .from("admin_users")
+        .select("is_super_admin")
+        .eq("id", id)
+        .maybeSingle();
+
+      if (targetUser?.is_super_admin) {
+        return new Response(
+          JSON.stringify({ error: "Super admin accounts cannot be modified via the UI" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
       const { data, error } = await supabase
         .from("admin_users")
         .update({ display_name })
@@ -130,10 +144,10 @@ Deno.serve(async (req: Request) => {
         );
       }
 
-      // Prevent self-deletion
+      // Fetch target user
       const { data: target } = await supabase
         .from("admin_users")
-        .select("auth_user_id")
+        .select("auth_user_id, is_super_admin")
         .eq("id", id)
         .maybeSingle();
 
@@ -141,6 +155,14 @@ Deno.serve(async (req: Request) => {
         return new Response(
           JSON.stringify({ error: "User not found" }),
           { status: 404, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+
+      // Prevent deleting super admins
+      if (target.is_super_admin) {
+        return new Response(
+          JSON.stringify({ error: "Super admin accounts cannot be removed via the UI" }),
+          { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
 

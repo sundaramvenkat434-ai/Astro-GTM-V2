@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
   UserCog, Plus, Pencil, Trash2, Loader as Loader2,
-  X, Eye, EyeOff, Clock, CalendarDays,
+  X, Eye, EyeOff, Clock, CalendarDays, ShieldCheck,
 } from 'lucide-react';
 
 interface AdminUser {
@@ -17,6 +17,7 @@ interface AdminUser {
   display_name: string;
   created_at: string;
   last_login_at: string | null;
+  is_super_admin: boolean;
 }
 
 export default function AdminUsersPage() {
@@ -161,11 +162,15 @@ function UsersManager() {
       ) : (
         <div className="space-y-3">
           {users.map((user) => (
-            <div key={user.id} className="bg-white border border-gray-200 rounded-xl p-4 flex items-center gap-4">
-              <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center shrink-0">
-                <span className="text-sm font-semibold text-gray-600">
-                  {(user.display_name || user.email)[0].toUpperCase()}
-                </span>
+            <div key={user.id} className={`bg-white border rounded-xl p-4 flex items-center gap-4 ${user.is_super_admin ? 'border-amber-200 bg-amber-50/30' : 'border-gray-200'}`}>
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${user.is_super_admin ? 'bg-amber-100' : 'bg-gray-100'}`}>
+                {user.is_super_admin ? (
+                  <ShieldCheck className="w-5 h-5 text-amber-600" />
+                ) : (
+                  <span className="text-sm font-semibold text-gray-600">
+                    {(user.display_name || user.email)[0].toUpperCase()}
+                  </span>
+                )}
               </div>
 
               <div className="flex-1 min-w-0">
@@ -197,7 +202,14 @@ function UsersManager() {
                   </div>
                 ) : (
                   <>
-                    <p className="text-sm font-medium text-gray-900 truncate">{user.display_name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-medium text-gray-900 truncate">{user.display_name}</p>
+                      {user.is_super_admin && (
+                        <span className="text-[10px] font-semibold uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded">
+                          Owner
+                        </span>
+                      )}
+                    </div>
                     <p className="text-xs text-gray-500 truncate">{user.email}</p>
                   </>
                 )}
@@ -214,7 +226,7 @@ function UsersManager() {
                 </div>
               </div>
 
-              {editingId !== user.id && (
+              {editingId !== user.id && !user.is_super_admin && (
                 <div className="flex items-center gap-1 shrink-0">
                   <Button
                     variant="ghost"
