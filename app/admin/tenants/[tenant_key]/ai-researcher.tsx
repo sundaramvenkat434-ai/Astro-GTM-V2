@@ -1570,6 +1570,3 @@ function MarketDiscoverySection({
     </EditableSection>
   );
 }
-
-
-export { AIResearcherModule }
