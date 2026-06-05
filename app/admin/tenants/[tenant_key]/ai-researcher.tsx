@@ -45,6 +45,13 @@ interface BrandIntelligence {
     secondary_keywords?: string[];
     long_tail_keywords?: string[];
   };
+  market_discovery: {
+    primary_search_keyword?: string;
+    confidence_score?: number;
+    alternative_keywords?: string[];
+    selection_reason?: string;
+    rejected_keywords?: { keyword: string; reason: string }[];
+  };
   content_opportunities: { topic: string; reason: string }[];
   confidence_reason: string | null;
   created_at: string;
@@ -336,6 +343,7 @@ function BrandProfileView({
   const [audience, setAudience] = useState(profile.audience);
   const [offerings, setOfferings] = useState(profile.offerings);
   const [seo, setSeo] = useState(profile.seo);
+  const [marketDiscovery, setMarketDiscovery] = useState(profile.market_discovery || {});
   const [contentOpps, setContentOpps] = useState(profile.content_opportunities || []);
 
   async function handleSave() {
@@ -347,6 +355,7 @@ function BrandProfileView({
         audience,
         offerings,
         seo,
+        market_discovery: marketDiscovery,
         content_opportunities: contentOpps,
         updated_at: new Date().toISOString(),
       })
@@ -439,6 +448,12 @@ function BrandProfileView({
           <ChipList label="Long-Tail Keywords" items={seo.long_tail_keywords || []} onChange={(v) => setSeo({ ...seo, long_tail_keywords: v })} color="gray" />
         </div>
       </EditableSection>
+
+      {/* Market Discovery */}
+      <MarketDiscoverySection
+        marketDiscovery={marketDiscovery}
+        onChange={setMarketDiscovery}
+      />
 
       {/* Content Opportunities */}
       <EditableSection
@@ -634,5 +649,172 @@ function ChipList({ label, items, onChange, color }: { label: string; items: str
         </Button>
       </div>
     </div>
+  );
+}
+
+/* ─── Market Discovery Section ───────────────────────────── */
+
+interface MarketDiscoveryData {
+  primary_search_keyword?: string;
+  confidence_score?: number;
+  alternative_keywords?: string[];
+  selection_reason?: string;
+  rejected_keywords?: { keyword: string; reason: string }[];
+}
+
+function MarketDiscoverySection({
+  marketDiscovery,
+  onChange,
+}: {
+  marketDiscovery: MarketDiscoveryData;
+  onChange: (v: MarketDiscoveryData) => void;
+}) {
+  const [newAltKeyword, setNewAltKeyword] = useState('');
+
+  const confidenceScore = marketDiscovery.confidence_score || 0;
+  const confColor = confidenceScore >= 80 ? 'text-emerald-600' : confidenceScore >= 60 ? 'text-amber-600' : 'text-red-500';
+  const confBg = confidenceScore >= 80 ? 'bg-emerald-50 border-emerald-200' : confidenceScore >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
+
+  function addAltKeyword() {
+    const trimmed = newAltKeyword.trim();
+    if (!trimmed) return;
+    const current = marketDiscovery.alternative_keywords || [];
+    if (current.includes(trimmed)) return;
+    onChange({ ...marketDiscovery, alternative_keywords: [...current, trimmed] });
+    setNewAltKeyword('');
+  }
+
+  return (
+    <EditableSection
+      title="Market Discovery"
+      icon={<Globe className="w-4 h-4 text-indigo-600" />}
+    >
+      <div className="space-y-5">
+        {/* Primary keyword highlight */}
+        <div className={`rounded-lg border p-4 ${confBg}`}>
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-xs font-medium text-gray-600">Selected Search Keyword</label>
+            <span className={`text-xs font-semibold ${confColor}`}>
+              Confidence: {confidenceScore}/100
+            </span>
+          </div>
+          <Input
+            value={marketDiscovery.primary_search_keyword || ''}
+            onChange={(e) => onChange({ ...marketDiscovery, primary_search_keyword: e.target.value })}
+            placeholder="e.g. gift registry india"
+            className="text-sm font-medium bg-white"
+          />
+          <p className="text-xs text-gray-500 mt-2">
+            This keyword will be used for competitor SERP discovery.
+          </p>
+        </div>
+
+        {/* Confidence score editable */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Confidence Score (0-100)</label>
+            <Input
+              type="number"
+              min={0}
+              max={100}
+              value={confidenceScore}
+              onChange={(e) => onChange({ ...marketDiscovery, confidence_score: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
+              className="text-sm"
+            />
+          </div>
+        </div>
+
+        {/* Selection reason */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-1">Why This Keyword Was Selected</label>
+          <textarea
+            value={marketDiscovery.selection_reason || ''}
+            onChange={(e) => onChange({ ...marketDiscovery, selection_reason: e.target.value })}
+            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-16"
+            placeholder="AI reasoning for why this keyword best discovers competitors..."
+          />
+        </div>
+
+        {/* Alternative keywords */}
+        <div>
+          <label className="block text-xs font-medium text-gray-500 mb-2">Alternative Keywords</label>
+          <div className="flex flex-wrap gap-2 mb-3">
+            {(marketDiscovery.alternative_keywords || []).map((kw, i) => (
+              <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border bg-blue-50 text-blue-700 border-blue-200">
+                {kw}
+                <button
+                  onClick={() => {
+                    const updated = (marketDiscovery.alternative_keywords || []).filter((_, idx) => idx !== i);
+                    onChange({ ...marketDiscovery, alternative_keywords: updated });
+                  }}
+                  className="text-current opacity-40 hover:opacity-100 transition-opacity"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            ))}
+            {(marketDiscovery.alternative_keywords || []).length === 0 && (
+              <span className="text-xs text-gray-400">No alternative keywords.</span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <Input
+              value={newAltKeyword}
+              onChange={(e) => setNewAltKeyword(e.target.value)}
+              placeholder="Add alternative keyword..."
+              className="text-sm max-w-xs"
+              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAltKeyword(); } }}
+            />
+            <Button onClick={addAltKeyword} disabled={!newAltKeyword.trim()} variant="outline" size="sm" className="text-xs gap-1">
+              <Plus className="w-3 h-3" /> Add
+            </Button>
+          </div>
+        </div>
+
+        {/* Rejected keywords */}
+        {(marketDiscovery.rejected_keywords || []).length > 0 && (
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-2">Rejected Keywords</label>
+            <div className="space-y-2">
+              {(marketDiscovery.rejected_keywords || []).map((rk, i) => (
+                <div key={i} className="flex items-start gap-3 p-2.5 border border-gray-100 rounded-lg bg-gray-50/50 group">
+                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <Input
+                      value={rk.keyword}
+                      onChange={(e) => {
+                        const updated = [...(marketDiscovery.rejected_keywords || [])];
+                        updated[i] = { ...updated[i], keyword: e.target.value };
+                        onChange({ ...marketDiscovery, rejected_keywords: updated });
+                      }}
+                      placeholder="Keyword"
+                      className="text-sm"
+                    />
+                    <Input
+                      value={rk.reason}
+                      onChange={(e) => {
+                        const updated = [...(marketDiscovery.rejected_keywords || [])];
+                        updated[i] = { ...updated[i], reason: e.target.value };
+                        onChange({ ...marketDiscovery, rejected_keywords: updated });
+                      }}
+                      placeholder="Reason for rejection"
+                      className="text-sm"
+                    />
+                  </div>
+                  <button
+                    onClick={() => {
+                      const updated = (marketDiscovery.rejected_keywords || []).filter((_, idx) => idx !== i);
+                      onChange({ ...marketDiscovery, rejected_keywords: updated });
+                    }}
+                    className="p-1 text-gray-400 hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+    </EditableSection>
   );
 }

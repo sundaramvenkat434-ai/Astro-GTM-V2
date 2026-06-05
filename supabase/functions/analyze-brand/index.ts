@@ -190,6 +190,7 @@ Deno.serve(async (req: Request) => {
         offerings: parsed.offerings || {},
         seo: parsed.seo || {},
         content_opportunities: parsed.content_opportunities || [],
+        market_discovery: parsed.market_discovery || {},
         confidence_reason: parsed.confidence_reason || null,
         raw_ai_response: parsed,
       })
