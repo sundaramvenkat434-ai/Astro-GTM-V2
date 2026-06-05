@@ -65,38 +65,24 @@ Deno.serve(async (req: Request) => {
       }
 
       const apifyPayload = {
-        chatGptSearch: { enableChatGpt: false },
-        copilotSearch: { enableCopilot: false },
         countryCode: country_code || "us",
-        disableGoogleSearchResults: false,
-        focusOnPaidAds: false,
-        forceExactMatch: false,
-        geminiSearch: { enableGemini: false },
-        includeIcons: false,
+        csvFriendlyOutput: false,
         includeUnfilteredResults: false,
         locationUule: location_uule || "",
         maxPagesPerQuery: 3,
-        maximumLeadsEnrichmentRecords: 0,
         mobileResults: false,
-        perplexitySearch: {
-          enablePerplexity: false,
-          returnImages: false,
-          returnRelatedQuestions: false,
-        },
         queries: primary_search_term,
+        resultsPerPage: 10,
         saveHtml: false,
         saveHtmlToKeyValueStore: false,
-        searchLanguage: "en",
-        verifyLeadsEnrichmentEmails: false,
       };
 
       const apifyRes = await fetch(
-        `https://api.apify.com/v2/acts/nFJndFXA5zjCTuudP/run-sync-get-dataset-items?clean=true`,
+        `https://api.apify.com/v2/acts/nFJndFXA5zjCTuudP/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
         {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            Authorization: `Bearer ${APIFY_TOKEN}`,
           },
           body: JSON.stringify(apifyPayload),
         }
@@ -114,15 +100,38 @@ Deno.serve(async (req: Request) => {
 
       const organicResults: SerpResult[] = [];
       for (const item of apifyData) {
-        const results = item?.organicResults || item?.organic_results || [];
-        for (const r of results) {
+        // Nested format: each item is a SERP page with organicResults array
+        const nested = item?.organicResults || item?.organic_results || [];
+        if (nested.length > 0) {
+          for (const r of nested) {
+            organicResults.push({
+              rank: r.position || r.rank || organicResults.length + 1,
+              title: r.title || "",
+              url: r.url || r.link || "",
+              description: r.description || r.snippet || "",
+            });
+          }
+        } else if (item?.title && (item?.url || item?.link)) {
+          // Flat format: each item IS a single organic result
           organicResults.push({
-            rank: r.position || r.rank || organicResults.length + 1,
-            title: r.title || "",
-            url: r.link || r.url || "",
-            description: r.description || r.snippet || "",
+            rank: item.position || item.rank || organicResults.length + 1,
+            title: item.title || "",
+            url: item.url || item.link || "",
+            description: item.description || item.snippet || "",
           });
         }
+      }
+
+      // Return debug info if no results found
+      if (organicResults.length === 0) {
+        return jsonResponse({
+          results: [],
+          debug: {
+            items_count: apifyData.length,
+            first_item_keys: apifyData.length > 0 ? Object.keys(apifyData[0]) : [],
+            sample: apifyData.length > 0 ? JSON.stringify(apifyData[0]).slice(0, 2000) : null,
+          },
+        });
       }
 
       return jsonResponse({ results: organicResults });
