@@ -4,7 +4,8 @@ import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info } from 'lucide-react';
 
 type AIResearcherSubTab = 'brand' | 'competitors' | 'keywords' | 'page-ideas' | 'interlinking';
 
@@ -83,7 +84,7 @@ export function AIResearcherModule({ tenantId, tenantKey }: { tenantId: string; 
 
       {activeTab === 'brand' && <BrandTab tenantId={tenantId} />}
       {activeTab === 'competitors' && <ComingSoonTab title="Competitors" description="Analyze competitor websites, content strategies, and identify gaps in your market positioning." />}
-      {activeTab === 'keywords' && <ComingSoonTab title="Keywords" description="AI-powered keyword research based on your brand intelligence and competitor analysis." />}
+      {activeTab === 'keywords' && <KeywordsTab tenantId={tenantId} />}
       {activeTab === 'page-ideas' && <ComingSoonTab title="Page Ideas" description="Generate content ideas and page concepts driven by keyword opportunities and audience intent." />}
       {activeTab === 'interlinking' && <ComingSoonTab title="Interlinking" description="Optimize your internal linking structure for better crawlability and topical authority." />}
     </div>
