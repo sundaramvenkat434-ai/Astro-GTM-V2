@@ -2,11 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { CircleCheck as CheckCircle } from 'lucide-react';
+import { CircleCheck as CheckCircle, TrendingUp } from 'lucide-react';
 import { CTAButton } from './cta-button';
 import { AIWorkflowDemo } from './ai-workflow-demo';
 
 const bulletPoints = ['Get 10 FREE Pages', 'No Card Needed', '1-on-1 Setup Call'];
+const caseStudy = {
+  metric: '1K to 30K+',
+  label: 'organic visitors/month',
+  brand: 'Gifaa',
+  desc: 'A premium gift registry platform for family events',
+};
 
 export function HeroSection() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -180,16 +186,32 @@ export function HeroSection() {
             {/* CTA */}
             <div>
               <CTAButton />
+              <p className="mt-3 flex flex-wrap items-center gap-x-1.5 text-xs text-emerald-200/60">
+                {bulletPoints.map((point, i) => (
+                  <span key={point} className="flex items-center gap-1">
+                    <CheckCircle className="w-3 h-3 text-emerald-400/70" />
+                    {point}
+                    {i < bulletPoints.length - 1 && <span className="text-emerald-400/30 ml-1">|</span>}
+                  </span>
+                ))}
+              </p>
             </div>
 
-            {/* Bullet points - stacked */}
-            <div className="flex flex-col gap-2.5">
-              {bulletPoints.map((point) => (
-                <span key={point} className="flex items-center gap-2 text-sm text-emerald-100/80">
-                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
-                  {point}
-                </span>
-              ))}
+            {/* Case study */}
+            <div className="rounded-xl border border-emerald-500/15 bg-emerald-900/20 backdrop-blur-sm p-4 max-w-sm">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-emerald-500/15 border border-emerald-500/20 flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-4 h-4 text-emerald-400" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-white leading-tight">
+                    {caseStudy.metric} <span className="text-emerald-300/70 font-medium text-xs">{caseStudy.label}</span>
+                  </p>
+                  <p className="text-[11px] text-emerald-200/50 mt-0.5">
+                    How we scaled <span className="font-semibold text-emerald-200/70">{caseStudy.brand}</span> &mdash; {caseStudy.desc}
+                  </p>
+                </div>
+              </div>
             </div>
           </motion.div>
 
