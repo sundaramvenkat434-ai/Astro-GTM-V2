@@ -7,7 +7,7 @@ export const metadata = {
 
 export default function AstroRankPage() {
   return (
-    <main className="min-h-screen bg-[#f0fdf4] overflow-hidden">
+    <main className="min-h-screen bg-[#042a18] overflow-hidden">
       <HeroSection />
     </main>
   );

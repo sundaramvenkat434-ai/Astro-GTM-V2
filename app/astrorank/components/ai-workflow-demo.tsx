@@ -10,7 +10,7 @@ import { PlanStep } from './steps/plan-step';
 import { PublishStep } from './steps/publish-step';
 
 const STEPS = ['Brand', 'Research', 'Plan', 'Publish'] as const;
-const STEP_DURATION = 6000;
+const STEP_DURATION = 5500;
 
 export function AIWorkflowDemo() {
   const [activeStep, setActiveStep] = useState(0);
@@ -23,11 +23,11 @@ export function AIWorkflowDemo() {
   }, []);
 
   return (
-    <div className="relative w-full max-w-[600px] mx-auto lg:max-w-none">
+    <div className="relative w-full max-w-[580px] mx-auto lg:max-w-none">
       <AnimatedBrowser>
         <WorkflowStepper steps={STEPS} activeStep={activeStep} onStepClick={setActiveStep} duration={STEP_DURATION} />
 
-        <div className="relative h-[360px] sm:h-[370px] mt-4 overflow-hidden">
+        <div className="relative h-[330px] sm:h-[345px] mt-3 overflow-hidden">
           <AnimatePresence mode="wait">
             {activeStep === 0 && <BrandStep key="brand" />}
             {activeStep === 1 && <ResearchStep key="research" />}
