@@ -22,22 +22,22 @@ export function BrandStep() {
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -5 }}
       transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
-      className="absolute inset-0 flex flex-col gap-2.5"
+      className="absolute inset-0 flex flex-col gap-3"
     >
-      {/* URL input bar */}
-      <div className="flex items-center gap-3 p-2.5 rounded-lg bg-[#071510] border border-emerald-500/10">
-        <div className="w-9 h-9 rounded-md bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shrink-0">
-          <Globe className="w-4 h-4 text-white" />
+      {/* URL input card */}
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shrink-0 shadow-sm">
+          <Globe className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-[13px] font-semibold text-white">yourbrand.com</p>
-          <p className="text-[10px] text-emerald-300/40">{stage >= 2 ? 'Analysis complete' : 'Scanning pages...'}</p>
+          <p className="text-sm font-semibold text-gray-800">yourbrand.com</p>
+          <p className="text-[11px] text-gray-500">{stage >= 2 ? 'Analysis complete' : 'Scanning pages...'}</p>
         </div>
         {stage < 2 ? (
-          <Loader2 className="w-4 h-4 text-emerald-400 animate-spin" />
+          <Loader2 className="w-4 h-4 text-emerald-500 animate-spin" />
         ) : (
           <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 500, damping: 15 }}>
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
+            <CheckCircle2 className="w-5 h-5 text-emerald-500" />
           </motion.div>
         )}
       </div>
@@ -48,40 +48,40 @@ export function BrandStep() {
           initial={{ opacity: 0, y: 3 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15 }}
-          className="grid grid-cols-2 gap-2"
+          className="grid grid-cols-2 gap-3"
         >
-          {/* Website screenshot mock */}
-          <div className="rounded-lg border border-emerald-500/10 overflow-hidden bg-[#071510]">
-            <div className="h-3.5 bg-[#0a1f16] border-b border-emerald-500/10 flex items-center px-2 gap-0.5">
-              <div className="w-1.5 h-1.5 rounded-full bg-red-400/50" />
-              <div className="w-1.5 h-1.5 rounded-full bg-yellow-400/50" />
-              <div className="w-1.5 h-1.5 rounded-full bg-green-400/50" />
+          {/* Website preview */}
+          <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
+            <div className="h-4 bg-gray-50 border-b border-gray-100 flex items-center px-2 gap-1">
+              <div className="w-1.5 h-1.5 rounded-full bg-red-300" />
+              <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
+              <div className="w-1.5 h-1.5 rounded-full bg-green-300" />
             </div>
-            <div className="p-2 space-y-1.5">
-              <div className="h-2.5 w-14 rounded-sm bg-emerald-500/20" />
-              <div className="h-1.5 w-full rounded-sm bg-emerald-500/5" />
-              <div className="h-1.5 w-3/4 rounded-sm bg-emerald-500/5" />
-              <div className="flex gap-1 mt-1.5">
-                <div className="h-4 w-12 rounded-sm bg-emerald-500/15 border border-emerald-500/20" />
-                <div className="h-4 w-12 rounded-sm bg-emerald-500/5" />
+            <div className="p-2.5 space-y-1.5">
+              <div className="h-2.5 w-16 rounded bg-emerald-200" />
+              <div className="h-2 w-full rounded bg-gray-100" />
+              <div className="h-2 w-3/4 rounded bg-gray-100" />
+              <div className="flex gap-1.5 mt-2">
+                <div className="h-5 w-14 rounded bg-emerald-100 border border-emerald-200" />
+                <div className="h-5 w-14 rounded bg-gray-50 border border-gray-200" />
               </div>
             </div>
           </div>
 
-          {/* Colors & fonts */}
-          <div className="rounded-lg border border-emerald-500/10 bg-[#071510] p-2.5 space-y-2.5">
+          {/* Colors & font */}
+          <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm space-y-2.5">
             <div>
-              <p className="text-[9px] uppercase tracking-wider text-emerald-400/40 font-semibold mb-1.5">Colors</p>
+              <p className="text-[9px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5">Colors</p>
               <div className="flex gap-1.5">
-                {['#10B981', '#059669', '#1F2937', '#F9FAFB'].map((c) => (
-                  <div key={c} className="w-5 h-5 rounded border border-emerald-500/20" style={{ backgroundColor: c }} />
+                {['#10B981', '#059669', '#1F2937', '#F3F4F6'].map((c) => (
+                  <div key={c} className="w-6 h-6 rounded-md border border-gray-200 shadow-sm" style={{ backgroundColor: c }} />
                 ))}
               </div>
             </div>
             <div>
-              <p className="text-[9px] uppercase tracking-wider text-emerald-400/40 font-semibold mb-1">Font</p>
-              <p className="text-[12px] font-bold text-white leading-none">Inter</p>
-              <p className="text-[9px] text-emerald-300/30 mt-0.5">Semi / Bold / Extra</p>
+              <p className="text-[9px] uppercase tracking-wider text-gray-400 font-semibold mb-1">Font</p>
+              <p className="text-sm font-bold text-gray-800">Inter</p>
+              <p className="text-[10px] text-gray-400">Semi / Bold / Extra</p>
             </div>
           </div>
         </motion.div>
@@ -93,17 +93,17 @@ export function BrandStep() {
           initial={{ opacity: 0, y: 3 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15 }}
-          className="flex-1 rounded-lg border border-emerald-500/10 bg-[#071510] p-2.5"
+          className="flex-1 rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
         >
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-[10px] font-semibold text-emerald-300/70 uppercase tracking-wider">Brand Intelligence</p>
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-xs font-semibold text-gray-700">Brand Intelligence</p>
             {stage >= 3 && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[9px] font-bold text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded border border-emerald-500/15">
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-100">
                 98% Match
               </motion.span>
             )}
           </div>
-          <div className="grid grid-cols-4 gap-1.5">
+          <div className="grid grid-cols-4 gap-2">
             {[
               { label: 'Industry', value: 'SaaS' },
               { label: 'Audience', value: 'Marketers' },
@@ -114,18 +114,18 @@ export function BrandStep() {
                 key={m.label}
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: i * 0.04, duration: 0.1 }}
-                className="text-center p-1.5 rounded bg-emerald-500/5 border border-emerald-500/5"
+                transition={{ delay: i * 0.04 }}
+                className="text-center p-2 rounded-lg bg-gray-50 border border-gray-100"
               >
-                <p className="text-[8px] text-emerald-400/40 uppercase">{m.label}</p>
-                <p className="text-[11px] font-bold text-white mt-0.5">{m.value}</p>
+                <p className="text-[8px] text-gray-400 uppercase tracking-wide">{m.label}</p>
+                <p className="text-xs font-bold text-gray-800 mt-0.5">{m.value}</p>
               </motion.div>
             ))}
           </div>
           <div className="mt-2 flex items-center gap-3">
             {['CTAs: 8', 'Tone: 94%', 'Mapped'].map((text, i) => (
-              <span key={i} className="text-[9px] text-emerald-300/40 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-500/60" />
+              <span key={i} className="text-[10px] text-gray-500 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-500" />
                 {text}
               </span>
             ))}

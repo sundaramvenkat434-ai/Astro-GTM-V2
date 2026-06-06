@@ -26,7 +26,7 @@ export function WorkflowStepper({ steps, activeStep, onStepClick, duration }: Wo
   }, [activeStep, duration]);
 
   return (
-    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-[#071510] border border-emerald-500/10">
+    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white border border-gray-200 shadow-sm">
       {steps.map((step, i) => {
         const isActive = i === activeStep;
         const isPast = i < activeStep;
@@ -38,26 +38,26 @@ export function WorkflowStepper({ steps, activeStep, onStepClick, duration }: Wo
           >
             <div className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-md text-[11px] font-semibold transition-all duration-150 ${
               isActive
-                ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200 shadow-sm'
                 : isPast
-                ? 'text-emerald-400/50 border border-transparent'
-                : 'text-slate-600 border border-transparent'
+                ? 'text-emerald-600 border border-transparent'
+                : 'text-gray-400 border border-transparent'
             }`}>
-              <span className={`w-4.5 h-4.5 flex items-center justify-center rounded-full text-[9px] font-bold shrink-0 ${
+              <span className={`flex items-center justify-center rounded-full text-[9px] font-bold shrink-0 ${
                 isActive
-                  ? 'bg-emerald-500 text-white shadow-sm shadow-emerald-500/30'
+                  ? 'bg-emerald-600 text-white shadow-sm'
                   : isPast
-                  ? 'bg-emerald-500/20 text-emerald-400'
-                  : 'bg-slate-800 text-slate-500'
+                  ? 'bg-emerald-100 text-emerald-600'
+                  : 'bg-gray-100 text-gray-400'
               }`} style={{ width: '18px', height: '18px' }}>
                 {isPast ? '\u2713' : i + 1}
               </span>
               <span className="hidden sm:inline">{step}</span>
             </div>
             {isActive && (
-              <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-emerald-900/30 rounded-full overflow-hidden">
+              <div className="absolute bottom-0 left-2 right-2 h-[2px] bg-emerald-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-400 rounded-full"
+                  className="h-full bg-emerald-500 rounded-full"
                   style={{ width: `${progress * 100}%`, transition: 'none' }}
                 />
               </div>
