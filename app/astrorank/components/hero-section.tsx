@@ -17,7 +17,7 @@ export function HeroSection() {
   const [visible, setVisible] = useState(false);
 
   useEffect(() => {
-    const t = setTimeout(() => setVisible(true), 80);
+    const t = setTimeout(() => setVisible(true), 60);
     return () => clearTimeout(t);
   }, []);
 
@@ -38,14 +38,14 @@ export function HeroSection() {
       twinkleSpeed: 0.012 + Math.random() * 0.04,
       twinkleOffset: Math.random() * Math.PI * 2,
       baseOpacity: 0.15 + Math.random() * 0.4,
-      hue: Math.random() < 0.4 ? '167,139,250' : Math.random() < 0.5 ? '139,92,246' : '100,116,139',
+      hue: Math.random() < 0.4 ? '52,211,153' : Math.random() < 0.5 ? '16,185,129' : '100,116,139',
     }));
 
     const ORBS = [
-      { x: 0.72, y: 0.18, r: 0.32, color: '139,92,246',  vx:  0.00008, vy:  0.00005 },
-      { x: 0.18, y: 0.55, r: 0.26, color: '167,139,250', vx: -0.00006, vy: -0.00004 },
-      { x: 0.50, y: 0.85, r: 0.22, color: '192,132,252', vx:  0.00005, vy:  0.00007 },
-      { x: 0.88, y: 0.65, r: 0.18, color: '124,58,237',  vx: -0.00009, vy:  0.00003 },
+      { x: 0.72, y: 0.18, r: 0.32, color: '16,185,129',  vx:  0.00008, vy:  0.00005 },
+      { x: 0.18, y: 0.55, r: 0.26, color: '52,211,153',  vx: -0.00006, vy: -0.00004 },
+      { x: 0.50, y: 0.85, r: 0.22, color: '110,231,183', vx:  0.00005, vy:  0.00007 },
+      { x: 0.88, y: 0.65, r: 0.18, color: '5,150,105',   vx: -0.00009, vy:  0.00003 },
     ];
 
     const DUST = Array.from({ length: 40 }, () => ({
@@ -98,7 +98,7 @@ export function HeroSection() {
         if (d.x < 0) d.x = 1; if (d.x > 1) d.x = 0;
         ctx.globalAlpha = d.opacity;
         const dg = ctx.createRadialGradient(d.x*W, d.y*H, 0, d.x*W, d.y*H, d.r);
-        dg.addColorStop(0, 'rgba(167,139,250,0.9)'); dg.addColorStop(1, 'rgba(139,92,246,0)');
+        dg.addColorStop(0, 'rgba(52,211,153,0.9)'); dg.addColorStop(1, 'rgba(16,185,129,0)');
         ctx.fillStyle = dg; ctx.beginPath(); ctx.arc(d.x*W, d.y*H, d.r, 0, Math.PI*2); ctx.fill();
       }
       ctx.globalAlpha = 1;
@@ -117,8 +117,8 @@ export function HeroSection() {
         const nx = s.vx / Math.sqrt(s.vx*s.vx + s.vy*s.vy);
         const ny = s.vy / Math.sqrt(s.vx*s.vx + s.vy*s.vy);
         const grd = ctx.createLinearGradient(s.x*W - nx*tailLen, s.y*H - ny*tailLen, s.x*W, s.y*H);
-        grd.addColorStop(0, 'rgba(139,92,246,0)');
-        grd.addColorStop(0.7, `rgba(167,139,250,${alpha*0.5})`);
+        grd.addColorStop(0, 'rgba(16,185,129,0)');
+        grd.addColorStop(0.7, `rgba(52,211,153,${alpha*0.5})`);
         grd.addColorStop(1, `rgba(255,255,255,${alpha*0.9})`);
         ctx.strokeStyle = grd; ctx.lineWidth = 1.5;
         ctx.beginPath();
@@ -136,40 +136,35 @@ export function HeroSection() {
 
   return (
     <section className="relative min-h-screen flex items-center">
-      {/* Background */}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, #080510 0%, #0F0720 30%, #1A0B2E 60%, #080510 100%)' }} />
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, #021a0f 0%, #03261a 30%, #042f1e 60%, #021a0f 100%)' }} />
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-80" aria-hidden="true" />
 
-      {/* Glow accents */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] pointer-events-none"
-        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(139,92,246,0.12) 0%, transparent 70%)' }} />
+        style={{ background: 'radial-gradient(ellipse 60% 50% at 50% 0%, rgba(16,185,129,0.1) 0%, transparent 70%)' }} />
       <div className="absolute top-1/3 left-0 w-[400px] h-[400px] pointer-events-none"
-        style={{ background: 'radial-gradient(circle at 0% 50%, rgba(167,139,250,0.06) 0%, transparent 60%)' }} />
+        style={{ background: 'radial-gradient(circle at 0% 50%, rgba(52,211,153,0.05) 0%, transparent 60%)' }} />
       <div className="absolute bottom-0 right-0 w-[500px] h-[400px] pointer-events-none"
-        style={{ background: 'radial-gradient(circle at 100% 80%, rgba(124,58,237,0.08) 0%, transparent 60%)' }} />
+        style={{ background: 'radial-gradient(circle at 100% 80%, rgba(5,150,105,0.07) 0%, transparent 60%)' }} />
       <div className="absolute bottom-0 left-0 right-0 h-32 pointer-events-none"
-        style={{ background: 'linear-gradient(to top, rgba(8,5,16,0.95) 0%, transparent 100%)' }} />
+        style={{ background: 'linear-gradient(to top, rgba(2,26,15,0.95) 0%, transparent 100%)' }} />
 
       <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-16 sm:py-20 lg:py-24 w-full">
         <div className="grid lg:grid-cols-[1fr_1.15fr] gap-10 lg:gap-14 items-center">
-          {/* Left Column */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: visible ? 1 : 0, x: visible ? 0 : -20 }}
-            transition={{ duration: 0.7, ease: 'easeOut' }}
+            transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
             className="space-y-7"
           >
-            {/* Badge */}
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-violet-500/20 bg-violet-500/5 backdrop-blur-sm">
-              <Sparkles className="w-4 h-4 text-violet-400" />
-              <span className="text-sm font-medium text-violet-300/90">AI SEO Agent for Programmatic Growth</span>
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-emerald-500/20 bg-emerald-500/5 backdrop-blur-sm">
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <span className="text-sm font-medium text-emerald-300/90">AI SEO Agent for Programmatic Growth</span>
             </span>
 
-            {/* Heading */}
             <div className="space-y-4">
               <h1 className="text-[2rem] sm:text-5xl lg:text-[3.4rem] font-extrabold leading-[1.08] tracking-[-0.025em] text-white">
                 Your Next 6 Months of SEO,{' '}
-                <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(95deg, #c4b5fd 0%, #a78bfa 35%, #8b5cf6 70%, #7c3aed 100%)' }}>
+                <span className="bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(95deg, #6ee7b7 0%, #34d399 35%, #10b981 70%, #059669 100%)' }}>
                   Done This Week!
                 </span>
               </h1>
@@ -178,34 +173,31 @@ export function HeroSection() {
               </p>
             </div>
 
-            {/* CTA */}
             <div className="space-y-3">
               <CTAButton />
               <p className="text-sm text-slate-500 flex items-center gap-1.5">
-                <span className="text-violet-400">&#10024;</span>
+                <span className="text-emerald-400">&#10024;</span>
                 Get 10 FREE SEO Pages &bull; No Card Needed &bull; 1-on-1 Setup Call
               </p>
             </div>
 
-            {/* Trust Points */}
             <div className="flex flex-wrap gap-3 pt-1">
               {trustPoints.map((point) => (
                 <div
                   key={point.label}
-                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-violet-500/10 bg-violet-500/5 backdrop-blur-sm"
+                  className="flex items-center gap-2 px-3 py-2 rounded-lg border border-emerald-500/10 bg-emerald-500/5 backdrop-blur-sm"
                 >
-                  <point.icon className="w-4 h-4 text-violet-400" />
+                  <point.icon className="w-4 h-4 text-emerald-400" />
                   <span className="text-sm font-medium text-slate-300">{point.label}</span>
                 </div>
               ))}
             </div>
           </motion.div>
 
-          {/* Right Column */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: visible ? 1 : 0, x: visible ? 0 : 20 }}
-            transition={{ duration: 0.7, delay: 0.2, ease: 'easeOut' }}
+            transition={{ duration: 0.5, delay: 0.15, ease: [0.22, 1, 0.36, 1] }}
             className="w-full"
           >
             <AIWorkflowDemo />

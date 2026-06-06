@@ -11,40 +11,40 @@ const brandMetrics = [
   { label: 'Brand Match', value: '98%' },
 ];
 
-const colors = ['#8B5CF6', '#A78BFA', '#6D28D9', '#C4B5FD'];
+const colors = ['#10B981', '#34D399', '#059669', '#6EE7B7'];
 
 export function BrandStep() {
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
     const timers = [
-      setTimeout(() => setStage(1), 600),
-      setTimeout(() => setStage(2), 1800),
-      setTimeout(() => setStage(3), 3200),
+      setTimeout(() => setStage(1), 400),
+      setTimeout(() => setStage(2), 1400),
+      setTimeout(() => setStage(3), 2600),
     ];
     return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
+      initial={{ opacity: 0, y: 6 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.25 }}
-      className="absolute inset-0 flex flex-col gap-3"
+      exit={{ opacity: 0, y: -6 }}
+      transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+      className="absolute inset-0 flex flex-col gap-2.5"
     >
       {/* Website preview card */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#0A0714] border border-violet-500/15">
-        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shrink-0">
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#041A12] border border-emerald-500/15">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-600 to-green-700 flex items-center justify-center shrink-0">
           <Globe className="w-5 h-5 text-white" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-medium text-white truncate">yourbrand.com</p>
-          <p className="text-[11px] text-slate-500">Connecting &amp; analyzing...</p>
+          <p className="text-[11px] text-slate-500">{stage >= 1 ? 'Connected' : 'Connecting...'}</p>
         </div>
         {stage >= 1 && (
-          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="shrink-0">
-            <CheckCircle2 className="w-5 h-5 text-violet-400" />
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: 'spring', stiffness: 400, damping: 15 }} className="shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
           </motion.div>
         )}
       </div>
@@ -52,15 +52,15 @@ export function BrandStep() {
       {/* Extracted visuals */}
       {stage >= 1 && (
         <motion.div
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.2 }}
           className="flex gap-2"
         >
-          {/* Logo mock */}
-          <div className="flex-1 p-3 rounded-xl bg-[#0A0714] border border-violet-500/10">
+          <div className="flex-1 p-3 rounded-xl bg-[#041A12] border border-emerald-500/10">
             <p className="text-[9px] uppercase tracking-wider text-slate-600 mb-2">Logo & Colors</p>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600" />
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600" />
               <div className="flex gap-1">
                 {colors.map((c) => (
                   <div key={c} className="w-4 h-4 rounded-full border border-white/10" style={{ backgroundColor: c }} />
@@ -68,8 +68,7 @@ export function BrandStep() {
               </div>
             </div>
           </div>
-          {/* Fonts mock */}
-          <div className="flex-1 p-3 rounded-xl bg-[#0A0714] border border-violet-500/10">
+          <div className="flex-1 p-3 rounded-xl bg-[#041A12] border border-emerald-500/10">
             <p className="text-[9px] uppercase tracking-wider text-slate-600 mb-2">Typography</p>
             <p className="text-sm font-bold text-white leading-none">Inter</p>
             <p className="text-xs text-slate-400 mt-1">Aa Bb Cc 123</p>
@@ -80,14 +79,15 @@ export function BrandStep() {
       {/* Brand Intelligence dashboard */}
       {stage >= 2 && (
         <motion.div
-          initial={{ opacity: 0, y: 6 }}
+          initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex-1 p-3 rounded-xl border border-violet-500/15 bg-gradient-to-br from-violet-500/5 to-transparent"
+          transition={{ duration: 0.2 }}
+          className="flex-1 p-3 rounded-xl border border-emerald-500/15 bg-gradient-to-br from-emerald-500/5 to-transparent"
         >
-          <div className="flex items-center justify-between mb-3">
-            <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">Brand Intelligence</p>
+          <div className="flex items-center justify-between mb-2.5">
+            <p className="text-[10px] font-semibold text-emerald-400 uppercase tracking-wider">Brand Intelligence</p>
             {stage >= 3 && (
-              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded-full">
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.15 }} className="text-[10px] text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-full">
                 Complete
               </motion.span>
             )}
@@ -96,22 +96,21 @@ export function BrandStep() {
             {brandMetrics.map((m, i) => (
               <motion.div
                 key={m.label}
-                initial={{ opacity: 0, y: 4 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
-                className="text-center p-2 rounded-lg bg-[#080510]/60"
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: i * 0.05, duration: 0.15 }}
+                className="text-center p-2 rounded-lg bg-[#021a0f]/60"
               >
                 <p className="text-[9px] text-slate-500 mb-0.5">{m.label}</p>
                 <p className="text-xs font-bold text-white">{m.value}</p>
               </motion.div>
             ))}
           </div>
-          {/* Progress indicators */}
-          <div className="mt-3 grid grid-cols-3 gap-2">
+          <div className="mt-2.5 grid grid-cols-3 gap-2">
             {['Pages Scanned', 'CTAs Found', 'Tone Score'].map((label, i) => (
               <div key={label} className="text-center">
                 <p className="text-[9px] text-slate-600">{label}</p>
-                <p className="text-xs font-semibold text-violet-300">{['24', '8', '94%'][i]}</p>
+                <p className="text-xs font-semibold text-emerald-300">{['24', '8', '94%'][i]}</p>
               </div>
             ))}
           </div>
