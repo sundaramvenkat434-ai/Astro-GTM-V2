@@ -1,6 +1,5 @@
 'use client';
 
-import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 interface WorkflowStepperProps {
@@ -27,7 +26,7 @@ export function WorkflowStepper({ steps, activeStep, onStepClick, duration }: Wo
   }, [activeStep, duration]);
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1 p-1 rounded-xl bg-gray-50 border border-gray-100">
       {steps.map((step, i) => {
         const isActive = i === activeStep;
         const isPast = i < activeStep;
@@ -39,27 +38,27 @@ export function WorkflowStepper({ steps, activeStep, onStepClick, duration }: Wo
           >
             <div className={`flex items-center justify-center gap-1.5 px-2 sm:px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 ${
               isActive
-                ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/25'
+                ? 'bg-white text-emerald-700 shadow-sm border border-emerald-100'
                 : isPast
-                ? 'bg-emerald-500/5 text-emerald-400/60 border border-transparent'
-                : 'text-slate-600 border border-transparent'
+                ? 'text-emerald-600'
+                : 'text-gray-400'
             }`}>
               <span className={`w-5 h-5 flex items-center justify-center rounded-full text-[10px] font-bold shrink-0 ${
                 isActive
                   ? 'bg-emerald-500 text-white'
                   : isPast
-                  ? 'bg-emerald-500/30 text-emerald-300'
-                  : 'bg-slate-700/50 text-slate-500'
+                  ? 'bg-emerald-100 text-emerald-600'
+                  : 'bg-gray-100 text-gray-400'
               }`}>
                 {isPast ? '\u2713' : i + 1}
               </span>
               <span className="hidden sm:inline">{step}</span>
             </div>
             {isActive && (
-              <div className="absolute bottom-0 left-2 right-2 h-0.5 bg-emerald-900/40 rounded-full overflow-hidden">
+              <div className="absolute bottom-0 left-3 right-3 h-0.5 bg-emerald-100 rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-emerald-400 rounded-full transition-none"
-                  style={{ width: `${progress * 100}%` }}
+                  className="h-full bg-emerald-500 rounded-full"
+                  style={{ width: `${progress * 100}%`, transition: 'none' }}
                 />
               </div>
             )}

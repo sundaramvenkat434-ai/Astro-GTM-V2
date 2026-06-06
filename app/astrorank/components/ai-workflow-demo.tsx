@@ -23,13 +23,11 @@ export function AIWorkflowDemo() {
   }, []);
 
   return (
-    <div className="relative w-full max-w-[580px] mx-auto lg:max-w-none">
-      <div className="absolute -inset-6 rounded-3xl bg-emerald-500/5 blur-3xl pointer-events-none" />
-
+    <div className="relative w-full max-w-[600px] mx-auto lg:max-w-none">
       <AnimatedBrowser>
         <WorkflowStepper steps={STEPS} activeStep={activeStep} onStepClick={setActiveStep} duration={STEP_DURATION} />
 
-        <div className="relative h-[340px] sm:h-[350px] mt-3 overflow-hidden">
+        <div className="relative h-[360px] sm:h-[370px] mt-4 overflow-hidden">
           <AnimatePresence mode="wait">
             {activeStep === 0 && <BrandStep key="brand" />}
             {activeStep === 1 && <ResearchStep key="research" />}
