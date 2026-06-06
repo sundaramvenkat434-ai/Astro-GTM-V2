@@ -2,100 +2,116 @@
 
 import { motion } from 'framer-motion';
 import { useState, useEffect } from 'react';
-import { Globe, Brain, Palette, CircleCheck as CheckCircle2 } from 'lucide-react';
+import { Globe, CircleCheck as CheckCircle2 } from 'lucide-react';
 
-const actions = [
-  { icon: Globe, text: 'Connecting to website...', done: 'Connected' },
-  { icon: Brain, text: 'Understanding business...', done: 'Business analyzed' },
-  { icon: CheckCircle2, text: 'Extracting brand intelligence...', done: 'Intelligence extracted' },
-  { icon: Palette, text: 'Learning design system...', done: 'Design system mapped' },
+const brandMetrics = [
+  { label: 'Industry', value: 'SaaS' },
+  { label: 'Audience', value: 'Marketers' },
+  { label: 'Tone', value: 'Professional' },
+  { label: 'Brand Match', value: '98%' },
 ];
 
-const brandCard = {
-  industry: 'SaaS',
-  audience: 'Marketers',
-  tone: 'Professional',
-  match: '98%',
-};
-
-const container = {
-  hidden: { opacity: 0 },
-  show: { opacity: 1, transition: { staggerChildren: 0.6 } },
-};
-
-const item = {
-  hidden: { opacity: 0, x: -10 },
-  show: { opacity: 1, x: 0 },
-};
+const colors = ['#8B5CF6', '#A78BFA', '#6D28D9', '#C4B5FD'];
 
 export function BrandStep() {
-  const [progress, setProgress] = useState(0);
+  const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      setProgress((p) => (p < actions.length ? p + 1 : p));
-    }, 1100);
-    return () => clearInterval(timer);
+    const timers = [
+      setTimeout(() => setStage(1), 600),
+      setTimeout(() => setStage(2), 1800),
+      setTimeout(() => setStage(3), 3200),
+    ];
+    return () => timers.forEach(clearTimeout);
   }, []);
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -10 }}
-      transition={{ duration: 0.3 }}
-      className="space-y-4"
+      exit={{ opacity: 0, y: -8 }}
+      transition={{ duration: 0.25 }}
+      className="absolute inset-0 flex flex-col gap-3"
     >
-      {/* URL input */}
-      <div className="flex items-center gap-2 px-3 py-2.5 rounded-lg bg-[#02140F] border border-emerald-500/20">
-        <Globe className="w-4 h-4 text-emerald-500/60" />
-        <span className="text-sm font-mono text-emerald-300">https://yourbrand.com</span>
-        <div className="ml-auto w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+      {/* Website preview card */}
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-[#0A0714] border border-violet-500/15">
+        <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-600 to-purple-700 flex items-center justify-center shrink-0">
+          <Globe className="w-5 h-5 text-white" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-sm font-medium text-white truncate">yourbrand.com</p>
+          <p className="text-[11px] text-slate-500">Connecting &amp; analyzing...</p>
+        </div>
+        {stage >= 1 && (
+          <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="shrink-0">
+            <CheckCircle2 className="w-5 h-5 text-violet-400" />
+          </motion.div>
+        )}
       </div>
 
-      {/* Action list */}
-      <motion.div variants={container} initial="hidden" animate="show" className="space-y-2.5">
-        {actions.map((action, i) => {
-          const isDone = i < progress;
-          return (
-            <motion.div
-              key={action.text}
-              variants={item}
-              className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-all duration-500 ${
-                isDone ? 'bg-emerald-500/5 border border-emerald-500/15' : 'border border-transparent'
-              }`}
-            >
-              <action.icon className={`w-4 h-4 ${isDone ? 'text-emerald-400' : 'text-gray-600'}`} />
-              <span className={`text-sm ${isDone ? 'text-emerald-300' : 'text-gray-500'}`}>
-                {isDone ? action.done : action.text}
-              </span>
-              {isDone && (
-                <motion.span
-                  initial={{ scale: 0 }}
-                  animate={{ scale: 1 }}
-                  className="ml-auto text-emerald-400"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                </motion.span>
-              )}
-            </motion.div>
-          );
-        })}
-      </motion.div>
-
-      {/* Brand Intelligence Card */}
-      {progress >= 3 && (
+      {/* Extracted visuals */}
+      {stage >= 1 && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 0, y: 6 }}
           animate={{ opacity: 1, y: 0 }}
-          className="mt-3 p-3 rounded-xl border border-emerald-500/20 bg-gradient-to-br from-emerald-500/5 to-transparent"
+          className="flex gap-2"
         >
-          <p className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider mb-2">Brand Intelligence</p>
+          {/* Logo mock */}
+          <div className="flex-1 p-3 rounded-xl bg-[#0A0714] border border-violet-500/10">
+            <p className="text-[9px] uppercase tracking-wider text-slate-600 mb-2">Logo & Colors</p>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-violet-500 to-fuchsia-600" />
+              <div className="flex gap-1">
+                {colors.map((c) => (
+                  <div key={c} className="w-4 h-4 rounded-full border border-white/10" style={{ backgroundColor: c }} />
+                ))}
+              </div>
+            </div>
+          </div>
+          {/* Fonts mock */}
+          <div className="flex-1 p-3 rounded-xl bg-[#0A0714] border border-violet-500/10">
+            <p className="text-[9px] uppercase tracking-wider text-slate-600 mb-2">Typography</p>
+            <p className="text-sm font-bold text-white leading-none">Inter</p>
+            <p className="text-xs text-slate-400 mt-1">Aa Bb Cc 123</p>
+          </div>
+        </motion.div>
+      )}
+
+      {/* Brand Intelligence dashboard */}
+      {stage >= 2 && (
+        <motion.div
+          initial={{ opacity: 0, y: 6 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex-1 p-3 rounded-xl border border-violet-500/15 bg-gradient-to-br from-violet-500/5 to-transparent"
+        >
+          <div className="flex items-center justify-between mb-3">
+            <p className="text-[10px] font-semibold text-violet-400 uppercase tracking-wider">Brand Intelligence</p>
+            {stage >= 3 && (
+              <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-[10px] text-violet-300 bg-violet-500/10 px-2 py-0.5 rounded-full">
+                Complete
+              </motion.span>
+            )}
+          </div>
           <div className="grid grid-cols-4 gap-2">
-            {Object.entries(brandCard).map(([key, value]) => (
-              <div key={key} className="text-center">
-                <p className="text-[10px] text-gray-500 capitalize">{key === 'match' ? 'Brand Match' : key}</p>
-                <p className="text-sm font-semibold text-white">{value}</p>
+            {brandMetrics.map((m, i) => (
+              <motion.div
+                key={m.label}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="text-center p-2 rounded-lg bg-[#080510]/60"
+              >
+                <p className="text-[9px] text-slate-500 mb-0.5">{m.label}</p>
+                <p className="text-xs font-bold text-white">{m.value}</p>
+              </motion.div>
+            ))}
+          </div>
+          {/* Progress indicators */}
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {['Pages Scanned', 'CTAs Found', 'Tone Score'].map((label, i) => (
+              <div key={label} className="text-center">
+                <p className="text-[9px] text-slate-600">{label}</p>
+                <p className="text-xs font-semibold text-violet-300">{['24', '8', '94%'][i]}</p>
               </div>
             ))}
           </div>
