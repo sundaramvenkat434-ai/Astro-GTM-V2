@@ -25,7 +25,7 @@ export function BrandStep() {
       className="absolute inset-0 flex flex-col gap-3"
     >
       {/* URL input card */}
-      <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-gray-200 shadow-sm">
+      <div className="flex items-center gap-3 p-3 rounded-xl bg-white border border-emerald-100 shadow-sm">
         <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center shrink-0 shadow-sm">
           <Globe className="w-5 h-5 text-white" />
         </div>
@@ -51,16 +51,16 @@ export function BrandStep() {
           className="grid grid-cols-2 gap-3"
         >
           {/* Website preview */}
-          <div className="rounded-xl border border-gray-200 overflow-hidden bg-white shadow-sm">
-            <div className="h-4 bg-gray-50 border-b border-gray-100 flex items-center px-2 gap-1">
+          <div className="rounded-xl border border-emerald-100 overflow-hidden bg-white shadow-sm">
+            <div className="h-4 bg-emerald-50/60 border-b border-emerald-100/50 flex items-center px-2 gap-1">
               <div className="w-1.5 h-1.5 rounded-full bg-red-300" />
               <div className="w-1.5 h-1.5 rounded-full bg-yellow-300" />
               <div className="w-1.5 h-1.5 rounded-full bg-green-300" />
             </div>
             <div className="p-2.5 space-y-1.5">
               <div className="h-2.5 w-16 rounded bg-emerald-200" />
-              <div className="h-2 w-full rounded bg-gray-100" />
-              <div className="h-2 w-3/4 rounded bg-gray-100" />
+              <div className="h-2 w-full rounded bg-emerald-50" />
+              <div className="h-2 w-3/4 rounded bg-emerald-50" />
               <div className="flex gap-1.5 mt-2">
                 <div className="h-5 w-14 rounded bg-emerald-100 border border-emerald-200" />
                 <div className="h-5 w-14 rounded bg-gray-50 border border-gray-200" />
@@ -69,7 +69,7 @@ export function BrandStep() {
           </div>
 
           {/* Colors & font */}
-          <div className="rounded-xl border border-gray-200 bg-white p-3 shadow-sm space-y-2.5">
+          <div className="rounded-xl border border-emerald-100 bg-white p-3 shadow-sm space-y-2.5">
             <div>
               <p className="text-[9px] uppercase tracking-wider text-gray-400 font-semibold mb-1.5">Colors</p>
               <div className="flex gap-1.5">
@@ -93,7 +93,7 @@ export function BrandStep() {
           initial={{ opacity: 0, y: 3 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.15 }}
-          className="flex-1 rounded-xl border border-gray-200 bg-white p-3 shadow-sm"
+          className="flex-1 rounded-xl border border-emerald-100 bg-white p-3 shadow-sm"
         >
           <div className="flex items-center justify-between mb-2.5">
             <p className="text-xs font-semibold text-gray-700">Brand Intelligence</p>
@@ -115,7 +115,7 @@ export function BrandStep() {
                 initial={{ opacity: 0, scale: 0.9 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: i * 0.04 }}
-                className="text-center p-2 rounded-lg bg-gray-50 border border-gray-100"
+                className="text-center p-2 rounded-lg bg-emerald-50/50 border border-emerald-100/50"
               >
                 <p className="text-[8px] text-gray-400 uppercase tracking-wide">{m.label}</p>
                 <p className="text-xs font-bold text-gray-800 mt-0.5">{m.value}</p>

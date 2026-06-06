@@ -39,19 +39,19 @@ export function PublishStep() {
       className="absolute inset-0 flex flex-col gap-3"
     >
       {/* Publishing progress */}
-      <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
-        <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
+      <div className="rounded-xl border border-emerald-100 bg-white shadow-sm overflow-hidden">
+        <div className="flex items-center justify-between px-3 py-2 border-b border-emerald-50 bg-emerald-50/30">
           <p className="text-xs font-semibold text-gray-700 flex items-center gap-1.5">
             <Sparkles className="w-3.5 h-3.5 text-emerald-500" /> Publishing Article
           </p>
           <span className="text-[10px] font-mono text-gray-500">{progress}%</span>
         </div>
         <div className="p-3">
-          <div className="h-2 rounded-full bg-gray-100 overflow-hidden mb-3">
+          <div className="h-2 rounded-full bg-emerald-50 overflow-hidden mb-3">
             <div className="h-full bg-gradient-to-r from-emerald-500 to-green-400 rounded-full transition-[width] duration-75" style={{ width: `${progress}%` }} />
           </div>
           {/* Article preview */}
-          <div className="rounded-lg border border-gray-100 bg-gray-50 p-3 space-y-2">
+          <div className="rounded-lg border border-emerald-100/50 bg-emerald-50/20 p-3 space-y-2">
             <div className="flex items-start gap-3">
               <div className="flex-1 space-y-1.5">
                 <div className="h-3 w-44 rounded bg-gray-300" />
@@ -74,7 +74,7 @@ export function PublishStep() {
           initial={{ opacity: 0, y: 3 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.12 }}
-          className="rounded-xl border border-gray-200 bg-white shadow-sm p-3"
+          className="rounded-xl border border-emerald-100 bg-white shadow-sm p-3"
         >
           <p className="text-[10px] font-semibold text-gray-500 uppercase tracking-wider mb-2">SEO Optimization</p>
           <div className="grid grid-cols-4 gap-2">
@@ -108,7 +108,7 @@ export function PublishStep() {
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.04 }}
-              className="p-3 rounded-xl border border-gray-200 bg-white shadow-sm text-center"
+              className="p-3 rounded-xl border border-emerald-100 bg-white shadow-sm text-center"
             >
               <div className="w-8 h-8 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center mx-auto mb-1.5">
                 <a.icon className="w-4 h-4 text-emerald-600" />

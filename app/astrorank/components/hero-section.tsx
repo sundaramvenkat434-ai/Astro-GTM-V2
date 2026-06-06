@@ -136,22 +136,20 @@ export function HeroSection() {
       <div className="absolute inset-0" style={{ background: 'linear-gradient(155deg, #011f12 0%, #03311d 20%, #064e30 45%, #053d26 65%, #022b18 85%, #011a0e 100%)' }} />
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full opacity-75" aria-hidden="true" />
 
-      {/* Extra depth elements */}
+      {/* Ambient glow elements */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[900px] h-[400px] pointer-events-none" style={{ background: 'radial-gradient(ellipse 55% 45% at 50% 0%, rgba(16,185,129,0.1) 0%, transparent 70%)' }} />
       <div className="absolute top-1/4 left-0 w-[350px] h-[350px] pointer-events-none" style={{ background: 'radial-gradient(circle at 0% 50%, rgba(52,211,153,0.06) 0%, transparent 60%)' }} />
       <div className="absolute bottom-1/4 right-0 w-[400px] h-[400px] pointer-events-none" style={{ background: 'radial-gradient(circle at 100% 60%, rgba(5,150,105,0.08) 0%, transparent 60%)' }} />
       <div className="absolute bottom-0 left-0 right-0 h-40 pointer-events-none" style={{ background: 'linear-gradient(to top, #011a0e 0%, transparent 100%)' }} />
-      {/* Subtle grid overlay */}
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: 'linear-gradient(rgba(52,211,153,1) 1px, transparent 1px), linear-gradient(90deg, rgba(52,211,153,1) 1px, transparent 1px)', backgroundSize: '60px 60px' }} />
 
       <div className="relative z-10 max-w-7xl mx-auto px-5 sm:px-6 lg:px-8 py-14 sm:py-20 lg:py-24 w-full">
-        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-10 lg:gap-16 items-center">
+        <div className="grid lg:grid-cols-[1fr_1.2fr] gap-12 lg:gap-20 items-center">
           {/* Left Column */}
           <motion.div
             initial={{ opacity: 0, y: 16 }}
             animate={{ opacity: visible ? 1 : 0, y: visible ? 0 : 16 }}
             transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
-            className="space-y-6"
+            className="space-y-8"
           >
             {/* Badge */}
             <span className="inline-flex items-center gap-2.5 px-4 py-2 rounded-full border border-emerald-400/25 bg-emerald-900/30 backdrop-blur-sm">
@@ -163,32 +161,32 @@ export function HeroSection() {
                 />
                 <span className="w-2 h-2 rounded-full bg-emerald-400" />
               </span>
-              <span className="text-sm font-semibold text-emerald-200">AI SEO Auto-Pilot</span>
+              <span className="text-sm font-semibold text-emerald-200">AstroRank AI SEO</span>
             </span>
 
             {/* Heading */}
-            <div className="space-y-2">
-              <h1 className="text-[1.75rem] sm:text-[2.6rem] lg:text-[3.2rem] font-extrabold leading-[1.1] tracking-[-0.03em] text-white">
-                <span className="block whitespace-nowrap">Your Next 6 Months of SEO,</span>
+            <div className="space-y-5">
+              <h1 className="text-[1.75rem] sm:text-[2.6rem] lg:text-[3.2rem] font-extrabold leading-[1.08] tracking-[-0.03em] text-white">
+                <span className="block">6 Months Of SEO</span>
                 <span className="block mt-1 bg-clip-text text-transparent" style={{ backgroundImage: 'linear-gradient(100deg, #86efac 0%, #6ee7b7 25%, #34d399 50%, #6ee7b7 75%, #86efac 100%)' }}>
-                  Done This Week!
+                  Delivered This Week
                 </span>
               </h1>
-              <p className="text-[15px] sm:text-base text-emerald-100/70 leading-relaxed max-w-md pt-2">
-                AstroRank connects to your site, learns your brand, discovers untapped keywords, and publishes hundreds of optimized SEO pages automatically.
+              <p className="text-[15px] sm:text-base text-emerald-100/75 leading-relaxed max-w-md">
+                AstroRank connects to your site, learns your brand, researches untapped keywords, and publishes hundreds of optimized SEO pages automatically.
               </p>
             </div>
 
             {/* CTA */}
-            <div className="pt-1">
+            <div>
               <CTAButton />
             </div>
 
-            {/* Bullet points */}
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {/* Bullet points - stacked */}
+            <div className="flex flex-col gap-2.5">
               {bulletPoints.map((point) => (
-                <span key={point} className="flex items-center gap-1.5 text-sm text-emerald-100/80">
-                  <CheckCircle className="w-4 h-4 text-emerald-400" />
+                <span key={point} className="flex items-center gap-2 text-sm text-emerald-100/80">
+                  <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0" />
                   {point}
                 </span>
               ))}

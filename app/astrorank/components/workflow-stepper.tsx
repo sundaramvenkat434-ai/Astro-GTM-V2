@@ -26,7 +26,7 @@ export function WorkflowStepper({ steps, activeStep, onStepClick, duration }: Wo
   }, [activeStep, duration]);
 
   return (
-    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white border border-gray-200 shadow-sm">
+    <div className="flex items-center gap-0.5 p-1 rounded-lg bg-white/70 border border-emerald-100 shadow-sm">
       {steps.map((step, i) => {
         const isActive = i === activeStep;
         const isPast = i < activeStep;
