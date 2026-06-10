@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info, Download } from 'lucide-react';
+import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info, Download, RefreshCw, TrendingUp } from 'lucide-react';
 
 type AIResearcherSubTab = 'brand' | 'competitors' | 'keywords' | 'page-ideas' | 'interlinking';
 
@@ -673,6 +673,12 @@ function isGenericDomain(url: string): boolean {
   }
 }
 
+interface VolumeEntry {
+  primary_keyword: string;
+  monthly_search_volume: number;
+  confidence: number;
+}
+
 interface KeywordStrategy {
   id: string;
   tenant_id: string;
@@ -693,6 +699,7 @@ interface KeywordStrategy {
     num_pages?: number;
     additional_instructions?: string;
   };
+  page_search_volumes: Record<string, VolumeEntry>;
   created_at: string;
 }
 
@@ -1233,9 +1240,100 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
 
 /* ─── Keyword Strategy Results View ─────────────────────── */
 
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .trim()
+    .replace(/\s+/g, '-')
+    .slice(0, 80);
+}
+
+function VolumeBadge({ volume, loading }: { volume?: VolumeEntry; loading: boolean }) {
+  if (loading) {
+    return <span className="inline-block w-16 h-4 bg-gray-200 rounded animate-pulse" />;
+  }
+  if (!volume) return <span className="text-xs text-gray-300">—</span>;
+
+  const v = volume.monthly_search_volume;
+  const colorClass = v >= 10000
+    ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+    : v >= 1000
+    ? 'bg-amber-50 text-amber-700 border-amber-200'
+    : 'bg-red-50 text-red-600 border-red-200';
+
+  const label = v >= 10000
+    ? `${Math.round(v / 1000)}K+`
+    : v >= 1000
+    ? `${(v / 1000).toFixed(1)}K`
+    : String(v);
+
+  const tier = v >= 10000 ? 'High' : v >= 1000 ? 'Medium' : 'Niche';
+
+  return (
+    <span
+      title={`AI estimated monthly searches (${tier}) — confidence ${volume.confidence}%`}
+      className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-full border ${colorClass} cursor-default`}
+    >
+      <TrendingUp className="w-2.5 h-2.5" />
+      {label}
+    </span>
+  );
+}
+
 function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStrategy; onNewStrategy: () => void }) {
+  const [volumes, setVolumes] = useState<Record<string, VolumeEntry>>(strategy.page_search_volumes || {});
+  const [enriching, setEnriching] = useState(false);
+
   const totalKeywords = strategy.themes.reduce((acc, t) => acc + (t.keywords?.length || 0), 0);
   const totalPages = strategy.themes.reduce((acc, t) => acc + (t.suggested_pages?.length || 0), 0);
+
+  // Collect all pages across all themes into a flat list for the batch call
+  const allPages = strategy.themes.flatMap((theme) =>
+    (theme.suggested_pages || []).map((p) => ({
+      title: p.title,
+      slug: slugify(p.title),
+      keyword: p.keyword,
+    }))
+  );
+
+  const hasVolumes = Object.keys(volumes).length > 0;
+
+  const enrichVolumes = useCallback(async () => {
+    if (allPages.length === 0) return;
+    setEnriching(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keyword-research`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'enrich-volume',
+            tenant_id: strategy.tenant_id,
+            strategy_id: strategy.id,
+            pages: allPages,
+            country: strategy.country_code || 'us',
+          }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.data) setVolumes(data.data);
+      }
+    } catch { /* silently fail — volumes are non-critical */ }
+    setEnriching(false);
+  }, [strategy.id, strategy.tenant_id, strategy.country_code]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Auto-enrich only if no volumes have been saved yet
+  useEffect(() => {
+    if (!hasVolumes && allPages.length > 0) {
+      enrichVolumes();
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   function downloadPDF() {
     const lines: string[] = [];
@@ -1259,8 +1357,11 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
       if (theme.suggested_pages && theme.suggested_pages.length > 0) {
         lines.push(`  Suggested Pages:`);
         theme.suggested_pages.forEach((p, pi) => {
+          const slug = slugify(p.title);
+          const vol = volumes[slug];
           lines.push(`    ${pi + 1}. ${p.title}`);
           lines.push(`       Target keyword: ${p.keyword}`);
+          if (vol) lines.push(`       Primary keyword: ${vol.primary_keyword} | Est. volume: ${vol.monthly_search_volume}/mo`);
         });
       }
       lines.push('');
@@ -1269,7 +1370,6 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
     lines.push(`${'='.repeat(60)}`);
     lines.push(`End of Report`);
 
-    // Create downloadable text file (universal, no extra dependencies)
     const blob = new Blob([lines.join('\n')], { type: 'text/plain;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -1282,16 +1382,27 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
   }
 
   function downloadCSV() {
-    const rows: string[][] = [['Theme', 'Opportunity Score', 'Page Title', 'Target Keyword']];
+    const rows: string[][] = [['Theme', 'Opportunity Score', 'Page Title', 'URL Slug', 'Target Keyword', 'Primary Keyword', 'Est. Monthly Volume', 'Confidence']];
     strategy.themes.forEach((theme) => {
       if (theme.suggested_pages && theme.suggested_pages.length > 0) {
         theme.suggested_pages.forEach((p) => {
-          rows.push([theme.name, String(theme.opportunity_score), p.title, p.keyword]);
+          const slug = slugify(p.title);
+          const vol = volumes[slug];
+          rows.push([
+            theme.name,
+            String(theme.opportunity_score),
+            p.title,
+            slug,
+            p.keyword,
+            vol?.primary_keyword || '',
+            vol ? String(vol.monthly_search_volume) : '',
+            vol ? String(vol.confidence) : '',
+          ]);
         });
       }
       (theme.keywords || []).forEach((kw) => {
         if (!theme.suggested_pages?.some((p) => p.keyword === kw)) {
-          rows.push([theme.name, String(theme.opportunity_score), '', kw]);
+          rows.push([theme.name, String(theme.opportunity_score), '', '', kw, '', '', '']);
         }
       });
     });
@@ -1320,6 +1431,17 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
             </p>
           </div>
           <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={enrichVolumes}
+              disabled={enriching}
+              className="gap-1.5 text-xs"
+              title="Re-run AI volume estimation for all pages"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${enriching ? 'animate-spin' : ''}`} />
+              {enriching ? 'Estimating...' : 'Refresh Volumes'}
+            </Button>
             <Button variant="outline" size="sm" onClick={downloadCSV} className="gap-1.5 text-xs">
               <FileText className="w-3.5 h-3.5" /> CSV
             </Button>
@@ -1387,13 +1509,25 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
               <div>
                 <label className="block text-xs font-medium text-gray-500 mb-2">Suggested Pages ({theme.suggested_pages.length})</label>
                 <div className="space-y-1.5">
-                  {theme.suggested_pages.map((page, pi) => (
-                    <div key={pi} className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg">
-                      <span className="text-[10px] font-bold text-gray-400 w-5 text-center shrink-0">{pi + 1}</span>
-                      <span className="text-sm text-gray-700">{page.title}</span>
-                      <span className="text-xs text-gray-400 ml-auto font-mono">{page.keyword}</span>
-                    </div>
-                  ))}
+                  {theme.suggested_pages.map((page, pi) => {
+                    const slug = slugify(page.title);
+                    const vol = volumes[slug];
+                    return (
+                      <div key={pi} className="flex items-center gap-3 px-3 py-2 bg-gray-50 border border-gray-100 rounded-lg">
+                        <span className="text-[10px] font-bold text-gray-400 w-5 text-center shrink-0">{pi + 1}</span>
+                        <span className="text-sm text-gray-700 flex-1 min-w-0">{page.title}</span>
+                        <span className="text-xs text-gray-400 font-mono shrink-0 hidden sm:block">{slug}</span>
+                        {(vol || enriching) && (
+                          <span className="inline-flex px-2 py-0.5 text-[11px] font-medium rounded bg-slate-100 text-slate-600 border border-slate-200 shrink-0 truncate max-w-[140px]" title={vol?.primary_keyword}>
+                            {enriching && !vol ? (
+                              <span className="inline-block w-20 h-3 bg-gray-200 rounded animate-pulse" />
+                            ) : vol?.primary_keyword}
+                          </span>
+                        )}
+                        <VolumeBadge volume={vol} loading={enriching && !vol} />
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

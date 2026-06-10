@@ -363,6 +363,134 @@ CRITICAL REQUIREMENTS:
       return jsonResponse({ success: true, data: saved });
     }
 
+    // ─── ACTION: enrich-volume ──────────────────────────────────
+    if (action === "enrich-volume") {
+      if (!OPENROUTER_API_KEY) {
+        return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
+      }
+
+      const { strategy_id, pages, country, industry } = body as {
+        strategy_id: string;
+        pages: { title: string; slug: string; keyword: string }[];
+        country?: string;
+        industry?: string;
+      };
+
+      if (!strategy_id) return jsonResponse({ error: "strategy_id is required" }, 400);
+      if (!pages || pages.length === 0) return jsonResponse({ error: "pages array is required" }, 400);
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+      // Load model + prompt from admin_settings
+      const { data: settingsRows } = await supabase
+        .from("admin_settings")
+        .select("key, value")
+        .in("key", ["ai_model_keyword_research", "ai_keyword_volume_prompt"]);
+
+      const settingsMap: Record<string, string> = {};
+      for (const row of settingsRows || []) {
+        settingsMap[row.key] = row.value;
+      }
+
+      const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-4o-mini";
+
+      const defaultSystemPrompt = `You are an SEO keyword research expert. Given a list of pages, estimate the primary search keyword and monthly search volume for each page.
+
+RULES:
+- primary_keyword must be 2-5 words only
+- monthly_search_volume must be an exact integer (no ranges, no approximations like "~1000")
+- confidence must be 0-100 representing how confident you are in the volume estimate
+- Estimates must be country-specific for the provided country code
+- Consider keyword difficulty, competition, and typical search volumes for the industry
+- Compare all keywords relative to each other for consistent relative sizing
+- Return ONLY valid JSON, no markdown, no explanation
+
+Return this exact JSON structure:
+{
+  "results": [
+    {
+      "slug": "page-slug",
+      "primary_keyword": "2-5 word phrase",
+      "monthly_search_volume": 1200,
+      "confidence": 72
+    }
+  ]
+}`;
+
+      let systemPrompt = settingsMap["ai_keyword_volume_prompt"] || defaultSystemPrompt;
+      // Replace template variables
+      systemPrompt = systemPrompt
+        .replace(/\{\{country\}\}/g, country || "us")
+        .replace(/\{\{industry\}\}/g, industry || "general");
+
+      const keywordsJson = JSON.stringify(pages, null, 2);
+      const userMessage = `Country: ${country || "us"}
+Industry: ${industry || "general"}
+
+Pages to analyze:
+${keywordsJson}`;
+
+      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": SUPABASE_URL,
+          "X-Title": "AstroGTM Volume Enrichment",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.3,
+          max_tokens: pages.length * 80 + 500,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!aiRes.ok) {
+        const errText = await aiRes.text();
+        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
+      }
+
+      const aiData = await aiRes.json();
+      let rawContent = aiData.choices?.[0]?.message?.content || "";
+      rawContent = rawContent.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
+
+      let parsed: { results: { slug: string; primary_keyword: string; monthly_search_volume: number; confidence: number }[] };
+      try {
+        parsed = JSON.parse(rawContent);
+      } catch {
+        return jsonResponse({ error: "Failed to parse AI response", raw: rawContent }, 500);
+      }
+
+      // Build volumes map keyed by slug
+      const volumesMap: Record<string, { primary_keyword: string; monthly_search_volume: number; confidence: number }> = {};
+      for (const item of parsed.results || []) {
+        if (item.slug) {
+          volumesMap[item.slug] = {
+            primary_keyword: item.primary_keyword,
+            monthly_search_volume: item.monthly_search_volume,
+            confidence: item.confidence,
+          };
+        }
+      }
+
+      // Persist to database
+      const { error: updateError } = await supabase
+        .from("gifaa_keyword_strategies")
+        .update({ page_search_volumes: volumesMap })
+        .eq("id", strategy_id);
+
+      if (updateError) {
+        return jsonResponse({ error: "Failed to save volumes", details: updateError.message }, 500);
+      }
+
+      return jsonResponse({ success: true, data: volumesMap });
+    }
+
     return jsonResponse({ error: `Unknown action: ${action}` }, 400);
   } catch (err) {
     return jsonResponse({ error: (err as Error).message || "unknown error" }, 500);
