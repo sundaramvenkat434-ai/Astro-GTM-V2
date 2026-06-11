@@ -927,7 +927,10 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
   }
 
   if (step === 'results' && strategy) {
-    return <KeywordStrategyView strategy={strategy} onNewStrategy={handleNewStrategy} />;
+    const industryContext = brandProfile
+      ? [brandProfile.brand?.category, brandProfile.brand?.description].filter(Boolean).join(' — ').slice(0, 200)
+      : undefined;
+    return <KeywordStrategyView strategy={strategy} onNewStrategy={handleNewStrategy} industry={industryContext} />;
   }
 
   if (step === 'generating') {
@@ -1281,19 +1284,19 @@ function VolumeBadge({ volume, loading }: { volume?: VolumeEntry; loading: boole
   );
 }
 
-function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStrategy; onNewStrategy: () => void }) {
+function KeywordStrategyView({ strategy, onNewStrategy, industry }: { strategy: KeywordStrategy; onNewStrategy: () => void; industry?: string }) {
   const [volumes, setVolumes] = useState<Record<string, VolumeEntry>>(strategy.page_search_volumes || {});
   const [enriching, setEnriching] = useState(false);
 
   const totalKeywords = strategy.themes.reduce((acc, t) => acc + (t.keywords?.length || 0), 0);
   const totalPages = strategy.themes.reduce((acc, t) => acc + (t.suggested_pages?.length || 0), 0);
 
-  // Collect all pages across all themes into a flat list for the batch call
+  // Collect all pages — send existing_keyword as the primary signal for the AI
   const allPages = strategy.themes.flatMap((theme) =>
     (theme.suggested_pages || []).map((p) => ({
       title: p.title,
       slug: slugify(p.title),
-      keyword: p.keyword,
+      existing_keyword: p.keyword,
     }))
   );
 
@@ -1317,6 +1320,7 @@ function KeywordStrategyView({ strategy, onNewStrategy }: { strategy: KeywordStr
             strategy_id: strategy.id,
             pages: allPages,
             country: strategy.country_code || 'us',
+            industry: industry || undefined,
           }),
         }
       );

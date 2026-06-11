@@ -371,7 +371,7 @@ CRITICAL REQUIREMENTS:
 
       const { strategy_id, pages, country, industry } = body as {
         strategy_id: string;
-        pages: { title: string; slug: string; keyword: string }[];
+        pages: { title: string; slug: string; existing_keyword: string }[];
         country?: string;
         industry?: string;
       };
@@ -381,7 +381,7 @@ CRITICAL REQUIREMENTS:
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-      // Load model + prompt from admin_settings
+      // Load model + prompt from admin_settings — warn if missing
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
@@ -392,43 +392,65 @@ CRITICAL REQUIREMENTS:
         settingsMap[row.key] = row.value;
       }
 
+      if (!settingsMap["ai_model_keyword_research"]) {
+        console.warn("[enrich-volume] ai_model_keyword_research not set in admin_settings, using default");
+      }
+      if (!settingsMap["ai_keyword_volume_prompt"]) {
+        console.warn("[enrich-volume] ai_keyword_volume_prompt not set in admin_settings, using default");
+      }
+
       const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-4o-mini";
 
-      const defaultSystemPrompt = `You are an SEO keyword research expert. Given a list of pages, estimate the primary search keyword and monthly search volume for each page.
+      // Default prompt — concrete calibration anchors keep volume estimates realistic.
+      // Priority for primary_keyword: existing_keyword > slug words > page title.
+      const defaultSystemPrompt = `You are an SEO keyword research expert. Given a list of pages, identify the best primary search keyword for each page and estimate its monthly search volume.
 
-RULES:
-- primary_keyword must be 2-5 words only
-- monthly_search_volume must be an exact integer (no ranges, no approximations like "~1000")
-- confidence must be 0-100 representing how confident you are in the volume estimate
-- Estimates must be country-specific for the provided country code
-- Consider keyword difficulty, competition, and typical search volumes for the industry
-- Compare all keywords relative to each other for consistent relative sizing
-- Return ONLY valid JSON, no markdown, no explanation
+KEYWORD SELECTION — priority order:
+1. Start with the "existing_keyword" field — this is the target keyword already chosen for the page. If it is 2-3 words and sounds like a real search query, use it as-is.
+2. If existing_keyword is too long (>3 words) or is a sentence fragment, extract its 2-3 most important words.
+3. Only fall back to deriving from the page title or slug if existing_keyword is blank.
 
-Return this exact JSON structure:
+KEYWORD RULES:
+- primary_keyword must be EXACTLY 2-3 words (never 1 word, never 4+ words)
+- Must be lowercase
+- Must sound like something a real person types into Google — not a marketing headline
+- Strip filler words: guide, tips, ultimate, complete, how, to, best, top, for
+- WRONG: "family financial organization tips" → RIGHT: "family budget app"
+- WRONG: "how to organize family finances" → RIGHT: "family finance tracker"
+- WRONG: "wedding gift registry ideas" → RIGHT: "gift registry"
+
+VOLUME RULES:
+- monthly_search_volume must be an exact integer representing realistic searches/month for country: {{country}}
+- Use relative sizing across all pages in this batch — pages on similar topics should have consistent relative volumes
+- Do NOT invent large numbers. Be conservative. Most niche long-tail pages get 100-2000/month.
+- confidence must be 0-100 (how certain you are about the volume estimate)
+
+Return ONLY valid JSON, no markdown, no explanation:
 {
   "results": [
     {
-      "slug": "page-slug",
-      "primary_keyword": "2-5 word phrase",
+      "slug": "exact-slug-from-input",
+      "primary_keyword": "2-3 word phrase",
       "monthly_search_volume": 1200,
-      "confidence": 72
+      "confidence": 65
     }
   ]
 }`;
 
       let systemPrompt = settingsMap["ai_keyword_volume_prompt"] || defaultSystemPrompt;
-      // Replace template variables
+      // Replace template variables in either the admin prompt or the default
+      const countryVal = country || "us";
+      const industryVal = industry || "general";
       systemPrompt = systemPrompt
-        .replace(/\{\{country\}\}/g, country || "us")
-        .replace(/\{\{industry\}\}/g, industry || "general");
+        .replace(/\{\{country\}\}/g, countryVal)
+        .replace(/\{\{industry\}\}/g, industryVal)
+        .replace(/\{\{keywords_json\}\}/g, JSON.stringify(pages, null, 2));
 
-      const keywordsJson = JSON.stringify(pages, null, 2);
-      const userMessage = `Country: ${country || "us"}
-Industry: ${industry || "general"}
+      const userMessage = `Country: ${countryVal}
+Industry: ${industryVal}
 
 Pages to analyze:
-${keywordsJson}`;
+${JSON.stringify(pages, null, 2)}`;
 
       const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -444,8 +466,8 @@ ${keywordsJson}`;
             { role: "system", content: systemPrompt },
             { role: "user", content: userMessage },
           ],
-          temperature: 0.3,
-          max_tokens: pages.length * 80 + 500,
+          temperature: 0,
+          max_tokens: pages.length * 100 + 500,
           response_format: { type: "json_object" },
         }),
       });
@@ -466,16 +488,53 @@ ${keywordsJson}`;
         return jsonResponse({ error: "Failed to parse AI response", raw: rawContent }, 500);
       }
 
-      // Build volumes map keyed by slug
+      // Build a set of valid input slugs for matching
+      const validSlugs = new Set(pages.map((p) => p.slug));
+
+      // Filler words to strip during post-processing
+      const FILLER = new Set(["guide", "tips", "ultimate", "complete", "how", "to", "best", "top", "for", "a", "an", "the", "and", "or", "of", "in", "on", "with"]);
+
+      function sanitizeKeyword(raw: string): string | null {
+        if (!raw || typeof raw !== "string") return null;
+        // Lowercase, remove punctuation
+        let kw = raw.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+        const words = kw.split(" ").filter((w) => w.length > 1);
+        // Remove leading/trailing filler
+        while (words.length > 0 && FILLER.has(words[0])) words.shift();
+        while (words.length > 0 && FILLER.has(words[words.length - 1])) words.pop();
+        if (words.length < 2) return null;
+        // Enforce 2-3 word limit
+        kw = words.slice(0, 3).join(" ");
+        return kw;
+      }
+
+      // Build volumes map keyed by slug with full validation
       const volumesMap: Record<string, { primary_keyword: string; monthly_search_volume: number; confidence: number }> = {};
       for (const item of parsed.results || []) {
-        if (item.slug) {
-          volumesMap[item.slug] = {
-            primary_keyword: item.primary_keyword,
-            monthly_search_volume: item.monthly_search_volume,
-            confidence: item.confidence,
-          };
+        // Skip slugs not in the original input
+        if (!item.slug || !validSlugs.has(item.slug)) continue;
+
+        const kw = sanitizeKeyword(item.primary_keyword);
+        if (!kw) {
+          console.warn(`[enrich-volume] Skipping slug "${item.slug}" — invalid primary_keyword: "${item.primary_keyword}"`);
+          continue;
         }
+
+        const volume = typeof item.monthly_search_volume === "number" ? Math.round(item.monthly_search_volume) : null;
+        if (volume === null || volume < 0) {
+          console.warn(`[enrich-volume] Skipping slug "${item.slug}" — invalid volume: ${item.monthly_search_volume}`);
+          continue;
+        }
+
+        const confidence = typeof item.confidence === "number"
+          ? Math.min(100, Math.max(0, Math.round(item.confidence)))
+          : 50;
+
+        volumesMap[item.slug] = {
+          primary_keyword: kw,
+          monthly_search_volume: volume,
+          confidence,
+        };
       }
 
       // Persist to database
