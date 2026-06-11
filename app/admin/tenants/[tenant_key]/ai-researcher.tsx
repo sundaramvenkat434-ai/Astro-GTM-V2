@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -85,7 +85,7 @@ export function AIResearcherModule({ tenantId, tenantKey }: { tenantId: string; 
       {activeTab === 'brand' && <BrandTab tenantId={tenantId} />}
       {activeTab === 'competitors' && <ComingSoonTab title="Competitors" description="Analyze competitor websites, content strategies, and identify gaps in your market positioning." />}
       {activeTab === 'keywords' && <KeywordsTab tenantId={tenantId} />}
-      {activeTab === 'page-ideas' && <ComingSoonTab title="Page Ideas" description="Generate content ideas and page concepts driven by keyword opportunities and audience intent." />}
+      {activeTab === 'page-ideas' && <PageIdeasTab tenantId={tenantId} />}
       {activeTab === 'interlinking' && <ComingSoonTab title="Interlinking" description="Optimize your internal linking structure for better crawlability and topical authority." />}
     </div>
   );
@@ -1706,5 +1706,399 @@ function MarketDiscoverySection({
         )}
       </div>
     </EditableSection>
+  );
+}
+
+/* ─── Page Ideas Tab (Keyword Opportunity Research) ─────── */
+
+interface KeywordOpportunity {
+  keyword: string;
+  search_volume: number;
+  difficulty: number;
+  intent: string;
+  funnel: string;
+  relevance: number;
+  keyword_type: string;
+  reasoning: string;
+  opportunity_score: number;
+  generated_pages?: { title: string; slug: string }[];
+}
+
+interface KeywordOpportunityRecord {
+  id: string;
+  tenant_id: string;
+  brand_intelligence_id: string | null;
+  keywords: KeywordOpportunity[];
+  generation_params: Record<string, unknown>;
+  country_code: string;
+  created_at: string;
+}
+
+function PageIdeasTab({ tenantId }: { tenantId: string }) {
+  const [record, setRecord] = useState<KeywordOpportunityRecord | null>(null);
+  const [brandProfile, setBrandProfile] = useState<BrandIntelligence | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [generating, setGenerating] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedRows, setExpandedRows] = useState<Set<number>>(new Set());
+  const [generatingPages, setGeneratingPages] = useState<Set<number>>(new Set());
+  const [sortField, setSortField] = useState<'opportunity_score' | 'search_volume' | 'difficulty' | 'relevance'>('opportunity_score');
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    async function load() {
+      const [oppRes, brandRes] = await Promise.all([
+        supabase
+          .from('gifaa_keyword_opportunities')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from('gifaa_brand_intelligence')
+          .select('*')
+          .eq('tenant_id', tenantId)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      if (oppRes.data) setRecord(oppRes.data);
+      if (brandRes.data) setBrandProfile(brandRes.data);
+      setLoading(false);
+    }
+    load();
+  }, [tenantId]);
+
+  async function handleGenerate() {
+    if (!brandProfile) {
+      setError('Brand Intelligence is required. Run Brand analysis first.');
+      return;
+    }
+    setError(null);
+    setGenerating(true);
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keyword-research`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'generate-opportunities',
+            tenant_id: tenantId,
+            country_code: brandProfile.brand?.location_focus?.toLowerCase().slice(0, 2) || 'us',
+            brand_intelligence: {
+              id: brandProfile.id,
+              brand: brandProfile.brand,
+              audience: brandProfile.audience,
+              offerings: brandProfile.offerings,
+              seo: brandProfile.seo,
+              market_discovery: brandProfile.market_discovery,
+              content_opportunities: brandProfile.content_opportunities,
+            },
+          }),
+        }
+      );
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setError((data as { error?: string }).error || `Error ${res.status}`);
+      } else {
+        const data = await res.json();
+        setRecord(data.data);
+      }
+    } catch (err) {
+      setError(String(err));
+    }
+    setGenerating(false);
+  }
+
+  async function handleGeneratePages(index: number) {
+    if (!record) return;
+    const kw = record.keywords[index];
+    if (!kw) return;
+
+    setGeneratingPages((prev) => new Set(prev).add(index));
+    try {
+      const res = await fetch(
+        `${process.env.NEXT_PUBLIC_SUPABASE_URL}/functions/v1/keyword-research`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'generate-pages-for-keyword',
+            tenant_id: tenantId,
+            opportunity_id: record.id,
+            keyword_index: index,
+            keyword_data: {
+              keyword: kw.keyword,
+              search_volume: kw.search_volume,
+              difficulty: kw.difficulty,
+              intent: kw.intent,
+              funnel: kw.funnel,
+              opportunity_score: kw.opportunity_score,
+            },
+          }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.pages) {
+          const updated = { ...record };
+          const keywords = [...updated.keywords];
+          keywords[index] = { ...keywords[index], generated_pages: data.pages };
+          updated.keywords = keywords;
+          setRecord(updated);
+          setExpandedRows((prev) => new Set(prev).add(index));
+        }
+      }
+    } catch { /* non-critical */ }
+    setGeneratingPages((prev) => {
+      const next = new Set(prev);
+      next.delete(index);
+      return next;
+    });
+  }
+
+  function toggleSort(field: typeof sortField) {
+    if (sortField === field) {
+      setSortDir(sortDir === 'desc' ? 'asc' : 'desc');
+    } else {
+      setSortField(field);
+      setSortDir('desc');
+    }
+  }
+
+  if (loading) {
+    return <p className="text-gray-400 text-sm py-10 text-center">Loading keyword opportunities...</p>;
+  }
+
+  if (!record) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-white border border-gray-200 rounded-xl p-8 text-center">
+          <div className="w-14 h-14 rounded-full bg-gradient-to-br from-amber-50 to-orange-100 flex items-center justify-center mx-auto mb-4">
+            <LayoutList className="w-6 h-6 text-amber-600" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-1">Page Ideas from Keyword Opportunities</h2>
+          <p className="text-sm text-gray-500 mb-6 max-w-md mx-auto">
+            Discover high-opportunity keywords and generate page ideas. The AI generates ~100 candidates internally and returns the top opportunities ranked by score.
+          </p>
+
+          {!brandProfile && (
+            <div className="mb-5 p-3 bg-amber-50 border border-amber-200 rounded-lg flex items-start gap-2 max-w-md mx-auto text-left">
+              <Info className="w-4 h-4 text-amber-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-amber-700">Run Brand Intelligence first. This requires brand context to generate relevant opportunities.</p>
+            </div>
+          )}
+
+          {brandProfile && (
+            <div className="mb-5 p-3 bg-sky-50 border border-sky-100 rounded-lg flex items-start gap-2 max-w-md mx-auto text-left">
+              <Brain className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
+              <p className="text-xs text-sky-700">
+                Brand loaded: <span className="font-medium">{brandProfile.brand?.name || 'Unknown'}</span> ({brandProfile.brand?.category || 'uncategorized'}). Ready to research.
+              </p>
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg max-w-md mx-auto text-left">
+              <p className="text-xs text-red-700">{error}</p>
+            </div>
+          )}
+
+          <Button onClick={handleGenerate} disabled={generating || !brandProfile} className="gap-2">
+            {generating ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Researching Keywords...</>
+            ) : (
+              <><Sparkles className="w-4 h-4" /> Research Keyword Opportunities</>
+            )}
+          </Button>
+          {generating && <p className="text-xs text-gray-400 mt-2">Generating ~100 candidates and filtering top opportunities. 30-60 seconds.</p>}
+        </div>
+      </div>
+    );
+  }
+
+  const sortedKeywords = [...record.keywords].map((kw, origIdx) => ({ ...kw, _idx: origIdx }));
+  sortedKeywords.sort((a, b) => {
+    const aVal = a[sortField] ?? 0;
+    const bVal = b[sortField] ?? 0;
+    return sortDir === 'desc' ? (bVal as number) - (aVal as number) : (aVal as number) - (bVal as number);
+  });
+
+  return (
+    <div className="space-y-6">
+      <div className="bg-white border border-gray-200 rounded-xl p-6">
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h3 className="text-sm font-semibold text-gray-900">Keyword Opportunities</h3>
+            <p className="text-xs text-gray-500 mt-0.5">
+              {record.keywords.length} opportunities | Generated {new Date(record.created_at).toLocaleDateString()} | Country: {record.country_code?.toUpperCase()}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating} className="gap-1.5 text-xs">
+            <RefreshCw className={`w-3.5 h-3.5 ${generating ? 'animate-spin' : ''}`} />
+            {generating ? 'Researching...' : 'Re-run Research'}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-4 gap-3">
+          <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
+            <p className="text-xl font-bold text-emerald-700">{record.keywords.filter(k => k.search_volume >= 10000).length}</p>
+            <p className="text-[10px] text-emerald-600 mt-0.5">High Volume</p>
+          </div>
+          <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg text-center">
+            <p className="text-xl font-bold text-sky-700">{record.keywords.filter(k => k.difficulty <= 30).length}</p>
+            <p className="text-[10px] text-sky-600 mt-0.5">Low Difficulty</p>
+          </div>
+          <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
+            <p className="text-xl font-bold text-amber-700">{record.keywords.filter(k => k.intent === 'commercial' || k.intent === 'transactional').length}</p>
+            <p className="text-[10px] text-amber-600 mt-0.5">Commercial+</p>
+          </div>
+          <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg text-center">
+            <p className="text-xl font-bold text-teal-700">{record.keywords.filter(k => k.opportunity_score >= 70).length}</p>
+            <p className="text-[10px] text-teal-600 mt-0.5">Score 70+</p>
+          </div>
+        </div>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-xs text-red-700">{error}</p>
+          </div>
+        )}
+      </div>
+
+      <div className="bg-white border border-gray-200 rounded-xl overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left">
+            <thead>
+              <tr className="border-b border-gray-100 bg-gray-50/80">
+                <th className="px-4 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Keyword</th>
+                <th className="px-3 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => toggleSort('search_volume')}>
+                  Volume {sortField === 'search_volume' && (sortDir === 'desc' ? '\u2193' : '\u2191')}
+                </th>
+                <th className="px-3 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => toggleSort('difficulty')}>
+                  Difficulty {sortField === 'difficulty' && (sortDir === 'desc' ? '\u2193' : '\u2191')}
+                </th>
+                <th className="px-3 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Intent</th>
+                <th className="px-3 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Funnel</th>
+                <th className="px-3 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => toggleSort('relevance')}>
+                  Relevance {sortField === 'relevance' && (sortDir === 'desc' ? '\u2193' : '\u2191')}
+                </th>
+                <th className="px-3 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider cursor-pointer hover:text-gray-700" onClick={() => toggleSort('opportunity_score')}>
+                  Score {sortField === 'opportunity_score' && (sortDir === 'desc' ? '\u2193' : '\u2191')}
+                </th>
+                <th className="px-3 py-3 text-[11px] font-semibold text-gray-500 uppercase tracking-wider">Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedKeywords.map((kw) => {
+                const idx = kw._idx;
+                const isExpanded = expandedRows.has(idx);
+                const isGen = generatingPages.has(idx);
+                const hasPages = kw.generated_pages && kw.generated_pages.length > 0;
+
+                const volLabel = kw.search_volume >= 10000 ? `${Math.round(kw.search_volume / 1000)}K` : kw.search_volume >= 1000 ? `${(kw.search_volume / 1000).toFixed(1)}K` : String(kw.search_volume);
+                const volColor = kw.search_volume >= 10000 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : kw.search_volume >= 1000 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-gray-50 text-gray-600 border-gray-200';
+                const kdColor = kw.difficulty <= 30 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : kw.difficulty <= 60 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-red-50 text-red-600 border-red-200';
+                const intentColor = kw.intent === 'transactional' ? 'bg-teal-50 text-teal-700 border-teal-200' : kw.intent === 'commercial' ? 'bg-sky-50 text-sky-700 border-sky-200' : 'bg-gray-50 text-gray-600 border-gray-200';
+                const funnelColor = kw.funnel === 'decision' ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : kw.funnel === 'consideration' ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-gray-50 text-gray-600 border-gray-200';
+                const scoreColor = kw.opportunity_score >= 70 ? 'bg-emerald-500' : kw.opportunity_score >= 50 ? 'bg-amber-500' : 'bg-gray-400';
+
+                return (
+                  <React.Fragment key={idx}>
+                    <tr className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                      <td className="px-4 py-3">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium text-gray-900">{kw.keyword}</span>
+                          <span className="text-[10px] text-gray-400 capitalize mt-0.5">{kw.keyword_type}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full border ${volColor}`}>
+                          {volLabel}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[11px] font-semibold rounded-full border ${kdColor}`}>
+                          KD {kw.difficulty}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full border capitalize ${intentColor}`}>
+                          {kw.intent}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className={`inline-flex items-center px-2 py-0.5 text-[10px] font-medium rounded-full border capitalize ${funnelColor}`}>
+                          {kw.funnel}
+                        </span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <span className="text-xs font-medium text-gray-700">{kw.relevance}%</span>
+                      </td>
+                      <td className="px-3 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-12 h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                            <div className={`h-full rounded-full ${scoreColor}`} style={{ width: `${kw.opportunity_score}%` }} />
+                          </div>
+                          <span className="text-xs font-bold text-gray-800">{kw.opportunity_score}</span>
+                        </div>
+                      </td>
+                      <td className="px-3 py-3">
+                        {hasPages ? (
+                          <Button variant="ghost" size="sm" onClick={() => {
+                            setExpandedRows((prev) => { const next = new Set(prev); next.has(idx) ? next.delete(idx) : next.add(idx); return next; });
+                          }} className="text-[11px] h-7 px-2 gap-1">
+                            <LayoutList className="w-3 h-3" />
+                            {isExpanded ? 'Hide' : 'Pages'}
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="sm" onClick={() => handleGeneratePages(idx)} disabled={isGen} className="text-[11px] h-7 px-2 gap-1">
+                            {isGen ? <Loader2 className="w-3 h-3 animate-spin" /> : <Sparkles className="w-3 h-3" />}
+                            {isGen ? '...' : 'Pages'}
+                          </Button>
+                        )}
+                      </td>
+                    </tr>
+                    {isExpanded && kw.generated_pages && kw.generated_pages.length > 0 && (
+                      <tr className="bg-slate-50/70">
+                        <td colSpan={8} className="px-6 py-3">
+                          <div className="flex items-start gap-2 mb-2">
+                            <Lightbulb className="w-3.5 h-3.5 text-amber-500 mt-0.5 shrink-0" />
+                            <p className="text-[10px] text-gray-500">
+                              Pages for "<span className="font-medium">{kw.keyword}</span>" — inherit: vol {kw.search_volume}, KD {kw.difficulty}, {kw.intent}, {kw.funnel}, score {kw.opportunity_score}
+                            </p>
+                          </div>
+                          <div className="space-y-1.5 pl-5">
+                            {kw.generated_pages.map((page, pi) => (
+                              <div key={pi} className="flex items-center gap-3 px-3 py-2 bg-white border border-gray-100 rounded-lg">
+                                <span className="text-[10px] font-bold text-gray-400 w-4 text-center shrink-0">{pi + 1}</span>
+                                <span className="text-sm text-gray-800 font-medium flex-1">{page.title}</span>
+                                <span className="text-xs text-gray-400 font-mono shrink-0">/{page.slug}</span>
+                              </div>
+                            ))}
+                          </div>
+                          {kw.reasoning && (
+                            <p className="text-[11px] text-gray-500 pl-5 mt-2 italic">{kw.reasoning}</p>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   );
 }
