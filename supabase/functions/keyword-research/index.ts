@@ -491,21 +491,34 @@ ${JSON.stringify(pages, null, 2)}`;
       // Build a set of valid input slugs for matching
       const validSlugs = new Set(pages.map((p) => p.slug));
 
-      // Filler words to strip during post-processing
-      const FILLER = new Set(["guide", "tips", "ultimate", "complete", "how", "to", "best", "top", "for", "a", "an", "the", "and", "or", "of", "in", "on", "with"]);
+      // Words that add no search meaning — safe to strip entirely
+      const FILLER = new Set(["guide", "tips", "ultimate", "complete", "how", "to", "best", "top", "for", "a", "an", "the", "and", "or", "of", "in", "on", "with", "using", "use", "get", "your", "my", "our"]);
+
+      // Commercial nouns that carry real search intent — must be preserved even when trimming to 3 words
+      const COMMERCIAL = new Set(["app", "apps", "software", "tool", "tools", "platform", "platforms", "template", "templates", "checklist", "checklists", "ideas", "service", "services", "system", "systems"]);
 
       function sanitizeKeyword(raw: string): string | null {
         if (!raw || typeof raw !== "string") return null;
-        // Lowercase, remove punctuation
-        let kw = raw.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-        const words = kw.split(" ").filter((w) => w.length > 1);
-        // Remove leading/trailing filler
-        while (words.length > 0 && FILLER.has(words[0])) words.shift();
-        while (words.length > 0 && FILLER.has(words[words.length - 1])) words.pop();
-        if (words.length < 2) return null;
-        // Enforce 2-3 word limit
-        kw = words.slice(0, 3).join(" ");
-        return kw;
+
+        // 1. Lowercase, remove punctuation
+        const clean = raw.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
+        // Keep only words of length > 1 to drop single-letter noise
+        const words = clean.split(" ").filter((w) => w.length > 1);
+
+        // 2. Remove ALL filler words — but never remove a commercial noun even if it appears in FILLER
+        const meaningful = words.filter((w) => COMMERCIAL.has(w) || !FILLER.has(w));
+
+        if (meaningful.length < 2) return null;
+        if (meaningful.length <= 3) return meaningful.join(" ");
+
+        // 3. More than 3 words remain: trim intelligently.
+        //    If the last word is a commercial noun, preserve it and take the first 2 substantive words.
+        //    Otherwise take the first 3 words.
+        const last = meaningful[meaningful.length - 1];
+        if (COMMERCIAL.has(last)) {
+          return [...meaningful.slice(0, 2), last].join(" ");
+        }
+        return meaningful.slice(0, 3).join(" ");
       }
 
       // Build volumes map keyed by slug with full validation
