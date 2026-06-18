@@ -26,7 +26,7 @@ interface SerpResult {
 // PIPELINE HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-const VALID_VOLUMES = [0, 10, 20, 30, 50, 70, 100, 150, 200, 250, 500, 1000, 3000, 5000, 10000];
+const VALID_VOLUMES = [0, 10, 20, 30, 50, 70, 100, 150, 200, 250, 500, 1000, 3000, 5000, 10000, 50000, 500000];
 
 function snapToVolumeBucket(v: number): number {
   let closest = 0;
@@ -49,6 +49,38 @@ function nearestLowerBucket(v: number): number {
   }
   return result;
 }
+
+// ═══════════════════════════════════════════════════════════════
+// KEYWORD VOLUME REFERENCE (from Google Keyword Planner CSV)
+// ═══════════════════════════════════════════════════════════════
+
+const KEYWORD_VOLUME_REFERENCE = [
+  { keyword: "ai agent", avg_monthly_searches: "10K-100K", competition: "Medium", volume_anchor: 50000 },
+  { keyword: "ai assistant", avg_monthly_searches: "100K-1M", competition: "Low", volume_anchor: 500000 },
+  { keyword: "ai automation tool", avg_monthly_searches: "1K-10K", competition: "Medium", volume_anchor: 5000 },
+  { keyword: "ai chatbot", avg_monthly_searches: "100K-1M", competition: "Low", volume_anchor: 500000 },
+  { keyword: "ai customer support agent", avg_monthly_searches: "10-100", competition: "Medium", volume_anchor: 50 },
+  { keyword: "ai email assistant", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
+  { keyword: "ai meeting assistant", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
+  { keyword: "ai recruiter", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
+  { keyword: "ai sales agent", avg_monthly_searches: "100-1K", competition: "Medium", volume_anchor: 500 },
+  { keyword: "ai tools", avg_monthly_searches: "100K-1M", competition: "Medium", volume_anchor: 500000 },
+  { keyword: "crm software", avg_monthly_searches: "10K-100K", competition: "Low", volume_anchor: 50000 },
+  { keyword: "client portal software", avg_monthly_searches: "10-100", competition: "Low", volume_anchor: 50 },
+  { keyword: "document organizer", avg_monthly_searches: "100-1K", competition: "High", volume_anchor: 500 },
+  { keyword: "document management software", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
+  { keyword: "gift registry", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
+  { keyword: "wedding registry", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
+  { keyword: "budget planner", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
+  { keyword: "expense tracker", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
+  { keyword: "invoice generator", avg_monthly_searches: "10K-100K", competition: "Low", volume_anchor: 50000 },
+  { keyword: "resume builder", avg_monthly_searches: "100K-1M", competition: "Medium", volume_anchor: 500000 },
+  { keyword: "fitness app", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
+  { keyword: "habit tracker", avg_monthly_searches: "10K-100K", competition: "Medium", volume_anchor: 50000 },
+  { keyword: "workflow automation", avg_monthly_searches: "1K-10K", competition: "Medium", volume_anchor: 5000 },
+  { keyword: "hr software", avg_monthly_searches: "10K-100K", competition: "Medium", volume_anchor: 50000 },
+  { keyword: "email marketing software", avg_monthly_searches: "10K-100K", competition: "Low", volume_anchor: 50000 },
+];
 
 function cleanAiJson(raw: string): string {
   return raw.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
@@ -707,153 +739,141 @@ Return ONLY valid JSON:
       }
 
       // ──────────────────────────────────────────────────────────
-      // STEP 3: VOLUME AGENT (isolated — no brand context)
+      // STEP 3: VOLUME AGENT (uses CSV reference context)
       // ──────────────────────────────────────────────────────────
 
-      // Check cache first
-      const keywordsForVolume = uniqueKeywords.map(k => k.normalized_keyword);
-      const { data: cachedVolumes } = await supabase
-        .from("keyword_volume_cache")
-        .select("keyword, volume, confidence")
-        .eq("country_code", countryVal)
-        .eq("industry", industry)
-        .in("keyword", keywordsForVolume);
+      const step3System = `You are a search volume estimation expert. Estimate monthly search volumes using the provided keyword reference database as your source of truth.
 
-      const cacheMap = new Map<string, { volume: number; confidence: number }>();
-      for (const cv of cachedVolumes || []) {
-        cacheMap.set(cv.keyword, { volume: cv.volume, confidence: cv.confidence });
-      }
+CRITICAL RULES:
+1. You receive a keyword_reference_context — this is real Google Keyword Planner data. It is your PRIMARY source of truth.
+2. For EVERY keyword, first check if it matches or relates to a reference keyword.
+3. NEVER invent volume numbers without first consulting the reference context.
+4. Parent keyword volume MUST always be >= child keyword volume.
 
-      const uncachedKeywords = uniqueKeywords.filter(k => !cacheMap.has(k.normalized_keyword));
+MATCHING PROCESS:
+1. EXACT MATCH: If the normalized_keyword or parent_keyword exactly matches a reference keyword, use that volume_anchor directly.
+2. FUZZY PARENT MATCH: If no exact match, find the closest reference keyword that is semantically the parent/category of the input keyword.
+3. MODIFIER ADJUSTMENT: Apply decay multipliers for each modifier present:
+   - free: x0.5
+   - best: x0.7
+   - online: x0.8
+   - country/location (india, uk, usa, australia, etc): x0.5
+   - supplier: x0.3
+   - custom: x0.2
+   - quote: x0.1
+   - review/reviews: x0.4
+   - alternative/alternatives: x0.3
+   - comparison/vs: x0.3
+   - pricing/cost: x0.4
+   - how to: x0.6
 
-      let volumeResults: { keyword: string; monthly_search_volume: number; volume_confidence: number }[] = [];
+4. NO MATCH FALLBACK: If no reference keyword is even loosely related, use these category defaults:
+   - Consumer/general keywords: 200
+   - Known SaaS category: 500
+   - Niche SaaS/B2B: 100
+   - Branded/navigational query: 10
 
-      // Add cached results
-      for (const k of uniqueKeywords) {
-        const cached = cacheMap.get(k.normalized_keyword);
-        if (cached) {
-          volumeResults.push({ keyword: k.normalized_keyword, monthly_search_volume: cached.volume, volume_confidence: cached.confidence });
-        }
-      }
+OUTPUT FORMAT:
+For each keyword, return:
+- keyword: exact keyword from input
+- search_volume: the estimated volume (integer)
+- matched_reference_keywords: array of reference keywords you used as anchors (can be empty if fallback)
+- confidence: 0-100 (90 for exact match, 70 for fuzzy match, 25 for fallback)
+- volume_source: "csv_reference" if matched, "category_fallback" if not
 
-      if (uncachedKeywords.length > 0) {
-        const step3System = `You are a search volume estimation expert. Estimate monthly search volumes ONLY.
+EXAMPLES:
 
-CRITICAL: You receive ONLY keywords, a country, and an industry. You have NO brand context, NO competitor data, NO opportunity information.
+Input: "free wedding gift registry india"
+Reference has: "gift registry" = 500, "wedding registry" = 500
+Match: "gift registry" (500)
+Modifiers: free (x0.5), india (x0.5)
+Calculation: 500 * 0.5 * 0.5 = 125 → round to 100
+Output: { search_volume: 100, matched_reference_keywords: ["gift registry", "wedding registry"], confidence: 70 }
 
-CALIBRATION DATABASE (use these as anchors):
+Input: "ai sales agent"
+Reference has: "ai sales agent" = 500
+Match: EXACT
+Output: { search_volume: 500, matched_reference_keywords: ["ai sales agent"], confidence: 90 }
 
-Gift industry:
-- gift ideas = 10000
-- wedding gifts = 5000
-- gift registry = 150
-- wedding registry = 100
-- online gift registry = 20
-- wedding cash fund = 50
-
-Industrial:
-- industrial automation = 500
-- industrial sensors = 200
-- sensor supplier = 50
-
-AI/Tech:
-- ai tools = 10000
-- ai chatbot = 5000
-- ai sales agent = 250
-- ai recruiter = 200
-
-MODIFIER MULTIPLIERS (apply to parent volume):
-- country modifier (india, uk, etc) = x0.5
-- supplier = x0.3
-- quote = x0.1
-- custom = x0.2
-- free = x0.5
-- best = x0.8
-- online = x0.3
-- review = x0.4
-
-RULES:
-1. Parent keyword volume MUST always be >= child keyword volume
-2. Apply modifier multipliers to estimate long-tail from parent
-3. Output volume MUST be one of these exact buckets: 0, 10, 20, 30, 50, 70, 100, 150, 200, 250, 500, 1000, 3000, 5000, 10000
-4. When unsure, default to lower bucket
-5. volume_confidence: 0-100 representing your certainty
-
-Example:
-- parent "gift registry" = 150
-- child "free wedding gift registry india" = free(x0.5) * country(x0.5) * 150 = ~37 → snap to 30
+Input: "best ai chatbot for customer service"
+Reference has: "ai chatbot" = 500000, "ai customer support agent" = 50
+Match: "ai chatbot" (500000) as parent, but also "ai customer support agent" (50) as more specific
+Use more specific: 50, modifier "best" (x0.7) = 35 → round to 30
+Output: { search_volume: 30, matched_reference_keywords: ["ai customer support agent", "ai chatbot"], confidence: 70 }
 
 Return ONLY valid JSON:
 {
   "volumes": [
-    { "keyword": "exact keyword from input", "monthly_search_volume": 100, "volume_confidence": 60 }
+    {
+      "keyword": "exact keyword from input",
+      "search_volume": 500,
+      "matched_reference_keywords": ["reference keyword 1"],
+      "confidence": 70,
+      "volume_source": "csv_reference"
+    }
   ]
 }`;
 
-        const step3Input = uncachedKeywords.map(k => ({
-          keyword: k.normalized_keyword,
-          parent_keyword: k.parent_keyword,
-          modifiers: k.modifiers,
-        }));
+      const step3Input = uniqueKeywords.map(k => ({
+        keyword: k.normalized_keyword,
+        parent_keyword: k.parent_keyword,
+        modifiers: k.modifiers,
+      }));
 
-        const step3User = `Country: ${countryVal}\nIndustry: ${industry}\n\nKeywords:\n${JSON.stringify(step3Input, null, 2)}`;
+      const step3User = `Country: ${countryVal}
+Industry: ${industry}
 
-        const step3Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step3System, step3User, {
-          temperature: 0.1,
-          maxTokens: 6000,
-          title: "AstroGTM Step3 Volume",
-        });
+## Keyword Reference Context (Google Keyword Planner data — source of truth)
+${JSON.stringify(KEYWORD_VOLUME_REFERENCE, null, 2)}
 
-        if (step3Res.error) return jsonResponse({ error: step3Res.error, step: 3 }, 502);
+## Keywords to estimate volumes for
+${JSON.stringify(step3Input, null, 2)}`;
 
-        let step3Data: { volumes: { keyword: string; monthly_search_volume: number; volume_confidence: number }[] };
-        try {
-          step3Data = JSON.parse(step3Res.content);
-        } catch {
-          return jsonResponse({ error: "Step 3: Failed to parse response", raw: step3Res.content.slice(0, 500) }, 500);
-        }
+      const step3Res = await callLLM(OPENROUTER_API_KEY!, model, SUPABASE_URL, step3System, step3User, {
+        temperature: 0.1,
+        maxTokens: 6000,
+        title: "AstroGTM Step3 Volume",
+      });
 
-        // Snap to valid buckets
-        for (const v of step3Data.volumes || []) {
-          v.monthly_search_volume = snapToVolumeBucket(v.monthly_search_volume);
-          volumeResults.push(v);
-        }
+      if (step3Res.error) return jsonResponse({ error: step3Res.error, step: 3 }, 502);
 
-        // Sanity check: parent volume >= child volume
-        const parentVolumes = new Map<string, number>();
-        for (const v of volumeResults) {
-          const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
-          if (matchingKw) {
-            const current = parentVolumes.get(matchingKw.parent_keyword) || 0;
-            if (v.monthly_search_volume > current) {
-              parentVolumes.set(matchingKw.parent_keyword, v.monthly_search_volume);
-            }
-          }
-        }
+      let step3Data: { volumes: { keyword: string; search_volume: number; matched_reference_keywords: string[]; confidence: number; volume_source: string }[] };
+      try {
+        step3Data = JSON.parse(step3Res.content);
+      } catch {
+        return jsonResponse({ error: "Step 3: Failed to parse response", raw: step3Res.content.slice(0, 500) }, 500);
+      }
 
-        for (const v of volumeResults) {
-          const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
-          if (matchingKw && matchingKw.normalized_keyword !== matchingKw.parent_keyword) {
-            const parentVol = parentVolumes.get(matchingKw.parent_keyword) || 10000;
-            if (v.monthly_search_volume > parentVol) {
-              v.monthly_search_volume = nearestLowerBucket(parentVol);
-            }
-          }
-        }
+      // Build volume results with bucket snapping and parent >= child enforcement
+      const volumeResults: { keyword: string; monthly_search_volume: number; volume_confidence: number }[] = [];
 
-        // Cache new volumes
-        const cacheInserts = (step3Data.volumes || []).map(v => ({
+      for (const v of step3Data.volumes || []) {
+        volumeResults.push({
           keyword: v.keyword,
-          country_code: countryVal,
-          industry,
-          volume: snapToVolumeBucket(v.monthly_search_volume),
-          confidence: Math.min(100, Math.max(0, v.volume_confidence || 50)),
-        }));
+          monthly_search_volume: snapToVolumeBucket(v.search_volume || 0),
+          volume_confidence: Math.min(100, Math.max(0, v.confidence || 50)),
+        });
+      }
 
-        if (cacheInserts.length > 0) {
-          await supabase
-            .from("keyword_volume_cache")
-            .upsert(cacheInserts, { onConflict: "keyword,country_code,industry" });
+      // Sanity check: parent volume >= child volume
+      const parentVolumes = new Map<string, number>();
+      for (const v of volumeResults) {
+        const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
+        if (matchingKw) {
+          const current = parentVolumes.get(matchingKw.parent_keyword) || 0;
+          if (v.monthly_search_volume > current) {
+            parentVolumes.set(matchingKw.parent_keyword, v.monthly_search_volume);
+          }
+        }
+      }
+
+      for (const v of volumeResults) {
+        const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
+        if (matchingKw && matchingKw.normalized_keyword !== matchingKw.parent_keyword) {
+          const parentVol = parentVolumes.get(matchingKw.parent_keyword) || 500000;
+          if (v.monthly_search_volume > parentVol) {
+            v.monthly_search_volume = nearestLowerBucket(parentVol);
+          }
         }
       }
 
