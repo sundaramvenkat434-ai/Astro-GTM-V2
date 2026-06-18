@@ -572,11 +572,13 @@ Return ONLY valid JSON:
 You produce 25-30 keyword opportunities in a single pass.
 
 ═══════════════════════════════════════════════
-VOLUME RULES (CRITICAL — READ CAREFULLY)
+VOLUME CALIBRATION (CRITICAL — READ CAREFULLY)
 ═══════════════════════════════════════════════
 
+The following keyword_reference_context contains real Google Keyword Planner examples that represent real search-volume distribution. Learn the scale. Do not copy keywords. Use them as calibration anchors.
+
 You are NOT estimating search volume from intuition.
-You are MAPPING to Google Keyword Planner reference data provided in keyword_reference_context.
+You are MAPPING to the reference data distribution.
 
 For EVERY keyword you generate:
 1. Find the closest matching row(s) in keyword_reference_context.
@@ -611,26 +613,7 @@ If no reference keyword is even loosely similar, use these fallbacks:
 - B2B: 10
 
 HARD CAP:
-NEVER output volume > 500 unless you matched a reference keyword with volume_anchor > 500.
-Examples that are FORBIDDEN:
-- "family digital vault" → 1000 (NO reference supports this)
-- "secure family cloud storage" → 1200 (NO reference supports this)
-
-EXAMPLES:
-Reference: "document organizer" = 500
-Candidate: "family document organizer"
-Correct volume: 250 (500 × 0.5)
-
-Reference: "gift registry" = 500
-Candidate: "free wedding gift registry india"
-Correct volume: 125 (500 × 0.5 × 0.5) → round to ~100-150
-
-Reference: "ai sales agent" = 500
-Candidate: "ai sales agent"
-Correct volume: 500 (exact match)
-
-No reference match: "how to create registry on gifaa"
-Correct volume: 10 (branded/navigational, no reference)
+NEVER output volume > 1000 unless similar examples in the reference context have > 1000.
 
 ═══════════════════════════════════════════════
 OTHER FIELDS
@@ -677,19 +660,24 @@ Return ONLY valid JSON:
 
 Generate EXACTLY 30 opportunities, sorted by score descending.`;
 
+      // Sample up to 1000 reference rows (random shuffle each generation)
+      const sampledReference = [...KEYWORD_VOLUME_REFERENCE]
+        .sort(() => Math.random() - 0.5)
+        .slice(0, 1000);
+
       let userMessage = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}\n\n`;
 
-      userMessage += `## Keyword Reference Context (Google Keyword Planner data — source of truth)\n${JSON.stringify(KEYWORD_VOLUME_REFERENCE, null, 2)}\n\n`;
+      userMessage += `## Keyword Reference Context (1000 Google Keyword Planner examples — calibration anchors, do not copy)\n${JSON.stringify(sampledReference, null, 2)}\n\n`;
 
       userMessage += `## Country: ${countryVal}\n## Industry: ${industry}\n\n`;
 
       if (serp_results && serp_results.length > 0) {
-        userMessage += `## SERP Results\n${JSON.stringify(serp_results.slice(0, 20), null, 2)}\n\n`;
+        userMessage += `## SERP Results\n${JSON.stringify(serp_results.slice(0, 10), null, 2)}\n\n`;
       }
       if (scraped_content && scraped_content.length > 0) {
         userMessage += `## Competitor Content\n`;
         for (const page of scraped_content.slice(0, 5)) {
-          if (page.content) userMessage += `### ${page.url}\n${page.content.slice(0, 4000)}\n\n`;
+          if (page.content) userMessage += `### ${page.url}\n${page.content.slice(0, 3000)}\n\n`;
         }
       }
 
