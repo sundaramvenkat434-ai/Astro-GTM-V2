@@ -563,6 +563,196 @@ ${JSON.stringify(pages, null, 2)}`;
       return jsonResponse({ success: true, data: volumesMap });
     }
 
+    // ─── ACTION: generate-opportunities ───────────────────────
+    if (action === "generate-opportunities") {
+      if (!OPENROUTER_API_KEY) {
+        return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
+      }
+      if (!brand_intelligence) {
+        return jsonResponse({ error: "brand_intelligence is required" }, 400);
+      }
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+      const { data: settingsRows } = await supabase
+        .from("admin_settings")
+        .select("key, value")
+        .in("key", ["ai_model_keyword_research"]);
+
+      const settingsMap: Record<string, string> = {};
+      for (const row of settingsRows || []) {
+        settingsMap[row.key] = row.value;
+      }
+      const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
+
+      const countryVal = country_code || "us";
+
+      const systemPrompt = `You are an expert SEO keyword researcher. Given brand intelligence data, generate a comprehensive list of keyword opportunities.
+
+For each keyword, provide:
+- keyword: a specific, actionable long-tail keyword (2-5 words)
+- search_volume: estimated monthly search volume (integer)
+- difficulty: SEO difficulty score 0-100
+- intent: one of "informational", "commercial", "transactional", "navigational"
+- funnel: one of "top", "middle", "bottom"
+- relevance: relevance to the brand 0-100
+- keyword_type: one of "head", "body", "long-tail"
+- reasoning: brief explanation of why this is an opportunity
+- opportunity_score: overall opportunity score 0-100 (combining volume, difficulty, relevance)
+
+Generate approximately 30 high-quality keyword opportunities. Internally consider ~100 candidates and return only the top 30 ranked by opportunity_score.
+
+Focus on GAPS — keywords the brand is NOT likely ranking for but SHOULD be.
+Prioritize keywords where the brand has a realistic chance of ranking.
+Country context: ${countryVal}
+
+Return ONLY valid JSON:
+{
+  "keywords": [...]
+}`;
+
+      const userMessage = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}`;
+
+      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": SUPABASE_URL,
+          "X-Title": "AstroGTM Keyword Opportunities",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.7,
+          max_tokens: 8000,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!aiRes.ok) {
+        const errText = await aiRes.text();
+        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
+      }
+
+      const aiData = await aiRes.json();
+      let rawContent = aiData.choices?.[0]?.message?.content || "";
+      rawContent = rawContent.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawContent);
+      } catch {
+        return jsonResponse({ error: "Failed to parse AI response", raw: rawContent }, 500);
+      }
+
+      const { data: saved, error: saveError } = await supabase
+        .from("gifaa_keyword_opportunities")
+        .insert({
+          tenant_id,
+          brand_intelligence_id: brand_intelligence.id || null,
+          keywords: parsed.keywords || [],
+          generation_params: { country_code: countryVal },
+          country_code: countryVal,
+        })
+        .select()
+        .single();
+
+      if (saveError) {
+        return jsonResponse({ error: "Failed to save opportunities", details: saveError.message, data: parsed }, 500);
+      }
+
+      return jsonResponse({ success: true, data: saved });
+    }
+
+    // ─── ACTION: generate-pages-for-keyword ─────────────────────
+    if (action === "generate-pages-for-keyword") {
+      if (!OPENROUTER_API_KEY) {
+        return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
+      }
+
+      const { keyword_data } = body as {
+        keyword_data: { keyword: string; search_volume: number; difficulty: number; intent: string; funnel: string; opportunity_score: number };
+      };
+
+      if (!keyword_data || !keyword_data.keyword) {
+        return jsonResponse({ error: "keyword_data is required" }, 400);
+      }
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+      const { data: settingsRows } = await supabase
+        .from("admin_settings")
+        .select("key, value")
+        .in("key", ["ai_model_keyword_research"]);
+
+      const settingsMap: Record<string, string> = {};
+      for (const row of settingsRows || []) {
+        settingsMap[row.key] = row.value;
+      }
+      const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
+
+      const systemPrompt = `You are an SEO content strategist. Given a target keyword and its metadata, generate 3-5 specific page ideas that could rank for this keyword or related variations.
+
+Each page idea should have:
+- title: SEO-optimized page title (compelling, click-worthy)
+- slug: URL-friendly slug (lowercase, hyphens, no stop words)
+
+Return ONLY valid JSON:
+{
+  "pages": [
+    { "title": "...", "slug": "..." }
+  ]
+}`;
+
+      const userMessage = `Target keyword: "${keyword_data.keyword}"
+Search volume: ${keyword_data.search_volume}/mo
+Difficulty: ${keyword_data.difficulty}/100
+Intent: ${keyword_data.intent}
+Funnel stage: ${keyword_data.funnel}`;
+
+      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+          "Content-Type": "application/json",
+          "HTTP-Referer": SUPABASE_URL,
+          "X-Title": "AstroGTM Page Ideas",
+        },
+        body: JSON.stringify({
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+          response_format: { type: "json_object" },
+        }),
+      });
+
+      if (!aiRes.ok) {
+        const errText = await aiRes.text();
+        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
+      }
+
+      const aiData = await aiRes.json();
+      let rawContent = aiData.choices?.[0]?.message?.content || "";
+      rawContent = rawContent.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
+
+      let parsed;
+      try {
+        parsed = JSON.parse(rawContent);
+      } catch {
+        return jsonResponse({ error: "Failed to parse AI response", raw: rawContent }, 500);
+      }
+
+      return jsonResponse({ success: true, pages: parsed.pages || [] });
+    }
+
     return jsonResponse({ error: `Unknown action: ${action}` }, 400);
   } catch (err) {
     return jsonResponse({ error: (err as Error).message || "unknown error" }, 500);
