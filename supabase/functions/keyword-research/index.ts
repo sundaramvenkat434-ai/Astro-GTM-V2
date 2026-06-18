@@ -197,7 +197,7 @@ Deno.serve(async (req: Request) => {
       for (const row of settingsRows || []) {
         settingsMap[row.key] = row.value;
       }
-      const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-4o-mini";
+      const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
 
       const themesCount = num_themes || 5;
       const keywordsCount = num_keywords || 20;
@@ -399,7 +399,7 @@ CRITICAL REQUIREMENTS:
         console.warn("[enrich-volume] ai_keyword_volume_prompt not set in admin_settings, using default");
       }
 
-      const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-4o-mini";
+      const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
 
       // Default prompt — concrete calibration anchors keep volume estimates realistic.
       // Priority for primary_keyword: existing_keyword > slug words > page title.
