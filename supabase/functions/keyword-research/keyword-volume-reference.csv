@@ -1,0 +1,43 @@
+keyword,avg_monthly_searches,competition,source
+ai agent,10K-100K,Medium,google_keyword_planner
+ai assistant,100K-1M,Low,google_keyword_planner
+ai automation tool,1K-10K,Medium,google_keyword_planner
+ai chatbot,100K-1M,Low,google_keyword_planner
+ai content generator,1K-10K,Medium,google_keyword_planner
+ai customer support agent,10-100,Medium,google_keyword_planner
+ai email assistant,100-1K,Low,google_keyword_planner
+ai interview software,100-1K,Low,google_keyword_planner
+ai meeting assistant,100-1K,Low,google_keyword_planner
+ai note taker,1K-10K,Medium,google_keyword_planner
+ai phone agent,10-100,Low,google_keyword_planner
+ai productivity tool,100-1K,Low,google_keyword_planner
+ai recruiter,1K-10K,Low,google_keyword_planner
+ai resume builder,10K-100K,Medium,google_keyword_planner
+ai sales agent,100-1K,Medium,google_keyword_planner
+ai software,1K-10K,Medium,google_keyword_planner
+ai tools,100K-1M,Medium,google_keyword_planner
+ai voice agent,1K-10K,Medium,google_keyword_planner
+ai workflow automation,1K-10K,Medium,google_keyword_planner
+ai writing tool,1K-10K,Low,google_keyword_planner
+analytics dashboard,100-1K,Low,google_keyword_planner
+applicant tracking system,1K-10K,Low,google_keyword_planner
+billing software,10K-100K,Medium,google_keyword_planner
+budget app,10K-100K,Low,google_keyword_planner
+budget planner,1K-10K,Low,google_keyword_planner
+crm software,10K-100K,Low,google_keyword_planner
+cloud document storage,10-100,Low,google_keyword_planner
+document management software,1K-10K,Low,google_keyword_planner
+document organizer,100-1K,High,google_keyword_planner
+expense tracker,1K-10K,Low,google_keyword_planner
+file organizer,1K-10K,High,google_keyword_planner
+gift registry,100-1K,Low,google_keyword_planner
+wedding registry,100-1K,Low,google_keyword_planner
+wishlist app,100-1K,Low,google_keyword_planner
+invoice generator,10K-100K,Low,google_keyword_planner
+resume builder,100K-1M,Medium,google_keyword_planner
+resume maker,100K-1M,Medium,google_keyword_planner
+seo tools,10K-100K,Low,google_keyword_planner
+hr software,10K-100K,Medium,google_keyword_planner
+fitness app,1K-10K,Low,google_keyword_planner
+workflow automation,1K-10K,Medium,google_keyword_planner
+email marketing software,10K-100K,Low,google_keyword_planner
