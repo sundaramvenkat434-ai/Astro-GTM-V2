@@ -27,36 +27,45 @@ interface SerpResult {
 // ═══════════════════════════════════════════════════════════════
 
 // ═══════════════════════════════════════════════════════════════
-// KEYWORD VOLUME REFERENCE (from Google Keyword Planner CSV)
+// KEYWORD VOLUME REFERENCE — loaded from CSV at runtime
 // ═══════════════════════════════════════════════════════════════
 
-const KEYWORD_VOLUME_REFERENCE = [
-  { keyword: "ai agent", avg_monthly_searches: "10K-100K", competition: "Medium", volume_anchor: 50000 },
-  { keyword: "ai assistant", avg_monthly_searches: "100K-1M", competition: "Low", volume_anchor: 500000 },
-  { keyword: "ai automation tool", avg_monthly_searches: "1K-10K", competition: "Medium", volume_anchor: 5000 },
-  { keyword: "ai chatbot", avg_monthly_searches: "100K-1M", competition: "Low", volume_anchor: 500000 },
-  { keyword: "ai customer support agent", avg_monthly_searches: "10-100", competition: "Medium", volume_anchor: 50 },
-  { keyword: "ai email assistant", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
-  { keyword: "ai meeting assistant", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
-  { keyword: "ai recruiter", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
-  { keyword: "ai sales agent", avg_monthly_searches: "100-1K", competition: "Medium", volume_anchor: 500 },
-  { keyword: "ai tools", avg_monthly_searches: "100K-1M", competition: "Medium", volume_anchor: 500000 },
-  { keyword: "crm software", avg_monthly_searches: "10K-100K", competition: "Low", volume_anchor: 50000 },
-  { keyword: "client portal software", avg_monthly_searches: "10-100", competition: "Low", volume_anchor: 50 },
-  { keyword: "document organizer", avg_monthly_searches: "100-1K", competition: "High", volume_anchor: 500 },
-  { keyword: "document management software", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
-  { keyword: "gift registry", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
-  { keyword: "wedding registry", avg_monthly_searches: "100-1K", competition: "Low", volume_anchor: 500 },
-  { keyword: "budget planner", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
-  { keyword: "expense tracker", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
-  { keyword: "invoice generator", avg_monthly_searches: "10K-100K", competition: "Low", volume_anchor: 50000 },
-  { keyword: "resume builder", avg_monthly_searches: "100K-1M", competition: "Medium", volume_anchor: 500000 },
-  { keyword: "fitness app", avg_monthly_searches: "1K-10K", competition: "Low", volume_anchor: 5000 },
-  { keyword: "habit tracker", avg_monthly_searches: "10K-100K", competition: "Medium", volume_anchor: 50000 },
-  { keyword: "workflow automation", avg_monthly_searches: "1K-10K", competition: "Medium", volume_anchor: 5000 },
-  { keyword: "hr software", avg_monthly_searches: "10K-100K", competition: "Medium", volume_anchor: 50000 },
-  { keyword: "email marketing software", avg_monthly_searches: "10K-100K", competition: "Low", volume_anchor: 50000 },
-];
+interface KeywordRef {
+  keyword: string;
+  avg_monthly_searches: string;
+  competition: string;
+}
+
+function loadKeywordReferenceCSV(): KeywordRef[] {
+  try {
+    const csvPath = new URL("./keyword-volume-reference.csv", import.meta.url).pathname;
+    const raw = Deno.readTextFileSync(csvPath);
+    const lines = raw.trim().split("\n");
+    const rows: KeywordRef[] = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cols = lines[i].split(",");
+      if (cols.length >= 3 && cols[0].trim()) {
+        rows.push({
+          keyword: cols[0].trim(),
+          avg_monthly_searches: cols[1].trim(),
+          competition: cols[2].trim(),
+        });
+      }
+    }
+    if (rows.length < 100) {
+      console.warn(`keyword-volume-reference.csv has only ${rows.length} rows (< 100)`);
+    }
+    return rows;
+  } catch (err) {
+    console.error("Failed to load keyword-volume-reference.csv:", err);
+    return [];
+  }
+}
+
+function sampleKeywordExamples(allRows: KeywordRef[], count = 100): KeywordRef[] {
+  const shuffled = [...allRows].sort(() => Math.random() - 0.5);
+  return shuffled.slice(0, count);
+}
 
 function cleanAiJson(raw: string): string {
   return raw.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
@@ -567,53 +576,54 @@ Return ONLY valid JSON:
       const countryVal = country_code || "us";
       const industry = brand_intelligence.brand?.category || brand_intelligence.brand?.industry || "general";
 
-      const systemPrompt = `You are an expert SEO keyword researcher and opportunity analyst. You generate keyword opportunities for a brand based on brand intelligence, SERP data, competitor content, and a keyword volume reference database.
+      // Load CSV and sample random rows as calibration context
+      const allKeywordRows = loadKeywordReferenceCSV();
+      const keyword_reference_examples = sampleKeywordExamples(allKeywordRows, 100);
+
+      const systemPrompt = `You are an expert SEO keyword researcher and opportunity analyst. You generate keyword opportunities for a brand based on brand intelligence, SERP data, and competitor content.
 
 You produce 25-30 keyword opportunities in a single pass.
 
 ═══════════════════════════════════════════════
-VOLUME CALIBRATION (CRITICAL — READ CAREFULLY)
+VOLUME CALIBRATION
 ═══════════════════════════════════════════════
 
-The following keyword_reference_context contains real Google Keyword Planner examples that represent real search-volume distribution. Learn the scale. Do not copy keywords. Use them as calibration anchors.
+You are estimating Google Keyword Planner style monthly search volume.
 
-You are NOT estimating search volume from intuition.
-You are MAPPING to the reference data distribution.
+You are provided keyword_reference_examples.
 
-For EVERY keyword you generate:
-1. Find the closest matching row(s) in keyword_reference_context.
-2. Use those rows as volume anchors.
-3. Adjust DOWN for specificity/modifiers.
-4. Report which reference keyword you matched.
+These are random real Google Keyword Planner keywords.
 
-MODIFIER DECAY MULTIPLIERS (apply to anchor volume):
-- family/personal: x0.5
-- secure/encrypted: x0.7
-- free: x0.5
-- best: x0.7
-- online: x0.8
-- comparison/vs: x0.3
-- custom: x0.2
-- country/location (india, uk, usa, etc): x0.5
-- review/reviews: x0.4
-- alternative/alternatives: x0.3
-- pricing/cost: x0.4
-- how to: x0.6
-- supplier: x0.3
+They exist ONLY to teach volume scale.
 
-LONG TAIL RULE:
-Longer keyword volume MUST be <= parent keyword volume.
-More specific = lower volume. Always.
+Do NOT copy them.
+Do NOT match against them.
 
-NO MATCH RULE:
-If no reference keyword is even loosely similar, use these fallbacks:
-- generic consumer keyword: 100
-- niche consumer: 50
-- niche SaaS: 20
-- B2B: 10
+Before assigning volume:
 
-HARD CAP:
-NEVER output volume > 1000 unless similar examples in the reference context have > 1000.
+1. Compare your keyword mentally against the examples.
+2. Decide if it is:
+   - broader
+   - similar
+   - narrower
+3. Assign realistic volume.
+
+Important:
+
+Large industries do not mean large keywords.
+
+Example:
+AI industry is huge.
+
+ai tools = very high
+ai sales agent = much lower
+ai phone agent = niche
+
+Long-tail phrases usually have lower volume.
+
+Never inflate because the business opportunity is good.
+
+Estimate search demand only.
 
 ═══════════════════════════════════════════════
 OTHER FIELDS
@@ -624,7 +634,7 @@ For each keyword also provide:
 - intent: "informational" | "commercial" | "transactional" | "navigational"
 - funnel: "top" | "middle" | "bottom"
 - relevance: 0-100 (how relevant to THIS brand's audience, products, and pain points)
-- score: 0-100 opportunity score = weighted average of (volume_normalized × 0.25) + ((100 - difficulty) × 0.25) + (intent_score × 0.25) + (relevance × 0.25)
+- score: 0-100 opportunity score = weighted average of (volume_normalized x 0.25) + ((100 - difficulty) x 0.25) + (intent_score x 0.25) + (relevance x 0.25)
   where intent_score: transactional=100, commercial=80, informational=40, navigational=20
   where volume_normalized: 500+=60, 200-499=45, 100-199=35, 50-99=25, 10-49=15, 0-9=5
 
@@ -648,7 +658,6 @@ Return ONLY valid JSON:
     {
       "keyword": "specific search phrase",
       "volume": 250,
-      "matched_reference_keyword": "reference keyword used as anchor",
       "difficulty": 45,
       "intent": "commercial",
       "funnel": "middle",
@@ -660,14 +669,9 @@ Return ONLY valid JSON:
 
 Generate EXACTLY 30 opportunities, sorted by score descending.`;
 
-      // Sample up to 1000 reference rows (random shuffle each generation)
-      const sampledReference = [...KEYWORD_VOLUME_REFERENCE]
-        .sort(() => Math.random() - 0.5)
-        .slice(0, 1000);
-
       let userMessage = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}\n\n`;
 
-      userMessage += `## Keyword Reference Context (1000 Google Keyword Planner examples — calibration anchors, do not copy)\n${JSON.stringify(sampledReference, null, 2)}\n\n`;
+      userMessage += `## keyword_reference_examples (random Google Keyword Planner rows — for volume scale calibration only)\n${JSON.stringify(keyword_reference_examples)}\n\n`;
 
       userMessage += `## Country: ${countryVal}\n## Industry: ${industry}\n\n`;
 
@@ -689,7 +693,7 @@ Generate EXACTLY 30 opportunities, sorted by score descending.`;
 
       if (aiRes.error) return jsonResponse({ error: aiRes.error }, 502);
 
-      let parsed: { opportunities: { keyword: string; volume: number; matched_reference_keyword: string; difficulty: number; intent: string; funnel: string; relevance: number; score: number }[] };
+      let parsed: { opportunities: { keyword: string; volume: number; difficulty: number; intent: string; funnel: string; relevance: number; score: number }[] };
       try {
         parsed = JSON.parse(aiRes.content);
       } catch {
@@ -703,7 +707,6 @@ Generate EXACTLY 30 opportunities, sorted by score descending.`;
       const opportunities = parsed.opportunities.slice(0, 30).map(o => ({
         keyword: o.keyword,
         search_volume: o.volume,
-        matched_reference_keyword: o.matched_reference_keyword || "",
         difficulty: o.difficulty,
         intent: o.intent,
         funnel: o.funnel,
@@ -720,7 +723,8 @@ Generate EXACTLY 30 opportunities, sorted by score descending.`;
           generation_params: {
             country_code: countryVal,
             industry,
-            pipeline_version: 3,
+            pipeline_version: 4,
+            reference_rows_sent: keyword_reference_examples.length,
             final_count: opportunities.length,
           },
           country_code: countryVal,
