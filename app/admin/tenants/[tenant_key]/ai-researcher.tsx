@@ -1713,6 +1713,9 @@ function MarketDiscoverySection({
 
 interface KeywordOpportunity {
   keyword: string;
+  normalized_keyword?: string;
+  parent_keyword?: string;
+  modifiers?: string[];
   search_volume: number;
   difficulty: number;
   intent: string;
@@ -1838,6 +1841,9 @@ function PageIdeasTab({ tenantId }: { tenantId: string }) {
             keyword_index: index,
             keyword_data: {
               keyword: kw.keyword,
+              normalized_keyword: kw.normalized_keyword || kw.keyword,
+              parent_keyword: kw.parent_keyword || '',
+              modifiers: kw.modifiers || [],
               search_volume: kw.search_volume,
               difficulty: kw.difficulty,
               intent: kw.intent,

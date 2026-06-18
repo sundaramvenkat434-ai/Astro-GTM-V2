@@ -22,6 +22,80 @@ interface SerpResult {
   description: string;
 }
 
+// ═══════════════════════════════════════════════════════════════
+// PIPELINE HELPERS
+// ═══════════════════════════════════════════════════════════════
+
+const VALID_VOLUMES = [0, 10, 20, 30, 50, 70, 100, 150, 200, 250, 500, 1000, 3000, 5000, 10000];
+
+function snapToVolumeBucket(v: number): number {
+  let closest = 0;
+  let minDiff = Math.abs(v);
+  for (const bucket of VALID_VOLUMES) {
+    const diff = Math.abs(v - bucket);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = bucket;
+    }
+  }
+  return closest;
+}
+
+function nearestLowerBucket(v: number): number {
+  let result = 0;
+  for (const bucket of VALID_VOLUMES) {
+    if (bucket <= v) result = bucket;
+    else break;
+  }
+  return result;
+}
+
+function cleanAiJson(raw: string): string {
+  return raw.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
+}
+
+async function callLLM(
+  apiKey: string,
+  model: string,
+  supabaseUrl: string,
+  systemPrompt: string,
+  userMessage: string,
+  opts: { temperature?: number; maxTokens?: number; title?: string } = {}
+): Promise<{ content: string; error?: string }> {
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "HTTP-Referer": supabaseUrl,
+      "X-Title": opts.title || "AstroGTM Keyword Pipeline",
+    },
+    body: JSON.stringify({
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userMessage },
+      ],
+      temperature: opts.temperature ?? 0.7,
+      max_tokens: opts.maxTokens ?? 8000,
+      response_format: { type: "json_object" },
+    }),
+  });
+
+  if (!res.ok) {
+    const errText = await res.text();
+    return { content: "", error: `AI API error (${res.status}): ${errText}` };
+  }
+
+  const data = await res.json();
+  const raw = data.choices?.[0]?.message?.content || "";
+  return { content: cleanAiJson(raw) };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MAIN HANDLER
+// ═══════════════════════════════════════════════════════════════
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -40,7 +114,6 @@ Deno.serve(async (req: Request) => {
       primary_search_term,
       country_code,
       location_uule,
-      tenant_domain,
       brand_intelligence,
       serp_results,
       scraped_content,
@@ -81,26 +154,19 @@ Deno.serve(async (req: Request) => {
         `https://api.apify.com/v2/acts/nFJndFXA5zjCTuudP/run-sync-get-dataset-items?token=${APIFY_TOKEN}`,
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify(apifyPayload),
         }
       );
 
       if (!apifyRes.ok) {
         const errText = await apifyRes.text();
-        return jsonResponse(
-          { error: `Apify request failed (${apifyRes.status})`, details: errText },
-          502
-        );
+        return jsonResponse({ error: `Apify request failed (${apifyRes.status})`, details: errText }, 502);
       }
 
       const apifyData = await apifyRes.json();
-
       const organicResults: SerpResult[] = [];
       for (const item of apifyData) {
-        // Nested format: each item is a SERP page with organicResults array
         const nested = item?.organicResults || item?.organic_results || [];
         if (nested.length > 0) {
           for (const r of nested) {
@@ -112,7 +178,6 @@ Deno.serve(async (req: Request) => {
             });
           }
         } else if (item?.title && (item?.url || item?.link)) {
-          // Flat format: each item IS a single organic result
           organicResults.push({
             rank: item.position || item.rank || organicResults.length + 1,
             title: item.title || "",
@@ -122,7 +187,6 @@ Deno.serve(async (req: Request) => {
         }
       }
 
-      // Return debug info if no results found
       if (organicResults.length === 0) {
         return jsonResponse({
           results: [],
@@ -144,23 +208,19 @@ Deno.serve(async (req: Request) => {
       }
 
       const results: { url: string; content: string; error?: string }[] = [];
-
       for (const pageUrl of urls.slice(0, 5)) {
         try {
           const pageRes = await fetch(pageUrl, {
             headers: {
-              "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+              "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
               Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             },
             redirect: "follow",
           });
-
           if (!pageRes.ok) {
             results.push({ url: pageUrl, content: "", error: `HTTP ${pageRes.status}` });
             continue;
           }
-
           const html = await pageRes.text();
           const text = html
             .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
@@ -169,7 +229,6 @@ Deno.serve(async (req: Request) => {
             .replace(/\s+/g, " ")
             .trim()
             .slice(0, 12000);
-
           results.push({ url: pageUrl, content: text });
         } catch (err) {
           results.push({ url: pageUrl, content: "", error: (err as Error).message });
@@ -179,7 +238,7 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ results });
     }
 
-    // ─── ACTION: generate ───────────────────────────────────────
+    // ─── ACTION: generate (keyword strategy) ────────────────────
     if (action === "generate") {
       if (!OPENROUTER_API_KEY) {
         return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
@@ -187,7 +246,6 @@ Deno.serve(async (req: Request) => {
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-      // Load model setting
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
@@ -203,7 +261,6 @@ Deno.serve(async (req: Request) => {
       const keywordsCount = num_keywords || 20;
       const pagesCount = num_pages || 10;
 
-      // Load custom prompt from admin settings if available
       const { data: promptRow } = await supabase
         .from("admin_settings")
         .select("value")
@@ -231,51 +288,38 @@ EXACT OUTPUT REQUIREMENTS:
 - Generate EXACTLY ${themesCount} content themes
 - Generate EXACTLY ${keywordsCount} keywords distributed across all themes
 - Generate EXACTLY ${pagesCount} suggested page titles distributed across all themes
-- Do NOT generate fewer items than requested. The user explicitly chose these numbers.
-- If the ratio seems unusual (e.g. 50 pages across 3 themes), distribute them proportionally — ~17 pages per theme. Do NOT reduce the total count.
+- Do NOT generate fewer items than requested.
 
 PAGE TITLE UNIQUENESS RULES:
 - Every single page title MUST be completely distinct and unique
 - No two page titles may cover the same topic from a slightly different angle
-- No titles should be synonyms or paraphrases of each other (e.g. "Best X for Y" and "Top X for Y" are too similar)
 - Each page must target a genuinely different search intent or user need
-- Verify uniqueness: if you removed any page title, would the remaining set lose coverage of a topic? If not, it's redundant.
 
 CRITICAL REQUIREMENTS:
-- Opportunity scores must be 0-100 based on: estimated search volume, competition difficulty from SERP analysis, and brand relevance
+- Opportunity scores must be 0-100 based on: estimated search volume, competition difficulty, and brand relevance
 - Keywords must be SPECIFIC and ACTIONABLE - no vague single-word terms. Long-tail is preferred.
-- Every keyword should map to clear search intent (informational, transactional, navigational, or commercial)
-- Page titles must be SEO-optimized, compelling, and distinct from each other
+- Every keyword should map to clear search intent
+- Page titles must be SEO-optimized, compelling, and distinct
 - Focus on GAPS and OPPORTUNITIES the brand is NOT currently ranking for
 - Use the scraped competitor content to understand what topics are already well-covered vs. where there are gaps
-- If brand intelligence is provided, align themes with the brand's audience segments, pain points, and value proposition
-- Prioritize keywords where the brand has a realistic chance of ranking (avoid head terms dominated by massive sites)`;
+- Prioritize keywords where the brand has a realistic chance of ranking`;
 
       let userMessage = "";
-
-      userMessage += `## STRICT OUTPUT CONSTRAINTS (non-negotiable)\n`;
-      userMessage += `You MUST return EXACTLY:\n`;
-      userMessage += `- ${themesCount} themes (no more, no less)\n`;
-      userMessage += `- ${keywordsCount} total keywords across ALL themes combined (not per theme)\n`;
-      userMessage += `- ${pagesCount} total suggested pages across ALL themes combined (not per theme)\n`;
-      userMessage += `Count carefully before returning. If your JSON has more or fewer items than specified above, regenerate.\n\n`;
+      userMessage += `## STRICT OUTPUT CONSTRAINTS\n`;
+      userMessage += `- ${themesCount} themes\n- ${keywordsCount} total keywords\n- ${pagesCount} total suggested pages\n\n`;
 
       if (brand_intelligence) {
-        userMessage += `## Brand Intelligence (CONTEXT ONLY — do NOT copy keywords from here)\n`;
-        userMessage += `The following brand profile is provided as BACKGROUND CONTEXT to help you understand the brand's identity, audience, and market positioning. Use it to inform your strategy direction ONLY.\n`;
-        userMessage += `DO NOT copy, reuse, or include keywords listed in this section in your output. Generate FRESH, NEW keywords based on your analysis.\n\n`;
+        userMessage += `## Brand Intelligence (CONTEXT ONLY)\n`;
         userMessage += JSON.stringify(brand_intelligence, null, 2);
         userMessage += "\n\n";
       }
 
       userMessage += `## Google SERP Results for "${primary_search_term}"\n`;
-      userMessage += `These are the actual Google rankings. Use position data to assess competition difficulty.\n\n`;
       userMessage += JSON.stringify(serp_results, null, 2);
       userMessage += "\n\n";
 
       if (scraped_content && scraped_content.length > 0) {
-        userMessage += `## Scraped Competitor Page Content\n`;
-        userMessage += `These are the actual page contents from top-ranking competitor sites. Analyze their keyword usage, content gaps, and topical coverage to identify opportunities.\n\n`;
+        userMessage += `## Scraped Competitor Content\n`;
         for (const page of scraped_content) {
           if (page.content && page.content.length > 0) {
             userMessage += `### ${page.url}\n${page.content.slice(0, 5000)}\n\n`;
@@ -284,7 +328,7 @@ CRITICAL REQUIREMENTS:
       }
 
       if (additional_instructions) {
-        userMessage += `\n## User Instructions & Keyword Focus\n${additional_instructions}\n`;
+        userMessage += `\n## User Instructions\n${additional_instructions}\n`;
       }
 
       const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
@@ -309,30 +353,20 @@ CRITICAL REQUIREMENTS:
 
       if (!aiRes.ok) {
         const errText = await aiRes.text();
-        return jsonResponse(
-          { error: `AI API error (${aiRes.status})`, details: errText },
-          502
-        );
+        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
       }
 
       const aiData = await aiRes.json();
       let rawContent = aiData.choices?.[0]?.message?.content || "";
-      rawContent = rawContent
-        .replace(/^```(?:json)?\n?/i, "")
-        .replace(/\n?```$/, "")
-        .trim();
+      rawContent = cleanAiJson(rawContent);
 
       let parsed;
       try {
         parsed = JSON.parse(rawContent);
       } catch {
-        return jsonResponse(
-          { error: "Failed to parse AI response", raw: rawContent },
-          500
-        );
+        return jsonResponse({ error: "Failed to parse AI response", raw: rawContent }, 500);
       }
 
-      // Save to database
       const { data: saved, error: saveError } = await supabase
         .from("gifaa_keyword_strategies")
         .insert({
@@ -354,10 +388,7 @@ CRITICAL REQUIREMENTS:
         .single();
 
       if (saveError) {
-        return jsonResponse(
-          { error: "Failed to save strategy", details: saveError.message, data: parsed },
-          500
-        );
+        return jsonResponse({ error: "Failed to save strategy", details: saveError.message, data: parsed }, 500);
       }
 
       return jsonResponse({ success: true, data: saved });
@@ -381,7 +412,6 @@ CRITICAL REQUIREMENTS:
 
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-      // Load model + prompt from admin_settings — warn if missing
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
@@ -392,53 +422,33 @@ CRITICAL REQUIREMENTS:
         settingsMap[row.key] = row.value;
       }
 
-      if (!settingsMap["ai_model_keyword_research"]) {
-        console.warn("[enrich-volume] ai_model_keyword_research not set in admin_settings, using default");
-      }
-      if (!settingsMap["ai_keyword_volume_prompt"]) {
-        console.warn("[enrich-volume] ai_keyword_volume_prompt not set in admin_settings, using default");
-      }
-
       const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
 
-      // Default prompt — concrete calibration anchors keep volume estimates realistic.
-      // Priority for primary_keyword: existing_keyword > slug words > page title.
       const defaultSystemPrompt = `You are an SEO keyword research expert. Given a list of pages, identify the best primary search keyword for each page and estimate its monthly search volume.
 
-KEYWORD SELECTION — priority order:
-1. Start with the "existing_keyword" field — this is the target keyword already chosen for the page. If it is 2-3 words and sounds like a real search query, use it as-is.
-2. If existing_keyword is too long (>3 words) or is a sentence fragment, extract its 2-3 most important words.
+KEYWORD SELECTION:
+1. Start with the "existing_keyword" field. If it is 2-3 words and sounds like a real search query, use it.
+2. If existing_keyword is too long, extract its 2-3 most important words.
 3. Only fall back to deriving from the page title or slug if existing_keyword is blank.
 
 KEYWORD RULES:
-- primary_keyword must be EXACTLY 2-3 words (never 1 word, never 4+ words)
+- primary_keyword must be EXACTLY 2-3 words
 - Must be lowercase
-- Must sound like something a real person types into Google — not a marketing headline
-- Strip filler words: guide, tips, ultimate, complete, how, to, best, top, for
-- WRONG: "family financial organization tips" → RIGHT: "family budget app"
-- WRONG: "how to organize family finances" → RIGHT: "family finance tracker"
-- WRONG: "wedding gift registry ideas" → RIGHT: "gift registry"
+- Must sound like something a real person types into Google
 
 VOLUME RULES:
-- monthly_search_volume must be an exact integer representing realistic searches/month for country: {{country}}
-- Use relative sizing across all pages in this batch — pages on similar topics should have consistent relative volumes
-- Do NOT invent large numbers. Be conservative. Most niche long-tail pages get 100-2000/month.
-- confidence must be 0-100 (how certain you are about the volume estimate)
+- monthly_search_volume must be a realistic integer for country: {{country}}
+- Be conservative. Most niche long-tail pages get 100-2000/month.
+- confidence must be 0-100
 
-Return ONLY valid JSON, no markdown, no explanation:
+Return ONLY valid JSON:
 {
   "results": [
-    {
-      "slug": "exact-slug-from-input",
-      "primary_keyword": "2-3 word phrase",
-      "monthly_search_volume": 1200,
-      "confidence": 65
-    }
+    { "slug": "exact-slug", "primary_keyword": "2-3 words", "monthly_search_volume": 1200, "confidence": 65 }
   ]
 }`;
 
       let systemPrompt = settingsMap["ai_keyword_volume_prompt"] || defaultSystemPrompt;
-      // Replace template variables in either the admin prompt or the default
       const countryVal = country || "us";
       const industryVal = industry || "general";
       systemPrompt = systemPrompt
@@ -446,11 +456,7 @@ Return ONLY valid JSON, no markdown, no explanation:
         .replace(/\{\{industry\}\}/g, industryVal)
         .replace(/\{\{keywords_json\}\}/g, JSON.stringify(pages, null, 2));
 
-      const userMessage = `Country: ${countryVal}
-Industry: ${industryVal}
-
-Pages to analyze:
-${JSON.stringify(pages, null, 2)}`;
+      const userMessage = `Country: ${countryVal}\nIndustry: ${industryVal}\n\nPages:\n${JSON.stringify(pages, null, 2)}`;
 
       const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -479,7 +485,7 @@ ${JSON.stringify(pages, null, 2)}`;
 
       const aiData = await aiRes.json();
       let rawContent = aiData.choices?.[0]?.message?.content || "";
-      rawContent = rawContent.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
+      rawContent = cleanAiJson(rawContent);
 
       let parsed: { results: { slug: string; primary_keyword: string; monthly_search_volume: number; confidence: number }[] };
       try {
@@ -488,69 +494,33 @@ ${JSON.stringify(pages, null, 2)}`;
         return jsonResponse({ error: "Failed to parse AI response", raw: rawContent }, 500);
       }
 
-      // Build a set of valid input slugs for matching
       const validSlugs = new Set(pages.map((p) => p.slug));
-
-      // Words that add no search meaning — safe to strip entirely
       const FILLER = new Set(["guide", "tips", "ultimate", "complete", "how", "to", "best", "top", "for", "a", "an", "the", "and", "or", "of", "in", "on", "with", "using", "use", "get", "your", "my", "our"]);
-
-      // Commercial nouns that carry real search intent — must be preserved even when trimming to 3 words
       const COMMERCIAL = new Set(["app", "apps", "software", "tool", "tools", "platform", "platforms", "template", "templates", "checklist", "checklists", "ideas", "service", "services", "system", "systems"]);
 
       function sanitizeKeyword(raw: string): string | null {
         if (!raw || typeof raw !== "string") return null;
-
-        // 1. Lowercase, remove punctuation
         const clean = raw.toLowerCase().replace(/[^a-z0-9\s]/g, " ").replace(/\s+/g, " ").trim();
-        // Keep only words of length > 1 to drop single-letter noise
         const words = clean.split(" ").filter((w) => w.length > 1);
-
-        // 2. Remove ALL filler words — but never remove a commercial noun even if it appears in FILLER
         const meaningful = words.filter((w) => COMMERCIAL.has(w) || !FILLER.has(w));
-
         if (meaningful.length < 2) return null;
         if (meaningful.length <= 3) return meaningful.join(" ");
-
-        // 3. More than 3 words remain: trim intelligently.
-        //    If the last word is a commercial noun, preserve it and take the first 2 substantive words.
-        //    Otherwise take the first 3 words.
         const last = meaningful[meaningful.length - 1];
-        if (COMMERCIAL.has(last)) {
-          return [...meaningful.slice(0, 2), last].join(" ");
-        }
+        if (COMMERCIAL.has(last)) return [...meaningful.slice(0, 2), last].join(" ");
         return meaningful.slice(0, 3).join(" ");
       }
 
-      // Build volumes map keyed by slug with full validation
       const volumesMap: Record<string, { primary_keyword: string; monthly_search_volume: number; confidence: number }> = {};
       for (const item of parsed.results || []) {
-        // Skip slugs not in the original input
         if (!item.slug || !validSlugs.has(item.slug)) continue;
-
         const kw = sanitizeKeyword(item.primary_keyword);
-        if (!kw) {
-          console.warn(`[enrich-volume] Skipping slug "${item.slug}" — invalid primary_keyword: "${item.primary_keyword}"`);
-          continue;
-        }
-
+        if (!kw) continue;
         const volume = typeof item.monthly_search_volume === "number" ? Math.round(item.monthly_search_volume) : null;
-        if (volume === null || volume < 0) {
-          console.warn(`[enrich-volume] Skipping slug "${item.slug}" — invalid volume: ${item.monthly_search_volume}`);
-          continue;
-        }
-
-        const confidence = typeof item.confidence === "number"
-          ? Math.min(100, Math.max(0, Math.round(item.confidence)))
-          : 50;
-
-        volumesMap[item.slug] = {
-          primary_keyword: kw,
-          monthly_search_volume: volume,
-          confidence,
-        };
+        if (volume === null || volume < 0) continue;
+        const confidence = typeof item.confidence === "number" ? Math.min(100, Math.max(0, Math.round(item.confidence))) : 50;
+        volumesMap[item.slug] = { primary_keyword: kw, monthly_search_volume: volume, confidence };
       }
 
-      // Persist to database
       const { error: updateError } = await supabase
         .from("gifaa_keyword_strategies")
         .update({ page_search_volumes: volumesMap })
@@ -563,7 +533,9 @@ ${JSON.stringify(pages, null, 2)}`;
       return jsonResponse({ success: true, data: volumesMap });
     }
 
-    // ─── ACTION: generate-opportunities ───────────────────────
+    // ═══════════════════════════════════════════════════════════════
+    // ACTION: generate-opportunities (6-STEP MULTI-AGENT PIPELINE)
+    // ═══════════════════════════════════════════════════════════════
     if (action === "generate-opportunities") {
       if (!OPENROUTER_API_KEY) {
         return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
@@ -584,85 +556,515 @@ ${JSON.stringify(pages, null, 2)}`;
         settingsMap[row.key] = row.value;
       }
       const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
-
       const countryVal = country_code || "us";
+      const industry = brand_intelligence.brand?.category || brand_intelligence.brand?.industry || "general";
 
-      const systemPrompt = `You are an expert SEO keyword researcher. Given brand intelligence data, generate a comprehensive list of keyword opportunities.
+      // ──────────────────────────────────────────────────────────
+      // STEP 1: KEYWORD DISCOVERY AGENT
+      // ──────────────────────────────────────────────────────────
+      const step1System = `You are an expert SEO keyword researcher. Generate 80-100 keyword candidates based on the provided brand intelligence, SERP results, and competitor content.
 
-For each keyword, provide:
-- keyword: a specific, actionable long-tail keyword (2-5 words)
-- search_volume: estimated monthly search volume (integer)
-- difficulty: SEO difficulty score 0-100
+RULES:
+- Generate ONLY keyword text, intent, funnel stage, keyword_type, and parent_keyword
+- Do NOT estimate search volume
+- Do NOT estimate difficulty
+- Do NOT score opportunities
+- Focus on GAPS the brand is NOT ranking for but SHOULD be
+- Include a mix of head terms, body terms, and long-tail keywords
+- Keywords must be specific, actionable phrases (2-5 words)
 - intent: one of "informational", "commercial", "transactional", "navigational"
 - funnel: one of "top", "middle", "bottom"
-- relevance: relevance to the brand 0-100
 - keyword_type: one of "head", "body", "long-tail"
-- reasoning: brief explanation of why this is an opportunity
-- opportunity_score: overall opportunity score 0-100 (combining volume, difficulty, relevance)
+- parent_keyword: the broader 1-2 word topic this keyword belongs to
 
-Generate approximately 30 high-quality keyword opportunities. Internally consider ~100 candidates and return only the top 30 ranked by opportunity_score.
-
-Focus on GAPS — keywords the brand is NOT likely ranking for but SHOULD be.
-Prioritize keywords where the brand has a realistic chance of ranking.
 Country context: ${countryVal}
 
 Return ONLY valid JSON:
 {
-  "keywords": [...]
+  "keywords": [
+    {
+      "keyword": "specific search phrase",
+      "intent": "commercial",
+      "funnel": "middle",
+      "keyword_type": "long-tail",
+      "parent_keyword": "broader topic"
+    }
+  ]
 }`;
 
-      const userMessage = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}`;
+      let step1User = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}\n\n`;
+      if (serp_results && serp_results.length > 0) {
+        step1User += `## SERP Results\n${JSON.stringify(serp_results.slice(0, 20), null, 2)}\n\n`;
+      }
+      if (scraped_content && scraped_content.length > 0) {
+        step1User += `## Competitor Content\n`;
+        for (const page of scraped_content.slice(0, 5)) {
+          if (page.content) step1User += `### ${page.url}\n${page.content.slice(0, 4000)}\n\n`;
+        }
+      }
 
-      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": SUPABASE_URL,
-          "X-Title": "AstroGTM Keyword Opportunities",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage },
-          ],
-          temperature: 0.7,
-          max_tokens: 8000,
-          response_format: { type: "json_object" },
-        }),
+      const step1Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step1System, step1User, {
+        temperature: 0.8,
+        maxTokens: 10000,
+        title: "AstroGTM Step1 Discovery",
       });
 
-      if (!aiRes.ok) {
-        const errText = await aiRes.text();
-        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
-      }
+      if (step1Res.error) return jsonResponse({ error: step1Res.error, step: 1 }, 502);
 
-      const aiData = await aiRes.json();
-      let rawContent = aiData.choices?.[0]?.message?.content || "";
-      rawContent = rawContent.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
-
-      let parsed;
+      let step1Data: { keywords: { keyword: string; intent: string; funnel: string; keyword_type: string; parent_keyword: string }[] };
       try {
-        parsed = JSON.parse(rawContent);
+        step1Data = JSON.parse(step1Res.content);
       } catch {
-        return jsonResponse({ error: "Failed to parse AI response", raw: rawContent }, 500);
+        return jsonResponse({ error: "Step 1: Failed to parse response", raw: step1Res.content.slice(0, 500) }, 500);
       }
 
+      if (!step1Data.keywords || step1Data.keywords.length === 0) {
+        return jsonResponse({ error: "Step 1: No keywords generated" }, 500);
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 2: KEYWORD NORMALIZER AGENT
+      // ──────────────────────────────────────────────────────────
+      const step2System = `You are a keyword normalization expert, similar to how Semrush processes keywords. For each keyword, normalize it to its canonical search form.
+
+RULES:
+- Find the parent keyword (broadest real search term)
+- Extract modifiers (country, quality, channel, format)
+- Detect if the phrase is real search language people actually type
+- Remove unnecessary words that don't add search intent
+- If multiple keywords normalize to the same parent + intent combination, mark duplicates
+
+Examples:
+
+"free wedding gift registry india" normalizes to:
+- normalized_keyword: "wedding gift registry"
+- parent_keyword: "gift registry"
+- modifiers: ["free", "india"]
+
+"whatsapp industrial sensors quote" normalizes to:
+- normalized_keyword: "industrial sensors"
+- parent_keyword: "industrial sensors"
+- modifiers: ["whatsapp", "quote"]
+
+"best ai chatbot for sales teams 2024" normalizes to:
+- normalized_keyword: "ai chatbot sales"
+- parent_keyword: "ai chatbot"
+- modifiers: ["best", "2024", "teams"]
+
+Return ONLY valid JSON:
+{
+  "normalized_keywords": [
+    {
+      "original_keyword": "the exact input keyword",
+      "normalized_keyword": "cleaned search phrase",
+      "parent_keyword": "broadest parent",
+      "modifiers": ["modifier1", "modifier2"],
+      "is_real_search": true,
+      "is_duplicate": false
+    }
+  ]
+}`;
+
+      const step2User = `Normalize these keywords:\n${JSON.stringify(step1Data.keywords.map(k => k.keyword), null, 2)}`;
+
+      const step2Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step2System, step2User, {
+        temperature: 0.2,
+        maxTokens: 10000,
+        title: "AstroGTM Step2 Normalizer",
+      });
+
+      if (step2Res.error) return jsonResponse({ error: step2Res.error, step: 2 }, 502);
+
+      let step2Data: { normalized_keywords: { original_keyword: string; normalized_keyword: string; parent_keyword: string; modifiers: string[]; is_real_search: boolean; is_duplicate: boolean }[] };
+      try {
+        step2Data = JSON.parse(step2Res.content);
+      } catch {
+        return jsonResponse({ error: "Step 2: Failed to parse response", raw: step2Res.content.slice(0, 500) }, 500);
+      }
+
+      // Collapse duplicates: keep best intent variant per parent_keyword
+      const parentMap = new Map<string, typeof step2Data.normalized_keywords[0] & { intent: string; funnel: string; keyword_type: string }>();
+      const intentPriority: Record<string, number> = { transactional: 4, commercial: 3, informational: 2, navigational: 1 };
+
+      for (const norm of step2Data.normalized_keywords || []) {
+        if (!norm.is_real_search) continue;
+
+        const original = step1Data.keywords.find(k => k.keyword === norm.original_keyword);
+        if (!original) continue;
+
+        const parentKey = `${norm.parent_keyword}|${original.intent}`;
+        const existing = parentMap.get(parentKey);
+
+        if (!existing || (intentPriority[original.intent] || 0) > (intentPriority[existing.intent] || 0)) {
+          parentMap.set(parentKey, { ...norm, intent: original.intent, funnel: original.funnel, keyword_type: original.keyword_type });
+        }
+      }
+
+      const uniqueKeywords = Array.from(parentMap.values());
+
+      if (uniqueKeywords.length === 0) {
+        return jsonResponse({ error: "Step 2: All keywords filtered as non-search or duplicate" }, 500);
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 3: VOLUME AGENT (isolated — no brand context)
+      // ──────────────────────────────────────────────────────────
+
+      // Check cache first
+      const keywordsForVolume = uniqueKeywords.map(k => k.normalized_keyword);
+      const { data: cachedVolumes } = await supabase
+        .from("keyword_volume_cache")
+        .select("keyword, volume, confidence")
+        .eq("country_code", countryVal)
+        .eq("industry", industry)
+        .in("keyword", keywordsForVolume);
+
+      const cacheMap = new Map<string, { volume: number; confidence: number }>();
+      for (const cv of cachedVolumes || []) {
+        cacheMap.set(cv.keyword, { volume: cv.volume, confidence: cv.confidence });
+      }
+
+      const uncachedKeywords = uniqueKeywords.filter(k => !cacheMap.has(k.normalized_keyword));
+
+      let volumeResults: { keyword: string; monthly_search_volume: number; volume_confidence: number }[] = [];
+
+      // Add cached results
+      for (const k of uniqueKeywords) {
+        const cached = cacheMap.get(k.normalized_keyword);
+        if (cached) {
+          volumeResults.push({ keyword: k.normalized_keyword, monthly_search_volume: cached.volume, volume_confidence: cached.confidence });
+        }
+      }
+
+      if (uncachedKeywords.length > 0) {
+        const step3System = `You are a search volume estimation expert. Estimate monthly search volumes ONLY.
+
+CRITICAL: You receive ONLY keywords, a country, and an industry. You have NO brand context, NO competitor data, NO opportunity information.
+
+CALIBRATION DATABASE (use these as anchors):
+
+Gift industry:
+- gift ideas = 10000
+- wedding gifts = 5000
+- gift registry = 150
+- wedding registry = 100
+- online gift registry = 20
+- wedding cash fund = 50
+
+Industrial:
+- industrial automation = 500
+- industrial sensors = 200
+- sensor supplier = 50
+
+AI/Tech:
+- ai tools = 10000
+- ai chatbot = 5000
+- ai sales agent = 250
+- ai recruiter = 200
+
+MODIFIER MULTIPLIERS (apply to parent volume):
+- country modifier (india, uk, etc) = x0.5
+- supplier = x0.3
+- quote = x0.1
+- custom = x0.2
+- free = x0.5
+- best = x0.8
+- online = x0.3
+- review = x0.4
+
+RULES:
+1. Parent keyword volume MUST always be >= child keyword volume
+2. Apply modifier multipliers to estimate long-tail from parent
+3. Output volume MUST be one of these exact buckets: 0, 10, 20, 30, 50, 70, 100, 150, 200, 250, 500, 1000, 3000, 5000, 10000
+4. When unsure, default to lower bucket
+5. volume_confidence: 0-100 representing your certainty
+
+Example:
+- parent "gift registry" = 150
+- child "free wedding gift registry india" = free(x0.5) * country(x0.5) * 150 = ~37 → snap to 30
+
+Return ONLY valid JSON:
+{
+  "volumes": [
+    { "keyword": "exact keyword from input", "monthly_search_volume": 100, "volume_confidence": 60 }
+  ]
+}`;
+
+        const step3Input = uncachedKeywords.map(k => ({
+          keyword: k.normalized_keyword,
+          parent_keyword: k.parent_keyword,
+          modifiers: k.modifiers,
+        }));
+
+        const step3User = `Country: ${countryVal}\nIndustry: ${industry}\n\nKeywords:\n${JSON.stringify(step3Input, null, 2)}`;
+
+        const step3Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step3System, step3User, {
+          temperature: 0.1,
+          maxTokens: 6000,
+          title: "AstroGTM Step3 Volume",
+        });
+
+        if (step3Res.error) return jsonResponse({ error: step3Res.error, step: 3 }, 502);
+
+        let step3Data: { volumes: { keyword: string; monthly_search_volume: number; volume_confidence: number }[] };
+        try {
+          step3Data = JSON.parse(step3Res.content);
+        } catch {
+          return jsonResponse({ error: "Step 3: Failed to parse response", raw: step3Res.content.slice(0, 500) }, 500);
+        }
+
+        // Snap to valid buckets
+        for (const v of step3Data.volumes || []) {
+          v.monthly_search_volume = snapToVolumeBucket(v.monthly_search_volume);
+          volumeResults.push(v);
+        }
+
+        // Sanity check: parent volume >= child volume
+        const parentVolumes = new Map<string, number>();
+        for (const v of volumeResults) {
+          const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
+          if (matchingKw) {
+            const current = parentVolumes.get(matchingKw.parent_keyword) || 0;
+            if (v.monthly_search_volume > current) {
+              parentVolumes.set(matchingKw.parent_keyword, v.monthly_search_volume);
+            }
+          }
+        }
+
+        for (const v of volumeResults) {
+          const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
+          if (matchingKw && matchingKw.normalized_keyword !== matchingKw.parent_keyword) {
+            const parentVol = parentVolumes.get(matchingKw.parent_keyword) || 10000;
+            if (v.monthly_search_volume > parentVol) {
+              v.monthly_search_volume = nearestLowerBucket(parentVol);
+            }
+          }
+        }
+
+        // Cache new volumes
+        const cacheInserts = (step3Data.volumes || []).map(v => ({
+          keyword: v.keyword,
+          country_code: countryVal,
+          industry,
+          volume: snapToVolumeBucket(v.monthly_search_volume),
+          confidence: Math.min(100, Math.max(0, v.volume_confidence || 50)),
+        }));
+
+        if (cacheInserts.length > 0) {
+          await supabase
+            .from("keyword_volume_cache")
+            .upsert(cacheInserts, { onConflict: "keyword,country_code,industry" });
+        }
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 4: DIFFICULTY AGENT
+      // ──────────────────────────────────────────────────────────
+      const step4System = `You are an SEO difficulty estimation expert. Estimate keyword difficulty scores ONLY.
+
+Consider:
+- What types of domains typically rank for this keyword (authority level)
+- How competitive the SERP landscape is for similar terms
+- Content quality required to rank
+- Do NOT use search volume to determine difficulty
+
+Difficulty scale:
+- 0-20: Very easy (thin competition, niche forums rank)
+- 21-40: Easy (small blogs rank)
+- 41-60: Medium (established sites rank)
+- 61-80: Hard (high-authority sites dominate)
+- 81-100: Very hard (only top-tier domains rank)
+
+Return ONLY valid JSON:
+{
+  "difficulties": [
+    { "keyword": "exact keyword from input", "difficulty": 45 }
+  ]
+}`;
+
+      const step4Keywords = uniqueKeywords.map(k => k.normalized_keyword);
+      let step4User = `Keywords to evaluate:\n${JSON.stringify(step4Keywords, null, 2)}`;
+      if (serp_results && serp_results.length > 0) {
+        step4User += `\n\nSERP context (domains currently ranking in this space):\n${JSON.stringify(serp_results.slice(0, 15).map((r: SerpResult) => ({ title: r.title, url: r.url })), null, 2)}`;
+      }
+
+      const step4Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step4System, step4User, {
+        temperature: 0.2,
+        maxTokens: 5000,
+        title: "AstroGTM Step4 Difficulty",
+      });
+
+      if (step4Res.error) return jsonResponse({ error: step4Res.error, step: 4 }, 502);
+
+      let step4Data: { difficulties: { keyword: string; difficulty: number }[] };
+      try {
+        step4Data = JSON.parse(step4Res.content);
+      } catch {
+        return jsonResponse({ error: "Step 4: Failed to parse response", raw: step4Res.content.slice(0, 500) }, 500);
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 5: RELEVANCE AGENT
+      // ──────────────────────────────────────────────────────────
+      const step5System = `You are a brand relevance analyst. Evaluate how relevant each keyword is to the brand.
+
+EVALUATION CRITERIA (weighted equally):
+1. Audience fit — does the brand's target audience search for this?
+2. Product/service fit — does the brand offer something related?
+3. Pain point fit — does this keyword relate to problems the brand solves?
+4. Conversion likelihood — could a visitor from this keyword become a customer?
+
+RULES:
+- Score 0-100 per keyword
+- Do NOT consider search volume or difficulty
+- Provide a brief reason for each score
+
+Return ONLY valid JSON:
+{
+  "relevance_scores": [
+    { "keyword": "exact keyword", "relevance": 75, "reason": "brief explanation" }
+  ]
+}`;
+
+      const step5Input = uniqueKeywords.map(k => ({
+        keyword: k.normalized_keyword,
+        parent_keyword: k.parent_keyword,
+        intent: k.intent,
+      }));
+
+      const step5User = `## Brand Intelligence\n${JSON.stringify({
+        brand: brand_intelligence.brand,
+        audience: brand_intelligence.audience,
+        offerings: brand_intelligence.offerings,
+      }, null, 2)}\n\n## Keywords to evaluate\n${JSON.stringify(step5Input, null, 2)}`;
+
+      const step5Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step5System, step5User, {
+        temperature: 0.3,
+        maxTokens: 6000,
+        title: "AstroGTM Step5 Relevance",
+      });
+
+      if (step5Res.error) return jsonResponse({ error: step5Res.error, step: 5 }, 502);
+
+      let step5Data: { relevance_scores: { keyword: string; relevance: number; reason: string }[] };
+      try {
+        step5Data = JSON.parse(step5Res.content);
+      } catch {
+        return jsonResponse({ error: "Step 5: Failed to parse response", raw: step5Res.content.slice(0, 500) }, 500);
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 6: DETERMINISTIC OPPORTUNITY SCORER
+      // ──────────────────────────────────────────────────────────
+      const volumeMap = new Map<string, number>();
+      for (const v of volumeResults) volumeMap.set(v.keyword, v.monthly_search_volume);
+
+      const difficultyMap = new Map<string, number>();
+      for (const d of step4Data.difficulties || []) difficultyMap.set(d.keyword, d.difficulty);
+
+      const relevanceMap = new Map<string, { relevance: number; reason: string }>();
+      for (const r of step5Data.relevance_scores || []) relevanceMap.set(r.keyword, { relevance: r.relevance, reason: r.reason });
+
+      const intentScores: Record<string, number> = {
+        transactional: 100,
+        commercial: 80,
+        informational: 40,
+        navigational: 20,
+      };
+
+      function volumeToScore(vol: number): number {
+        if (vol >= 10000) return 100;
+        if (vol >= 5000) return 90;
+        if (vol >= 3000) return 80;
+        if (vol >= 1000) return 70;
+        if (vol >= 500) return 60;
+        if (vol >= 250) return 50;
+        if (vol >= 200) return 45;
+        if (vol >= 150) return 40;
+        if (vol >= 100) return 35;
+        if (vol >= 70) return 30;
+        if (vol >= 50) return 25;
+        if (vol >= 30) return 20;
+        if (vol >= 20) return 15;
+        if (vol >= 10) return 10;
+        return 5;
+      }
+
+      interface FinalKeyword {
+        keyword: string;
+        normalized_keyword: string;
+        parent_keyword: string;
+        modifiers: string[];
+        search_volume: number;
+        difficulty: number;
+        intent: string;
+        funnel: string;
+        relevance: number;
+        keyword_type: string;
+        reasoning: string;
+        opportunity_score: number;
+      }
+
+      const finalKeywords: FinalKeyword[] = [];
+
+      for (const kw of uniqueKeywords) {
+        const volume = volumeMap.get(kw.normalized_keyword) ?? 0;
+        const difficulty = difficultyMap.get(kw.normalized_keyword) ?? 50;
+        const rel = relevanceMap.get(kw.normalized_keyword);
+        const relevance = rel?.relevance ?? 50;
+        const reason = rel?.reason ?? "";
+
+        const volScore = volumeToScore(volume);
+        const diffScore = 100 - difficulty;
+        const intentScore = intentScores[kw.intent] || 40;
+
+        const opportunityScore = Math.round(
+          (volScore * 0.25) + (diffScore * 0.25) + (intentScore * 0.25) + (relevance * 0.25)
+        );
+
+        finalKeywords.push({
+          keyword: kw.original_keyword,
+          normalized_keyword: kw.normalized_keyword,
+          parent_keyword: kw.parent_keyword,
+          modifiers: kw.modifiers,
+          search_volume: volume,
+          difficulty,
+          intent: kw.intent,
+          funnel: kw.funnel,
+          relevance,
+          keyword_type: kw.keyword_type,
+          reasoning: reason,
+          opportunity_score: opportunityScore,
+        });
+      }
+
+      // Sort by opportunity_score descending, take top 30
+      finalKeywords.sort((a, b) => b.opportunity_score - a.opportunity_score);
+      const top30 = finalKeywords.slice(0, 30);
+
+      // Persist
       const { data: saved, error: saveError } = await supabase
         .from("gifaa_keyword_opportunities")
         .insert({
           tenant_id,
           brand_intelligence_id: brand_intelligence.id || null,
-          keywords: parsed.keywords || [],
-          generation_params: { country_code: countryVal },
+          keywords: top30,
+          generation_params: {
+            country_code: countryVal,
+            industry,
+            pipeline_version: 2,
+            steps_completed: 6,
+            candidates_discovered: step1Data.keywords.length,
+            after_normalization: uniqueKeywords.length,
+            final_count: top30.length,
+          },
           country_code: countryVal,
         })
         .select()
         .single();
 
       if (saveError) {
-        return jsonResponse({ error: "Failed to save opportunities", details: saveError.message, data: parsed }, 500);
+        return jsonResponse({ error: "Failed to save opportunities", details: saveError.message, data: { keywords: top30 } }, 500);
       }
 
       return jsonResponse({ success: true, data: saved });
@@ -675,7 +1077,17 @@ Return ONLY valid JSON:
       }
 
       const { keyword_data } = body as {
-        keyword_data: { keyword: string; search_volume: number; difficulty: number; intent: string; funnel: string; opportunity_score: number };
+        keyword_data: {
+          keyword: string;
+          normalized_keyword?: string;
+          parent_keyword?: string;
+          modifiers?: string[];
+          search_volume: number;
+          difficulty: number;
+          intent: string;
+          funnel: string;
+          opportunity_score: number;
+        };
       };
 
       if (!keyword_data || !keyword_data.keyword) {
@@ -695,24 +1107,38 @@ Return ONLY valid JSON:
       }
       const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
 
+      const hasNormalized = keyword_data.normalized_keyword && keyword_data.parent_keyword;
+
       const systemPrompt = `You are an SEO content strategist. Given a target keyword and its metadata, generate 3-5 specific page ideas that could rank for this keyword or related variations.
 
+${hasNormalized ? `IMPORTANT CONTEXT:
+- The keyword has been normalized. Use the normalized form for SEO targeting.
+- The parent keyword represents the broader topic cluster.
+- Modifiers indicate long-tail intent variations to incorporate.
+- Pages should target the long-tail intent but SEO metadata should align with the parent keyword cluster.` : ""}
+
 Each page idea should have:
-- title: SEO-optimized page title (compelling, click-worthy)
+- title: SEO-optimized page title (compelling, click-worthy, targets the long-tail intent)
 - slug: URL-friendly slug (lowercase, hyphens, no stop words)
+- seo_cluster: the parent keyword this page belongs to (for internal linking strategy)
 
 Return ONLY valid JSON:
 {
   "pages": [
-    { "title": "...", "slug": "..." }
+    { "title": "...", "slug": "...", "seo_cluster": "..." }
   ]
 }`;
 
-      const userMessage = `Target keyword: "${keyword_data.keyword}"
-Search volume: ${keyword_data.search_volume}/mo
-Difficulty: ${keyword_data.difficulty}/100
-Intent: ${keyword_data.intent}
-Funnel stage: ${keyword_data.funnel}`;
+      let userMessage = `Target keyword: "${keyword_data.keyword}"`;
+      if (hasNormalized) {
+        userMessage += `\nNormalized keyword: "${keyword_data.normalized_keyword}"`;
+        userMessage += `\nParent keyword (SEO cluster): "${keyword_data.parent_keyword}"`;
+        userMessage += `\nModifiers: ${JSON.stringify(keyword_data.modifiers || [])}`;
+      }
+      userMessage += `\nSearch volume: ${keyword_data.search_volume}/mo`;
+      userMessage += `\nDifficulty: ${keyword_data.difficulty}/100`;
+      userMessage += `\nIntent: ${keyword_data.intent}`;
+      userMessage += `\nFunnel stage: ${keyword_data.funnel}`;
 
       const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
         method: "POST",
@@ -741,7 +1167,7 @@ Funnel stage: ${keyword_data.funnel}`;
 
       const aiData = await aiRes.json();
       let rawContent = aiData.choices?.[0]?.message?.content || "";
-      rawContent = rawContent.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/, "").trim();
+      rawContent = cleanAiJson(rawContent);
 
       let parsed;
       try {
