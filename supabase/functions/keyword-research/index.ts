@@ -26,45 +26,28 @@ interface SerpResult {
 // PIPELINE HELPERS
 // ═══════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════
-// KEYWORD VOLUME REFERENCE — loaded from CSV at runtime
-// ═══════════════════════════════════════════════════════════════
+const VALID_VOLUMES = [0, 10, 20, 30, 50, 70, 100, 150, 200, 250, 500, 1000, 3000, 5000, 10000];
 
-interface KeywordRef {
-  keyword: string;
-  avg_monthly_searches: string;
-  competition: string;
-}
-
-function loadKeywordReferenceCSV(): KeywordRef[] {
-  try {
-    const csvPath = new URL("./keyword-volume-reference.csv", import.meta.url).pathname;
-    const raw = Deno.readTextFileSync(csvPath);
-    const lines = raw.trim().split("\n");
-    const rows: KeywordRef[] = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cols = lines[i].split(",");
-      if (cols.length >= 3 && cols[0].trim()) {
-        rows.push({
-          keyword: cols[0].trim(),
-          avg_monthly_searches: cols[1].trim(),
-          competition: cols[2].trim(),
-        });
-      }
+function snapToVolumeBucket(v: number): number {
+  let closest = 0;
+  let minDiff = Math.abs(v);
+  for (const bucket of VALID_VOLUMES) {
+    const diff = Math.abs(v - bucket);
+    if (diff < minDiff) {
+      minDiff = diff;
+      closest = bucket;
     }
-    if (rows.length < 100) {
-      console.warn(`keyword-volume-reference.csv has only ${rows.length} rows (< 100)`);
-    }
-    return rows;
-  } catch (err) {
-    console.error("Failed to load keyword-volume-reference.csv:", err);
-    return [];
   }
+  return closest;
 }
 
-function sampleKeywordExamples(allRows: KeywordRef[], count = 100): KeywordRef[] {
-  const shuffled = [...allRows].sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+function nearestLowerBucket(v: number): number {
+  let result = 0;
+  for (const bucket of VALID_VOLUMES) {
+    if (bucket <= v) result = bucket;
+    else break;
+  }
+  return result;
 }
 
 function cleanAiJson(raw: string): string {
@@ -551,7 +534,7 @@ Return ONLY valid JSON:
     }
 
     // ═══════════════════════════════════════════════════════════════
-    // ACTION: generate-opportunities (SINGLE LLM CALL)
+    // ACTION: generate-opportunities (6-STEP MULTI-AGENT PIPELINE)
     // ═══════════════════════════════════════════════════════════════
     if (action === "generate-opportunities") {
       if (!OPENROUTER_API_KEY) {
@@ -576,156 +559,504 @@ Return ONLY valid JSON:
       const countryVal = country_code || "us";
       const industry = brand_intelligence.brand?.category || brand_intelligence.brand?.industry || "general";
 
-      // Load CSV and sample random rows as calibration context
-      const allKeywordRows = loadKeywordReferenceCSV();
-      const keyword_reference_examples = sampleKeywordExamples(allKeywordRows, 100);
+      // ──────────────────────────────────────────────────────────
+      // STEP 1: KEYWORD DISCOVERY AGENT
+      // ──────────────────────────────────────────────────────────
+      const step1System = `You are an expert SEO keyword researcher. Generate 80-100 keyword candidates based on the provided brand intelligence, SERP results, and competitor content.
 
-      const systemPrompt = `You are an expert SEO keyword researcher and opportunity analyst. You generate keyword opportunities for a brand based on brand intelligence, SERP data, and competitor content.
-
-You produce 25-30 keyword opportunities in a single pass.
-
-═══════════════════════════════════════════════
-VOLUME CALIBRATION
-═══════════════════════════════════════════════
-
-You are estimating Google Keyword Planner style monthly search volume.
-
-You are provided keyword_reference_examples.
-
-These are random real Google Keyword Planner keywords.
-
-They exist ONLY to teach volume scale.
-
-Do NOT copy them.
-Do NOT match against them.
-
-Before assigning volume:
-
-1. Compare your keyword mentally against the examples.
-2. Decide if it is:
-   - broader
-   - similar
-   - narrower
-3. Assign realistic volume.
-
-Important:
-
-Large industries do not mean large keywords.
-
-Example:
-AI industry is huge.
-
-ai tools = very high
-ai sales agent = much lower
-ai phone agent = niche
-
-Long-tail phrases usually have lower volume.
-
-Never inflate because the business opportunity is good.
-
-Estimate search demand only.
-
-═══════════════════════════════════════════════
-OTHER FIELDS
-═══════════════════════════════════════════════
-
-For each keyword also provide:
-- difficulty: 0-100 (how hard to rank; consider domain authority of typical rankers)
-- intent: "informational" | "commercial" | "transactional" | "navigational"
-- funnel: "top" | "middle" | "bottom"
-- relevance: 0-100 (how relevant to THIS brand's audience, products, and pain points)
-- score: 0-100 opportunity score = weighted average of (volume_normalized x 0.25) + ((100 - difficulty) x 0.25) + (intent_score x 0.25) + (relevance x 0.25)
-  where intent_score: transactional=100, commercial=80, informational=40, navigational=20
-  where volume_normalized: 500+=60, 200-499=45, 100-199=35, 50-99=25, 10-49=15, 0-9=5
-
-═══════════════════════════════════════════════
-KEYWORD SELECTION RULES
-═══════════════════════════════════════════════
-
+RULES:
+- Generate ONLY keyword text, intent, funnel stage, keyword_type, and parent_keyword
+- Do NOT estimate search volume
+- Do NOT estimate difficulty
+- Do NOT score opportunities
 - Focus on GAPS the brand is NOT ranking for but SHOULD be
-- Include a mix of intent types and funnel stages
+- Include a mix of head terms, body terms, and long-tail keywords
 - Keywords must be specific, actionable phrases (2-5 words)
-- No duplicate or near-duplicate keywords
-- Each keyword targets a genuinely different search intent
+- intent: one of "informational", "commercial", "transactional", "navigational"
+- funnel: one of "top", "middle", "bottom"
+- keyword_type: one of "head", "body", "long-tail"
+- parent_keyword: the broader 1-2 word topic this keyword belongs to
 
-═══════════════════════════════════════════════
-OUTPUT FORMAT
-═══════════════════════════════════════════════
+Country context: ${countryVal}
 
 Return ONLY valid JSON:
 {
-  "opportunities": [
+  "keywords": [
     {
       "keyword": "specific search phrase",
-      "volume": 250,
-      "difficulty": 45,
       "intent": "commercial",
       "funnel": "middle",
-      "relevance": 80,
-      "score": 65
+      "keyword_type": "long-tail",
+      "parent_keyword": "broader topic"
     }
   ]
-}
+}`;
 
-Generate EXACTLY 30 opportunities, sorted by score descending.`;
-
-      let userMessage = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}\n\n`;
-
-      userMessage += `## keyword_reference_examples (random Google Keyword Planner rows — for volume scale calibration only)\n${JSON.stringify(keyword_reference_examples)}\n\n`;
-
-      userMessage += `## Country: ${countryVal}\n## Industry: ${industry}\n\n`;
-
+      let step1User = `## Brand Intelligence\n${JSON.stringify(brand_intelligence, null, 2)}\n\n`;
       if (serp_results && serp_results.length > 0) {
-        userMessage += `## SERP Results\n${JSON.stringify(serp_results.slice(0, 10), null, 2)}\n\n`;
+        step1User += `## SERP Results\n${JSON.stringify(serp_results.slice(0, 20), null, 2)}\n\n`;
       }
       if (scraped_content && scraped_content.length > 0) {
-        userMessage += `## Competitor Content\n`;
+        step1User += `## Competitor Content\n`;
         for (const page of scraped_content.slice(0, 5)) {
-          if (page.content) userMessage += `### ${page.url}\n${page.content.slice(0, 3000)}\n\n`;
+          if (page.content) step1User += `### ${page.url}\n${page.content.slice(0, 4000)}\n\n`;
         }
       }
 
-      const aiRes = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, systemPrompt, userMessage, {
-        temperature: 0.5,
-        maxTokens: 8000,
-        title: "AstroGTM Keyword Opportunities",
+      const step1Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step1System, step1User, {
+        temperature: 0.8,
+        maxTokens: 10000,
+        title: "AstroGTM Step1 Discovery",
       });
 
-      if (aiRes.error) return jsonResponse({ error: aiRes.error }, 502);
+      if (step1Res.error) return jsonResponse({ error: step1Res.error, step: 1 }, 502);
 
-      let parsed: { opportunities: { keyword: string; volume: number; difficulty: number; intent: string; funnel: string; relevance: number; score: number }[] };
+      let step1Data: { keywords: { keyword: string; intent: string; funnel: string; keyword_type: string; parent_keyword: string }[] };
       try {
-        parsed = JSON.parse(aiRes.content);
+        step1Data = JSON.parse(step1Res.content);
       } catch {
-        return jsonResponse({ error: "Failed to parse AI response", raw: aiRes.content.slice(0, 500) }, 500);
+        return jsonResponse({ error: "Step 1: Failed to parse response", raw: step1Res.content.slice(0, 500) }, 500);
       }
 
-      if (!parsed.opportunities || parsed.opportunities.length === 0) {
-        return jsonResponse({ error: "No opportunities generated" }, 500);
+      if (!step1Data.keywords || step1Data.keywords.length === 0) {
+        return jsonResponse({ error: "Step 1: No keywords generated" }, 500);
       }
 
-      const opportunities = parsed.opportunities.slice(0, 30).map(o => ({
-        keyword: o.keyword,
-        search_volume: o.volume,
-        difficulty: o.difficulty,
-        intent: o.intent,
-        funnel: o.funnel,
-        relevance: o.relevance,
-        opportunity_score: o.score,
+      // ──────────────────────────────────────────────────────────
+      // STEP 2: KEYWORD NORMALIZER AGENT
+      // ──────────────────────────────────────────────────────────
+      const step2System = `You are a keyword normalization expert, similar to how Semrush processes keywords. For each keyword, normalize it to its canonical search form.
+
+RULES:
+- Find the parent keyword (broadest real search term)
+- Extract modifiers (country, quality, channel, format)
+- Detect if the phrase is real search language people actually type
+- Remove unnecessary words that don't add search intent
+- If multiple keywords normalize to the same parent + intent combination, mark duplicates
+
+Examples:
+
+"free wedding gift registry india" normalizes to:
+- normalized_keyword: "wedding gift registry"
+- parent_keyword: "gift registry"
+- modifiers: ["free", "india"]
+
+"whatsapp industrial sensors quote" normalizes to:
+- normalized_keyword: "industrial sensors"
+- parent_keyword: "industrial sensors"
+- modifiers: ["whatsapp", "quote"]
+
+"best ai chatbot for sales teams 2024" normalizes to:
+- normalized_keyword: "ai chatbot sales"
+- parent_keyword: "ai chatbot"
+- modifiers: ["best", "2024", "teams"]
+
+Return ONLY valid JSON:
+{
+  "normalized_keywords": [
+    {
+      "original_keyword": "the exact input keyword",
+      "normalized_keyword": "cleaned search phrase",
+      "parent_keyword": "broadest parent",
+      "modifiers": ["modifier1", "modifier2"],
+      "is_real_search": true,
+      "is_duplicate": false
+    }
+  ]
+}`;
+
+      const step2User = `Normalize these keywords:\n${JSON.stringify(step1Data.keywords.map(k => k.keyword), null, 2)}`;
+
+      const step2Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step2System, step2User, {
+        temperature: 0.2,
+        maxTokens: 10000,
+        title: "AstroGTM Step2 Normalizer",
+      });
+
+      if (step2Res.error) return jsonResponse({ error: step2Res.error, step: 2 }, 502);
+
+      let step2Data: { normalized_keywords: { original_keyword: string; normalized_keyword: string; parent_keyword: string; modifiers: string[]; is_real_search: boolean; is_duplicate: boolean }[] };
+      try {
+        step2Data = JSON.parse(step2Res.content);
+      } catch {
+        return jsonResponse({ error: "Step 2: Failed to parse response", raw: step2Res.content.slice(0, 500) }, 500);
+      }
+
+      // Collapse duplicates: keep best intent variant per parent_keyword
+      const parentMap = new Map<string, typeof step2Data.normalized_keywords[0] & { intent: string; funnel: string; keyword_type: string }>();
+      const intentPriority: Record<string, number> = { transactional: 4, commercial: 3, informational: 2, navigational: 1 };
+
+      for (const norm of step2Data.normalized_keywords || []) {
+        if (!norm.is_real_search) continue;
+
+        const original = step1Data.keywords.find(k => k.keyword === norm.original_keyword);
+        if (!original) continue;
+
+        const parentKey = `${norm.parent_keyword}|${original.intent}`;
+        const existing = parentMap.get(parentKey);
+
+        if (!existing || (intentPriority[original.intent] || 0) > (intentPriority[existing.intent] || 0)) {
+          parentMap.set(parentKey, { ...norm, intent: original.intent, funnel: original.funnel, keyword_type: original.keyword_type });
+        }
+      }
+
+      const uniqueKeywords = Array.from(parentMap.values());
+
+      if (uniqueKeywords.length === 0) {
+        return jsonResponse({ error: "Step 2: All keywords filtered as non-search or duplicate" }, 500);
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 3: VOLUME AGENT (isolated — no brand context)
+      // ──────────────────────────────────────────────────────────
+
+      // Check cache first
+      const keywordsForVolume = uniqueKeywords.map(k => k.normalized_keyword);
+      const { data: cachedVolumes } = await supabase
+        .from("keyword_volume_cache")
+        .select("keyword, volume, confidence")
+        .eq("country_code", countryVal)
+        .eq("industry", industry)
+        .in("keyword", keywordsForVolume);
+
+      const cacheMap = new Map<string, { volume: number; confidence: number }>();
+      for (const cv of cachedVolumes || []) {
+        cacheMap.set(cv.keyword, { volume: cv.volume, confidence: cv.confidence });
+      }
+
+      const uncachedKeywords = uniqueKeywords.filter(k => !cacheMap.has(k.normalized_keyword));
+
+      let volumeResults: { keyword: string; monthly_search_volume: number; volume_confidence: number }[] = [];
+
+      // Add cached results
+      for (const k of uniqueKeywords) {
+        const cached = cacheMap.get(k.normalized_keyword);
+        if (cached) {
+          volumeResults.push({ keyword: k.normalized_keyword, monthly_search_volume: cached.volume, volume_confidence: cached.confidence });
+        }
+      }
+
+      if (uncachedKeywords.length > 0) {
+        const step3System = `You are a search volume estimation expert. Estimate monthly search volumes ONLY.
+
+CRITICAL: You receive ONLY keywords, a country, and an industry. You have NO brand context, NO competitor data, NO opportunity information.
+
+CALIBRATION DATABASE (use these as anchors):
+
+Gift industry:
+- gift ideas = 10000
+- wedding gifts = 5000
+- gift registry = 150
+- wedding registry = 100
+- online gift registry = 20
+- wedding cash fund = 50
+
+Industrial:
+- industrial automation = 500
+- industrial sensors = 200
+- sensor supplier = 50
+
+AI/Tech:
+- ai tools = 10000
+- ai chatbot = 5000
+- ai sales agent = 250
+- ai recruiter = 200
+
+MODIFIER MULTIPLIERS (apply to parent volume):
+- country modifier (india, uk, etc) = x0.5
+- supplier = x0.3
+- quote = x0.1
+- custom = x0.2
+- free = x0.5
+- best = x0.8
+- online = x0.3
+- review = x0.4
+
+RULES:
+1. Parent keyword volume MUST always be >= child keyword volume
+2. Apply modifier multipliers to estimate long-tail from parent
+3. Output volume MUST be one of these exact buckets: 0, 10, 20, 30, 50, 70, 100, 150, 200, 250, 500, 1000, 3000, 5000, 10000
+4. When unsure, default to lower bucket
+5. volume_confidence: 0-100 representing your certainty
+
+Example:
+- parent "gift registry" = 150
+- child "free wedding gift registry india" = free(x0.5) * country(x0.5) * 150 = ~37 → snap to 30
+
+Return ONLY valid JSON:
+{
+  "volumes": [
+    { "keyword": "exact keyword from input", "monthly_search_volume": 100, "volume_confidence": 60 }
+  ]
+}`;
+
+        const step3Input = uncachedKeywords.map(k => ({
+          keyword: k.normalized_keyword,
+          parent_keyword: k.parent_keyword,
+          modifiers: k.modifiers,
+        }));
+
+        const step3User = `Country: ${countryVal}\nIndustry: ${industry}\n\nKeywords:\n${JSON.stringify(step3Input, null, 2)}`;
+
+        const step3Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step3System, step3User, {
+          temperature: 0.1,
+          maxTokens: 6000,
+          title: "AstroGTM Step3 Volume",
+        });
+
+        if (step3Res.error) return jsonResponse({ error: step3Res.error, step: 3 }, 502);
+
+        let step3Data: { volumes: { keyword: string; monthly_search_volume: number; volume_confidence: number }[] };
+        try {
+          step3Data = JSON.parse(step3Res.content);
+        } catch {
+          return jsonResponse({ error: "Step 3: Failed to parse response", raw: step3Res.content.slice(0, 500) }, 500);
+        }
+
+        // Snap to valid buckets
+        for (const v of step3Data.volumes || []) {
+          v.monthly_search_volume = snapToVolumeBucket(v.monthly_search_volume);
+          volumeResults.push(v);
+        }
+
+        // Sanity check: parent volume >= child volume
+        const parentVolumes = new Map<string, number>();
+        for (const v of volumeResults) {
+          const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
+          if (matchingKw) {
+            const current = parentVolumes.get(matchingKw.parent_keyword) || 0;
+            if (v.monthly_search_volume > current) {
+              parentVolumes.set(matchingKw.parent_keyword, v.monthly_search_volume);
+            }
+          }
+        }
+
+        for (const v of volumeResults) {
+          const matchingKw = uniqueKeywords.find(k => k.normalized_keyword === v.keyword);
+          if (matchingKw && matchingKw.normalized_keyword !== matchingKw.parent_keyword) {
+            const parentVol = parentVolumes.get(matchingKw.parent_keyword) || 10000;
+            if (v.monthly_search_volume > parentVol) {
+              v.monthly_search_volume = nearestLowerBucket(parentVol);
+            }
+          }
+        }
+
+        // Cache new volumes
+        const cacheInserts = (step3Data.volumes || []).map(v => ({
+          keyword: v.keyword,
+          country_code: countryVal,
+          industry,
+          volume: snapToVolumeBucket(v.monthly_search_volume),
+          confidence: Math.min(100, Math.max(0, v.volume_confidence || 50)),
+        }));
+
+        if (cacheInserts.length > 0) {
+          await supabase
+            .from("keyword_volume_cache")
+            .upsert(cacheInserts, { onConflict: "keyword,country_code,industry" });
+        }
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 4: DIFFICULTY AGENT
+      // ──────────────────────────────────────────────────────────
+      const step4System = `You are an SEO difficulty estimation expert. Estimate keyword difficulty scores ONLY.
+
+Consider:
+- What types of domains typically rank for this keyword (authority level)
+- How competitive the SERP landscape is for similar terms
+- Content quality required to rank
+- Do NOT use search volume to determine difficulty
+
+Difficulty scale:
+- 0-20: Very easy (thin competition, niche forums rank)
+- 21-40: Easy (small blogs rank)
+- 41-60: Medium (established sites rank)
+- 61-80: Hard (high-authority sites dominate)
+- 81-100: Very hard (only top-tier domains rank)
+
+Return ONLY valid JSON:
+{
+  "difficulties": [
+    { "keyword": "exact keyword from input", "difficulty": 45 }
+  ]
+}`;
+
+      const step4Keywords = uniqueKeywords.map(k => k.normalized_keyword);
+      let step4User = `Keywords to evaluate:\n${JSON.stringify(step4Keywords, null, 2)}`;
+      if (serp_results && serp_results.length > 0) {
+        step4User += `\n\nSERP context (domains currently ranking in this space):\n${JSON.stringify(serp_results.slice(0, 15).map((r: SerpResult) => ({ title: r.title, url: r.url })), null, 2)}`;
+      }
+
+      const step4Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step4System, step4User, {
+        temperature: 0.2,
+        maxTokens: 5000,
+        title: "AstroGTM Step4 Difficulty",
+      });
+
+      if (step4Res.error) return jsonResponse({ error: step4Res.error, step: 4 }, 502);
+
+      let step4Data: { difficulties: { keyword: string; difficulty: number }[] };
+      try {
+        step4Data = JSON.parse(step4Res.content);
+      } catch {
+        return jsonResponse({ error: "Step 4: Failed to parse response", raw: step4Res.content.slice(0, 500) }, 500);
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 5: RELEVANCE AGENT
+      // ──────────────────────────────────────────────────────────
+      const step5System = `You are a brand relevance analyst. Evaluate how relevant each keyword is to the brand.
+
+EVALUATION CRITERIA (weighted equally):
+1. Audience fit — does the brand's target audience search for this?
+2. Product/service fit — does the brand offer something related?
+3. Pain point fit — does this keyword relate to problems the brand solves?
+4. Conversion likelihood — could a visitor from this keyword become a customer?
+
+RULES:
+- Score 0-100 per keyword
+- Do NOT consider search volume or difficulty
+- Provide a brief reason for each score
+
+Return ONLY valid JSON:
+{
+  "relevance_scores": [
+    { "keyword": "exact keyword", "relevance": 75, "reason": "brief explanation" }
+  ]
+}`;
+
+      const step5Input = uniqueKeywords.map(k => ({
+        keyword: k.normalized_keyword,
+        parent_keyword: k.parent_keyword,
+        intent: k.intent,
       }));
 
+      const step5User = `## Brand Intelligence\n${JSON.stringify({
+        brand: brand_intelligence.brand,
+        audience: brand_intelligence.audience,
+        offerings: brand_intelligence.offerings,
+      }, null, 2)}\n\n## Keywords to evaluate\n${JSON.stringify(step5Input, null, 2)}`;
+
+      const step5Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step5System, step5User, {
+        temperature: 0.3,
+        maxTokens: 6000,
+        title: "AstroGTM Step5 Relevance",
+      });
+
+      if (step5Res.error) return jsonResponse({ error: step5Res.error, step: 5 }, 502);
+
+      let step5Data: { relevance_scores: { keyword: string; relevance: number; reason: string }[] };
+      try {
+        step5Data = JSON.parse(step5Res.content);
+      } catch {
+        return jsonResponse({ error: "Step 5: Failed to parse response", raw: step5Res.content.slice(0, 500) }, 500);
+      }
+
+      // ──────────────────────────────────────────────────────────
+      // STEP 6: DETERMINISTIC OPPORTUNITY SCORER
+      // ──────────────────────────────────────────────────────────
+      const volumeMap = new Map<string, number>();
+      for (const v of volumeResults) volumeMap.set(v.keyword, v.monthly_search_volume);
+
+      const difficultyMap = new Map<string, number>();
+      for (const d of step4Data.difficulties || []) difficultyMap.set(d.keyword, d.difficulty);
+
+      const relevanceMap = new Map<string, { relevance: number; reason: string }>();
+      for (const r of step5Data.relevance_scores || []) relevanceMap.set(r.keyword, { relevance: r.relevance, reason: r.reason });
+
+      const intentScores: Record<string, number> = {
+        transactional: 100,
+        commercial: 80,
+        informational: 40,
+        navigational: 20,
+      };
+
+      function volumeToScore(vol: number): number {
+        if (vol >= 10000) return 100;
+        if (vol >= 5000) return 90;
+        if (vol >= 3000) return 80;
+        if (vol >= 1000) return 70;
+        if (vol >= 500) return 60;
+        if (vol >= 250) return 50;
+        if (vol >= 200) return 45;
+        if (vol >= 150) return 40;
+        if (vol >= 100) return 35;
+        if (vol >= 70) return 30;
+        if (vol >= 50) return 25;
+        if (vol >= 30) return 20;
+        if (vol >= 20) return 15;
+        if (vol >= 10) return 10;
+        return 5;
+      }
+
+      interface FinalKeyword {
+        keyword: string;
+        normalized_keyword: string;
+        parent_keyword: string;
+        modifiers: string[];
+        search_volume: number;
+        difficulty: number;
+        intent: string;
+        funnel: string;
+        relevance: number;
+        keyword_type: string;
+        reasoning: string;
+        opportunity_score: number;
+      }
+
+      const finalKeywords: FinalKeyword[] = [];
+
+      for (const kw of uniqueKeywords) {
+        const volume = volumeMap.get(kw.normalized_keyword) ?? 0;
+        const difficulty = difficultyMap.get(kw.normalized_keyword) ?? 50;
+        const rel = relevanceMap.get(kw.normalized_keyword);
+        const relevance = rel?.relevance ?? 50;
+        const reason = rel?.reason ?? "";
+
+        const volScore = volumeToScore(volume);
+        const diffScore = 100 - difficulty;
+        const intentScore = intentScores[kw.intent] || 40;
+
+        const opportunityScore = Math.round(
+          (volScore * 0.25) + (diffScore * 0.25) + (intentScore * 0.25) + (relevance * 0.25)
+        );
+
+        finalKeywords.push({
+          keyword: kw.original_keyword,
+          normalized_keyword: kw.normalized_keyword,
+          parent_keyword: kw.parent_keyword,
+          modifiers: kw.modifiers,
+          search_volume: volume,
+          difficulty,
+          intent: kw.intent,
+          funnel: kw.funnel,
+          relevance,
+          keyword_type: kw.keyword_type,
+          reasoning: reason,
+          opportunity_score: opportunityScore,
+        });
+      }
+
+      // Sort by opportunity_score descending, take top 30
+      finalKeywords.sort((a, b) => b.opportunity_score - a.opportunity_score);
+      const top30 = finalKeywords.slice(0, 30);
+
+      // Persist
       const { data: saved, error: saveError } = await supabase
         .from("gifaa_keyword_opportunities")
         .insert({
           tenant_id,
           brand_intelligence_id: brand_intelligence.id || null,
-          keywords: opportunities,
+          keywords: top30,
           generation_params: {
             country_code: countryVal,
             industry,
-            pipeline_version: 4,
-            reference_rows_sent: keyword_reference_examples.length,
-            final_count: opportunities.length,
+            pipeline_version: 2,
+            steps_completed: 6,
+            candidates_discovered: step1Data.keywords.length,
+            after_normalization: uniqueKeywords.length,
+            final_count: top30.length,
           },
           country_code: countryVal,
         })
@@ -733,7 +1064,7 @@ Generate EXACTLY 30 opportunities, sorted by score descending.`;
         .single();
 
       if (saveError) {
-        return jsonResponse({ error: "Failed to save opportunities", details: saveError.message, data: { keywords: opportunities } }, 500);
+        return jsonResponse({ error: "Failed to save opportunities", details: saveError.message, data: { keywords: top30 } }, 500);
       }
 
       return jsonResponse({ success: true, data: saved });
