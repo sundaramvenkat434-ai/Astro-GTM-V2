@@ -479,8 +479,3 @@ export function MetricsStrip() {
     </section>
   );
 }
-
-
-export default AstroRankHero
-
-export { MetricsStrip }
