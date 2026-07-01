@@ -7,18 +7,15 @@ import { ArrowRight, Star, Sparkles, TrendingUp, Search, MousePointer, ArrowUp, 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
 const PLATFORMS = ["Google", "ChatGPT", "Gemini", "Claude", "Perplexity", "Copilot"];
 function PlatformCycler() {
-  const [index, setIndex] = useState(0);
-  useEffect(() => {
-    const t = setInterval(() => setIndex(i => (i + 1) % PLATFORMS.length), 2200);
-    return () => clearInterval(t);
-  }, []);
+  const [i, setI] = useState(0);
+  useEffect(() => { const t = setInterval(() => setI(v => (v + 1) % PLATFORMS.length), 2200); return () => clearInterval(t); }, []);
   return (
     <span className="inline-block relative min-w-[100px]">
       <AnimatePresence mode="wait">
-        <motion.span key={index} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
+        <motion.span key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3, ease: "easeInOut" }}
           className="inline-block bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-          {PLATFORMS[index]}
+          {PLATFORMS[i]}
         </motion.span>
       </AnimatePresence>
     </span>
@@ -29,29 +26,26 @@ function PlatformCycler() {
 type Article = { id: number; cat: string; catKey: string; title: string; slug: string; readTime: string };
 
 const ARTICLES: Article[] = [
-  { id: 1, cat: "SEO Strategy",    catKey: "blue",    title: "10 Best AI Tools for B2B Content Teams",           slug: "best-ai-tools-b2b",          readTime: "8 min" },
-  { id: 2, cat: "How-To Guide",    catKey: "emerald", title: "Build a Keyword Strategy with AI Research",         slug: "keyword-strategy-ai",        readTime: "6 min" },
-  { id: 3, cat: "Industry Trends", catKey: "violet",  title: "AI Content: The New SaaS Growth Lever",             slug: "ai-content-saas",            readTime: "5 min" },
-  { id: 4, cat: "Growth",          catKey: "teal",    title: "Content Velocity: 50 Articles per Month",           slug: "content-velocity",           readTime: "7 min" },
-  { id: 5, cat: "Comparison",      catKey: "sky",     title: "AstroRank vs Manual SEO: The Numbers",              slug: "astrorank-vs-manual",        readTime: "9 min" },
-  { id: 6, cat: "SEO Strategy",    catKey: "blue",    title: "How to Rank for Competitor Keywords in 2025",       slug: "competitor-keywords",        readTime: "6 min" },
-  { id: 7, cat: "How-To Guide",    catKey: "emerald", title: "Setting Up a Scalable Internal Linking Structure",  slug: "internal-linking",           readTime: "5 min" },
-  { id: 8, cat: "Industry Trends", catKey: "violet",  title: "Answer Engine Optimization: The New SEO Frontier", slug: "answer-engine-optimization", readTime: "7 min" },
-  { id: 9, cat: "Growth",          catKey: "teal",    title: "SaaS Content Moat: The 6-Month Blueprint",         slug: "content-moat",               readTime: "6 min" },
+  { id: 1, cat: "SEO Strategy",    catKey: "blue",    title: "10 Best AI Tools for B2B Content Teams",          slug: "best-ai-tools-b2b",         readTime: "8 min" },
+  { id: 2, cat: "How-To Guide",    catKey: "emerald", title: "Build a Keyword Strategy with AI Research",        slug: "keyword-strategy-ai",       readTime: "6 min" },
+  { id: 3, cat: "Industry Trends", catKey: "violet",  title: "AI Content: The New SaaS Growth Lever",            slug: "ai-content-saas",           readTime: "5 min" },
+  { id: 4, cat: "Growth",          catKey: "teal",    title: "Content Velocity: 50 Articles per Month",          slug: "content-velocity",          readTime: "7 min" },
+  { id: 5, cat: "Comparison",      catKey: "sky",     title: "AstroRank vs Manual SEO: The Numbers",             slug: "astrorank-vs-manual",       readTime: "9 min" },
+  { id: 6, cat: "SEO Strategy",    catKey: "blue",    title: "How to Rank for Competitor Keywords in 2025",      slug: "competitor-keywords",       readTime: "6 min" },
+  { id: 7, cat: "How-To Guide",    catKey: "emerald", title: "Setting Up a Scalable Internal Linking Structure", slug: "internal-linking",          readTime: "5 min" },
+  { id: 8, cat: "Industry Trends", catKey: "violet",  title: "Answer Engine Optimization: The New SEO Frontier",slug: "answer-engine-optimization",readTime: "7 min" },
+  { id: 9, cat: "Growth",          catKey: "teal",    title: "SaaS Content Moat: The 6-Month Blueprint",         slug: "content-moat",              readTime: "6 min" },
 ];
 
 const CATS = [
-  { id: "All",    label: "All"       },
-  { id: "SEO",    label: "SEO"       },
-  { id: "How-To", label: "How-To"    },
-  { id: "Trends", label: "Trends"    },
-  { id: "Growth", label: "Growth"    },
+  { id: "All",    label: "All"    },
+  { id: "SEO",    label: "SEO"    },
+  { id: "How-To", label: "How-To" },
+  { id: "Trends", label: "Trends" },
+  { id: "Growth", label: "Growth" },
 ];
 
-// catKey → active filter id
-const KEY_TO_CAT: Record<string, string> = {
-  blue: "SEO", emerald: "How-To", violet: "Trends", teal: "Growth", sky: "All", amber: "All",
-};
+const KEY_TO_CAT: Record<string, string> = { blue: "SEO", emerald: "How-To", violet: "Trends", teal: "Growth", sky: "All" };
 
 const CAT_STYLES: Record<string, { bg: string; text: string }> = {
   blue:    { bg: "bg-blue-100",    text: "text-blue-700"    },
@@ -60,15 +54,6 @@ const CAT_STYLES: Record<string, { bg: string; text: string }> = {
   teal:    { bg: "bg-teal-100",    text: "text-teal-700"    },
   amber:   { bg: "bg-amber-100",   text: "text-amber-700"   },
   sky:     { bg: "bg-sky-100",     text: "text-sky-700"     },
-};
-
-const GRAD_HERO: Record<string, string> = {
-  blue:    "from-blue-500 via-blue-400 to-indigo-400",
-  emerald: "from-emerald-500 via-emerald-400 to-teal-400",
-  violet:  "from-violet-500 via-violet-400 to-purple-400",
-  teal:    "from-teal-500 via-teal-400 to-cyan-400",
-  amber:   "from-amber-500 via-amber-400 to-orange-400",
-  sky:     "from-sky-500 via-sky-400 to-blue-400",
 };
 
 const GRAD_LIGHT: Record<string, string> = {
@@ -80,18 +65,46 @@ const GRAD_LIGHT: Record<string, string> = {
   sky:     "from-sky-100 to-blue-50",
 };
 
-const HIGHLIGHT_BORDER: Record<string, string> = {
+const GRAD_HERO: Record<string, string> = {
+  blue:    "from-blue-500 via-blue-400 to-indigo-400",
+  emerald: "from-emerald-500 via-emerald-400 to-teal-400",
+  violet:  "from-violet-500 via-violet-400 to-purple-400",
+  teal:    "from-teal-500 via-teal-400 to-cyan-400",
+  amber:   "from-amber-500 via-amber-400 to-orange-400",
+  sky:     "from-sky-500 via-sky-400 to-blue-400",
+};
+
+const HBorder: Record<string, string> = {
   blue: "border-blue-300", emerald: "border-emerald-300", violet: "border-violet-300",
   teal: "border-teal-300", amber: "border-amber-300", sky: "border-sky-300",
 };
 
-const TRAFFIC_DATA = [
-  { month: "Jan", v: 190  },
-  { month: "Feb", v: 380  },
-  { month: "Mar", v: 740  },
-  { month: "Apr", v: 1280 },
-  { month: "May", v: 2100 },
-  { month: "Jun", v: 2847 },
+// 0: initial grid (3 cards)
+// 1-3: filter SEO→How-To→Trends (~2.7 sec)
+// 4-9: cards pop in one by one (~3.9 sec)
+// 10: zoom card
+// 11: open article
+// 12: scan article (~2 sec)
+// 13: Google SERP + scroll (~3.5 sec)
+// 14: analytics line graph (~3.2 sec)
+// 15: return
+const PHASE_DUR = [
+  400,  // 0
+  900,  // 1  SEO
+  900,  // 2  How-To
+  900,  // 3  Trends
+  520,  // 4  art 4
+  520,  // 5  art 5
+  500,  // 6  art 6
+  470,  // 7  art 7
+  470,  // 8  art 8
+  470,  // 9  art 9
+  420,  // 10 zoom
+  500,  // 11 open
+  2150, // 12 scan
+  3600, // 13 SERP
+  3300, // 14 analytics
+  550,  // 15 return
 ];
 
 const KEYWORDS_DATA = [
@@ -101,31 +114,16 @@ const KEYWORDS_DATA = [
   { kw: "saas content tools",   pos: 16, vol: "320",  up: true  },
 ];
 
-// Phases:
-// 0         : initial list (3 articles)
-// 1-3       : filter cycling SEO → How-To → Trends  (~3 sec total)
-// 4-9       : articles 3-8 appear one by one         (~4 sec total)
-// 10        : focus on article 0
-// 11        : open article view
-// 12        : scan article                            (~2 sec)
-// 13        : analytics dashboard                    (~3 sec)
-// 14        : return to list
-const PHASE_DUR = [
-  500,  // 0
-  1000, // 1  SEO
-  1000, // 2  How-To
-  1000, // 3  Trends
-  660,  // 4  +art 3
-  660,  // 5  +art 4
-  660,  // 6  +art 5
-  600,  // 7  +art 6
-  600,  // 8  +art 7
-  600,  // 9  +art 8
-  450,  // 10 focus
-  550,  // 11 open
-  2200, // 12 scan
-  3300, // 13 analytics
-  600,  // 14 return
+// Line graph
+const LINE_PATH = "M 12,61 C 29,61 37,57 54,57 C 71,57 79,50 96,50 C 113,50 121,39 138,39 C 155,39 163,23 180,23 C 197,23 205,8 222,8";
+const AREA_PATH = LINE_PATH + " L 222,64 L 12,64 Z";
+const LINE_PTS = [
+  { x: 12,  y: 61, m: "Jan", v: "190"  },
+  { x: 54,  y: 57, m: "Feb", v: "380"  },
+  { x: 96,  y: 50, m: "Mar", v: "740"  },
+  { x: 138, y: 39, m: "Apr", v: "1.3K" },
+  { x: 180, y: 23, m: "May", v: "2.1K" },
+  { x: 222, y: 8,  m: "Jun", v: "2.8K" },
 ];
 
 // ─── Animated counter ─────────────────────────────────────────────────────────
@@ -137,7 +135,7 @@ function AnimCounter({ target, run }: { target: number; run: boolean }) {
     let t0: number | null = null;
     const tick = (ts: number) => {
       if (!t0) t0 = ts;
-      const p = Math.min((ts - t0) / 1400, 1);
+      const p = Math.min((ts - t0) / 1600, 1);
       setV(Math.floor((1 - (1 - p) ** 3) * target));
       if (p < 1) raf.current = requestAnimationFrame(tick);
     };
@@ -147,31 +145,45 @@ function AnimCounter({ target, run }: { target: number; run: boolean }) {
   return <>{v.toLocaleString()}</>;
 }
 
-// ─── Traffic chart ─────────────────────────────────────────────────────────────
-const CHART_H = 52;
-function TrafficChart({ show }: { show: boolean }) {
-  const max = TRAFFIC_DATA[TRAFFIC_DATA.length - 1].v;
+// ─── Line graph ───────────────────────────────────────────────────────────────
+function LineGraph({ show }: { show: boolean }) {
   return (
-    <div className="flex items-end gap-1.5" style={{ height: CHART_H + 16 }}>
-      {TRAFFIC_DATA.map((d, i) => (
-        <div key={d.month} className="flex-1 flex flex-col items-center gap-0.5">
-          <div className="w-full relative flex items-end" style={{ height: CHART_H }}>
-            <motion.div
-              initial={{ height: 0 }}
-              animate={{ height: show ? Math.max(3, Math.round((d.v / max) * CHART_H)) : 0 }}
-              transition={{ delay: show ? 0.3 + i * 0.09 : 0, duration: 0.55, ease: "easeOut" }}
-              className="absolute bottom-0 left-0 right-0 rounded-t-sm"
-              style={{ background: `linear-gradient(to top, rgb(29 78 216), rgba(96,165,250,${0.6 + (i / TRAFFIC_DATA.length) * 0.4}))` }}
-            />
-          </div>
-          <span className="text-[6px] text-slate-400">{d.month}</span>
-        </div>
+    <svg viewBox="0 0 234 74" style={{ width: "100%", height: 74 }}>
+      <defs>
+        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="rgb(59,130,246)" stopOpacity="0.22" />
+          <stop offset="100%" stopColor="rgb(59,130,246)" stopOpacity="0.01" />
+        </linearGradient>
+      </defs>
+      {/* Grid lines */}
+      {[64, 48, 32, 16].map(y => (
+        <line key={y} x1="12" y1={y} x2="222" y2={y} stroke="rgb(241,245,249)" strokeWidth="0.75" />
       ))}
-    </div>
+      {/* Area */}
+      <motion.path d={AREA_PATH} fill="url(#areaGrad)"
+        initial={{ opacity: 0 }} animate={{ opacity: show ? 1 : 0 }}
+        transition={{ duration: 0.6, delay: show ? 0.5 : 0 }} />
+      {/* Line */}
+      <motion.path d={LINE_PATH} fill="none" stroke="rgb(59,130,246)" strokeWidth="1.75"
+        strokeLinecap="round" strokeLinejoin="round"
+        initial={{ pathLength: 0 }} animate={{ pathLength: show ? 1 : 0 }}
+        transition={{ duration: 2.6, ease: "easeInOut", delay: show ? 0.15 : 0 }} />
+      {/* Dots */}
+      {LINE_PTS.map((p, i) => (
+        <motion.circle key={i} cx={p.x} cy={p.y} r="2.8"
+          fill="white" stroke="rgb(59,130,246)" strokeWidth="1.5"
+          initial={{ scale: 0, opacity: 0 }} animate={{ scale: show ? 1 : 0, opacity: show ? 1 : 0 }}
+          transition={{ delay: show ? 0.25 + i * 0.38 : 0, duration: 0.22 }} />
+      ))}
+      {/* Month labels */}
+      {LINE_PTS.map((p, i) => (
+        <text key={i} x={p.x} y="73" textAnchor="middle" fontSize="5" fill="rgb(148,163,184)">{p.m}</text>
+      ))}
+    </svg>
   );
 }
 
-// ─── Analytics panel ──────────────────────────────────────────────────────────
+// ─── Stats panel ──────────────────────────────────────────────────────────────
 function StatsPanel({ show }: { show: boolean }) {
   function posBadge(pos: number) {
     if (pos <= 3)  return "bg-emerald-100 text-emerald-700";
@@ -179,7 +191,7 @@ function StatsPanel({ show }: { show: boolean }) {
     return "bg-slate-100 text-slate-500";
   }
   return (
-    <div className="p-3 overflow-hidden h-full flex flex-col gap-0">
+    <div className="p-3 h-full overflow-hidden flex flex-col">
       {/* Header */}
       <div className="flex items-center gap-1.5 mb-2.5">
         <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-50 shrink-0" />
@@ -194,7 +206,7 @@ function StatsPanel({ show }: { show: boolean }) {
         </motion.div>
       </div>
 
-      {/* Traffic chart */}
+      {/* Line chart */}
       <div className="mb-2">
         <div className="flex items-center justify-between mb-1">
           <p className="text-[7px] font-semibold text-slate-500 uppercase tracking-wider">Organic Traffic</p>
@@ -202,7 +214,7 @@ function StatsPanel({ show }: { show: boolean }) {
             <AnimCounter target={2847} run={show} /><span className="text-[7px] font-normal text-slate-400">/mo</span>
           </p>
         </div>
-        <TrafficChart show={show} />
+        <LineGraph show={show} />
       </div>
 
       <div className="h-px bg-slate-100 mb-2" />
@@ -217,13 +229,12 @@ function StatsPanel({ show }: { show: boolean }) {
       </div>
       <div className="flex flex-col gap-1 mb-2">
         {KEYWORDS_DATA.map((kw, i) => (
-          <motion.div key={kw.kw}
-            initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: show ? 0.5 + i * 0.1 : 0, duration: 0.22 }}
+          <motion.div key={kw.kw} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: show ? 0.55 + i * 0.1 : 0, duration: 0.22 }}
             className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-1.5 py-1">
             <span className="flex-1 text-[7.5px] text-slate-700 truncate">{kw.kw}</span>
             <span className={`w-7 text-center text-[6.5px] font-bold px-0.5 py-[1px] rounded-full ${posBadge(kw.pos)}`}>#{kw.pos}</span>
-            <span className="w-8 text-right text-[7px] text-slate-500 font-medium tabular-nums">{kw.vol}</span>
+            <span className="w-8 text-right text-[7px] text-slate-500 tabular-nums">{kw.vol}</span>
             <div className="w-4 flex justify-center">
               {kw.up ? <ArrowUp size={8} className="text-emerald-500" /> : <Minus size={8} className="text-slate-400" />}
             </div>
@@ -233,9 +244,8 @@ function StatsPanel({ show }: { show: boolean }) {
 
       <div className="h-px bg-slate-100 mb-2" />
 
-      {/* Summary */}
       <div className="grid grid-cols-2 gap-1.5">
-        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 1.0 : 0, duration: 0.25 }}
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 1.1 : 0, duration: 0.25 }}
           className="bg-violet-50 border border-violet-100 rounded-xl p-2">
           <div className="flex items-center gap-1 mb-0.5">
             <Search size={8} className="text-violet-500" />
@@ -244,7 +254,7 @@ function StatsPanel({ show }: { show: boolean }) {
           <p className="text-[17px] font-extrabold text-violet-900 leading-none tabular-nums">4.2</p>
           <p className="text-[6.5px] text-violet-400 mt-0.5">across all keywords</p>
         </motion.div>
-        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 1.1 : 0, duration: 0.25 }}
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 1.2 : 0, duration: 0.25 }}
           className="bg-emerald-50 border border-emerald-100 rounded-xl p-2">
           <div className="flex items-center gap-1 mb-0.5">
             <MousePointer size={8} className="text-emerald-500" />
@@ -260,55 +270,52 @@ function StatsPanel({ show }: { show: boolean }) {
   );
 }
 
-// ─── Article list item ────────────────────────────────────────────────────────
-function ArticleListItem({
-  article, generating, highlighted, focused,
-}: {
+// ─── Grid card ────────────────────────────────────────────────────────────────
+function ArticleGridCard({ article, generating, highlighted, focused }: {
   article: Article; generating: boolean; highlighted: boolean; focused: boolean;
 }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.28, ease: "easeOut" }}
-      className={`flex items-center rounded-xl border overflow-hidden bg-white transition-shadow ${
+      initial={{ opacity: 0, scale: 0.82, y: 6 }}
+      animate={{ opacity: 1, scale: focused ? 1.05 : 1, y: 0 }}
+      transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+      className={`rounded-xl border overflow-hidden bg-white h-full transition-shadow ${
         focused
-          ? "border-blue-300 shadow-[0_0_0_2px_rgba(59,130,246,0.18),0_2px_8px_rgba(59,130,246,0.12)]"
+          ? "border-blue-400 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_4px_14px_rgba(59,130,246,0.15)]"
           : highlighted
-          ? HIGHLIGHT_BORDER[article.catKey]
-          : "border-slate-100"
+          ? HBorder[article.catKey] + " shadow-sm"
+          : "border-slate-100 shadow-[0_1px_4px_rgba(15,23,42,0.05)]"
       }`}
-      style={{ height: 52, minHeight: 52 }}
     >
       <AnimatePresence mode="wait">
         {generating ? (
-          <motion.div key="gen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.15 }} className="flex items-center gap-2.5 px-2.5 w-full">
-            <div className="w-7 h-7 rounded-lg bg-slate-100 flex items-center justify-center shrink-0">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
-                className="w-[11px] h-[11px] border-[1.5px] border-slate-200 border-t-blue-500 rounded-full"
-              />
+          <motion.div key="gen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
+            <div className="h-11 bg-slate-100 animate-pulse" />
+            <div className="p-2">
+              <div className="flex items-center justify-between mb-1.5">
+                <div className="h-3 w-11 bg-slate-100 rounded-full animate-pulse" />
+                <div className="flex items-center gap-0.5">
+                  <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
+                    className="w-2 h-2 border border-slate-200 border-t-blue-400 rounded-full" />
+                  <span className="text-[5.5px] text-blue-400 font-semibold">writing…</span>
+                </div>
+              </div>
+              <div className="h-[5.5px] bg-slate-100 rounded-full animate-pulse mb-1.5" style={{ width: "84%" }} />
+              <div className="h-[5.5px] bg-slate-100 rounded-full animate-pulse" style={{ width: "62%" }} />
             </div>
-            <div className="flex-1">
-              <div className="h-[7px] bg-slate-100 rounded-full mb-1.5 animate-pulse" style={{ width: "58%" }} />
-              <div className="h-[6px] bg-slate-100 rounded-full animate-pulse" style={{ width: "36%" }} />
-            </div>
-            <span className="text-[7px] text-blue-500 font-semibold shrink-0 pr-2.5">writing…</span>
           </motion.div>
         ) : (
-          <motion.div key="loaded" initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-            transition={{ duration: 0.2 }} className="flex items-center gap-2.5 px-2.5 w-full">
-            <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${GRAD_HERO[article.catKey]} shrink-0`} />
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-[3px]">
-                <span className={`text-[6px] font-bold px-1 py-[1.5px] rounded-full ${CAT_STYLES[article.catKey].bg} ${CAT_STYLES[article.catKey].text}`}>
+          <motion.div key="loaded" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
+            <div className={`h-11 bg-gradient-to-br ${GRAD_LIGHT[article.catKey]}`} />
+            <div className="p-2">
+              <div className="mb-1.5">
+                <span className={`text-[6px] font-bold px-1.5 py-[1.5px] rounded-full ${CAT_STYLES[article.catKey].bg} ${CAT_STYLES[article.catKey].text}`}>
                   {article.cat}
                 </span>
-                <span className="text-[6px] text-slate-400">{article.readTime} read</span>
               </div>
-              <p className="text-[8px] font-semibold text-slate-800 truncate leading-tight">{article.title}</p>
+              <div className="h-[5.5px] bg-slate-200 rounded-full mb-1.5" style={{ width: "88%" }} />
+              <div className="h-[5.5px] bg-slate-200 rounded-full mb-1.5" style={{ width: "66%" }} />
+              <div className="h-[5px] bg-slate-100 rounded-full" style={{ width: "44%" }} />
             </div>
           </motion.div>
         )}
@@ -317,25 +324,13 @@ function ArticleListItem({
   );
 }
 
-// ─── Article page content (SEO) ───────────────────────────────────────────────
-function SkeletonLines({ widths }: { widths: number[] }) {
-  return (
-    <>
-      {widths.map((w, i) =>
-        w === 0 ? <div key={i} className="h-1.5" /> :
-        <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />
-      )}
-    </>
-  );
-}
-
+// ─── Article page ─────────────────────────────────────────────────────────────
 function ArticlePageSEO() {
   const a = ARTICLES[0];
   const cat = CAT_STYLES[a.catKey];
   return (
     <>
-      {/* Hero gradient */}
-      <div className={`h-[46px] bg-gradient-to-br ${GRAD_HERO[a.catKey]} relative overflow-hidden`}>
+      <div className={`h-[44px] bg-gradient-to-br ${GRAD_HERO[a.catKey]} relative overflow-hidden`}>
         <div className="absolute inset-0 bg-black/10" />
         <div className="absolute bottom-2 left-3 flex items-center gap-1.5">
           <span className="text-[6.5px] font-bold px-1.5 py-[1.5px] rounded-full bg-white/25 text-white backdrop-blur-sm">{a.cat}</span>
@@ -343,21 +338,17 @@ function ArticlePageSEO() {
         </div>
       </div>
       <div className="px-3 pt-2.5">
-        {/* Breadcrumb */}
         <div className="flex items-center gap-1 mb-1.5">
           <span className="text-[7px] text-slate-400">Articles</span>
           <span className="text-[7px] text-slate-300">/</span>
           <span className={`text-[7px] font-medium ${cat.text}`}>{a.cat}</span>
         </div>
-        {/* Title */}
         <h3 className="text-[11px] font-extrabold text-slate-900 leading-tight mb-1.5">{a.title}</h3>
-        {/* Meta */}
         <div className="flex items-center gap-1.5 mb-2.5">
           <div className={`w-3.5 h-3.5 rounded-full bg-gradient-to-br ${GRAD_LIGHT[a.catKey]}`} />
           <span className="text-[7.5px] text-slate-400">AstroRank AI &nbsp;·&nbsp; {a.readTime} read &nbsp;·&nbsp; Mar 2025</span>
         </div>
         <div className="h-px bg-slate-100 mb-2.5" />
-        {/* TOC */}
         <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-2.5 mb-2.5">
           <p className="text-[7.5px] font-bold text-blue-700 mb-1.5">In this article</p>
           {["What counts as an AI content tool?", "Evaluation criteria & scoring", "Our top 10 picks for 2025", "Final verdict & recommendations"].map((item, i) => (
@@ -368,7 +359,8 @@ function ArticlePageSEO() {
           ))}
         </div>
         <p className="text-[8.5px] font-bold text-slate-900 mb-1.5">Overview</p>
-        <SkeletonLines widths={[98, 93, 100, 87, 0]} />
+        {[98, 93, 100, 87].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
+        <div className="h-1.5" />
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-2 mb-2">
           <div className="flex items-center gap-1 mb-0.5">
             <span className="text-[8px]">💡</span>
@@ -376,64 +368,186 @@ function ArticlePageSEO() {
           </div>
           <p className="text-[7.5px] text-amber-700 leading-snug">Teams using AI content tools publish 4.7× more content with the same headcount.</p>
         </div>
-        <SkeletonLines widths={[95, 88, 100, 82, 96, 0]} />
+        {[95, 88, 100, 82, 96].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
+        <div className="h-1.5" />
         <p className="text-[8.5px] font-bold text-slate-900 mb-1.5">AI Tool Comparison</p>
-        <SkeletonLines widths={[100, 91, 95, 84, 98, 0]} />
-        <p className="text-[8.5px] font-bold text-slate-900 mb-1.5">Final Verdict</p>
-        <SkeletonLines widths={[93, 100, 88, 95]} />
+        {[100, 91, 95, 84, 98].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
       </div>
     </>
   );
 }
 
+// ─── Google SERP panel ────────────────────────────────────────────────────────
+function GoogleSerpPanel({ scrolled }: { scrolled: boolean }) {
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-white">
+      <motion.div
+        animate={{ y: scrolled ? -92 : 0 }}
+        transition={{ duration: 1.3, ease: "easeInOut" }}
+        className="px-3 py-3"
+      >
+        {/* Google header */}
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[12px] font-bold tracking-tight leading-none">
+            <span style={{ color: "#4285F4" }}>G</span><span style={{ color: "#EA4335" }}>o</span>
+            <span style={{ color: "#FBBC05" }}>o</span><span style={{ color: "#4285F4" }}>g</span>
+            <span style={{ color: "#34A853" }}>l</span><span style={{ color: "#EA4335" }}>e</span>
+          </span>
+          <div className="flex-1 flex items-center gap-1.5 bg-white border border-slate-200 rounded-full px-2.5 py-1 shadow-[0_1px_6px_rgba(32,33,36,0.1)]">
+            <span className="text-[7.5px] text-slate-700 flex-1 truncate">best ai tools b2b content teams</span>
+            <div className="w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center shrink-0">
+              <Search size={7} className="text-white" />
+            </div>
+          </div>
+        </div>
+
+        {/* Tabs */}
+        <div className="flex items-center gap-3 mb-2 border-b border-slate-100 pb-1.5">
+          {["All", "Images", "News", "Shopping"].map((t, i) => (
+            <span key={t} className={`text-[7px] pb-1 ${i === 0 ? "font-semibold text-blue-600 border-b-2 border-blue-600" : "text-slate-500"}`}>{t}</span>
+          ))}
+        </div>
+
+        {/* Result count */}
+        <p className="text-[6.5px] text-slate-400 mb-2">About 1,240,000 results (0.42 seconds)</p>
+
+        {/* AI Overview box */}
+        <div className="rounded-xl overflow-hidden mb-2.5" style={{ background: "linear-gradient(135deg,#4285F4,#EA4335,#FBBC05,#34A853)", padding: "1px" }}>
+          <div className="bg-white rounded-[11px] p-2.5">
+            <div className="flex items-center gap-1 mb-1.5">
+              <span className="text-[8.5px] font-bold" style={{ background: "linear-gradient(90deg,#4285F4,#EA4335)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                ✦ AI Overview
+              </span>
+            </div>
+            <p className="text-[7px] text-slate-700 leading-snug mb-2">
+              The best AI content tools for B2B teams in 2025 combine keyword research, automated writing, and SEO optimization. Teams report 4.7× content velocity using dedicated AI platforms.
+            </p>
+            <div className="flex gap-1 flex-wrap">
+              {/* Our site — always highlighted in AI Overview */}
+              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 shadow-[0_0_0_1.5px_rgba(59,130,246,0.15)]">
+                <div className="w-2.5 h-2.5 rounded-sm bg-gradient-to-br from-blue-500 to-indigo-400 shrink-0" />
+                <span className="text-[6.5px] font-semibold text-blue-600">yourwebsite.com</span>
+              </div>
+              {["semrush.com", "backlinko.com"].map(s => (
+                <div key={s} className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-slate-100 bg-slate-50">
+                  <div className="w-2 h-2 rounded-sm bg-slate-200 shrink-0" />
+                  <span className="text-[6.5px] text-slate-500">{s}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        {/* Sponsored */}
+        <div className="mb-2 pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-1 mb-0.5">
+            <span className="text-[5.5px] border border-slate-300 text-slate-500 px-0.5 rounded">Sponsored</span>
+            <span className="text-[6.5px] text-slate-400">contentai.io › start-free</span>
+          </div>
+          <p className="text-[8px] text-blue-700 font-medium leading-tight mb-0.5">AI Content Platform — Start Free Today</p>
+          <p className="text-[6.5px] text-slate-500 leading-snug">Create 100+ SEO articles per month. Trusted by 10,000+ marketers.</p>
+        </div>
+
+        {/* Organic #1 (competitor) */}
+        <div className="mb-2 pb-2 border-b border-slate-100">
+          <div className="flex items-center gap-1 mb-0.5">
+            <div className="w-2.5 h-2.5 rounded-sm bg-slate-200 shrink-0" />
+            <span className="text-[6.5px] text-slate-400">writesonic.com › blog</span>
+          </div>
+          <p className="text-[8px] text-blue-700 font-medium leading-tight mb-0.5">15 Best AI Writing Tools for Content Marketing in 2025</p>
+          <p className="text-[6.5px] text-slate-500 leading-snug">A comprehensive guide to AI writing assistants for content teams. Compare features, pricing.</p>
+        </div>
+
+        {/* Organic #2 — OUR article (highlighted when scrolled) */}
+        <motion.div
+          animate={scrolled ? {
+            borderColor: "rgb(59,130,246)",
+            boxShadow: "0 0 0 2px rgba(59,130,246,0.1), 0 2px 12px rgba(59,130,246,0.08)",
+          } : { borderColor: "rgba(0,0,0,0)", boxShadow: "none" }}
+          transition={{ duration: 0.4, delay: scrolled ? 0.5 : 0 }}
+          className="rounded-xl border-2 p-2"
+        >
+          <div className="flex items-center justify-between mb-0.5">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-sm bg-gradient-to-br from-blue-500 to-indigo-400 shrink-0" />
+              <span className="text-[6.5px] text-emerald-600">yourwebsite.com › articles › best-ai-tools-b2b</span>
+            </div>
+            <AnimatePresence>
+              {scrolled && (
+                <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
+                  transition={{ delay: 0.65, duration: 0.25 }}
+                  className="flex items-center gap-0.5 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full shrink-0">
+                  <TrendingUp size={6} className="text-emerald-500" />
+                  <span className="text-[6.5px] font-bold text-emerald-600">Rank #2</span>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+          <p className={`text-[8.5px] font-semibold leading-tight mb-0.5 transition-colors duration-300 ${scrolled ? "text-blue-700" : "text-blue-600"}`}>
+            10 Best AI Tools for B2B Content Teams [2025 Guide]
+          </p>
+          <p className="text-[6.5px] text-slate-500 leading-snug">
+            Our hands-on comparison of the top AI content tools for B2B teams — featuring pricing, features, and real-world performance data.
+          </p>
+        </motion.div>
+      </motion.div>
+    </div>
+  );
+}
+
 // ─── Main panel ───────────────────────────────────────────────────────────────
-const ITEM_H  = 56; // list item height + gap
-const MAX_VIS = 5;  // max items visible in list at once
+const CARD_H = 92; // grid card height
 
 function ContentLibraryPanel() {
-  const [phase,   setPhase]   = useState(0);
-  const [mounted, setMounted] = useState(false);
-  const [settled, setSettled] = useState(() => new Set<number>([0, 1, 2]));
+  const [phase,       setPhase]       = useState(0);
+  const [mounted,     setMounted]     = useState(false);
+  const [settled,     setSettled]     = useState<Set<number>>(() => { const s = new Set<number>(); s.add(0); s.add(1); s.add(2); return s; });
+  const [serpScrolled, setSerpScrolled] = useState(false);
 
-  // Mount guard (SSR safety)
   useEffect(() => setMounted(true), []);
 
-  // Advance phase
   useEffect(() => {
     if (!mounted) return;
     const t = setTimeout(() => setPhase(p => (p + 1) % PHASE_DUR.length), PHASE_DUR[phase]);
     return () => clearTimeout(t);
   }, [phase, mounted]);
 
-  // Reset settled on loop restart; mark article as settled 350ms after it appears
+  // Settled logic & SERP scroll trigger
   useEffect(() => {
     if (!mounted) return;
-    if (phase === 0) { setSettled(new Set([0, 1, 2])); return; }
+    if (phase === 0) {
+      const next = new Set<number>(); next.add(0); next.add(1); next.add(2);
+      setSettled(next);
+      return;
+    }
     if (phase >= 4 && phase <= 9) {
-      const idx = phase - 1; // phase4→3, phase5→4, …, phase9→8
-      const t = setTimeout(() => setSettled(prev => { const next = new Set(prev); next.add(idx); return next; }), 350);
+      const idx = phase - 1;
+      const t = setTimeout(() => setSettled(prev => { const n = new Set(prev); n.add(idx); return n; }), 360);
       return () => clearTimeout(t);
+    }
+    if (phase === 13) {
+      setSerpScrolled(false);
+      const t = setTimeout(() => setSerpScrolled(true), 1600);
+      return () => clearTimeout(t);
+    } else {
+      setSerpScrolled(false);
     }
   }, [phase, mounted]);
 
-  // Derived state
-  const numVisible  = phase < 4 ? 3 : Math.min(9, phase);
-  const activeCat   = phase === 1 ? "SEO" : phase === 2 ? "How-To" : phase === 3 ? "Trends" : "All";
-  const isGenerating = phase >= 4 && phase <= 9;
-  const isListPhase  = phase < 11 || phase === 14;
-  const focusedIdx   = phase === 10 ? 0 : -1;
-  const inArticle    = phase >= 11 && phase <= 12;
-  const scanning     = phase === 12;
-  const showStats    = phase === 13;
-
-  // List scroll: keep latest article in view
-  const listScrollY = isListPhase && phase !== 14
-    ? Math.max(0, (numVisible - MAX_VIS) * ITEM_H)
-    : 0;
+  const numVisible    = phase < 4 ? 3 : Math.min(9, phase);
+  const activeCat     = phase === 1 ? "SEO" : phase === 2 ? "How-To" : phase === 3 ? "Trends" : "All";
+  const isGenerating  = phase >= 4 && phase <= 9;
+  const isGridPhase   = phase <= 10 || phase === 15;
+  const focusedIdx    = phase === 10 ? 0 : -1;
+  const inArticle     = phase === 11 || phase === 12;
+  const scanning      = phase === 12;
+  const isSerp        = phase === 13;
+  const showStats     = phase === 14;
 
   const url =
-    inArticle || phase === 10 ? `yourwebsite.com/articles/${ARTICLES[0].slug}` :
-    showStats                  ? "yourwebsite.com/analytics/overview" :
+    phase >= 10 && phase <= 12 ? `yourwebsite.com/articles/${ARTICLES[0].slug}` :
+    isSerp                     ? "google.com/search?q=best+ai+tools+b2b" :
+    showStats                  ? "yourwebsite.com/analytics" :
     "yourwebsite.com/articles";
 
   // SSR placeholder
@@ -448,31 +562,27 @@ function ContentLibraryPanel() {
             <span className="text-[9.5px] text-slate-400 font-mono">yourwebsite.com/articles</span>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-100 bg-white" style={{ minHeight: 370 }}>
+        <div className="rounded-xl border border-slate-100 bg-white" style={{ minHeight: 380 }}>
           <div className="p-3">
             <div className="flex items-center justify-between mb-2.5">
-              <div>
-                <p className="text-[10.5px] font-bold text-slate-900 mb-0.5">Content Library</p>
-                <p className="text-[8px] text-slate-400">3 articles published</p>
-              </div>
+              <p className="text-[10.5px] font-bold text-slate-900">Content Library</p>
               <div className="flex gap-1">
                 {CATS.slice(0, 3).map((c, i) => (
                   <span key={c.id} className={`text-[7px] font-semibold px-2 py-[2.5px] rounded-full ${i === 0 ? "bg-slate-900 text-white" : "bg-slate-100 text-slate-500"}`}>{c.label}</span>
                 ))}
               </div>
             </div>
-            <div className="flex flex-col gap-1">
+            <div className="grid grid-cols-3 gap-1.5">
               {ARTICLES.slice(0, 3).map(a => (
-                <div key={a.id} className="flex items-center gap-2.5 px-2.5 border border-slate-100 rounded-xl bg-white" style={{ height: 52 }}>
-                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${GRAD_HERO[a.catKey]} shrink-0`} />
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-1.5 mb-[3px]">
-                      <span className={`text-[6px] font-bold px-1 py-[1.5px] rounded-full ${CAT_STYLES[a.catKey].bg} ${CAT_STYLES[a.catKey].text}`}>{a.cat}</span>
-                      <span className="text-[6px] text-slate-400">{a.readTime} read</span>
-                    </div>
-                    <p className="text-[8px] font-semibold text-slate-800 truncate">{a.title}</p>
+                <div key={a.id} className="rounded-xl border border-slate-100 overflow-hidden" style={{ height: CARD_H }}>
+                  <div className={`h-11 bg-gradient-to-br ${GRAD_LIGHT[a.catKey]}`} />
+                  <div className="p-2">
+                    <span className={`text-[6px] font-bold px-1.5 py-[1.5px] rounded-full ${CAT_STYLES[a.catKey].bg} ${CAT_STYLES[a.catKey].text}`}>{a.cat}</span>
                   </div>
                 </div>
+              ))}
+              {[0, 1, 2, 3, 4, 5].map(i => (
+                <div key={i} className="rounded-xl border border-dashed border-slate-100 bg-slate-50/30" style={{ height: CARD_H }} />
               ))}
             </div>
           </div>
@@ -499,108 +609,92 @@ function ContentLibraryPanel() {
       </div>
 
       {/* Viewport */}
-      <div className="relative rounded-xl border border-slate-100 bg-white overflow-hidden" style={{ minHeight: 370 }}>
+      <div className="relative rounded-xl border border-slate-100 bg-white overflow-hidden" style={{ minHeight: 380 }}>
         <AnimatePresence mode="wait">
 
-          {/* ── LIST VIEW ──────────────────────────────────────── */}
-          {isListPhase && (
-            <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+          {/* ── GRID ─────────────────────────────────────────── */}
+          {isGridPhase && (
+            <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }} className="absolute inset-0 p-3">
-
-              {/* Header row */}
-              <div className="flex items-center justify-between mb-2">
+              {/* Header */}
+              <div className="flex items-center justify-between mb-2.5">
                 <div>
                   <p className="text-[10.5px] font-bold text-slate-900 leading-none mb-0.5">Content Library</p>
                   <p className="text-[8px] text-slate-400 tabular-nums">{numVisible} articles published</p>
                 </div>
                 {isGenerating ? (
                   <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
-                      className="w-2.5 h-2.5 border-[1.5px] border-blue-200 border-t-blue-500 rounded-full"
-                    />
+                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
+                      className="w-2.5 h-2.5 border-[1.5px] border-blue-200 border-t-blue-500 rounded-full" />
                     <span className="text-[7px] font-semibold text-blue-600 whitespace-nowrap">AstroRank is writing…</span>
                   </div>
                 ) : (
-                  <div className="flex items-center gap-1">
+                  <div className="flex items-center gap-0.5">
                     {CATS.map(cat => (
                       <motion.span key={cat.id}
                         animate={{ backgroundColor: activeCat === cat.id ? "#0f172a" : "#f1f5f9", color: activeCat === cat.id ? "#ffffff" : "#64748b" }}
-                        transition={{ duration: 0.32 }}
-                        className="text-[7px] font-semibold px-2 py-[2.5px] rounded-full shrink-0 whitespace-nowrap"
-                      >
-                        {cat.label}
-                      </motion.span>
+                        transition={{ duration: 0.3 }}
+                        className="text-[7px] font-semibold px-1.5 py-[2.5px] rounded-full shrink-0 whitespace-nowrap"
+                      >{cat.label}</motion.span>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Scrollable article list */}
-              <div className="overflow-hidden" style={{ height: MAX_VIS * ITEM_H }}>
-                <motion.div
-                  animate={{ y: -listScrollY }}
-                  transition={{ duration: 0.5, ease: "easeInOut" }}
-                  className="flex flex-col gap-1"
-                >
-                  {ARTICLES.slice(0, numVisible).map((a, i) => {
-                    const generating  = !settled.has(i);
-                    const highlighted = activeCat !== "All" && KEY_TO_CAT[a.catKey] === activeCat;
-                    const focused     = i === focusedIdx;
-                    return (
-                      <ArticleListItem
-                        key={a.id}
-                        article={a}
-                        generating={generating}
-                        highlighted={highlighted}
-                        focused={focused}
-                      />
-                    );
-                  })}
-                </motion.div>
+              {/* 3×3 grid */}
+              <div className="grid grid-cols-3 gap-1.5">
+                {ARTICLES.map((article, i) => {
+                  const visible    = i < numVisible;
+                  const generating = visible && !settled.has(i);
+                  const highlighted = !isGenerating && activeCat !== "All" && KEY_TO_CAT[article.catKey] === activeCat;
+                  const focused     = i === focusedIdx;
+                  return (
+                    <div key={article.id} style={{ height: CARD_H }}>
+                      {visible ? (
+                        <ArticleGridCard article={article} generating={generating} highlighted={highlighted} focused={focused} />
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-slate-100 bg-slate-50/30 h-full" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           )}
 
-          {/* ── ARTICLE + STATS ──────────────────────────────── */}
-          {!isListPhase && (
-            <motion.div key="content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }} className="absolute inset-0">
+          {/* ── ARTICLE ──────────────────────────────────────── */}
+          {inArticle && (
+            <motion.div key="article" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }} className="absolute inset-0 overflow-hidden">
+              <motion.div animate={{ y: scanning ? -118 : 0 }} transition={{ duration: 2.15, ease: "easeInOut" }}>
+                <ArticlePageSEO />
+              </motion.div>
               <AnimatePresence>
-                {/* Article view */}
-                {!showStats && (
-                  <motion.div key="article" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    transition={{ duration: 0.22 }} className="absolute inset-0 overflow-hidden">
-                    <motion.div
-                      animate={{ y: scanning ? -120 : 0 }}
-                      transition={{ duration: 2.2, ease: "easeInOut" }}
-                    >
-                      <ArticlePageSEO />
-                    </motion.div>
-                    {/* Scan line */}
-                    <AnimatePresence>
-                      {scanning && (
-                        <motion.div key="scan"
-                          initial={{ top: "6%" }}
-                          animate={{ top: "85%" }}
-                          transition={{ duration: 2.2, ease: "easeInOut" }}
-                          className="absolute left-3 right-3 h-px pointer-events-none"
-                          style={{ background: "linear-gradient(to right, transparent, rgba(59,130,246,0.6) 20%, rgba(59,130,246,0.6) 80%, transparent)" }}
-                        />
-                      )}
-                    </AnimatePresence>
-                  </motion.div>
-                )}
-
-                {/* Analytics / stats */}
-                {showStats && (
-                  <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    transition={{ duration: 0.3 }} className="absolute inset-0 bg-white overflow-hidden">
-                    <StatsPanel show={showStats} />
-                  </motion.div>
+                {scanning && (
+                  <motion.div key="scan"
+                    initial={{ top: "5%" }} animate={{ top: "84%" }}
+                    transition={{ duration: 2.15, ease: "easeInOut" }}
+                    className="absolute left-3 right-3 h-px pointer-events-none"
+                    style={{ background: "linear-gradient(to right,transparent,rgba(59,130,246,0.6) 20%,rgba(59,130,246,0.6) 80%,transparent)" }}
+                  />
                 )}
               </AnimatePresence>
+            </motion.div>
+          )}
+
+          {/* ── GOOGLE SERP ──────────────────────────────────── */}
+          {isSerp && (
+            <motion.div key="serp" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.28 }} className="absolute inset-0">
+              <GoogleSerpPanel scrolled={serpScrolled} />
+            </motion.div>
+          )}
+
+          {/* ── ANALYTICS ────────────────────────────────────── */}
+          {showStats && (
+            <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.28 }} className="absolute inset-0 bg-white">
+              <StatsPanel show={showStats} />
             </motion.div>
           )}
 
@@ -633,7 +727,6 @@ export default function AstroRankHero() {
     if (!email) { inputRef.current?.focus(); return; }
     setEmail("");
   }
-
   return (
     <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[60px]">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -642,11 +735,8 @@ export default function AstroRankHero() {
         <div className="absolute inset-0 opacity-[0.02]"
           style={{ backgroundImage: "linear-gradient(rgba(15,23,42,1) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,1) 1px,transparent 1px)", backgroundSize: "56px 56px" }} />
       </div>
-
       <div className="relative z-10 w-full max-w-[1280px] mx-auto px-6 lg:px-12 py-20 lg:py-0 lg:min-h-screen flex items-center">
         <div className="w-full grid lg:grid-cols-[54fr_46fr] gap-14 xl:gap-20 items-center">
-
-          {/* Left: copy */}
           <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-start">
             <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
@@ -657,24 +747,18 @@ export default function AstroRankHero() {
               <span className="w-px h-3.5 bg-blue-200" />
               <span className="font-semibold">First 10 pages free</span>
             </motion.div>
-
             <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.14, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="text-[2.75rem] sm:text-[3.25rem] lg:text-[3.5rem] xl:text-[3.85rem] font-extrabold leading-[1.08] tracking-[-0.025em] text-slate-900 mb-5">
-              Give your brand an
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-violet-600 bg-clip-text text-transparent">
-                unfair SEO
-              </span>{" "}advantage.
+              Give your brand an<br />
+              <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-violet-600 bg-clip-text text-transparent">unfair SEO</span>{" "}advantage.
             </motion.h1>
-
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.55 }}
               className="text-[17px] text-slate-500 leading-relaxed mb-9 max-w-[460px]">
               Scale high-quality content with AI and publish hundreds of research-backed articles designed to rank on{" "}
               <PlatformCycler />.
             </motion.p>
-
             <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
               className="w-full max-w-[460px] flex flex-col sm:flex-row gap-2.5 mb-3.5">
@@ -683,16 +767,13 @@ export default function AstroRankHero() {
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-[14px] placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm transition-all duration-200" />
               <button type="submit"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-sm shadow-blue-200/80 hover:bg-blue-500 active:scale-[0.98] transition-all duration-150 whitespace-nowrap">
-                Join Early Access
-                <ArrowRight size={14} strokeWidth={2.25} />
+                Join Early Access <ArrowRight size={14} strokeWidth={2.25} />
               </button>
             </motion.form>
-
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
               className="text-[12px] text-slate-400 mb-10">
               No credit card required &nbsp;·&nbsp; Cancel anytime
             </motion.p>
-
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.46, duration: 0.4 }} className="flex items-center gap-3.5">
               <AvatarRow />
@@ -705,7 +786,6 @@ export default function AstroRankHero() {
             </motion.div>
           </motion.div>
 
-          {/* Right: product mockup */}
           <motion.div initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }} className="relative">
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-100/50 via-violet-100/30 to-sky-100/50 blur-2xl pointer-events-none" />
@@ -713,7 +793,6 @@ export default function AstroRankHero() {
               <ContentLibraryPanel />
             </div>
           </motion.div>
-
         </div>
       </div>
     </section>
@@ -726,7 +805,6 @@ const METRICS = [
   { value: "85+", label: "EEAT Score",          color: "text-amber-500"   },
   { value: "95%", label: "Content Originality", color: "text-emerald-600" },
 ];
-
 export function MetricsStrip() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
