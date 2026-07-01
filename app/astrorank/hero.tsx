@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { ArrowRight, Star, Sparkles, TrendingUp, Search, MousePointer, ArrowUp, Minus } from "lucide-react";
+import { ArrowRight, Star, Sparkles, TrendingUp, Search, MousePointer, ArrowUp, Minus, Zap } from "lucide-react";
 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
 const PLATFORMS = ["Google", "ChatGPT", "Gemini", "Claude", "Perplexity", "Copilot"];
@@ -79,15 +79,15 @@ const HBorder: Record<string, string> = {
   teal: "border-teal-300", amber: "border-amber-300", sky: "border-sky-300",
 };
 
-// 0: initial grid (3 cards)
-// 1-3: filter SEO→How-To→Trends (~2.7 sec)
-// 4-9: cards pop in one by one (~3.9 sec)
-// 10: zoom card
-// 11: open article
-// 12: scan article (~2 sec)
-// 13: Google SERP + scroll (~3.5 sec)
-// 14: analytics line graph (~3.2 sec)
-// 15: return
+const GEN_CATS = [
+  { key: "blue",    label: "SEO Strategy"    },
+  { key: "emerald", label: "How-To Guide"    },
+  { key: "violet",  label: "Industry Trends" },
+  { key: "teal",    label: "Growth"          },
+  { key: "sky",     label: "Comparison"      },
+];
+
+// 0: initial grid | 1-3: filter cycling | 4-9: cards pop | 10: zoom | 11-12: article+scan | 13: SERP | 14: analytics | 15: return
 const PHASE_DUR = [
   400,  // 0
   900,  // 1  SEO
@@ -101,23 +101,23 @@ const PHASE_DUR = [
   470,  // 9  art 9
   420,  // 10 zoom
   500,  // 11 open
-  2150, // 12 scan
-  3600, // 13 SERP
-  3300, // 14 analytics
+  2700, // 12 scan (scores animate)
+  4000, // 13 SERP
+  4800, // 14 analytics (two graphs)
   550,  // 15 return
 ];
 
 const KEYWORDS_DATA = [
-  { kw: "best ai tools b2b",    pos: 3,  vol: "2.1K", up: true  },
-  { kw: "ai content strategy",  pos: 7,  vol: "890",  up: true  },
-  { kw: "b2b content velocity", pos: 12, vol: "450",  up: false },
-  { kw: "saas content tools",   pos: 16, vol: "320",  up: true  },
+  { kw: "best ai tools b2b",    pos: 2,  vol: "2.1K", up: true  },
+  { kw: "ai content strategy",  pos: 4,  vol: "890",  up: true  },
+  { kw: "b2b content velocity", pos: 9,  vol: "450",  up: true  },
+  { kw: "saas content tools",   pos: 14, vol: "320",  up: false },
 ];
 
-// Line graph
-const LINE_PATH = "M 12,61 C 29,61 37,57 54,57 C 71,57 79,50 96,50 C 113,50 121,39 138,39 C 155,39 163,23 180,23 C 197,23 205,8 222,8";
-const AREA_PATH = LINE_PATH + " L 222,64 L 12,64 Z";
-const LINE_PTS = [
+// Traffic line graph
+const TRAFFIC_PATH = "M 12,61 C 29,61 37,57 54,57 C 71,57 79,50 96,50 C 113,50 121,39 138,39 C 155,39 163,23 180,23 C 197,23 205,8 222,8";
+const TRAFFIC_AREA = TRAFFIC_PATH + " L 222,64 L 12,64 Z";
+const TRAFFIC_PTS = [
   { x: 12,  y: 61, m: "Jan", v: "190"  },
   { x: 54,  y: 57, m: "Feb", v: "380"  },
   { x: 96,  y: 50, m: "Mar", v: "740"  },
@@ -126,8 +126,20 @@ const LINE_PTS = [
   { x: 222, y: 8,  m: "Jun", v: "2.8K" },
 ];
 
+// Searches line graph (emerald)
+const SEARCH_PATH = "M 12,62 C 29,62 37,56 54,56 C 71,56 79,47 96,47 C 113,47 121,34 138,34 C 155,34 163,19 180,19 C 197,19 205,9 222,9";
+const SEARCH_AREA = SEARCH_PATH + " L 222,64 L 12,64 Z";
+const SEARCH_PTS = [
+  { x: 12,  y: 62, m: "Jan", v: "1.2K" },
+  { x: 54,  y: 56, m: "Feb", v: "3.4K" },
+  { x: 96,  y: 47, m: "Mar", v: "7.8K" },
+  { x: 138, y: 34, m: "Apr", v: "13K"  },
+  { x: 180, y: 19, m: "May", v: "21K"  },
+  { x: 222, y: 9,  m: "Jun", v: "31K"  },
+];
+
 // ─── Animated counter ─────────────────────────────────────────────────────────
-function AnimCounter({ target, run }: { target: number; run: boolean }) {
+function AnimCounter({ target, run, duration = 1800 }: { target: number; run: boolean; duration?: number }) {
   const [v, setV] = useState(0);
   const raf = useRef<number | null>(null);
   useEffect(() => {
@@ -135,65 +147,174 @@ function AnimCounter({ target, run }: { target: number; run: boolean }) {
     let t0: number | null = null;
     const tick = (ts: number) => {
       if (!t0) t0 = ts;
-      const p = Math.min((ts - t0) / 1600, 1);
+      const p = Math.min((ts - t0) / duration, 1);
       setV(Math.floor((1 - (1 - p) ** 3) * target));
       if (p < 1) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
     return () => { if (raf.current) cancelAnimationFrame(raf.current); };
-  }, [run, target]);
+  }, [run, target, duration]);
   return <>{v.toLocaleString()}</>;
 }
 
-// ─── Line graph ───────────────────────────────────────────────────────────────
-function LineGraph({ show }: { show: boolean }) {
+// ─── Cycling category badge ───────────────────────────────────────────────────
+function CyclingCatBadge({ startIdx }: { startIdx: number }) {
+  const [ci, setCi] = useState(startIdx % GEN_CATS.length);
+  useEffect(() => {
+    const t = setInterval(() => setCi(v => (v + 1) % GEN_CATS.length), 580);
+    return () => clearInterval(t);
+  }, []);
+  const c = GEN_CATS[ci];
   return (
-    <svg viewBox="0 0 234 74" style={{ width: "100%", height: 74 }}>
+    <AnimatePresence mode="wait">
+      <motion.span key={ci} initial={{ opacity: 0, y: 3 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -3 }}
+        transition={{ duration: 0.18 }}
+        className={`text-[6px] font-bold px-1.5 py-[1.5px] rounded-full ${CAT_STYLES[c.key].bg} ${CAT_STYLES[c.key].text}`}>
+        {c.label}
+      </motion.span>
+    </AnimatePresence>
+  );
+}
+
+// ─── Line graph ───────────────────────────────────────────────────────────────
+function LineGraph({ show, linePath, areaPath, pts, color, gradId, delay = 0 }: {
+  show: boolean; linePath: string; areaPath: string;
+  pts: { x: number; y: number; m: string; v: string }[];
+  color: string; gradId: string; delay?: number;
+}) {
+  return (
+    <svg viewBox="0 0 234 74" style={{ width: "100%", height: 62 }}>
       <defs>
-        <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="rgb(59,130,246)" stopOpacity="0.22" />
-          <stop offset="100%" stopColor="rgb(59,130,246)" stopOpacity="0.01" />
+        <linearGradient id={gradId} x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor={color} stopOpacity="0.2" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.01" />
         </linearGradient>
       </defs>
-      {/* Grid lines */}
       {[64, 48, 32, 16].map(y => (
         <line key={y} x1="12" y1={y} x2="222" y2={y} stroke="rgb(241,245,249)" strokeWidth="0.75" />
       ))}
-      {/* Area */}
-      <motion.path d={AREA_PATH} fill="url(#areaGrad)"
+      <motion.path d={areaPath} fill={`url(#${gradId})`}
         initial={{ opacity: 0 }} animate={{ opacity: show ? 1 : 0 }}
-        transition={{ duration: 0.6, delay: show ? 0.5 : 0 }} />
-      {/* Line */}
-      <motion.path d={LINE_PATH} fill="none" stroke="rgb(59,130,246)" strokeWidth="1.75"
+        transition={{ duration: 0.6, delay: show ? delay + 0.5 : 0 }} />
+      <motion.path d={linePath} fill="none" stroke={color} strokeWidth="1.75"
         strokeLinecap="round" strokeLinejoin="round"
         initial={{ pathLength: 0 }} animate={{ pathLength: show ? 1 : 0 }}
-        transition={{ duration: 2.6, ease: "easeInOut", delay: show ? 0.15 : 0 }} />
-      {/* Dots */}
-      {LINE_PTS.map((p, i) => (
-        <motion.circle key={i} cx={p.x} cy={p.y} r="2.8"
-          fill="white" stroke="rgb(59,130,246)" strokeWidth="1.5"
+        transition={{ duration: 2.8, ease: "easeInOut", delay: show ? delay + 0.15 : 0 }} />
+      {pts.map((p, i) => (
+        <motion.circle key={i} cx={p.x} cy={p.y} r="2.6"
+          fill="white" stroke={color} strokeWidth="1.5"
           initial={{ scale: 0, opacity: 0 }} animate={{ scale: show ? 1 : 0, opacity: show ? 1 : 0 }}
-          transition={{ delay: show ? 0.25 + i * 0.38 : 0, duration: 0.22 }} />
+          transition={{ delay: show ? delay + 0.3 + i * 0.38 : 0, duration: 0.2 }} />
       ))}
-      {/* Month labels */}
-      {LINE_PTS.map((p, i) => (
+      {pts.map((p, i) => (
         <text key={i} x={p.x} y="73" textAnchor="middle" fontSize="5" fill="rgb(148,163,184)">{p.m}</text>
       ))}
     </svg>
   );
 }
 
+// ─── AI quality score bar ─────────────────────────────────────────────────────
+function ScoreBar({ label, from, to, run, color, delay }: {
+  label: string; from: number; to: number; run: boolean; color: string; delay: number;
+}) {
+  const [val, setVal] = useState(from);
+  const raf = useRef<number | null>(null);
+  useEffect(() => {
+    if (!run) { setVal(from); return; }
+    let t0: number | null = null;
+    const tick = (ts: number) => {
+      if (!t0) t0 = ts;
+      const p = Math.min((ts - t0) / 1800, 1);
+      setVal(Math.round(from + (to - from) * (1 - (1 - p) ** 2.5)));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    const id = setTimeout(() => { raf.current = requestAnimationFrame(tick); }, delay * 1000);
+    return () => { clearTimeout(id); if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [run, from, to, delay]);
+
+  const styles: Record<string, { bar: string; text: string; bg: string }> = {
+    blue:    { bar: "bg-blue-500",    text: "text-blue-700",    bg: "bg-blue-100"    },
+    emerald: { bar: "bg-emerald-500", text: "text-emerald-700", bg: "bg-emerald-100" },
+    violet:  { bar: "bg-violet-500",  text: "text-violet-700",  bg: "bg-violet-100"  },
+  };
+  const s = styles[color];
+  return (
+    <div className="mb-1.5">
+      <div className="flex items-center justify-between mb-[2px]">
+        <span className="text-[6px] font-semibold text-slate-500">{label}</span>
+        <span className={`text-[7px] font-extrabold tabular-nums ${s.text}`}>{val}</span>
+      </div>
+      <div className={`h-[3.5px] ${s.bg} rounded-full overflow-hidden`}>
+        <div className={`h-full ${s.bar} rounded-full transition-all duration-75`} style={{ width: `${val}%` }} />
+      </div>
+    </div>
+  );
+}
+
+function ScoresOverlay({ show }: { show: boolean }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, x: 14, scale: 0.94 }}
+      animate={{ opacity: show ? 1 : 0, x: show ? 0 : 14, scale: show ? 1 : 0.94 }}
+      transition={{ duration: 0.32, delay: show ? 0.25 : 0 }}
+      className="absolute right-2 top-2 bg-white/97 backdrop-blur-sm rounded-xl border border-slate-100 shadow-[0_4px_18px_rgba(15,23,42,0.1)] p-2 w-[90px] pointer-events-none"
+    >
+      <div className="flex items-center gap-1 mb-1.5">
+        <Zap size={7} className="text-amber-500" />
+        <p className="text-[6.5px] font-bold text-slate-700 uppercase tracking-wider">AI Quality</p>
+      </div>
+      <ScoreBar label="EEAT"       from={62} to={91} run={show} color="blue"    delay={0}   />
+      <ScoreBar label="Lighthouse" from={74} to={97} run={show} color="emerald" delay={0.2} />
+      <ScoreBar label="Grammarly"  from={68} to={95} run={show} color="violet"  delay={0.4} />
+    </motion.div>
+  );
+}
+
+// ─── Traffic capture % ────────────────────────────────────────────────────────
+function TrafficCapture({ show }: { show: boolean }) {
+  const [pct, setPct] = useState(12);
+  const raf = useRef<number | null>(null);
+  useEffect(() => {
+    if (!show) { setPct(12); return; }
+    let t0: number | null = null;
+    const tick = (ts: number) => {
+      if (!t0) t0 = ts;
+      const p = Math.min((ts - t0) / 3200, 1);
+      setPct(Math.round(12 + 44 * (1 - (1 - p) ** 2)));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    const id = setTimeout(() => { raf.current = requestAnimationFrame(tick); }, 700);
+    return () => { clearTimeout(id); if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [show]);
+
+  return (
+    <div className="bg-slate-50 border border-slate-100 rounded-xl p-2">
+      <div className="flex items-center justify-between mb-1">
+        <p className="text-[7px] font-semibold text-slate-500">Traffic Capture</p>
+        <span className="text-[12px] font-extrabold text-slate-900 tabular-nums leading-none">
+          {pct}<span className="text-[8px] text-slate-400">%</span>
+        </span>
+      </div>
+      <div className="h-[5px] bg-slate-200 rounded-full overflow-hidden mb-1">
+        <div
+          className="h-full rounded-full bg-gradient-to-r from-blue-500 to-violet-500 transition-all duration-75"
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      <div className="flex justify-between">
+        <span className="text-[5.5px] text-slate-400">of total search impressions</span>
+        <span className="text-[5.5px] text-emerald-500 font-semibold">+44pp</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Stats panel ──────────────────────────────────────────────────────────────
 function StatsPanel({ show }: { show: boolean }) {
-  function posBadge(pos: number) {
-    if (pos <= 3)  return "bg-emerald-100 text-emerald-700";
-    if (pos <= 10) return "bg-amber-100 text-amber-700";
-    return "bg-slate-100 text-slate-500";
-  }
   return (
     <div className="p-3 h-full overflow-hidden flex flex-col">
       {/* Header */}
-      <div className="flex items-center gap-1.5 mb-2.5">
+      <div className="flex items-center gap-1.5 mb-2">
         <div className="w-5 h-5 rounded-lg bg-gradient-to-br from-blue-100 to-indigo-50 shrink-0" />
         <div className="flex-1 min-w-0">
           <p className="text-[8.5px] font-semibold text-slate-700 truncate">{ARTICLES[0].title}</p>
@@ -202,48 +323,38 @@ function StatsPanel({ show }: { show: boolean }) {
         <motion.div initial={{ scale: 0.8, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ delay: 0.2 }}
           className="flex items-center gap-0.5 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded-full shrink-0">
           <TrendingUp size={7} className="text-emerald-500" />
-          <span className="text-[7.5px] font-bold text-emerald-600">+127%</span>
+          <span className="text-[7.5px] font-bold text-emerald-600">+1,375%</span>
         </motion.div>
       </div>
 
-      {/* Line chart */}
-      <div className="mb-2">
-        <div className="flex items-center justify-between mb-1">
-          <p className="text-[7px] font-semibold text-slate-500 uppercase tracking-wider">Organic Traffic</p>
-          <p className="text-[8.5px] font-bold text-blue-600 tabular-nums">
-            <AnimCounter target={2847} run={show} /><span className="text-[7px] font-normal text-slate-400">/mo</span>
+      {/* Two graphs side by side */}
+      <div className="grid grid-cols-2 gap-1.5 mb-2">
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 0.1 : 0 }}
+          className="bg-slate-50 rounded-xl p-2 border border-slate-100">
+          <p className="text-[6px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Monthly Searches</p>
+          <p className="text-[10px] font-extrabold text-emerald-600 tabular-nums leading-none mb-0.5">
+            <AnimCounter target={31200} run={show} duration={2800} />
           </p>
-        </div>
-        <LineGraph show={show} />
+          <LineGraph show={show} linePath={SEARCH_PATH} areaPath={SEARCH_AREA} pts={SEARCH_PTS}
+            color="rgb(16,185,129)" gradId="areaGradSearch" delay={0} />
+        </motion.div>
+        <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 0.2 : 0 }}
+          className="bg-slate-50 rounded-xl p-2 border border-slate-100">
+          <p className="text-[6px] font-semibold text-slate-400 uppercase tracking-wider mb-0.5">Monthly Traffic</p>
+          <p className="text-[10px] font-extrabold text-blue-600 tabular-nums leading-none mb-0.5">
+            <AnimCounter target={2847} run={show} duration={2800} />
+          </p>
+          <LineGraph show={show} linePath={TRAFFIC_PATH} areaPath={TRAFFIC_AREA} pts={TRAFFIC_PTS}
+            color="rgb(59,130,246)" gradId="areaGradTraffic" delay={0.15} />
+        </motion.div>
       </div>
 
-      <div className="h-px bg-slate-100 mb-2" />
+      {/* Traffic capture */}
+      <TrafficCapture show={show} />
 
-      {/* Ranking keywords */}
-      <p className="text-[7px] font-semibold text-slate-500 uppercase tracking-wider mb-1.5">Ranking Keywords</p>
-      <div className="flex items-center gap-1.5 px-1.5 mb-1">
-        <span className="flex-1 text-[6.5px] text-slate-400">Keyword</span>
-        <span className="w-7 text-[6.5px] text-slate-400 text-center">Pos.</span>
-        <span className="w-8 text-[6.5px] text-slate-400 text-right">Vol.</span>
-        <span className="w-4 text-[6.5px] text-slate-400 text-center">↑</span>
-      </div>
-      <div className="flex flex-col gap-1 mb-2">
-        {KEYWORDS_DATA.map((kw, i) => (
-          <motion.div key={kw.kw} initial={{ opacity: 0, x: -6 }} animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: show ? 0.55 + i * 0.1 : 0, duration: 0.22 }}
-            className="flex items-center gap-1.5 bg-slate-50 rounded-lg px-1.5 py-1">
-            <span className="flex-1 text-[7.5px] text-slate-700 truncate">{kw.kw}</span>
-            <span className={`w-7 text-center text-[6.5px] font-bold px-0.5 py-[1px] rounded-full ${posBadge(kw.pos)}`}>#{kw.pos}</span>
-            <span className="w-8 text-right text-[7px] text-slate-500 tabular-nums">{kw.vol}</span>
-            <div className="w-4 flex justify-center">
-              {kw.up ? <ArrowUp size={8} className="text-emerald-500" /> : <Minus size={8} className="text-slate-400" />}
-            </div>
-          </motion.div>
-        ))}
-      </div>
+      <div className="h-px bg-slate-100 my-2" />
 
-      <div className="h-px bg-slate-100 mb-2" />
-
+      {/* Bottom stat cards */}
       <div className="grid grid-cols-2 gap-1.5">
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 1.1 : 0, duration: 0.25 }}
           className="bg-violet-50 border border-violet-100 rounded-xl p-2">
@@ -251,19 +362,19 @@ function StatsPanel({ show }: { show: boolean }) {
             <Search size={8} className="text-violet-500" />
             <p className="text-[7px] text-violet-600 font-semibold">Avg. Position</p>
           </div>
-          <p className="text-[17px] font-extrabold text-violet-900 leading-none tabular-nums">4.2</p>
+          <p className="text-[17px] font-extrabold text-violet-900 leading-none tabular-nums">3.0</p>
           <p className="text-[6.5px] text-violet-400 mt-0.5">across all keywords</p>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: show ? 1.2 : 0, duration: 0.25 }}
           className="bg-emerald-50 border border-emerald-100 rounded-xl p-2">
           <div className="flex items-center gap-1 mb-0.5">
             <MousePointer size={8} className="text-emerald-500" />
-            <p className="text-[7px] text-emerald-600 font-semibold">Conversions</p>
+            <p className="text-[7px] text-emerald-600 font-semibold">CTA Conversions</p>
           </div>
           <p className="text-[17px] font-extrabold text-emerald-900 leading-none tabular-nums">
-            <AnimCounter target={127} run={show} />
+            <AnimCounter target={284} run={show} duration={2200} />
           </p>
-          <p className="text-[6.5px] text-emerald-400 mt-0.5">per month</p>
+          <p className="text-[6.5px] text-emerald-400 mt-0.5">signups / month</p>
         </motion.div>
       </div>
     </div>
@@ -291,31 +402,38 @@ function ArticleGridCard({ article, generating, highlighted, focused }: {
         {generating ? (
           <motion.div key="gen" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.12 }}>
             <div className="h-11 bg-slate-100 animate-pulse" />
-            <div className="p-2">
-              <div className="flex items-center justify-between mb-1.5">
-                <div className="h-3 w-11 bg-slate-100 rounded-full animate-pulse" />
+            <div className="p-1.5">
+              <div className="flex items-center justify-between mb-1">
+                <CyclingCatBadge startIdx={article.id} />
                 <div className="flex items-center gap-0.5">
                   <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
                     className="w-2 h-2 border border-slate-200 border-t-blue-400 rounded-full" />
                   <span className="text-[5.5px] text-blue-400 font-semibold">writing…</span>
                 </div>
               </div>
-              <div className="h-[5.5px] bg-slate-100 rounded-full animate-pulse mb-1.5" style={{ width: "84%" }} />
-              <div className="h-[5.5px] bg-slate-100 rounded-full animate-pulse" style={{ width: "62%" }} />
+              <div className="h-[4.5px] bg-slate-100 rounded-full animate-pulse mb-1" style={{ width: "88%" }} />
+              <div className="h-[4.5px] bg-slate-100 rounded-full animate-pulse mb-[5px]" style={{ width: "62%" }} />
+              <div className="flex gap-1">
+                <div className="h-[5px] w-[22px] bg-slate-100 animate-pulse rounded-full" />
+                <div className="h-[5px] w-[16px] bg-slate-100 animate-pulse rounded-full" />
+              </div>
             </div>
           </motion.div>
         ) : (
           <motion.div key="loaded" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
             <div className={`h-11 bg-gradient-to-br ${GRAD_LIGHT[article.catKey]}`} />
-            <div className="p-2">
-              <div className="mb-1.5">
+            <div className="p-1.5">
+              <div className="mb-1">
                 <span className={`text-[6px] font-bold px-1.5 py-[1.5px] rounded-full ${CAT_STYLES[article.catKey].bg} ${CAT_STYLES[article.catKey].text}`}>
                   {article.cat}
                 </span>
               </div>
-              <div className="h-[5.5px] bg-slate-200 rounded-full mb-1.5" style={{ width: "88%" }} />
-              <div className="h-[5.5px] bg-slate-200 rounded-full mb-1.5" style={{ width: "66%" }} />
-              <div className="h-[5px] bg-slate-100 rounded-full" style={{ width: "44%" }} />
+              <div className="h-[4.5px] bg-slate-200 rounded-full mb-1" style={{ width: "92%" }} />
+              <div className="h-[4.5px] bg-slate-200 rounded-full mb-[5px]" style={{ width: "68%" }} />
+              <div className="flex gap-1">
+                <div className="h-[5px] w-[22px] bg-slate-100 rounded-full" />
+                <div className="h-[5px] w-[16px] bg-slate-100 rounded-full" />
+              </div>
             </div>
           </motion.div>
         )}
@@ -325,7 +443,7 @@ function ArticleGridCard({ article, generating, highlighted, focused }: {
 }
 
 // ─── Article page ─────────────────────────────────────────────────────────────
-function ArticlePageSEO() {
+function ArticlePageSEO({ scanning }: { scanning: boolean }) {
   const a = ARTICLES[0];
   const cat = CAT_STYLES[a.catKey];
   return (
@@ -337,30 +455,45 @@ function ArticlePageSEO() {
           <span className="text-[6.5px] text-white/70">{a.readTime} read</span>
         </div>
       </div>
-      <div className="px-3 pt-2.5">
+      <div className="px-3 pt-2.5 relative">
         <div className="flex items-center gap-1 mb-1.5">
           <span className="text-[7px] text-slate-400">Articles</span>
           <span className="text-[7px] text-slate-300">/</span>
           <span className={`text-[7px] font-medium ${cat.text}`}>{a.cat}</span>
         </div>
         <h3 className="text-[11px] font-extrabold text-slate-900 leading-tight mb-1.5">{a.title}</h3>
-        <div className="flex items-center gap-1.5 mb-2.5">
+        <div className="flex items-center gap-1.5 mb-2">
           <div className={`w-3.5 h-3.5 rounded-full bg-gradient-to-br ${GRAD_LIGHT[a.catKey]}`} />
           <span className="text-[7.5px] text-slate-400">AstroRank AI &nbsp;·&nbsp; {a.readTime} read &nbsp;·&nbsp; Mar 2025</span>
         </div>
-        <div className="h-px bg-slate-100 mb-2.5" />
-        <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-2.5 mb-2.5">
+        <div className="h-px bg-slate-100 mb-2" />
+
+        {/* Image placeholder */}
+        <div className="h-[52px] bg-gradient-to-br from-slate-100 to-blue-50/40 rounded-xl mb-2 flex items-center justify-center border border-slate-100">
+          <div className="flex items-center gap-2 opacity-40">
+            <div className="w-8 h-6 bg-slate-300 rounded-md" />
+            <div className="flex flex-col gap-1">
+              <div className="w-14 h-1.5 bg-slate-200 rounded-full" />
+              <div className="w-10 h-1.5 bg-slate-200 rounded-full" />
+            </div>
+          </div>
+        </div>
+
+        {/* TOC */}
+        <div className="bg-blue-50/80 border border-blue-100 rounded-xl p-2 mb-2">
           <p className="text-[7.5px] font-bold text-blue-700 mb-1.5">In this article</p>
-          {["What counts as an AI content tool?", "Evaluation criteria & scoring", "Our top 10 picks for 2025", "Final verdict & recommendations"].map((item, i) => (
+          {["What counts as an AI content tool?", "Evaluation criteria & scoring", "Our top 10 picks for 2025", "Final verdict"].map((item, i) => (
             <div key={i} className="flex items-center gap-1.5 mb-1">
               <span className="text-[6.5px] font-bold text-blue-400 w-3">{i + 1}.</span>
               <span className="text-[7.5px] text-blue-600 leading-none">{item}</span>
             </div>
           ))}
         </div>
+
         <p className="text-[8.5px] font-bold text-slate-900 mb-1.5">Overview</p>
         {[98, 93, 100, 87].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
-        <div className="h-1.5" />
+
+        {/* Pro tip */}
         <div className="bg-amber-50 border border-amber-100 rounded-xl p-2 mb-2">
           <div className="flex items-center gap-1 mb-0.5">
             <span className="text-[8px]">💡</span>
@@ -368,26 +501,60 @@ function ArticlePageSEO() {
           </div>
           <p className="text-[7.5px] text-amber-700 leading-snug">Teams using AI content tools publish 4.7× more content with the same headcount.</p>
         </div>
-        {[95, 88, 100, 82, 96].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
-        <div className="h-1.5" />
+        {[95, 88, 100, 82].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
+
+        {/* CTA block — highlighted during scanning */}
+        <motion.div
+          animate={scanning ? {
+            borderColor: "rgb(59,130,246)",
+            boxShadow: "0 0 0 2.5px rgba(59,130,246,0.14), 0 2px 14px rgba(59,130,246,0.1)",
+          } : { borderColor: "rgb(219,234,254)", boxShadow: "none" }}
+          transition={{ duration: 0.5, delay: scanning ? 0.55 : 0 }}
+          className="rounded-xl border-2 bg-gradient-to-r from-blue-600 to-indigo-600 p-3 mb-2"
+        >
+          <p className="text-[8px] font-extrabold text-white mb-1">Ready to rank like this?</p>
+          <p className="text-[7px] text-blue-100 mb-2 leading-snug">Join 500+ teams publishing SEO content at scale with AstroRank AI.</p>
+          <div className="flex items-center gap-1">
+            <div className="flex-1 h-5 bg-white/20 rounded-lg" />
+            <div className="h-5 px-2 bg-white rounded-lg flex items-center">
+              <span className="text-[7px] font-bold text-blue-600">Start Free →</span>
+            </div>
+          </div>
+        </motion.div>
+
         <p className="text-[8.5px] font-bold text-slate-900 mb-1.5">AI Tool Comparison</p>
-        {[100, 91, 95, 84, 98].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
+        {[100, 91, 95, 84].map((w, i) => <div key={i} className="h-[5px] rounded-full bg-slate-100 mb-1.5" style={{ width: `${w}%` }} />)}
+
+        {/* Scores overlay */}
+        <ScoresOverlay show={scanning} />
       </div>
     </>
   );
 }
 
 // ─── Google SERP panel ────────────────────────────────────────────────────────
+const AI_CHUNKS = [
+  "The best AI content tools for B2B teams in 2025 combine automated keyword research, long-form writing, and on-page SEO scoring.",
+  "Teams using dedicated platforms report 4.7× content velocity.",
+  "Key evaluation factors: integration depth, content quality scoring, and built-in publishing workflows.",
+];
+
 function GoogleSerpPanel({ scrolled }: { scrolled: boolean }) {
+  const [chunkIdx, setChunkIdx] = useState(-1);
+  useEffect(() => {
+    const timers = AI_CHUNKS.map((_, i) => setTimeout(() => setChunkIdx(i), 200 + i * 450));
+    return () => timers.forEach(clearTimeout);
+  }, []);
+
   return (
     <div className="absolute inset-0 overflow-hidden bg-white">
       <motion.div
-        animate={{ y: scrolled ? -92 : 0 }}
-        transition={{ duration: 1.3, ease: "easeInOut" }}
-        className="px-3 py-3"
+        animate={{ y: scrolled ? -140 : 0 }}
+        transition={{ duration: 1.4, ease: "easeInOut" }}
+        className="px-3 py-2.5"
       >
         {/* Google header */}
-        <div className="flex items-center gap-2 mb-2">
+        <div className="flex items-center gap-2 mb-1.5">
           <span className="text-[12px] font-bold tracking-tight leading-none">
             <span style={{ color: "#4285F4" }}>G</span><span style={{ color: "#EA4335" }}>o</span>
             <span style={{ color: "#FBBC05" }}>o</span><span style={{ color: "#4285F4" }}>g</span>
@@ -402,44 +569,55 @@ function GoogleSerpPanel({ scrolled }: { scrolled: boolean }) {
         </div>
 
         {/* Tabs */}
-        <div className="flex items-center gap-3 mb-2 border-b border-slate-100 pb-1.5">
+        <div className="flex items-center gap-3 mb-1.5 border-b border-slate-100 pb-1">
           {["All", "Images", "News", "Shopping"].map((t, i) => (
             <span key={t} className={`text-[7px] pb-1 ${i === 0 ? "font-semibold text-blue-600 border-b-2 border-blue-600" : "text-slate-500"}`}>{t}</span>
           ))}
         </div>
+        <p className="text-[6.5px] text-slate-400 mb-1.5">About 1,240,000 results (0.42 seconds)</p>
 
-        {/* Result count */}
-        <p className="text-[6.5px] text-slate-400 mb-2">About 1,240,000 results (0.42 seconds)</p>
-
-        {/* AI Overview box */}
-        <div className="rounded-xl overflow-hidden mb-2.5" style={{ background: "linear-gradient(135deg,#4285F4,#EA4335,#FBBC05,#34A853)", padding: "1px" }}>
-          <div className="bg-white rounded-[11px] p-2.5">
-            <div className="flex items-center gap-1 mb-1.5">
-              <span className="text-[8.5px] font-bold" style={{ background: "linear-gradient(90deg,#4285F4,#EA4335)", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
-                ✦ AI Overview
-              </span>
+        {/* AI Overview */}
+        <div className="rounded-xl overflow-hidden mb-2" style={{ background: "linear-gradient(135deg,#4285F4,#EA4335,#FBBC05,#34A853)", padding: "1.5px" }}>
+          <div className="bg-white rounded-[10px] p-2">
+            <div className="flex items-center gap-1.5 mb-1.5">
+              <div className="flex gap-[3px]">
+                {["#4285F4","#EA4335","#FBBC05","#34A853"].map((c, i) => (
+                  <div key={i} className="w-[5px] h-[5px] rounded-full" style={{ background: c }} />
+                ))}
+              </div>
+              <span className="text-[7.5px] font-bold text-slate-700">AI Overview</span>
             </div>
-            <p className="text-[7px] text-slate-700 leading-snug mb-2">
-              The best AI content tools for B2B teams in 2025 combine keyword research, automated writing, and SEO optimization. Teams report 4.7× content velocity using dedicated AI platforms.
-            </p>
+            <div className="space-y-1 mb-1.5 min-h-[36px]">
+              {AI_CHUNKS.map((chunk, i) => (
+                <motion.p key={i}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: chunkIdx >= i ? 1 : 0, y: chunkIdx >= i ? 0 : 4 }}
+                  transition={{ duration: 0.35 }}
+                  className="text-[7px] text-slate-700 leading-snug">
+                  {chunk}
+                </motion.p>
+              ))}
+            </div>
+            {/* Source chips */}
             <div className="flex gap-1 flex-wrap">
-              {/* Our site — always highlighted in AI Overview */}
-              <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 shadow-[0_0_0_1.5px_rgba(59,130,246,0.15)]">
+              <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.15 }}
+                className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-blue-200 bg-blue-50 shadow-[0_0_0_1.5px_rgba(59,130,246,0.15)]">
                 <div className="w-2.5 h-2.5 rounded-sm bg-gradient-to-br from-blue-500 to-indigo-400 shrink-0" />
                 <span className="text-[6.5px] font-semibold text-blue-600">yourwebsite.com</span>
-              </div>
-              {["semrush.com", "backlinko.com"].map(s => (
-                <div key={s} className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-slate-100 bg-slate-50">
+              </motion.div>
+              {["semrush.com", "backlinko.com"].map((s, i) => (
+                <motion.div key={s} initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.25 + i * 0.1 }}
+                  className="flex items-center gap-1 px-1.5 py-0.5 rounded-full border border-slate-100 bg-slate-50">
                   <div className="w-2 h-2 rounded-sm bg-slate-200 shrink-0" />
                   <span className="text-[6.5px] text-slate-500">{s}</span>
-                </div>
+                </motion.div>
               ))}
             </div>
           </div>
         </div>
 
         {/* Sponsored */}
-        <div className="mb-2 pb-2 border-b border-slate-100">
+        <div className="mb-1.5 pb-1.5 border-b border-slate-100">
           <div className="flex items-center gap-1 mb-0.5">
             <span className="text-[5.5px] border border-slate-300 text-slate-500 px-0.5 rounded">Sponsored</span>
             <span className="text-[6.5px] text-slate-400">contentai.io › start-free</span>
@@ -448,47 +626,109 @@ function GoogleSerpPanel({ scrolled }: { scrolled: boolean }) {
           <p className="text-[6.5px] text-slate-500 leading-snug">Create 100+ SEO articles per month. Trusted by 10,000+ marketers.</p>
         </div>
 
-        {/* Organic #1 (competitor) */}
-        <div className="mb-2 pb-2 border-b border-slate-100">
-          <div className="flex items-center gap-1 mb-0.5">
-            <div className="w-2.5 h-2.5 rounded-sm bg-slate-200 shrink-0" />
-            <span className="text-[6.5px] text-slate-400">writesonic.com › blog</span>
-          </div>
-          <p className="text-[8px] text-blue-700 font-medium leading-tight mb-0.5">15 Best AI Writing Tools for Content Marketing in 2025</p>
-          <p className="text-[6.5px] text-slate-500 leading-snug">A comprehensive guide to AI writing assistants for content teams. Compare features, pricing.</p>
-        </div>
-
-        {/* Organic #2 — OUR article (highlighted when scrolled) */}
+        {/* OUR article — Rank #2 */}
         <motion.div
           animate={scrolled ? {
             borderColor: "rgb(59,130,246)",
-            boxShadow: "0 0 0 2px rgba(59,130,246,0.1), 0 2px 12px rgba(59,130,246,0.08)",
-          } : { borderColor: "rgba(0,0,0,0)", boxShadow: "none" }}
-          transition={{ duration: 0.4, delay: scrolled ? 0.5 : 0 }}
-          className="rounded-xl border-2 p-2"
+            boxShadow: "0 0 0 2px rgba(59,130,246,0.12), 0 2px 10px rgba(59,130,246,0.08)",
+            backgroundColor: "rgb(239,246,255)",
+          } : { borderColor: "rgba(0,0,0,0)", boxShadow: "none", backgroundColor: "rgb(255,255,255)" }}
+          transition={{ duration: 0.45, delay: scrolled ? 0.55 : 0 }}
+          className="rounded-xl border-2 p-2 mb-1.5"
         >
           <div className="flex items-center justify-between mb-0.5">
             <div className="flex items-center gap-1">
               <div className="w-2.5 h-2.5 rounded-sm bg-gradient-to-br from-blue-500 to-indigo-400 shrink-0" />
-              <span className="text-[6.5px] text-emerald-600">yourwebsite.com › articles › best-ai-tools-b2b</span>
+              <span className="text-[6.5px] text-emerald-600">yourwebsite.com › articles</span>
             </div>
             <AnimatePresence>
               {scrolled && (
-                <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                  transition={{ delay: 0.65, duration: 0.25 }}
-                  className="flex items-center gap-0.5 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded-full shrink-0">
-                  <TrendingUp size={6} className="text-emerald-500" />
-                  <span className="text-[6.5px] font-bold text-emerald-600">Rank #2</span>
+                <motion.div initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.7, duration: 0.25 }}
+                  className="flex items-center gap-0.5 bg-blue-600 px-1.5 py-[2px] rounded-full">
+                  <TrendingUp size={5} className="text-white" />
+                  <span className="text-[6px] font-bold text-white">Rank #2</span>
                 </motion.div>
               )}
             </AnimatePresence>
           </div>
-          <p className={`text-[8.5px] font-semibold leading-tight mb-0.5 transition-colors duration-300 ${scrolled ? "text-blue-700" : "text-blue-600"}`}>
+          <p className="text-[8.5px] font-semibold text-blue-700 leading-tight mb-0.5">
             10 Best AI Tools for B2B Content Teams [2025 Guide]
           </p>
           <p className="text-[6.5px] text-slate-500 leading-snug">
-            Our hands-on comparison of the top AI content tools for B2B teams — featuring pricing, features, and real-world performance data.
+            Hands-on comparison of the top AI content tools for B2B teams — pricing, features, real-world data.
           </p>
+        </motion.div>
+
+        {/* Competitor #1 */}
+        <motion.div
+          animate={{ opacity: scrolled ? 1 : 0.45 }}
+          transition={{ duration: 0.4, delay: scrolled ? 0.8 : 0 }}
+          className="mb-1.5 pb-1.5 border-b border-slate-100"
+        >
+          <div className="flex items-center justify-between mb-0.5">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-sm bg-slate-200 shrink-0" />
+              <span className="text-[6.5px] text-slate-400">writesonic.com › blog</span>
+            </div>
+            <AnimatePresence>
+              {scrolled && (
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }}
+                  className="text-[5.5px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-[2px] rounded-full">
+                  Competitor #1
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+          <p className="text-[7.5px] text-blue-600 font-medium leading-tight mb-0.5">15 Best AI Writing Tools for Content Marketing in 2025</p>
+          <p className="text-[6.5px] text-slate-500 leading-snug">A comprehensive guide to AI writing assistants for content teams.</p>
+        </motion.div>
+
+        {/* Competitor #2 */}
+        <motion.div
+          animate={{ opacity: scrolled ? 1 : 0.2 }}
+          transition={{ duration: 0.4, delay: scrolled ? 0.95 : 0 }}
+          className="mb-1.5 pb-1.5 border-b border-slate-100"
+        >
+          <div className="flex items-center justify-between mb-0.5">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-sm bg-slate-200 shrink-0" />
+              <span className="text-[6.5px] text-slate-400">ahrefs.com › blog</span>
+            </div>
+            <AnimatePresence>
+              {scrolled && (
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.05 }}
+                  className="text-[5.5px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-[2px] rounded-full">
+                  Competitor #2
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+          <p className="text-[7.5px] text-blue-600 font-medium leading-tight mb-0.5">AI Content Tools: Complete B2B Buyer's Guide (2025)</p>
+          <p className="text-[6.5px] text-slate-500 leading-snug">Expert analysis of 20+ AI writing tools ranked by ROI for B2B teams.</p>
+        </motion.div>
+
+        {/* Competitor #3 */}
+        <motion.div
+          animate={{ opacity: scrolled ? 0.85 : 0.1 }}
+          transition={{ duration: 0.4, delay: scrolled ? 1.1 : 0 }}
+        >
+          <div className="flex items-center justify-between mb-0.5">
+            <div className="flex items-center gap-1">
+              <div className="w-2.5 h-2.5 rounded-sm bg-slate-200 shrink-0" />
+              <span className="text-[6.5px] text-slate-400">hubspot.com › marketing</span>
+            </div>
+            <AnimatePresence>
+              {scrolled && (
+                <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.15 }}
+                  className="text-[5.5px] font-semibold text-slate-500 bg-slate-100 px-1.5 py-[2px] rounded-full">
+                  Competitor #3
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </div>
+          <p className="text-[7.5px] text-blue-600 font-medium leading-tight mb-0.5">The 12 Best AI Content Creation Tools for Marketers</p>
+          <p className="text-[6.5px] text-slate-500 leading-snug">HubSpot's curated list of AI tools that improve content quality and speed.</p>
         </motion.div>
       </motion.div>
     </div>
@@ -496,13 +736,14 @@ function GoogleSerpPanel({ scrolled }: { scrolled: boolean }) {
 }
 
 // ─── Main panel ───────────────────────────────────────────────────────────────
-const CARD_H = 92; // grid card height
+const CARD_H = 100;
 
 function ContentLibraryPanel() {
-  const [phase,       setPhase]       = useState(0);
-  const [mounted,     setMounted]     = useState(false);
-  const [settled,     setSettled]     = useState<Set<number>>(() => { const s = new Set<number>(); s.add(0); s.add(1); s.add(2); return s; });
+  const [phase,        setPhase]        = useState(0);
+  const [mounted,      setMounted]      = useState(false);
+  const [settled,      setSettled]      = useState<Set<number>>(() => { const s = new Set<number>(); s.add(0); s.add(1); s.add(2); return s; });
   const [serpScrolled, setSerpScrolled] = useState(false);
+  const [genLabelIdx,  setGenLabelIdx]  = useState(0);
 
   useEffect(() => setMounted(true), []);
 
@@ -512,7 +753,6 @@ function ContentLibraryPanel() {
     return () => clearTimeout(t);
   }, [phase, mounted]);
 
-  // Settled logic & SERP scroll trigger
   useEffect(() => {
     if (!mounted) return;
     if (phase === 0) {
@@ -527,12 +767,18 @@ function ContentLibraryPanel() {
     }
     if (phase === 13) {
       setSerpScrolled(false);
-      const t = setTimeout(() => setSerpScrolled(true), 1600);
+      const t = setTimeout(() => setSerpScrolled(true), 1500);
       return () => clearTimeout(t);
     } else {
       setSerpScrolled(false);
     }
   }, [phase, mounted]);
+
+  useEffect(() => {
+    if (!(phase >= 4 && phase <= 9)) return;
+    const t = setInterval(() => setGenLabelIdx(v => (v + 1) % GEN_CATS.length), 680);
+    return () => clearInterval(t);
+  }, [phase]);
 
   const numVisible    = phase < 4 ? 3 : Math.min(9, phase);
   const activeCat     = phase === 1 ? "SEO" : phase === 2 ? "How-To" : phase === 3 ? "Trends" : "All";
@@ -550,7 +796,6 @@ function ContentLibraryPanel() {
     showStats                  ? "yourwebsite.com/analytics" :
     "yourwebsite.com/articles";
 
-  // SSR placeholder
   if (!mounted) {
     return (
       <div className="flex flex-col">
@@ -562,7 +807,7 @@ function ContentLibraryPanel() {
             <span className="text-[9.5px] text-slate-400 font-mono">yourwebsite.com/articles</span>
           </div>
         </div>
-        <div className="rounded-xl border border-slate-100 bg-white" style={{ minHeight: 380 }}>
+        <div className="rounded-xl border border-slate-100 bg-white" style={{ minHeight: 410 }}>
           <div className="p-3">
             <div className="flex items-center justify-between mb-2.5">
               <p className="text-[10.5px] font-bold text-slate-900">Content Library</p>
@@ -576,12 +821,12 @@ function ContentLibraryPanel() {
               {ARTICLES.slice(0, 3).map(a => (
                 <div key={a.id} className="rounded-xl border border-slate-100 overflow-hidden" style={{ height: CARD_H }}>
                   <div className={`h-11 bg-gradient-to-br ${GRAD_LIGHT[a.catKey]}`} />
-                  <div className="p-2">
+                  <div className="p-1.5">
                     <span className={`text-[6px] font-bold px-1.5 py-[1.5px] rounded-full ${CAT_STYLES[a.catKey].bg} ${CAT_STYLES[a.catKey].text}`}>{a.cat}</span>
                   </div>
                 </div>
               ))}
-              {[0, 1, 2, 3, 4, 5].map(i => (
+              {[0,1,2,3,4,5].map(i => (
                 <div key={i} className="rounded-xl border border-dashed border-slate-100 bg-slate-50/30" style={{ height: CARD_H }} />
               ))}
             </div>
@@ -609,24 +854,32 @@ function ContentLibraryPanel() {
       </div>
 
       {/* Viewport */}
-      <div className="relative rounded-xl border border-slate-100 bg-white overflow-hidden" style={{ minHeight: 380 }}>
+      <div className="relative rounded-xl border border-slate-100 bg-white overflow-hidden" style={{ minHeight: 410 }}>
         <AnimatePresence mode="wait">
 
           {/* ── GRID ─────────────────────────────────────────── */}
           {isGridPhase && (
             <motion.div key="grid" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }} className="absolute inset-0 p-3">
-              {/* Header */}
               <div className="flex items-center justify-between mb-2.5">
                 <div>
                   <p className="text-[10.5px] font-bold text-slate-900 leading-none mb-0.5">Content Library</p>
                   <p className="text-[8px] text-slate-400 tabular-nums">{numVisible} articles published</p>
                 </div>
                 {isGenerating ? (
-                  <div className="flex items-center gap-1.5 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full">
+                  <div className="flex items-center gap-1 bg-blue-50 border border-blue-100 px-2 py-1 rounded-full">
                     <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.85, repeat: Infinity, ease: "linear" }}
-                      className="w-2.5 h-2.5 border-[1.5px] border-blue-200 border-t-blue-500 rounded-full" />
-                    <span className="text-[7px] font-semibold text-blue-600 whitespace-nowrap">AstroRank is writing…</span>
+                      className="w-2.5 h-2.5 border-[1.5px] border-blue-200 border-t-blue-500 rounded-full shrink-0" />
+                    <span className="text-[7px] font-semibold text-blue-600 whitespace-nowrap">Writing </span>
+                    <AnimatePresence mode="wait">
+                      <motion.span key={genLabelIdx}
+                        initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }}
+                        transition={{ duration: 0.2 }}
+                        className={`text-[7px] font-bold whitespace-nowrap ${CAT_STYLES[GEN_CATS[genLabelIdx].key].text}`}>
+                        {GEN_CATS[genLabelIdx].label}
+                      </motion.span>
+                    </AnimatePresence>
+                    <span className="text-[7px] font-semibold text-blue-600">…</span>
                   </div>
                 ) : (
                   <div className="flex items-center gap-0.5">
@@ -640,12 +893,10 @@ function ContentLibraryPanel() {
                   </div>
                 )}
               </div>
-
-              {/* 3×3 grid */}
               <div className="grid grid-cols-3 gap-1.5">
                 {ARTICLES.map((article, i) => {
-                  const visible    = i < numVisible;
-                  const generating = visible && !settled.has(i);
+                  const visible     = i < numVisible;
+                  const generating  = visible && !settled.has(i);
                   const highlighted = !isGenerating && activeCat !== "All" && KEY_TO_CAT[article.catKey] === activeCat;
                   const focused     = i === focusedIdx;
                   return (
@@ -666,16 +917,16 @@ function ContentLibraryPanel() {
           {inArticle && (
             <motion.div key="article" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
               transition={{ duration: 0.25 }} className="absolute inset-0 overflow-hidden">
-              <motion.div animate={{ y: scanning ? -118 : 0 }} transition={{ duration: 2.15, ease: "easeInOut" }}>
-                <ArticlePageSEO />
+              <motion.div animate={{ y: scanning ? -148 : 0 }} transition={{ duration: 2.7, ease: "easeInOut" }}>
+                <ArticlePageSEO scanning={scanning} />
               </motion.div>
               <AnimatePresence>
                 {scanning && (
                   <motion.div key="scan"
-                    initial={{ top: "5%" }} animate={{ top: "84%" }}
-                    transition={{ duration: 2.15, ease: "easeInOut" }}
+                    initial={{ top: "5%" }} animate={{ top: "88%" }}
+                    transition={{ duration: 2.7, ease: "easeInOut" }}
                     className="absolute left-3 right-3 h-px pointer-events-none"
-                    style={{ background: "linear-gradient(to right,transparent,rgba(59,130,246,0.6) 20%,rgba(59,130,246,0.6) 80%,transparent)" }}
+                    style={{ background: "linear-gradient(to right,transparent,rgba(59,130,246,0.5) 20%,rgba(59,130,246,0.5) 80%,transparent)" }}
                   />
                 )}
               </AnimatePresence>
