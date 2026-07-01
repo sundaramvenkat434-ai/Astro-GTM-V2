@@ -1041,7 +1041,7 @@ export default function AstroRankHero() {
             <motion.div initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 0.28, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="sm:hidden w-full mb-6">
-              <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 overflow-hidden h-[220px] flex items-center justify-center">
+              <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 overflow-hidden" style={{ minHeight: "340px" }}>
                 <ContentLibraryPanel />
               </div>
             </motion.div>
