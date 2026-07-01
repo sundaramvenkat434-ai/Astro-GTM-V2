@@ -986,10 +986,13 @@ function RatingWidget() {
             {[1,2,3,4].map(i => (
               <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             ))}
-            <svg width="13" height="13" viewBox="0 0 24 24">
-              <defs><linearGradient id="half-star"><stop offset="65%" stopColor="#F59E0B"/><stop offset="65%" stopColor="#D1D5DB"/></linearGradient></defs>
-              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#half-star)"/>
-            </svg>
+            {/* Half star: grey base + amber left half via clip */}
+            <span className="relative inline-block w-[13px] h-[13px]">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="#D1D5DB"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              <span className="absolute inset-0 overflow-hidden" style={{ width: "65%" }}>
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </span>
+            </span>
           </div>
           <span className="text-[12px] font-bold text-slate-800">4.6</span>
           <span className="text-[11px] text-slate-400 font-medium">· 340+ reviews</span>
