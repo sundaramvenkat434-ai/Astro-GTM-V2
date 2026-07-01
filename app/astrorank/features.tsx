@@ -27,7 +27,7 @@ function usePhaseLoop(delays: number[]) {
 // ─── Shared card shell ───────────────────────────────────────────────────────
 function AnimCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`w-full max-w-[380px] h-[220px] bg-white rounded-[20px] border border-[#E5E7EB] shadow-[0_4px_28px_rgba(0,0,0,0.07)] overflow-hidden p-4 flex flex-col select-none ${className}`}>
+    <div className={`w-full h-full bg-white rounded-2xl border border-slate-200 shadow-[0_2px_16px_rgba(15,23,42,0.07)] overflow-hidden p-5 flex flex-col select-none ${className}`}>
       {children}
     </div>
   );
@@ -549,44 +549,58 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
   const isReversed = index % 2 !== 0;
   const { Card } = feature;
 
+  const textCol = (
+    <div className="flex flex-col justify-center py-2">
+      <div className="flex items-center gap-2.5 mb-3">
+        <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
+          {feature.number}
+        </span>
+        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
+          {feature.tag}
+        </span>
+      </div>
+      <h3 className="text-[1.45rem] font-bold text-slate-900 leading-[1.22] tracking-[-0.02em] mb-3">
+        {feature.headline}
+      </h3>
+      <p className="text-[14px] text-slate-500 leading-[1.65] mb-5">{feature.body}</p>
+      <ul className="flex flex-col gap-2">
+        {feature.highlights.map((h) => (
+          <li key={h} className="flex items-start gap-2.5">
+            <span className="mt-[3px] w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+              <Check size={8} className="text-emerald-600" strokeWidth={3} />
+            </span>
+            <span className="text-[13px] text-slate-600 leading-relaxed">{h}</span>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+
+  const cardCol = (
+    <div className="h-[260px] lg:h-[280px]">
+      <Card />
+    </div>
+  );
+
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 32 }}
+      initial={{ opacity: 0, y: 28 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className={`flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-20 ${isReversed ? "lg:flex-row-reverse" : ""}`}
+      className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center"
     >
-      {/* Text */}
-      <div className="w-full lg:w-1/2">
-        <div className="flex items-center gap-2.5 mb-4">
-          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
-            {feature.number}
-          </span>
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-            {feature.tag}
-          </span>
-        </div>
-        <h3 className="text-[1.6rem] sm:text-[1.75rem] font-bold text-slate-900 leading-[1.2] tracking-[-0.02em] mb-3.5">
-          {feature.headline}
-        </h3>
-        <p className="text-[15px] text-slate-500 leading-[1.7] mb-6">{feature.body}</p>
-        <ul className="flex flex-col gap-2">
-          {feature.highlights.map((h) => (
-            <li key={h} className="flex items-start gap-2.5">
-              <span className="mt-[2px] w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                <Check size={8} className="text-emerald-600" strokeWidth={3} />
-              </span>
-              <span className="text-[13.5px] text-slate-600 leading-relaxed">{h}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      {/* Card */}
-      <div className="w-full lg:w-1/2 flex justify-center">
-        <Card />
-      </div>
+      {isReversed ? (
+        <>
+          {cardCol}
+          {textCol}
+        </>
+      ) : (
+        <>
+          {textCol}
+          {cardCol}
+        </>
+      )}
     </motion.div>
   );
 }
@@ -594,7 +608,7 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
 // ─── Section export ───────────────────────────────────────────────────────────
 export default function FeaturesSection() {
   return (
-    <section className="py-28 bg-white border-t border-slate-100">
+    <section className="py-20 bg-white border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-6 lg:px-12">
         {/* Section header */}
         <motion.div
@@ -602,10 +616,10 @@ export default function FeaturesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-20"
+          className="text-center mb-16"
         >
           <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-widest mb-4">How It Works</p>
-          <h2 className="text-[2.25rem] sm:text-[2.65rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
+          <h2 className="text-[2rem] sm:text-[2.4rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
             From brand to rankings.
             <br />
             <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
@@ -615,7 +629,7 @@ export default function FeaturesSection() {
         </motion.div>
 
         {/* Blocks */}
-        <div className="flex flex-col gap-24 lg:gap-32">
+        <div className="flex flex-col gap-16 lg:gap-20">
           {FEATURES.map((f, i) => (
             <FeatureBlock key={f.number} feature={f} index={i} />
           ))}
