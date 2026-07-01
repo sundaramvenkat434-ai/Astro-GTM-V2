@@ -5,17 +5,37 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import { ArrowRight, TrendingUp, Search, MousePointer, Zap } from "lucide-react";
 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
-const PLATFORMS = ["Google", "ChatGPT", "Gemini", "Claude", "Perplexity", "Copilot"];
+const PLATFORMS = [
+  { name: "Google",     color: "#4285F4", icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+  )},
+  { name: "ChatGPT",    color: "#10A37F", icon: (
+    <svg width="14" height="14" viewBox="0 0 41 41" fill="none"><path d="M37.532 16.87a9.963 9.963 0 0 0-.856-8.184 10.078 10.078 0 0 0-10.855-4.835 9.964 9.964 0 0 0-6.75-3.001 10.079 10.079 0 0 0-9.612 6.977 9.967 9.967 0 0 0-6.63 4.811 10.079 10.079 0 0 0 1.24 11.817 9.965 9.965 0 0 0 .856 8.185 10.079 10.079 0 0 0 10.855 4.835 9.965 9.965 0 0 0 6.75 3.001 10.079 10.079 0 0 0 9.617-6.981 9.967 9.967 0 0 0 6.63-4.811 10.079 10.079 0 0 0-1.243-11.813zM22.498 37.886a7.474 7.474 0 0 1-4.799-1.735c.061-.033.168-.091.237-.134l7.964-4.6a1.294 1.294 0 0 0 .655-1.134V19.054l3.366 1.944a.12.12 0 0 1 .066.092v9.299a7.505 7.505 0 0 1-7.49 7.496zM6.392 31.006a7.471 7.471 0 0 1-.894-5.023c.06.036.162.099.237.141l7.964 4.6a1.297 1.297 0 0 0 1.308 0l9.724-5.614v3.888a.12.12 0 0 1-.048.103L16.5 33.569a7.505 7.505 0 0 1-10.108-2.563zm-1.961-16.118A7.474 7.474 0 0 1 8.343 11.2l-.033.2v9.195a1.295 1.295 0 0 0 .654 1.132l9.723 5.614-3.366 1.944a.12.12 0 0 1-.114.012L7.044 24.2a7.505 7.505 0 0 1-2.612-9.312zm27.688 6.437l-9.724-5.615 3.367-1.943a.121.121 0 0 1 .114-.012l8.163 4.71a7.504 7.504 0 0 1-1.158 13.528v-9.396a1.293 1.293 0 0 0-.762-1.272zm3.35-5.043c-.059-.037-.162-.099-.236-.141l-7.965-4.6a1.298 1.298 0 0 0-1.308 0l-9.723 5.614v-3.888a.12.12 0 0 1 .048-.103l8.167-4.714a7.505 7.505 0 0 1 11.017 7.831zm-21.063 6.929l-3.367-1.944a.12.12 0 0 1-.065-.092v-9.299a7.505 7.505 0 0 1 12.293-5.756 6.94 6.94 0 0 0-.236.134l-7.965 4.6a1.294 1.294 0 0 0-.654 1.132l-.006 11.225zm1.829-3.943l4.33-2.501 4.332 2.5v4.999l-4.331 2.5-4.331-2.5V19.268z" fill="currentColor"/></svg>
+  )},
+  { name: "Gemini",     color: "#1A73E8", icon: (
+    <svg width="14" height="14" viewBox="0 0 28 28" fill="none"><path d="M14 28C14 26.0633 13.6267 24.2433 12.88 22.54C12.1567 20.8367 11.165 19.355 9.905 18.095C8.645 16.835 7.16333 15.8433 5.46 15.12C3.75667 14.3733 1.93667 14 0 14C1.93667 14 3.75667 13.6383 5.46 12.915C7.16333 12.1683 8.645 11.165 9.905 9.905C11.165 8.645 12.1567 7.16333 12.88 5.46C13.6267 3.75667 14 1.93667 14 0C14 1.93667 14.3617 3.75667 15.085 5.46C15.8317 7.16333 16.835 8.645 18.095 9.905C19.355 11.165 20.8367 12.1683 22.54 12.915C24.2433 13.6383 26.0633 14 28 14C26.0633 14 24.2433 14.3733 22.54 15.12C20.8367 15.8433 19.355 16.835 18.095 18.095C16.835 19.355 15.8317 20.8367 15.085 22.54C14.3617 24.2433 14 26.0633 14 28Z" fill="url(#gemini_grad)"/><defs><linearGradient id="gemini_grad" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse"><stop stopColor="#1A73E8"/><stop offset="1" stopColor="#9C40EE"/></linearGradient></defs></svg>
+  )},
+  { name: "Claude",     color: "#D97706", icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm0 3c.828 0 1.5.672 1.5 1.5S12.828 8 12 8s-1.5-.672-1.5-1.5S11.172 5 12 5zm3.5 10.5h-7a.5.5 0 010-1h2.75v-5H9.5a.5.5 0 010-1h3a.5.5 0 01.5.5v5.5H15.5a.5.5 0 010 1z" fill="#D97706"/></svg>
+  )},
+  { name: "Perplexity", color: "#20B2AA", icon: (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18L20 8.5v7L12 19.82 4 15.5v-7l8-4.32z" fill="#20B2AA"/><path d="M12 8v8M8 10l4-2 4 2M8 14l4 2 4-2" stroke="#20B2AA" strokeWidth="1.5" strokeLinecap="round"/></svg>
+  )},
+];
+
 function PlatformCycler() {
   const [i, setI] = useState(0);
   useEffect(() => { const t = setInterval(() => setI(v => (v + 1) % PLATFORMS.length), 2200); return () => clearInterval(t); }, []);
+  const p = PLATFORMS[i];
   return (
-    <span className="inline-block relative min-w-[100px]">
+    <span className="inline-flex items-center gap-1.5 align-middle">
       <AnimatePresence mode="wait">
         <motion.span key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}
-          className="inline-block bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-          {PLATFORMS[i]}
+          className="inline-flex items-center gap-1.5 font-semibold"
+          style={{ color: p.color }}>
+          {p.icon}
+          {p.name}
         </motion.span>
       </AnimatePresence>
     </span>
@@ -942,21 +962,21 @@ function ContentLibraryPanel() {
 
 // ─── Trustpilot widget ────────────────────────────────────────────────────────
 const LINKEDIN_AVATARS = [
-  { initials: "SM", href: "https://www.linkedin.com/", grad: "from-blue-500 to-blue-700" },
-  { initials: "RK", href: "https://www.linkedin.com/", grad: "from-teal-400 to-teal-600" },
-  { initials: "AP", href: "https://www.linkedin.com/", grad: "from-sky-400 to-sky-600" },
-  { initials: "JL", href: "https://www.linkedin.com/", grad: "from-emerald-400 to-emerald-600" },
-  { initials: "NB", href: "https://www.linkedin.com/", grad: "from-slate-400 to-slate-600" },
+  { photo: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1", href: "https://www.linkedin.com/" },
+  { photo: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1", href: "https://www.linkedin.com/" },
+  { photo: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1",   href: "https://www.linkedin.com/" },
+  { photo: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1",   href: "https://www.linkedin.com/" },
+  { photo: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1", href: "https://www.linkedin.com/" },
 ];
 
 function TrustpilotWidget() {
   return (
     <div className="flex items-center gap-3">
       <div className="flex -space-x-1.5">
-        {LINKEDIN_AVATARS.map(av => (
-          <a key={av.initials} href={av.href} target="_blank" rel="noopener noreferrer"
-            className={`w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br ${av.grad} flex items-center justify-center text-white text-[8.5px] font-bold hover:scale-110 transition-transform duration-150 z-10 relative`}>
-            {av.initials}
+        {LINKEDIN_AVATARS.map((av, idx) => (
+          <a key={idx} href={av.href} target="_blank" rel="noopener noreferrer"
+            className="w-7 h-7 rounded-full border-2 border-white overflow-hidden hover:scale-110 transition-transform duration-150 z-10 relative block">
+            <img src={av.photo} alt="User" className="w-full h-full object-cover" />
           </a>
         ))}
       </div>
@@ -998,7 +1018,7 @@ export default function AstroRankHero() {
         <div className="absolute inset-0 opacity-[0.015]"
           style={{ backgroundImage: "linear-gradient(rgba(15,23,42,1) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,1) 1px,transparent 1px)", backgroundSize: "56px 56px" }} />
       </div>
-      <div className="relative z-10 w-full max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-0 lg:min-h-screen flex items-center">
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-0 lg:min-h-screen flex items-center">
         <div className="w-full grid lg:grid-cols-[54fr_46fr] gap-10 xl:gap-20 items-center">
 
           {/* Left: copy */}
@@ -1008,7 +1028,7 @@ export default function AstroRankHero() {
               transition={{ delay: 0.14, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="text-[2.5rem] sm:text-[3rem] lg:text-[3.35rem] xl:text-[3.75rem] font-extrabold leading-[1.08] tracking-[-0.025em] text-slate-900 mb-5">
               Give your brand an<br />
-              <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-violet-600 bg-clip-text text-transparent">unfair SEO</span>{" "}advantage.
+              <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-violet-600 bg-clip-text text-transparent">astronomical SEO</span> advantage.
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.55 }}
@@ -1065,7 +1085,7 @@ export function MetricsStrip() {
   return (
     <section ref={ref} className="w-full bg-white border-y border-slate-100">
       <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ duration: 0.5 }}
-        className="max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-5">
+        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-5">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-0 sm:divide-x sm:divide-slate-100">
           {METRICS.map((m, i) => (
             <motion.div key={m.label} initial={{ opacity: 0, y: 8 }} animate={inView ? { opacity: 1, y: 0 } : {}}

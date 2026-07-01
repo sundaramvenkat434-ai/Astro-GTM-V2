@@ -129,7 +129,7 @@ export default function AstroRankFooter() {
       >
         <span
           className="whitespace-nowrap font-black text-slate-900"
-          style={{ fontSize: "clamp(64px, 16vw, 260px)", opacity: 0.025, letterSpacing: "-0.05em", lineHeight: 1 }}
+          style={{ fontSize: "clamp(64px, 16vw, 260px)", opacity: 0.06, letterSpacing: "-0.05em", lineHeight: 1 }}
         >
           ASTRORANK
         </span>
