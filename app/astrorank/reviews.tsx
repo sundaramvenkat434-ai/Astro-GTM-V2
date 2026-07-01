@@ -89,7 +89,7 @@ export default function ReviewsSection() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section ref={ref} id="reviews" className="py-16 bg-white border-t border-slate-100">
+    <section ref={ref} id="reviews" className="py-16 bg-white/95 border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
 
         {/* Header */}

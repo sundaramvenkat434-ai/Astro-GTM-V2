@@ -1011,7 +1011,7 @@ export default function AstroRankHero() {
     setEmail("");
   }
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[64px]">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white/92 pt-[64px]">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[680px] h-[680px] rounded-full bg-gradient-to-br from-blue-50/80 via-violet-50/50 to-transparent blur-[80px]" />
         <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-sky-50/70 to-transparent blur-[80px]" />

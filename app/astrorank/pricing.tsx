@@ -128,7 +128,7 @@ export default function PricingSection() {
   const plan = STARTER_PRICING[cycle];
 
   return (
-    <section ref={sectionRef} id="pricing" className="py-16 bg-[#FAFAFA] border-t border-slate-100">
+    <section ref={sectionRef} id="pricing" className="py-16 bg-slate-50/90 border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
 
         {/* Header */}

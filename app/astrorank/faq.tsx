@@ -90,7 +90,7 @@ export default function FAQSection() {
   const right = FAQS.slice(half);
 
   return (
-    <section ref={ref} id="faq" className="py-16 bg-white border-t border-slate-100">
+    <section ref={ref} id="faq" className="py-16 bg-slate-50/90 border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10">
 
         <motion.div
