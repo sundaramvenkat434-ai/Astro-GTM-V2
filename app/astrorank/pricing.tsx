@@ -128,7 +128,7 @@ export default function PricingSection() {
   const plan = STARTER_PRICING[cycle];
 
   return (
-    <section ref={sectionRef} id="pricing" className="py-16 bg-transparent border-t border-slate-200/60">
+    <section ref={sectionRef} id="pricing" className="py-16 bg-slate-50 border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
 
         {/* Header */}
@@ -220,7 +220,7 @@ export default function PricingSection() {
               </AnimatePresence>
             </div>
 
-            <button className="w-full py-2.5 rounded-xl bg-blue-600 text-white text-[13.5px] font-semibold shadow-sm shadow-blue-200 hover:bg-blue-500 active:scale-[0.99] transition-all duration-150 mb-7">
+            <button className="w-full py-3 rounded-xl bg-blue-600 text-white text-[13.5px] font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 active:scale-[0.99] transition-all duration-150 mb-7 ring-1 ring-blue-700/20">
               Start Growing
             </button>
 

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { ArrowRight, TrendingUp, Search, MousePointer, Zap } from "lucide-react";
+import SpaceBg from "./space-bg";
 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
 const PLATFORMS = [
@@ -960,42 +961,40 @@ function ContentLibraryPanel() {
   );
 }
 
-// ─── Trustpilot widget ────────────────────────────────────────────────────────
+// ─── Rating widget ────────────────────────────────────────────────────────────
 const LINKEDIN_AVATARS = [
-  { photo: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1", href: "https://www.linkedin.com/" },
-  { photo: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1", href: "https://www.linkedin.com/" },
-  { photo: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1",   href: "https://www.linkedin.com/" },
-  { photo: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1",   href: "https://www.linkedin.com/" },
-  { photo: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1", href: "https://www.linkedin.com/" },
+  { photo: "https://images.pexels.com/photos/2379004/pexels-photo-2379004.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1" },
+  { photo: "https://images.pexels.com/photos/1239291/pexels-photo-1239291.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1" },
+  { photo: "https://images.pexels.com/photos/220453/pexels-photo-220453.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1"   },
+  { photo: "https://images.pexels.com/photos/415829/pexels-photo-415829.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1"   },
+  { photo: "https://images.pexels.com/photos/1222271/pexels-photo-1222271.jpeg?auto=compress&cs=tinysrgb&w=60&h=60&dpr=1" },
 ];
 
-function TrustpilotWidget() {
+function RatingWidget() {
   return (
     <div className="flex items-center gap-3">
       <div className="flex -space-x-1.5">
         {LINKEDIN_AVATARS.map((av, idx) => (
-          <a key={idx} href={av.href} target="_blank" rel="noopener noreferrer"
-            className="w-7 h-7 rounded-full border-2 border-white overflow-hidden hover:scale-110 transition-transform duration-150 z-10 relative block">
+          <div key={idx} className="w-7 h-7 rounded-full border-2 border-white overflow-hidden z-10 relative">
             <img src={av.photo} alt="User" className="w-full h-full object-cover" />
-          </a>
+          </div>
         ))}
       </div>
-      <div className="flex flex-col gap-[3px]">
+      <div className="flex flex-col gap-[2px]">
         <div className="flex items-center gap-1.5">
           <div className="flex gap-[2px]">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div key={i} className="w-[14px] h-[14px] bg-[#00B67A] flex items-center justify-center rounded-[2px]">
-                <svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
-              </div>
+            {[1,2,3,4].map(i => (
+              <svg key={i} width="13" height="13" viewBox="0 0 24 24" fill="#F59E0B"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
             ))}
+            <svg width="13" height="13" viewBox="0 0 24 24">
+              <defs><linearGradient id="half-star"><stop offset="65%" stopColor="#F59E0B"/><stop offset="65%" stopColor="#D1D5DB"/></linearGradient></defs>
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="url(#half-star)"/>
+            </svg>
           </div>
-          <span className="text-[11.5px] font-bold text-slate-800">Excellent</span>
+          <span className="text-[12px] font-bold text-slate-800">4.6</span>
+          <span className="text-[11px] text-slate-400 font-medium">· 340+ reviews</span>
         </div>
-        <div className="flex items-center gap-1">
-          <svg width="52" height="12" viewBox="0 0 130 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <text x="0" y="22" fontFamily="Arial,sans-serif" fontWeight="bold" fontSize="20" fill="#00B67A">Trustpilot</text>
-          </svg>
-        </div>
+        <span className="text-[10.5px] text-slate-400">Trusted by 1,200+ content teams</span>
       </div>
     </div>
   );
@@ -1011,7 +1010,8 @@ export default function AstroRankHero() {
     setEmail("");
   }
   return (
-    <section className="relative flex items-center overflow-hidden bg-transparent pt-[64px]">
+    <section className="relative flex items-center overflow-hidden bg-white pt-[64px]">
+      <SpaceBg />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[680px] h-[680px] rounded-full bg-gradient-to-br from-blue-50/80 via-violet-50/50 to-transparent blur-[80px]" />
         <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-sky-50/70 to-transparent blur-[80px]" />
@@ -1053,13 +1053,13 @@ export default function AstroRankHero() {
                 placeholder="yourwebsite.com"
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-[14px] placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm transition-all duration-200" />
               <button type="submit"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-sm shadow-blue-200/80 hover:bg-blue-500 active:scale-[0.98] transition-all duration-150 whitespace-nowrap">
-                Get FREE Audit <ArrowRight size={14} strokeWidth={2.25} />
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 active:scale-[0.98] transition-all duration-150 whitespace-nowrap ring-1 ring-blue-700/20">
+                Get FREE Audit <ArrowRight size={14} strokeWidth={2.5} />
               </button>
             </motion.form>
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.46, duration: 0.4 }}>
-              <TrustpilotWidget />
+              <RatingWidget />
             </motion.div>
           </motion.div>
 
@@ -1084,52 +1084,56 @@ const METRICS = [
   {
     value: "95+",
     label: "Lighthouse Score",
-    sublabel: "Google Lighthouse",
+    sublabel: "Google PageSpeed",
     color: "text-orange-500",
     bg: "bg-orange-50",
     border: "border-orange-100",
     Icon: () => (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="#FFF7ED"/>
-        <path d="M16 6l2.5 5h5.5l-4 3.5 1.5 5.5L16 17.5l-5.5 2.5 1.5-5.5-4-3.5h5.5L16 6z" fill="#F97316" opacity="0.15"/>
-        <path d="M16 7l2.2 4.8H23l-3.8 3.2 1.4 5.2L16 17.4l-4.6 2.8 1.4-5.2L8.8 11.8h4.8L16 7z" fill="none" stroke="#F97316" strokeWidth="1.3" strokeLinejoin="round"/>
-        <circle cx="16" cy="14" r="2.2" fill="#F97316"/>
-        <line x1="16" y1="14" x2="13" y2="9.5" stroke="#F97316" strokeWidth="1.3" strokeLinecap="round"/>
-      </svg>
+      /* Google Lighthouse "lighthouse" icon — orange beacon */
+      <div className="w-10 h-10 rounded-xl bg-orange-50 flex items-center justify-center shrink-0">
+        <svg width="26" height="26" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M24 4L30 16H42L32 24L36 36L24 29L12 36L16 24L6 16H18L24 4Z" fill="#F97316" opacity="0.18"/>
+          <path d="M24 6L29.5 17H41L32 24.5L35.5 35L24 28.5L12.5 35L16 24.5L7 17H18.5L24 6Z" fill="none" stroke="#F97316" strokeWidth="2" strokeLinejoin="round"/>
+          <circle cx="24" cy="20" r="3.5" fill="#F97316"/>
+          <line x1="24" y1="20" x2="20" y2="12" stroke="#F97316" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </div>
     ),
   },
   {
     value: "85+",
-    label: "EEAT Score",
-    sublabel: "Google Search",
+    label: "E-E-A-T Score",
+    sublabel: "Google AI Search",
     color: "text-blue-600",
     bg: "bg-blue-50",
     border: "border-blue-100",
     Icon: () => (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
-        <path d="M21 10.5h-10a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V11a.5.5 0 0 0-.5-.5z" fill="#3B82F6" opacity="0.12"/>
-        <rect x="11" y="11" width="10" height="10" rx="1.5" fill="none" stroke="#3B82F6" strokeWidth="1.3"/>
-        <path d="M13.5 14.5h5M13.5 16h5M13.5 17.5h3" stroke="#3B82F6" strokeWidth="1.3" strokeLinecap="round"/>
-        <circle cx="21.5" cy="10.5" r="3" fill="#22C55E"/>
-        <path d="M20 10.5l1 1 1.5-1.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
+      /* Google multicolour "G" mark */
+      <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+        <svg width="24" height="24" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
+          <path fill="#4285F4" d="M45.12 24.5c0-1.56-.14-3.06-.4-4.5H24v8.51h11.84c-.51 2.75-2.06 5.08-4.39 6.64v5.52h7.11c4.16-3.83 6.56-9.47 6.56-16.17z"/>
+          <path fill="#34A853" d="M24 46c5.94 0 10.92-1.97 14.56-5.33l-7.11-5.52c-1.97 1.32-4.49 2.1-7.45 2.1-5.73 0-10.58-3.87-12.32-9.07H4.34v5.7C7.96 41.07 15.4 46 24 46z"/>
+          <path fill="#FBBC05" d="M11.68 28.18A13.9 13.9 0 0 1 10.8 24c0-1.45.25-2.86.68-4.18v-5.7H4.34A23.93 23.93 0 0 0 .08 24c0 3.87.93 7.53 2.56 10.77l7.04-5.59z" transform="translate(.2)"/>
+          <path fill="#EA4335" d="M24 10.75c3.23 0 6.13 1.11 8.41 3.29l6.31-6.31C34.91 4.18 29.93 2 24 2 15.4 2 7.96 6.93 4.34 14.12l7.34 5.7C13.42 14.62 18.27 10.75 24 10.75z"/>
+        </svg>
+      </div>
     ),
   },
   {
     value: "95%",
-    label: "Originality",
-    sublabel: "Grammarly",
+    label: "Originality Score",
+    sublabel: "Grammarly AI Detection",
     color: "text-emerald-600",
     bg: "bg-emerald-50",
     border: "border-emerald-100",
     Icon: () => (
-      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <rect width="32" height="32" rx="8" fill="#F0FDF4"/>
-        <circle cx="16" cy="16" r="7.5" fill="#15803D" opacity="0.1"/>
-        <circle cx="16" cy="16" r="7.5" fill="none" stroke="#15803D" strokeWidth="1.3"/>
-        <path d="M12.5 16l2.5 2.5 4.5-4.5" stroke="#15803D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-      </svg>
+      /* Grammarly "G" mark — green circle with inner arc */
+      <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+        <svg width="24" height="24" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="24" cy="24" r="22" fill="#15A34A"/>
+          <path d="M33 20.5h-9v4h5.2c-.6 2.8-3.1 4.8-5.9 4.8a6.8 6.8 0 0 1 0-13.6c1.7 0 3.2.6 4.4 1.7l2.8-2.8A11 11 0 0 0 24 12a11.8 11.8 0 1 0 9 19.5V20.5z" fill="white"/>
+        </svg>
+      </div>
     ),
   },
 ];
@@ -1143,24 +1147,24 @@ export function MetricsStrip() {
         initial={{ opacity: 0 }}
         animate={inView ? { opacity: 1 } : {}}
         transition={{ duration: 0.5 }}
-        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-5"
+        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-8 sm:py-10"
       >
-        <div className="grid grid-cols-3 gap-3 sm:gap-0 sm:flex sm:items-center sm:justify-center sm:divide-x sm:divide-slate-100">
+        <div className="grid grid-cols-3 gap-4 sm:gap-0 sm:flex sm:items-center sm:justify-center sm:divide-x sm:divide-slate-100">
           {METRICS.map((m, i) => (
             <motion.div
               key={m.label}
               initial={{ opacity: 0, y: 8 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className={`flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 sm:px-8 lg:px-14 rounded-xl sm:rounded-none ${m.bg} sm:bg-transparent border ${m.border} sm:border-transparent p-3 sm:p-0`}
+              className={`flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4 sm:px-12 lg:px-20 rounded-2xl sm:rounded-none ${m.bg} sm:bg-transparent border ${m.border} sm:border-transparent p-4 sm:p-0`}
             >
               <m.Icon />
               <div className="flex flex-col items-center sm:items-start">
-                <span className={`text-[1.35rem] sm:text-[1.5rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>
+                <span className={`text-[1.6rem] sm:text-[1.85rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>
                   {m.value}
                 </span>
-                <span className="text-[11px] font-semibold text-slate-700 leading-tight">{m.label}</span>
-                <span className="text-[10px] text-slate-400 leading-tight hidden sm:block">{m.sublabel}</span>
+                <span className="text-[12px] font-semibold text-slate-800 leading-tight mt-0.5">{m.label}</span>
+                <span className="text-[11px] text-slate-400 leading-tight mt-0.5 hidden sm:block">{m.sublabel}</span>
               </div>
             </motion.div>
           ))}

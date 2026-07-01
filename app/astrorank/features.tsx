@@ -663,7 +663,7 @@ function ComingSoonCard({ index }: { index: number }) {
 // ─── Section export ───────────────────────────────────────────────────────────
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-16 bg-transparent border-t border-slate-200/60">
+    <section id="features" className="py-16 bg-white border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
         {/* Section header */}
         <motion.div

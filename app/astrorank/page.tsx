@@ -6,7 +6,6 @@ import PricingSection from './pricing';
 import ReviewsSection from './reviews';
 import FAQSection from './faq';
 import AstroRankFooter from './footer';
-import SpaceBg from './space-bg';
 
 export const metadata = {
   title: 'AstroRank — Give Your Brand an Astronomical SEO Advantage',
@@ -17,8 +16,7 @@ export default function AstroRankPage() {
   return (
     <>
       <AstroRankHeader />
-      <main className="relative min-h-screen bg-[#f8fafc] overflow-hidden" style={{ zIndex: 1 }}>
-        <SpaceBg />
+      <main className="relative min-h-screen bg-white overflow-hidden" style={{ zIndex: 1 }}>
         <AstroRankHero />
         <MetricsStrip />
         <FeaturesSection />

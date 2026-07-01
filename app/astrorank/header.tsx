@@ -99,7 +99,7 @@ export default function AstroRankHeader() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white text-[13.5px] font-semibold rounded-lg hover:bg-blue-500 transition-colors duration-150 shadow-sm shadow-blue-200/70"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white text-[13.5px] font-semibold rounded-lg hover:bg-blue-700 transition-colors duration-150 shadow-md shadow-blue-600/20 ring-1 ring-blue-700/20"
             >
               Get 10 Pages FREE
               <ArrowRight size={13} strokeWidth={2.5} />

@@ -89,7 +89,7 @@ export default function ReviewsSection() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section ref={ref} id="reviews" className="py-16 bg-transparent border-t border-slate-200/60">
+    <section ref={ref} id="reviews" className="py-16 bg-white border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
 
         {/* Header */}
@@ -116,30 +116,30 @@ export default function ReviewsSection() {
           transition={{ duration: 0.55, delay: 0.08 }}
           className="mb-5"
         >
-          <div className="bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl p-8 sm:p-10 lg:p-12 relative overflow-hidden">
-            {/* subtle glow */}
-            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute bottom-0 left-0 w-60 h-60 bg-violet-500/8 rounded-full blur-3xl pointer-events-none" />
+          <div className="bg-white rounded-2xl border border-slate-200 shadow-[0_4px_24px_rgba(15,23,42,0.07)] p-8 sm:p-10 lg:p-12 relative overflow-hidden">
+            {/* subtle tinted glow */}
+            <div className="absolute top-0 right-0 w-80 h-80 bg-blue-100/40 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute bottom-0 left-0 w-60 h-60 bg-sky-100/30 rounded-full blur-3xl pointer-events-none" />
 
             <div className="relative flex flex-col lg:flex-row lg:items-start lg:justify-between gap-8">
               <div className="flex-1 max-w-[600px]">
-                <span className="inline-block text-[10px] font-bold text-blue-400 bg-blue-500/20 border border-blue-400/30 rounded-full px-3 py-[3px] uppercase tracking-widest mb-4">
+                <span className="inline-block text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-200 rounded-full px-3 py-[3px] uppercase tracking-widest mb-4">
                   {FEATURED.tag}
                 </span>
-                <h3 className="text-[1.5rem] sm:text-[1.75rem] font-extrabold text-white leading-[1.2] tracking-[-0.02em] mb-4">
+                <h3 className="text-[1.5rem] sm:text-[1.75rem] font-extrabold text-slate-900 leading-[1.2] tracking-[-0.02em] mb-4">
                   {FEATURED.headline}
                 </h3>
-                <p className="text-[14.5px] text-white/60 leading-relaxed">
+                <p className="text-[14.5px] text-slate-500 leading-relaxed">
                   {FEATURED.body}
                 </p>
               </div>
               <div className="flex flex-row lg:flex-col gap-3 lg:gap-3 shrink-0">
                 {FEATURED.metrics.map(m => (
-                  <div key={m.label} className="bg-white/[0.06] border border-white/[0.1] rounded-xl px-5 py-4 text-center min-w-[120px]">
-                    <div className="text-[1.75rem] font-extrabold text-white leading-none tracking-tight mb-1">
+                  <div key={m.label} className="bg-slate-50 border border-slate-200 rounded-xl px-5 py-4 text-center min-w-[120px]">
+                    <div className="text-[1.75rem] font-extrabold text-blue-600 leading-none tracking-tight mb-1">
                       {m.value}
                     </div>
-                    <div className="text-[11px] text-white/50 font-medium">{m.label}</div>
+                    <div className="text-[11px] text-slate-500 font-medium">{m.label}</div>
                   </div>
                 ))}
               </div>

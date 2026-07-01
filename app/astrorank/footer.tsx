@@ -57,7 +57,7 @@ export default function AstroRankFooter() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <footer ref={ref} className="relative bg-transparent border-t border-slate-200/60"
+    <footer ref={ref} className="relative bg-white border-t border-slate-100"
       style={{ isolation: "isolate" }}>
 
       {/* ── CTA band ─────────────────────────────────────────── */}
@@ -80,7 +80,7 @@ export default function AstroRankFooter() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
-              className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[14px] font-semibold hover:bg-blue-500 transition-colors duration-150 shadow-sm shadow-blue-100"
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl text-[14px] font-semibold hover:bg-blue-700 transition-all duration-150 shadow-md shadow-blue-600/25 ring-1 ring-blue-700/20"
             >
               Get 10 Pages FREE
             </motion.a>
