@@ -211,7 +211,7 @@ export default function AstroRankHero() {
   }
 
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[60px]">
       {/* Background gradient blobs */}
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-32 -right-32 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-blue-50 via-violet-50 to-transparent opacity-60 blur-3xl" />

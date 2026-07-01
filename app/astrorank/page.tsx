@@ -1,3 +1,4 @@
+import AstroRankHeader from './header';
 import AstroRankHero, { MetricsStrip } from './hero';
 import FeaturesSection from './features';
 import PricingSection from './pricing';
@@ -10,12 +11,15 @@ export const metadata = {
 
 export default function AstroRankPage() {
   return (
-    <main className="min-h-screen bg-white overflow-hidden">
-      <AstroRankHero />
-      <MetricsStrip />
-      <FeaturesSection />
-      <PricingSection />
-      <AstroRankFooter />
-    </main>
+    <>
+      <AstroRankHeader />
+      <main className="min-h-screen bg-white overflow-hidden">
+        <AstroRankHero />
+        <MetricsStrip />
+        <FeaturesSection />
+        <PricingSection />
+        <AstroRankFooter />
+      </main>
+    </>
   );
 }
