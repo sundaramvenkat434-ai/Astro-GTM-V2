@@ -1,316 +1,189 @@
 "use client";
 
+import { useEffect, useRef } from "react";
+
 export default function SpaceBg() {
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    let raf: number;
+
+    const resize = () => {
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+    };
+    resize();
+    window.addEventListener("resize", resize);
+
+    let t = 0;
+
+    // Subtle dots — dark on light, low opacity
+    const DOTS = Array.from({ length: 220 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      r: 0.5 + Math.random() * 1.4,
+      twinkleSpeed: 0.008 + Math.random() * 0.04,
+      twinkleOffset: Math.random() * Math.PI * 2,
+      baseOpacity: 0.06 + Math.random() * 0.18,
+      // Mostly slate/blue-grey, occasional blue tint
+      hue: Math.random() < 0.3 ? "59,130,246" : "100,116,139",
+    }));
+
+    // Slow-moving radial gradient orbs (very subtle on light bg)
+    const ORBS = [
+      { x: 0.78, y: 0.18, r: 0.38, color: "96,165,250",  vx:  0.00008, vy:  0.00005 },
+      { x: 0.12, y: 0.65, r: 0.30, color: "148,163,184", vx: -0.00007, vy: -0.00004 },
+      { x: 0.55, y: 0.85, r: 0.26, color: "125,211,252", vx:  0.00005, vy:  0.00008 },
+    ];
+
+    // Floating dust particles drifting upward
+    const DUST = Array.from({ length: 35 }, () => ({
+      x: Math.random(),
+      y: Math.random(),
+      vx: (Math.random() - 0.5) * 0.00015,
+      vy: -0.00014 - Math.random() * 0.00020,
+      r: 1.0 + Math.random() * 1.8,
+      opacity: 0.04 + Math.random() * 0.08,
+    }));
+
+    // Orbit rings
+    const RINGS = [
+      { cx: 0.88, cy: 0.12, rx: 0.08, ry: 0.03, angle: 0,   speed:  0.002, opacity: 0.08 },
+      { cx: 0.08, cy: 0.25, rx: 0.06, ry: 0.022, angle: 1.0, speed: -0.0015, opacity: 0.06 },
+    ];
+
+    // Shooting stars
+    type Shooter = { x: number; y: number; vx: number; vy: number; life: number; maxLife: number; active: boolean };
+    const SHOOTERS: Shooter[] = Array.from({ length: 4 }, () => ({ x: 0, y: 0, vx: 0, vy: 0, life: 0, maxLife: 1, active: false }));
+    function spawnShooter(s: Shooter) {
+      s.x = 0.05 + Math.random() * 0.55;
+      s.y = 0.02 + Math.random() * 0.35;
+      const angle = Math.PI / 6 + (Math.random() - 0.5) * 0.35;
+      const speed = 0.003 + Math.random() * 0.003;
+      s.vx = Math.cos(angle) * speed;
+      s.vy = Math.sin(angle) * speed;
+      s.maxLife = 60 + Math.random() * 50;
+      s.life = 0;
+      s.active = true;
+    }
+    spawnShooter(SHOOTERS[0]);
+    const t1 = setTimeout(() => spawnShooter(SHOOTERS[1]), 2200);
+
+    function draw() {
+      if (!ctx || !canvas) return;
+      const W = canvas.width, H = canvas.height;
+      ctx.clearRect(0, 0, W, H);
+      t++;
+
+      // Orbs
+      for (const o of ORBS) {
+        o.x += o.vx; o.y += o.vy;
+        if (o.x < -0.15) o.x = 1.15; if (o.x > 1.15) o.x = -0.15;
+        if (o.y < -0.15) o.y = 1.15; if (o.y > 1.15) o.y = -0.15;
+        const g = ctx.createRadialGradient(o.x * W, o.y * H, 0, o.x * W, o.y * H, o.r * W);
+        g.addColorStop(0, `rgba(${o.color},0.10)`);
+        g.addColorStop(0.5, `rgba(${o.color},0.04)`);
+        g.addColorStop(1, `rgba(${o.color},0)`);
+        ctx.fillStyle = g;
+        ctx.fillRect(0, 0, W, H);
+      }
+
+      // Dots / stars
+      for (const d of DOTS) {
+        const flicker = Math.sin(t * d.twinkleSpeed + d.twinkleOffset) * 0.4 + 0.6;
+        ctx.globalAlpha = d.baseOpacity * flicker;
+        ctx.beginPath();
+        ctx.arc(d.x * W, d.y * H, d.r, 0, Math.PI * 2);
+        ctx.fillStyle = `rgb(${d.hue})`;
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Dust
+      for (const d of DUST) {
+        d.x += d.vx; d.y += d.vy;
+        if (d.y < -0.02) { d.y = 1.02; d.x = Math.random(); }
+        if (d.x < 0) d.x = 1; if (d.x > 1) d.x = 0;
+        ctx.globalAlpha = d.opacity;
+        const dg = ctx.createRadialGradient(d.x * W, d.y * H, 0, d.x * W, d.y * H, d.r);
+        dg.addColorStop(0, "rgba(59,130,246,0.8)");
+        dg.addColorStop(1, "rgba(59,130,246,0)");
+        ctx.fillStyle = dg;
+        ctx.beginPath();
+        ctx.arc(d.x * W, d.y * H, d.r, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.globalAlpha = 1;
+
+      // Orbit rings
+      for (const ring of RINGS) {
+        ring.angle += ring.speed;
+        ctx.save();
+        ctx.translate(ring.cx * W, ring.cy * H);
+        ctx.rotate(ring.angle);
+        ctx.scale(1, ring.ry / ring.rx);
+        ctx.beginPath();
+        ctx.arc(0, 0, ring.rx * W, 0, Math.PI * 2);
+        ctx.restore();
+        ctx.strokeStyle = `rgba(96,165,250,${ring.opacity})`;
+        ctx.lineWidth = 1;
+        ctx.stroke();
+      }
+
+      // Shooting stars
+      if (t % 100 === 0) {
+        const idle = SHOOTERS.find(s => !s.active);
+        if (idle) spawnShooter(idle);
+      }
+      for (const s of SHOOTERS) {
+        if (!s.active) continue;
+        s.x += s.vx; s.y += s.vy; s.life++;
+        if (s.life > s.maxLife || s.x > 1.2 || s.y > 1.2) { s.active = false; continue; }
+        const prog = s.life / s.maxLife;
+        const alpha = prog < 0.15 ? prog / 0.15 : prog > 0.75 ? (1 - prog) / 0.25 : 1;
+        const tailLen = 80 + prog * 50;
+        const len = Math.sqrt(s.vx * s.vx + s.vy * s.vy);
+        const nx = s.vx / len, ny = s.vy / len;
+        const grd = ctx.createLinearGradient(
+          s.x * W - nx * tailLen, s.y * H - ny * tailLen,
+          s.x * W, s.y * H
+        );
+        grd.addColorStop(0, "rgba(96,165,250,0)");
+        grd.addColorStop(0.7, `rgba(59,130,246,${alpha * 0.35})`);
+        grd.addColorStop(1, `rgba(148,210,252,${alpha * 0.7})`);
+        ctx.strokeStyle = grd;
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.moveTo(s.x * W - nx * tailLen, s.y * H - ny * tailLen);
+        ctx.lineTo(s.x * W, s.y * H);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(s.x * W, s.y * H, 1.5, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(96,165,250,${alpha * 0.8})`;
+        ctx.fill();
+      }
+
+      raf = requestAnimationFrame(draw);
+    }
+    draw();
+
+    return () => {
+      window.removeEventListener("resize", resize);
+      cancelAnimationFrame(raf);
+      clearTimeout(t1);
+    };
+  }, []);
+
   return (
-    <div
+    <canvas
+      ref={canvasRef}
       aria-hidden
-      className="pointer-events-none select-none absolute inset-0 overflow-hidden"
-      style={{ zIndex: 0 }}
-    >
-      <style>{`
-        @keyframes twinkle {
-          0%,100% { opacity: var(--base-op); transform: scale(1); }
-          50%      { opacity: calc(var(--base-op) * 0.2); transform: scale(0.7); }
-        }
-        @keyframes float-slow {
-          0%,100% { transform: translateY(0px) translateX(0px); }
-          33%      { transform: translateY(-24px) translateX(10px); }
-          66%      { transform: translateY(14px) translateX(-8px); }
-        }
-        @keyframes float-med {
-          0%,100% { transform: translateY(0px) translateX(0px) scale(1); }
-          40%      { transform: translateY(-16px) translateX(-12px) scale(1.04); }
-          70%      { transform: translateY(10px) translateX(8px) scale(0.97); }
-        }
-        @keyframes comet {
-          0%   { transform: translateX(-80px) translateY(-80px); opacity: 0; }
-          5%   { opacity: 1; }
-          80%  { opacity: 0.7; }
-          100% { transform: translateX(700px) translateY(700px); opacity: 0; }
-        }
-        @keyframes comet2 {
-          0%   { transform: translateX(-60px) translateY(-60px); opacity: 0; }
-          6%   { opacity: 0.8; }
-          100% { transform: translateX(550px) translateY(550px); opacity: 0; }
-        }
-        @keyframes comet3 {
-          0%   { transform: translateX(-50px) translateY(-50px); opacity: 0; }
-          7%   { opacity: 0.6; }
-          100% { transform: translateX(420px) translateY(420px); opacity: 0; }
-        }
-        @keyframes pulse-glow {
-          0%,100% { opacity: 1; transform: scale(1); }
-          50%      { opacity: 0.55; transform: scale(1.08); }
-        }
-        @keyframes orbit-spin {
-          from { transform: rotate(0deg); }
-          to   { transform: rotate(360deg); }
-        }
-      `}</style>
-
-      {/* ── Stars ──────────────────────────────────────────────── */}
-      {STARS.map((s, i) => (
-        <div
-          key={i}
-          className="absolute rounded-full"
-          style={{
-            left: `${s.x}%`,
-            top: `${s.y}%`,
-            width: s.size,
-            height: s.size,
-            backgroundColor: s.blue ? "rgb(96,165,250)" : "rgb(100,116,139)",
-            "--base-op": s.op,
-            opacity: s.op,
-            animation: `twinkle ${s.dur}s ease-in-out ${s.delay}s infinite`,
-            boxShadow: s.blue ? `0 0 ${s.size * 2}px rgba(96,165,250,${s.op * 0.8})` : "none",
-          } as React.CSSProperties}
-        />
-      ))}
-
-      {/* ── Planet 1 — large, top-right ───────────────────────── */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          right: "-3%",
-          top: "3%",
-          width: 420,
-          height: 420,
-          background: "radial-gradient(circle at 35% 35%, rgba(147,197,253,0.45) 0%, rgba(96,165,250,0.2) 40%, rgba(59,130,246,0.06) 65%, transparent 80%)",
-          animation: "float-slow 18s ease-in-out infinite",
-          filter: "blur(1px)",
-        }}
-      />
-      {/* Orbit ring */}
-      <div
-        className="absolute"
-        style={{
-          right: "-9%",
-          top: "-3%",
-          width: 540,
-          height: 540,
-          borderRadius: "50%",
-          border: "1px solid rgba(147,197,253,0.25)",
-          animation: "float-slow 18s ease-in-out infinite, orbit-spin 40s linear infinite",
-        }}
-      />
-      {/* Orbit dot */}
-      <div
-        className="absolute"
-        style={{
-          right: "-9%",
-          top: "-3%",
-          width: 540,
-          height: 540,
-          animation: "float-slow 18s ease-in-out infinite, orbit-spin 40s linear infinite",
-        }}
-      >
-        <div style={{
-          position: "absolute",
-          top: "50%",
-          left: "0%",
-          width: 6,
-          height: 6,
-          borderRadius: "50%",
-          background: "rgba(96,165,250,0.6)",
-          transform: "translateY(-50%)",
-          boxShadow: "0 0 8px rgba(96,165,250,0.6)",
-        }} />
-      </div>
-
-      {/* ── Planet 2 — medium, left-middle ────────────────────── */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          left: "-5%",
-          top: "35%",
-          width: 260,
-          height: 260,
-          background: "radial-gradient(circle at 40% 40%, rgba(125,211,252,0.38) 0%, rgba(56,189,248,0.14) 50%, transparent 72%)",
-          animation: "float-med 14s ease-in-out 2s infinite",
-          filter: "blur(0.5px)",
-        }}
-      />
-      {/* Ring */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          left: "-8%",
-          top: "33%",
-          width: 310,
-          height: 310,
-          border: "1px solid rgba(125,211,252,0.22)",
-          animation: "float-med 14s ease-in-out 2s infinite",
-        }}
-      />
-
-      {/* ── Planet 3 — small, bottom-right ────────────────────── */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          right: "10%",
-          bottom: "8%",
-          width: 180,
-          height: 180,
-          background: "radial-gradient(circle at 38% 38%, rgba(165,180,252,0.35) 0%, rgba(129,140,248,0.12) 55%, transparent 75%)",
-          animation: "float-slow 22s ease-in-out 5s infinite",
-          filter: "blur(0.5px)",
-        }}
-      />
-
-      {/* ── Planet 4 — tiny, upper-center-left ────────────────── */}
-      <div
-        className="absolute rounded-full"
-        style={{
-          left: "20%",
-          top: "6%",
-          width: 100,
-          height: 100,
-          background: "radial-gradient(circle at 38% 38%, rgba(186,230,253,0.4) 0%, rgba(125,211,252,0.14) 60%, transparent 78%)",
-          animation: "float-med 11s ease-in-out 1s infinite",
-        }}
-      />
-
-      {/* ── Nebula glow 1 ─────────────────────────────────────── */}
-      <div
-        className="absolute"
-        style={{
-          left: "25%",
-          top: "15%",
-          width: 700,
-          height: 500,
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, rgba(191,219,254,0.22) 0%, rgba(147,197,253,0.08) 45%, transparent 70%)",
-          animation: "pulse-glow 14s ease-in-out infinite",
-          filter: "blur(2px)",
-        }}
-      />
-
-      {/* ── Nebula glow 2 ─────────────────────────────────────── */}
-      <div
-        className="absolute"
-        style={{
-          right: "15%",
-          bottom: "10%",
-          width: 600,
-          height: 400,
-          borderRadius: "50%",
-          background: "radial-gradient(ellipse at center, rgba(199,210,254,0.2) 0%, rgba(165,180,252,0.07) 50%, transparent 70%)",
-          animation: "pulse-glow 18s ease-in-out 5s infinite",
-          filter: "blur(2px)",
-        }}
-      />
-
-      {/* ── Comet 1 ───────────────────────────────────────────── */}
-      <div
-        className="absolute"
-        style={{
-          left: "8%",
-          top: "10%",
-          width: 160,
-          height: 2,
-          background: "linear-gradient(90deg, rgba(96,165,250,0.9), rgba(147,197,253,0.5), transparent)",
-          borderRadius: 4,
-          transform: "rotate(45deg)",
-          transformOrigin: "left center",
-          animation: "comet 8s ease-in 1.5s infinite",
-          boxShadow: "0 0 6px rgba(96,165,250,0.4)",
-        }}
-      />
-      {/* Comet head dot */}
-      <div
-        className="absolute"
-        style={{
-          left: "8%",
-          top: "10%",
-          width: 4,
-          height: 4,
-          borderRadius: "50%",
-          background: "rgba(147,197,253,0.9)",
-          transform: "rotate(45deg)",
-          transformOrigin: "left center",
-          animation: "comet 8s ease-in 1.5s infinite",
-          boxShadow: "0 0 6px rgba(147,197,253,0.8)",
-        }}
-      />
-
-      {/* ── Comet 2 ───────────────────────────────────────────── */}
-      <div
-        className="absolute"
-        style={{
-          right: "28%",
-          top: "4%",
-          width: 120,
-          height: 1.5,
-          background: "linear-gradient(90deg, rgba(125,211,252,0.85), rgba(186,230,253,0.4), transparent)",
-          borderRadius: 4,
-          transform: "rotate(45deg)",
-          transformOrigin: "left center",
-          animation: "comet2 12s ease-in 5s infinite",
-        }}
-      />
-
-      {/* ── Comet 3 ───────────────────────────────────────────── */}
-      <div
-        className="absolute"
-        style={{
-          left: "52%",
-          top: "28%",
-          width: 90,
-          height: 1.5,
-          background: "linear-gradient(90deg, rgba(196,181,253,0.75), rgba(221,214,254,0.3), transparent)",
-          borderRadius: 4,
-          transform: "rotate(45deg)",
-          transformOrigin: "left center",
-          animation: "comet3 16s ease-in 9s infinite",
-        }}
-      />
-
-      {/* ── Dot grid overlay ──────────────────────────────────── */}
-      <div
-        className="absolute inset-0"
-        style={{
-          backgroundImage: "radial-gradient(circle, rgba(100,116,139,0.12) 1px, transparent 1px)",
-          backgroundSize: "48px 48px",
-        }}
-      />
-    </div>
+      className="pointer-events-none select-none absolute inset-0 w-full h-full"
+      style={{ zIndex: 0, opacity: 0.65 }}
+    />
   );
 }
-
-const STARS: { x: number; y: number; size: number; op: number; dur: number; delay: number; blue?: boolean }[] = [
-  { x:  4, y:  7, size: 3,   op: 0.45, dur: 4.2, delay: 0,   blue: true  },
-  { x: 11, y: 23, size: 2,   op: 0.35, dur: 6.1, delay: 1.2             },
-  { x: 18, y: 55, size: 3.5, op: 0.50, dur: 5.3, delay: 0.7, blue: true  },
-  { x: 25, y: 14, size: 1.5, op: 0.30, dur: 7.0, delay: 2.1             },
-  { x: 32, y: 80, size: 2.5, op: 0.40, dur: 4.8, delay: 0.4             },
-  { x: 38, y: 42, size: 2,   op: 0.32, dur: 6.5, delay: 1.8             },
-  { x: 45, y:  9, size: 3,   op: 0.48, dur: 5.0, delay: 3.0, blue: true  },
-  { x: 52, y: 68, size: 1.5, op: 0.28, dur: 7.4, delay: 0.9             },
-  { x: 59, y: 31, size: 3.5, op: 0.52, dur: 4.4, delay: 2.5, blue: true  },
-  { x: 66, y: 88, size: 2,   op: 0.38, dur: 6.2, delay: 1.0             },
-  { x: 73, y: 19, size: 2.5, op: 0.42, dur: 5.6, delay: 0.3             },
-  { x: 80, y: 62, size: 1.5, op: 0.30, dur: 7.1, delay: 2.7             },
-  { x: 87, y: 44, size: 3.5, op: 0.50, dur: 4.9, delay: 1.5, blue: true  },
-  { x: 93, y: 76, size: 2,   op: 0.38, dur: 5.7, delay: 0.6             },
-  { x:  8, y: 90, size: 2.5, op: 0.43, dur: 6.3, delay: 3.3             },
-  { x: 15, y: 36, size: 1.5, op: 0.31, dur: 4.6, delay: 1.9             },
-  { x: 22, y: 71, size: 2.5, op: 0.46, dur: 5.2, delay: 0.8             },
-  { x: 29, y: 48, size: 2,   op: 0.35, dur: 6.8, delay: 2.3             },
-  { x: 36, y: 25, size: 3.5, op: 0.55, dur: 4.1, delay: 1.1, blue: true  },
-  { x: 43, y: 94, size: 1.5, op: 0.28, dur: 7.3, delay: 0.2             },
-  { x: 50, y: 58, size: 2.5, op: 0.42, dur: 5.5, delay: 2.8             },
-  { x: 57, y: 15, size: 2,   op: 0.34, dur: 6.0, delay: 1.6             },
-  { x: 64, y: 82, size: 2.5, op: 0.47, dur: 4.7, delay: 0.5, blue: true  },
-  { x: 71, y: 37, size: 1.5, op: 0.30, dur: 7.2, delay: 3.1             },
-  { x: 78, y: 53, size: 3.5, op: 0.52, dur: 5.4, delay: 1.4, blue: true  },
-  { x: 85, y:  6, size: 2,   op: 0.38, dur: 6.4, delay: 2.0             },
-  { x: 91, y: 29, size: 2.5, op: 0.44, dur: 4.3, delay: 0.1             },
-  { x:  2, y: 50, size: 1.5, op: 0.28, dur: 7.5, delay: 2.6             },
-  { x: 96, y: 66, size: 2.5, op: 0.46, dur: 5.1, delay: 1.7             },
-  { x: 48, y: 77, size: 2,   op: 0.36, dur: 6.6, delay: 0.8             },
-  { x: 34, y:  3, size: 2.5, op: 0.41, dur: 4.5, delay: 2.9, blue: true  },
-  { x: 69, y: 97, size: 1.5, op: 0.29, dur: 7.0, delay: 1.3             },
-  { x: 83, y: 73, size: 3.5, op: 0.53, dur: 4.9, delay: 0.4, blue: true  },
-  { x: 10, y: 60, size: 2,   op: 0.33, dur: 6.7, delay: 3.2             },
-  { x: 55, y: 45, size: 2.5, op: 0.44, dur: 5.3, delay: 1.0             },
-];

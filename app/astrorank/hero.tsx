@@ -1013,13 +1013,11 @@ export default function AstroRankHero() {
     setEmail("");
   }
   return (
-    <section className="relative flex items-center overflow-hidden bg-white pt-[64px]">
+    <section className="relative flex items-center overflow-hidden bg-slate-50 pt-[64px]">
       <SpaceBg />
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-[680px] h-[680px] rounded-full bg-gradient-to-br from-blue-50/80 via-violet-50/50 to-transparent blur-[80px]" />
-        <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-sky-50/70 to-transparent blur-[80px]" />
-        <div className="absolute inset-0 opacity-[0.015]"
-          style={{ backgroundImage: "linear-gradient(rgba(15,23,42,1) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,1) 1px,transparent 1px)", backgroundSize: "56px 56px" }} />
+        <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-blue-100/40 via-sky-50/30 to-transparent blur-[90px]" />
+        <div className="absolute bottom-0 -left-32 w-[440px] h-[440px] rounded-full bg-gradient-to-tr from-slate-100/60 to-transparent blur-[80px]" />
       </div>
       <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-10 sm:py-14 lg:py-20 flex items-center">
         <div className="w-full grid sm:grid-cols-2 lg:grid-cols-[54fr_46fr] gap-10 xl:gap-20 items-center">
