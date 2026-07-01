@@ -57,7 +57,8 @@ export default function AstroRankFooter() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <footer ref={ref} className="relative bg-white border-t border-slate-100 overflow-hidden">
+    <footer ref={ref} className="relative bg-white border-t border-slate-100"
+      style={{ isolation: "isolate" }}>
 
       {/* ── CTA band ─────────────────────────────────────────── */}
       <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-10 pt-20 pb-16">
@@ -99,15 +100,15 @@ export default function AstroRankFooter() {
         <div className="border-t border-slate-100 pt-12 pb-10">
           <div className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr] gap-10 lg:gap-16">
             <div className="col-span-2 sm:col-span-1">
-              <a href="/astrorank" className="flex items-center gap-2 mb-3">
-                <div className="relative w-6 h-6 shrink-0">
-                  <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect width="28" height="28" rx="7" fill="#2563EB"/>
-                    <path d="M14 4L17.5 10.5H24L18.5 14.5L21 21L14 17L7 21L9.5 14.5L4 10.5H10.5L14 4Z" fill="white" fillOpacity="0.95"/>
-                    <circle cx="14" cy="14" r="3" fill="#93C5FD" fillOpacity="0.7"/>
+              <a href="/astrorank" className="flex items-center gap-2.5 mb-3">
+                <div className="relative w-7 h-7 shrink-0">
+                  <svg width="28" height="28" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="32" height="32" rx="8" fill="#1D4ED8"/>
+                    <path d="M16 5L19.5 11.5H26L20.5 15.8L23 23L16 19L9 23L11.5 15.8L6 11.5H12.5L16 5Z" fill="white"/>
+                    <circle cx="16" cy="15" r="3.5" fill="#BFDBFE" fillOpacity="0.8"/>
                   </svg>
                 </div>
-                <span className="text-[15px] font-black tracking-[-0.04em] text-slate-900 leading-none">
+                <span className="text-[16px] font-black tracking-[-0.045em] text-slate-900 leading-none">
                   Astro<span className="bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Rank</span>
                 </span>
               </a>
@@ -132,12 +133,11 @@ export default function AstroRankFooter() {
       {/* ── Background wordmark ─────────────────────────────────── */}
       <div
         aria-hidden
-        className="absolute inset-x-0 bottom-0 flex justify-center pointer-events-none select-none"
-        style={{ transform: "translateY(18%)" }}
+        className="absolute inset-x-0 bottom-0 flex justify-center pointer-events-none select-none overflow-hidden"
       >
         <span
           className="whitespace-nowrap font-black text-slate-900"
-          style={{ fontSize: "clamp(80px, 20vw, 300px)", opacity: 0.06, letterSpacing: "-0.05em", lineHeight: 1 }}
+          style={{ fontSize: "clamp(72px, 18vw, 280px)", opacity: 0.055, letterSpacing: "-0.04em", lineHeight: 1, transform: "translateY(30%)" }}
         >
           ASTRORANK
         </span>

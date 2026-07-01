@@ -18,17 +18,24 @@ function scrollTo(href: string) {
 
 function AstroLogo({ className = "" }: { className?: string }) {
   return (
-    <a href="/astrorank" className={`flex items-center gap-2 shrink-0 group ${className}`}>
+    <a href="/astrorank" className={`flex items-center gap-2.5 shrink-0 group ${className}`}>
       {/* Icon mark */}
-      <div className="relative w-7 h-7 shrink-0">
-        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <rect width="28" height="28" rx="7" fill="#2563EB"/>
-          <path d="M14 4L17.5 10.5H24L18.5 14.5L21 21L14 17L7 21L9.5 14.5L4 10.5H10.5L14 4Z" fill="white" fillOpacity="0.95"/>
-          <circle cx="14" cy="14" r="3" fill="#93C5FD" fillOpacity="0.7"/>
+      <div className="relative w-8 h-8 shrink-0">
+        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="32" height="32" rx="8" fill="#1D4ED8"/>
+          <rect width="32" height="32" rx="8" fill="url(#logo_grad)" opacity="0.6"/>
+          <path d="M16 5L19.5 11.5H26L20.5 15.8L23 23L16 19L9 23L11.5 15.8L6 11.5H12.5L16 5Z" fill="white"/>
+          <circle cx="16" cy="15" r="3.5" fill="#BFDBFE" fillOpacity="0.8"/>
+          <defs>
+            <linearGradient id="logo_grad" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+              <stop stopColor="#3B82F6"/>
+              <stop offset="1" stopColor="#1D4ED8"/>
+            </linearGradient>
+          </defs>
         </svg>
       </div>
       {/* Wordmark */}
-      <span className="text-[15.5px] font-black tracking-[-0.04em] text-slate-900 leading-none">
+      <span className="text-[17px] font-black tracking-[-0.045em] text-slate-900 leading-none">
         Astro<span className="bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Rank</span>
       </span>
     </a>
@@ -62,17 +69,17 @@ export default function AstroRankHeader() {
             : "bg-transparent"
         }`}
       >
-        <div className="max-w-[1280px] mx-auto px-5 lg:px-10 h-[58px] flex items-center justify-between gap-6">
+        <div className="max-w-[1280px] mx-auto px-5 lg:px-10 h-[64px] flex items-center justify-between gap-6">
 
           <AstroLogo />
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
+          <nav className="hidden md:flex items-center gap-1 flex-1 justify-center">
             {NAV_LINKS.map(link => (
               <button
                 key={link.label}
                 onClick={() => scrollTo(link.href)}
-                className="px-3.5 py-1.5 rounded-lg text-[13.5px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-150"
+                className="px-4 py-2 rounded-lg text-[14px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-150"
               >
                 {link.label}
               </button>
@@ -80,10 +87,10 @@ export default function AstroRankHeader() {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-3 shrink-0">
+          <div className="hidden md:flex items-center gap-3.5 shrink-0">
             <button
               onClick={() => scrollTo("#pricing")}
-              className="text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors duration-150"
+              className="text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors duration-150"
             >
               Sign in
             </button>
@@ -92,10 +99,10 @@ export default function AstroRankHeader() {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
-              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-[13px] font-semibold rounded-lg hover:bg-blue-500 transition-colors duration-150 shadow-sm shadow-blue-200/70"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 bg-blue-600 text-white text-[13.5px] font-semibold rounded-lg hover:bg-blue-500 transition-colors duration-150 shadow-sm shadow-blue-200/70"
             >
               Get 10 Pages FREE
-              <ArrowRight size={12} strokeWidth={2.5} />
+              <ArrowRight size={13} strokeWidth={2.5} />
             </motion.button>
           </div>
 
@@ -129,9 +136,9 @@ export default function AstroRankHeader() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 340, damping: 32 }}
-              className="absolute top-0 right-0 bottom-0 w-[75vw] max-w-[280px] bg-white shadow-2xl flex flex-col"
+              className="absolute top-0 right-0 bottom-0 w-[75vw] max-w-[300px] bg-white shadow-2xl flex flex-col"
             >
-              <div className="flex items-center justify-between px-5 h-[58px] border-b border-slate-100">
+              <div className="flex items-center justify-between px-5 h-[64px] border-b border-slate-100">
                 <AstroLogo />
                 <button
                   onClick={() => setMenuOpen(false)}

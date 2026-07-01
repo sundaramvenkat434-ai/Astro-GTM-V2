@@ -1011,7 +1011,7 @@ export default function AstroRankHero() {
     setEmail("");
   }
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[58px]">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[64px]">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[680px] h-[680px] rounded-full bg-gradient-to-br from-blue-50/80 via-violet-50/50 to-transparent blur-[80px]" />
         <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-sky-50/70 to-transparent blur-[80px]" />
@@ -1032,13 +1032,12 @@ export default function AstroRankHero() {
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.55 }}
-              className="text-[16px] sm:text-[17px] text-slate-500 leading-relaxed mb-8 max-w-[460px]">
-              Scale high-quality content with AI and publish hundreds of research-backed articles designed to rank on{" "}
-              <PlatformCycler />.
+              className="text-[16px] sm:text-[17px] text-slate-500 leading-relaxed mb-8 max-w-[500px]">
+              Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to perform on Google, AI Overviews, ChatGPT, Gemini, Bing, and more.
             </motion.p>
             <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="w-full max-w-[460px] flex flex-col sm:flex-row gap-2.5 mb-3">
+              className="w-full max-w-[460px] flex flex-col sm:flex-row gap-2.5 mb-6">
               <input ref={inputRef} type="text" value={email} onChange={e => setEmail(e.target.value)}
                 placeholder="yourwebsite.com"
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-[14px] placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm transition-all duration-200" />
@@ -1047,10 +1046,6 @@ export default function AstroRankHero() {
                 Get FREE Audit <ArrowRight size={14} strokeWidth={2.25} />
               </button>
             </motion.form>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
-              className="text-[12px] text-slate-400 mb-8">
-              No credit card required &nbsp;·&nbsp; Cancel anytime
-            </motion.p>
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.46, duration: 0.4 }}>
               <TrustpilotWidget />
