@@ -610,69 +610,49 @@ function ComingSoonCard({ index }: { index: number }) {
       initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: (index % 2) * 0.08 }}
-      className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700/60 shadow-[0_2px_16px_rgba(15,23,42,0.14)] overflow-hidden flex flex-col"
+      className="group relative bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_16px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_40px_rgba(15,23,42,0.1)] hover:border-blue-200/60 transition-all duration-300 overflow-hidden flex flex-col"
     >
-      {/* Starfield background */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        {[...Array(28)].map((_, i) => (
-          <motion.div
-            key={i}
-            className="absolute rounded-full bg-white"
-            style={{
-              width: i % 4 === 0 ? 2 : 1,
-              height: i % 4 === 0 ? 2 : 1,
-              top: `${(i * 37 + 11) % 100}%`,
-              left: `${(i * 53 + 7) % 100}%`,
-              opacity: 0.15 + (i % 5) * 0.1,
-            }}
-            animate={{ opacity: [0.1 + (i % 5) * 0.08, 0.4 + (i % 3) * 0.1, 0.1 + (i % 5) * 0.08] }}
-            transition={{ duration: 2 + (i % 4), repeat: Infinity, delay: (i * 0.3) % 3 }}
-          />
-        ))}
-        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl" />
-      </div>
+      {/* Top accent */}
+      <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
 
-      {/* Upcoming list area */}
-      <div className="relative h-[230px] flex items-center justify-center px-6 border-b border-white/[0.07]">
-        <div className="w-full space-y-2.5">
+      {/* Animation area */}
+      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-b border-slate-100 overflow-hidden flex items-center justify-center px-5 py-5">
+        <div className="w-full space-y-2">
           {upcomingFeatures.map((f, i) => (
             <motion.div
               key={f.label}
               initial={{ opacity: 0, x: -8 }}
               animate={inView ? { opacity: 1, x: 0 } : {}}
-              transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
-              className="flex items-center gap-3 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5"
+              transition={{ delay: 0.2 + i * 0.09, duration: 0.4 }}
+              className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl px-3.5 py-2.5 shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
             >
               <span className="text-base leading-none">{f.icon}</span>
-              <div>
-                <p className="text-[12px] font-semibold text-white/90">{f.label}</p>
-                <p className="text-[10.5px] text-white/40">{f.desc}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-[12px] font-semibold text-slate-800">{f.label}</p>
+                <p className="text-[10.5px] text-slate-400 truncate">{f.desc}</p>
               </div>
-              <div className="ml-auto">
-                <span className="text-[9px] font-bold text-blue-300 bg-blue-500/20 border border-blue-400/30 rounded-full px-2 py-[2px] uppercase tracking-wide">
-                  Soon
-                </span>
-              </div>
+              <span className="shrink-0 text-[9px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2 py-[2px] uppercase tracking-wide">
+                Soon
+              </span>
             </motion.div>
           ))}
         </div>
       </div>
 
       {/* Text area */}
-      <div className="relative p-6">
+      <div className="p-6 flex flex-col flex-1">
         <div className="flex items-center gap-2 mb-3">
-          <span className="text-[10px] font-bold text-blue-400 bg-blue-500/20 border border-blue-400/30 rounded-full px-2.5 py-[3px]">
+          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
             06
           </span>
-          <span className="text-[10.5px] font-semibold text-white/40 uppercase tracking-widest">
+          <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-widest">
             Roadmap
           </span>
         </div>
-        <h3 className="text-[1.1rem] font-bold text-white leading-[1.25] tracking-[-0.02em] mb-2">
+        <h3 className="text-[1.1rem] font-bold text-slate-900 leading-[1.25] tracking-[-0.02em] mb-2">
           More powerful features coming soon.
         </h3>
-        <p className="text-[13px] text-white/50 leading-relaxed">
+        <p className="text-[13px] text-slate-500 leading-relaxed">
           We&apos;re shipping fast. CMS integrations, multilingual SEO, smart alerts, and an AI content interface are all on the way.
         </p>
       </div>

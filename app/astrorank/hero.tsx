@@ -1032,9 +1032,20 @@ export default function AstroRankHero() {
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.55 }}
-              className="text-[16px] sm:text-[17px] text-slate-500 leading-relaxed mb-8 max-w-[500px]">
-              Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to perform on Google, AI Overviews, ChatGPT, Gemini, Bing, and more.
+              className="text-[16px] sm:text-[17px] text-slate-500 leading-relaxed mb-6 max-w-[500px]">
+              Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to perform on{" "}
+              <PlatformCycler />.
             </motion.p>
+
+            {/* Mobile only: animation panel between subtext and CTA */}
+            <motion.div initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+              transition={{ delay: 0.28, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
+              className="sm:hidden w-full mb-6">
+              <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 overflow-hidden h-[220px] flex items-center justify-center">
+                <ContentLibraryPanel />
+              </div>
+            </motion.div>
+
             <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
               className="w-full max-w-[460px] flex flex-col sm:flex-row gap-2.5 mb-6">
@@ -1052,10 +1063,10 @@ export default function AstroRankHero() {
             </motion.div>
           </motion.div>
 
-          {/* Right: animation panel */}
+          {/* Right: animation panel — hidden on mobile (shown inline above) */}
           <motion.div initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-[520px] mx-auto sm:mx-0 sm:max-w-none lg:max-w-[520px] lg:mx-0">
+            className="hidden sm:block relative w-full max-w-[520px] mx-auto sm:mx-0 sm:max-w-none lg:max-w-[520px] lg:mx-0">
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-100/50 via-violet-100/30 to-sky-100/50 blur-2xl pointer-events-none" />
             <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 sm:p-5 overflow-hidden">
               <ContentLibraryPanel />
@@ -1069,58 +1080,88 @@ export default function AstroRankHero() {
 }
 
 // ─── Metrics strip ────────────────────────────────────────────────────────────
-function LighthouseIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2L8 6H4l2 4-4 2 4 2-2 4h4l4 4 4-4h4l-2-4 4-2-4-2 2-4h-4L12 2z" fill="#F63" opacity="0.15"/>
-      <path d="M12 3l-3.5 3.5H5l1.5 3L3 11l3.5 1.5L5 16h3.5L12 19.5 15.5 16H19l-1.5-3.5L21 11l-3.5-1.5L19 6.5h-3.5L12 3z" fill="none" stroke="#F63" strokeWidth="1.5" strokeLinejoin="round"/>
-      <circle cx="12" cy="11" r="2.5" fill="#F63"/>
-      <path d="M12 11l-3-5" stroke="#F63" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  );
-}
-function EEATIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4" opacity="0.12"/>
-      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none" stroke="#4285F4" strokeWidth="1.5"/>
-      <path d="M8 9h8M8 12h8M8 15h5" stroke="#4285F4" strokeWidth="1.5" strokeLinecap="round"/>
-    </svg>
-  );
-}
-function GrammarlyIcon() {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <circle cx="12" cy="12" r="10" fill="#15C39A" opacity="0.12"/>
-      <circle cx="12" cy="12" r="10" fill="none" stroke="#15C39A" strokeWidth="1.5"/>
-      <path d="M8 12l3 3 5-5" stroke="#15C39A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-    </svg>
-  );
-}
-
 const METRICS = [
-  { value: "95+", label: "Lighthouse Score",    sublabel: "Google Lighthouse",   Icon: LighthouseIcon, color: "text-orange-500" },
-  { value: "85+", label: "EEAT Score",          sublabel: "Google Search",        Icon: EEATIcon,       color: "text-blue-600"  },
-  { value: "95%", label: "Content Originality", sublabel: "Grammarly",            Icon: GrammarlyIcon,  color: "text-emerald-600" },
+  {
+    value: "95+",
+    label: "Lighthouse Score",
+    sublabel: "Google Lighthouse",
+    color: "text-orange-500",
+    bg: "bg-orange-50",
+    border: "border-orange-100",
+    Icon: () => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#FFF7ED"/>
+        <path d="M16 6l2.5 5h5.5l-4 3.5 1.5 5.5L16 17.5l-5.5 2.5 1.5-5.5-4-3.5h5.5L16 6z" fill="#F97316" opacity="0.15"/>
+        <path d="M16 7l2.2 4.8H23l-3.8 3.2 1.4 5.2L16 17.4l-4.6 2.8 1.4-5.2L8.8 11.8h4.8L16 7z" fill="none" stroke="#F97316" strokeWidth="1.3" strokeLinejoin="round"/>
+        <circle cx="16" cy="14" r="2.2" fill="#F97316"/>
+        <line x1="16" y1="14" x2="13" y2="9.5" stroke="#F97316" strokeWidth="1.3" strokeLinecap="round"/>
+      </svg>
+    ),
+  },
+  {
+    value: "85+",
+    label: "EEAT Score",
+    sublabel: "Google Search",
+    color: "text-blue-600",
+    bg: "bg-blue-50",
+    border: "border-blue-100",
+    Icon: () => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#EFF6FF"/>
+        <path d="M21 10.5h-10a.5.5 0 0 0-.5.5v10a.5.5 0 0 0 .5.5h10a.5.5 0 0 0 .5-.5V11a.5.5 0 0 0-.5-.5z" fill="#3B82F6" opacity="0.12"/>
+        <rect x="11" y="11" width="10" height="10" rx="1.5" fill="none" stroke="#3B82F6" strokeWidth="1.3"/>
+        <path d="M13.5 14.5h5M13.5 16h5M13.5 17.5h3" stroke="#3B82F6" strokeWidth="1.3" strokeLinecap="round"/>
+        <circle cx="21.5" cy="10.5" r="3" fill="#22C55E"/>
+        <path d="M20 10.5l1 1 1.5-1.5" stroke="white" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
+  {
+    value: "95%",
+    label: "Originality",
+    sublabel: "Grammarly",
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+    border: "border-emerald-100",
+    Icon: () => (
+      <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect width="32" height="32" rx="8" fill="#F0FDF4"/>
+        <circle cx="16" cy="16" r="7.5" fill="#15803D" opacity="0.1"/>
+        <circle cx="16" cy="16" r="7.5" fill="none" stroke="#15803D" strokeWidth="1.3"/>
+        <path d="M12.5 16l2.5 2.5 4.5-4.5" stroke="#15803D" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+      </svg>
+    ),
+  },
 ];
+
 export function MetricsStrip() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
   return (
     <section ref={ref} className="w-full bg-white border-y border-slate-100">
-      <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ duration: 0.5 }}
-        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-4">
-        <div className="flex flex-row items-center justify-center gap-0 divide-x divide-slate-100">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={inView ? { opacity: 1 } : {}}
+        transition={{ duration: 0.5 }}
+        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-5"
+      >
+        <div className="grid grid-cols-3 gap-3 sm:gap-0 sm:flex sm:items-center sm:justify-center sm:divide-x sm:divide-slate-100">
           {METRICS.map((m, i) => (
-            <motion.div key={m.label} initial={{ opacity: 0, y: 6 }} animate={inView ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.4, delay: i * 0.07 }}
-              className="flex items-center gap-2.5 px-4 sm:px-8 lg:px-12 first:pl-0 last:pr-0">
+            <motion.div
+              key={m.label}
+              initial={{ opacity: 0, y: 8 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className={`flex flex-col sm:flex-row items-center sm:items-center gap-2 sm:gap-3 sm:px-8 lg:px-14 rounded-xl sm:rounded-none ${m.bg} sm:bg-transparent border ${m.border} sm:border-transparent p-3 sm:p-0`}
+            >
               <m.Icon />
-              <div className="flex flex-col">
-                <span className={`text-[1.3rem] sm:text-[1.45rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>{m.value}</span>
+              <div className="flex flex-col items-center sm:items-start">
+                <span className={`text-[1.35rem] sm:text-[1.5rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>
+                  {m.value}
+                </span>
+                <span className="text-[11px] font-semibold text-slate-700 leading-tight">{m.label}</span>
                 <span className="text-[10px] text-slate-400 leading-tight hidden sm:block">{m.sublabel}</span>
               </div>
-              <span className="text-[11px] sm:text-[12px] font-medium text-slate-500 leading-snug max-w-[64px] sm:max-w-none">{m.label}</span>
             </motion.div>
           ))}
         </div>
