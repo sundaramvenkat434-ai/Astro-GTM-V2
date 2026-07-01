@@ -17,8 +17,8 @@ export default function AstroRankPage() {
   return (
     <>
       <AstroRankHeader />
-      <SpaceBg />
-      <main className="relative min-h-screen overflow-hidden" style={{ zIndex: 1 }}>
+      <main className="relative min-h-screen bg-[#f8fafc] overflow-hidden" style={{ zIndex: 1 }}>
+        <SpaceBg />
         <AstroRankHero />
         <MetricsStrip />
         <FeaturesSection />

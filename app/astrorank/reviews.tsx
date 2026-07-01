@@ -89,7 +89,7 @@ export default function ReviewsSection() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <section ref={ref} id="reviews" className="py-16 bg-white/95 border-t border-slate-100">
+    <section ref={ref} id="reviews" className="py-16 bg-transparent border-t border-slate-200/60">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
 
         {/* Header */}
@@ -155,7 +155,7 @@ export default function ReviewsSection() {
               initial={{ opacity: 0, y: 18 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.5, delay: 0.15 + i * 0.07 }}
-              className="bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_12px_rgba(15,23,42,0.05)] p-6 flex flex-col gap-4 hover:shadow-[0_6px_28px_rgba(15,23,42,0.09)] hover:border-slate-300/60 transition-all duration-300"
+              className="bg-slate-50 rounded-2xl border border-slate-200/70 shadow-[0_2px_12px_rgba(15,23,42,0.04)] p-6 flex flex-col gap-4 hover:shadow-[0_6px_28px_rgba(15,23,42,0.08)] hover:border-slate-300/60 transition-all duration-300"
             >
               <div className="flex items-start justify-between gap-3">
                 <div>

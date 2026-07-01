@@ -624,7 +624,7 @@ function ComingSoonCard({ index }: { index: number }) {
               initial={{ opacity: 0, x: -8 }}
               animate={inView ? { opacity: 1, x: 0 } : {}}
               transition={{ delay: 0.2 + i * 0.09, duration: 0.4 }}
-              className="flex items-center gap-3 bg-white border border-slate-100 rounded-xl px-3.5 py-2.5 shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
+              className="flex items-center gap-3 bg-slate-50 border border-slate-100 rounded-xl px-3.5 py-2.5 shadow-[0_1px_4px_rgba(15,23,42,0.04)]"
             >
               <span className="text-base leading-none">{f.icon}</span>
               <div className="flex-1 min-w-0">
@@ -663,7 +663,7 @@ function ComingSoonCard({ index }: { index: number }) {
 // ─── Section export ───────────────────────────────────────────────────────────
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-16 bg-white/95 border-t border-slate-100">
+    <section id="features" className="py-16 bg-transparent border-t border-slate-200/60">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
         {/* Section header */}
         <motion.div

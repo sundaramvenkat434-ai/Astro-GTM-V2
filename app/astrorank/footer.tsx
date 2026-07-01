@@ -57,7 +57,7 @@ export default function AstroRankFooter() {
   const inView = useInView(ref, { once: true, margin: "-60px" });
 
   return (
-    <footer ref={ref} className="relative bg-white border-t border-slate-100"
+    <footer ref={ref} className="relative bg-transparent border-t border-slate-200/60"
       style={{ isolation: "isolate" }}>
 
       {/* ── CTA band ─────────────────────────────────────────── */}
@@ -130,17 +130,34 @@ export default function AstroRankFooter() {
         </div>
       </div>
 
-      {/* ── Background wordmark ─────────────────────────────────── */}
+      {/* ── Background wordmark — fills entire footer edge-to-edge ── */}
       <div
         aria-hidden
-        className="absolute inset-0 flex items-end justify-center pointer-events-none select-none overflow-hidden"
+        className="absolute inset-0 pointer-events-none select-none overflow-hidden flex flex-col justify-end"
       >
-        <span
-          className="whitespace-nowrap font-black text-slate-900 w-full text-center"
-          style={{ fontSize: "clamp(48px, 16vw, 260px)", opacity: 0.045, letterSpacing: "-0.04em", lineHeight: 1 }}
+        <svg
+          viewBox="0 0 1000 160"
+          preserveAspectRatio="none"
+          xmlns="http://www.w3.org/2000/svg"
+          className="w-full block"
+          style={{ height: "auto", minHeight: "90px", maxHeight: "55%" }}
         >
-          ASTRORANK
-        </span>
+          <text
+            x="500"
+            y="145"
+            textAnchor="middle"
+            textLength="1000"
+            lengthAdjust="spacingAndGlyphs"
+            fontFamily="ui-sans-serif, system-ui, -apple-system, sans-serif"
+            fontWeight="900"
+            fontSize="160"
+            letterSpacing="-5"
+            fill="rgb(15,23,42)"
+            fillOpacity="0.05"
+          >
+            ASTRORANK
+          </text>
+        </svg>
       </div>
     </footer>
   );
