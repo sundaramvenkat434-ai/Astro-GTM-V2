@@ -96,11 +96,15 @@ function AnimCounter({ target, run }: { target: number; run: boolean }) {
 
 function ContentLibraryPanel() {
   const [phase, setPhase] = useState(0);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
+    if (!mounted) return;
     const t = setTimeout(() => setPhase(p => (p + 1) % PHASE_DUR.length), PHASE_DUR[phase]);
     return () => clearTimeout(t);
-  }, [phase]);
+  }, [phase, mounted]);
 
   const numVisible  = phase <= 0 ? 3 : phase === 1 ? 4 : phase === 2 ? 5 : 6;
   const zoomedIdx   = phase === 5 ? 0 : -1;
@@ -111,6 +115,60 @@ function ContentLibraryPanel() {
   const url         = inArticle
     ? `yourwebsite.com/articles/${focused.slug}`
     : "yourwebsite.com/articles";
+
+  // Static chrome shared between SSR placeholder and live panel
+  const browserChrome = (
+    <div className="flex items-center gap-1.5 mb-3.5">
+      <div className="w-[11px] h-[11px] rounded-full bg-[#FF5F57]" />
+      <div className="w-[11px] h-[11px] rounded-full bg-[#FEBC2E]" />
+      <div className="w-[11px] h-[11px] rounded-full bg-[#28C840]" />
+      <div className="flex-1 mx-2.5 h-5 rounded-md bg-slate-100 flex items-center px-2.5 overflow-hidden">
+        <span className="text-[9.5px] text-slate-400 font-mono truncate">yourwebsite.com/articles</span>
+      </div>
+    </div>
+  );
+
+  // SSR / pre-mount: static placeholder, no framer-motion, no AnimatePresence
+  if (!mounted) {
+    return (
+      <div className="flex flex-col">
+        {browserChrome}
+        <div className="rounded-xl border border-slate-100 bg-white" style={{ minHeight: 310 }}>
+          <div className="p-3">
+            <div className="flex items-center justify-between mb-2.5">
+              <div>
+                <div className="text-[10.5px] font-bold text-slate-900 leading-none mb-0.5">Content Library</div>
+                <div className="text-[8.5px] text-slate-400">3 articles published</div>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[7.5px] font-semibold bg-slate-900 text-white px-2 py-[2.5px] rounded-full">All</span>
+                <span className="text-[7.5px] text-slate-500 bg-slate-100 px-2 py-[2.5px] rounded-full">SEO</span>
+                <span className="text-[7.5px] text-slate-500 bg-slate-100 px-2 py-[2.5px] rounded-full">Guides</span>
+              </div>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {LIBRARY_ARTICLES.slice(0, 3).map((article) => {
+                const cat  = CAT_STYLES[article.catKey];
+                const grad = GRAD[article.catKey];
+                return (
+                  <div key={article.id} className="rounded-xl border border-slate-100 overflow-hidden bg-white shadow-[0_1px_4px_rgba(15,23,42,0.05)]">
+                    <div className={`h-9 bg-gradient-to-br ${grad}`} />
+                    <div className="p-1.5">
+                      <span className={`inline-block text-[6.5px] font-bold px-1.5 py-[1.5px] rounded-full mb-0.5 ${cat.bg} ${cat.text}`}>{article.cat}</span>
+                      <p className="text-[7.5px] font-semibold text-slate-800 leading-snug line-clamp-2">{article.title}</p>
+                    </div>
+                  </div>
+                );
+              })}
+              {[0, 1, 2].map(i => (
+                <div key={`ph-${i}`} className="rounded-xl border border-dashed border-slate-100 bg-slate-50/40 h-[72px]" />
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col">
