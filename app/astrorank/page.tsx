@@ -1,4 +1,5 @@
 import AstroRankHero, { MetricsStrip } from './hero';
+import FeaturesSection from './features';
 
 export const metadata = {
   title: 'AstroRank — Give Your Brand an Unfair SEO Advantage',
@@ -10,6 +11,7 @@ export default function AstroRankPage() {
     <main className="min-h-screen bg-white overflow-hidden">
       <AstroRankHero />
       <MetricsStrip />
+      <FeaturesSection />
     </main>
   );
 }
