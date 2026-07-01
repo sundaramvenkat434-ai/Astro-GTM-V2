@@ -608,7 +608,7 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
 // ─── Section export ───────────────────────────────────────────────────────────
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-20 bg-white border-t border-slate-100">
+    <section id="features" className="py-14 bg-white border-t border-slate-100">
       <div className="max-w-[1100px] mx-auto px-5 lg:px-8">
         {/* Section header */}
         <motion.div

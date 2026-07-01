@@ -11,7 +11,6 @@ const NAV = [
       { label: "Features",     href: "#features"     },
       { label: "Pricing",      href: "#pricing"      },
       { label: "How It Works", href: "#how-it-works" },
-      { label: "Early Access", href: "#"             },
     ],
   },
   {
@@ -61,7 +60,7 @@ export default function AstroRankFooter() {
     <footer ref={ref} className="relative bg-white border-t border-slate-100 overflow-hidden">
 
       {/* ── CTA band ─────────────────────────────────────────── */}
-      <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-12 pt-20 pb-16">
+      <div className="relative z-10 max-w-[1100px] mx-auto px-6 lg:px-12 pt-20 pb-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -72,7 +71,7 @@ export default function AstroRankFooter() {
             Ready to outrank your competitors?
           </h2>
           <p className="text-[15.5px] text-slate-500 mb-8 leading-relaxed">
-            Join early access and get your first 10 pages free.
+            Start with 10 free pages and watch your organic traffic grow.
           </p>
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <motion.a
@@ -82,7 +81,7 @@ export default function AstroRankFooter() {
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
               className="px-6 py-2.5 bg-blue-600 text-white rounded-xl text-[14px] font-semibold hover:bg-blue-500 transition-colors duration-150 shadow-sm shadow-blue-100"
             >
-              Join Early Access
+              Get 10 Pages FREE
             </motion.a>
             <a
               href="#"
@@ -96,7 +95,7 @@ export default function AstroRankFooter() {
       </div>
 
       {/* ── Nav grid ─────────────────────────────────────────── */}
-      <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-12">
+      <div className="relative z-10 max-w-[1100px] mx-auto px-6 lg:px-12">
         <div className="border-t border-slate-100 pt-12 pb-10">
           <div className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr] gap-10 lg:gap-16">
             <div className="col-span-2 sm:col-span-1">
@@ -115,7 +114,7 @@ export default function AstroRankFooter() {
       </div>
 
       {/* ── Bottom bar ─────────────────────────────────────────── */}
-      <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-12">
+      <div className="relative z-10 max-w-[1100px] mx-auto px-6 lg:px-12">
         <div className="border-t border-slate-100 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
           <p className="text-[12px] text-slate-400">© 2026 AstroRank. All rights reserved.</p>
           <p className="text-[12px] text-slate-400">Built with AI. Designed for growth.</p>

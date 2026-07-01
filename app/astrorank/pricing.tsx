@@ -134,7 +134,7 @@ export default function PricingSection() {
 
   return (
     <TooltipProvider>
-      <section ref={sectionRef} id="pricing" className="py-20 bg-[#FAFAFA] border-t border-slate-100">
+      <section ref={sectionRef} id="pricing" className="py-14 bg-[#FAFAFA] border-t border-slate-100">
         <div className="max-w-[1100px] mx-auto px-5 lg:px-8">
 
           {/* Header */}

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { ArrowRight, Star, Sparkles, TrendingUp, Search, MousePointer, Zap } from "lucide-react";
+import { ArrowRight, TrendingUp, Search, MousePointer, Zap } from "lucide-react";
 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
 const PLATFORMS = ["Google", "ChatGPT", "Gemini", "Claude", "Perplexity", "Copilot"];
@@ -940,16 +940,43 @@ function ContentLibraryPanel() {
   );
 }
 
-// ─── Avatar row ───────────────────────────────────────────────────────────────
-const AVATAR_COLORS = ["bg-blue-400", "bg-violet-400", "bg-teal-400", "bg-indigo-400", "bg-sky-400"];
-function AvatarRow() {
+// ─── Trustpilot widget ────────────────────────────────────────────────────────
+const LINKEDIN_AVATARS = [
+  { initials: "SM", href: "https://www.linkedin.com/", grad: "from-blue-500 to-blue-700" },
+  { initials: "RK", href: "https://www.linkedin.com/", grad: "from-teal-400 to-teal-600" },
+  { initials: "AP", href: "https://www.linkedin.com/", grad: "from-sky-400 to-sky-600" },
+  { initials: "JL", href: "https://www.linkedin.com/", grad: "from-emerald-400 to-emerald-600" },
+  { initials: "NB", href: "https://www.linkedin.com/", grad: "from-slate-400 to-slate-600" },
+];
+
+function TrustpilotWidget() {
   return (
-    <div className="flex -space-x-1.5">
-      {AVATAR_COLORS.map((c, i) => (
-        <div key={i} className={`w-7 h-7 rounded-full border-2 border-white ${c} flex items-center justify-center text-white text-[9px] font-bold`}>
-          {String.fromCharCode(65 + i)}
+    <div className="flex items-center gap-3">
+      <div className="flex -space-x-1.5">
+        {LINKEDIN_AVATARS.map(av => (
+          <a key={av.initials} href={av.href} target="_blank" rel="noopener noreferrer"
+            className={`w-7 h-7 rounded-full border-2 border-white bg-gradient-to-br ${av.grad} flex items-center justify-center text-white text-[8.5px] font-bold hover:scale-110 transition-transform duration-150 z-10 relative`}>
+            {av.initials}
+          </a>
+        ))}
+      </div>
+      <div className="flex flex-col gap-[3px]">
+        <div className="flex items-center gap-1.5">
+          <div className="flex gap-[2px]">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div key={i} className="w-[14px] h-[14px] bg-[#00B67A] flex items-center justify-center rounded-[2px]">
+                <svg width="9" height="9" viewBox="0 0 24 24" fill="white"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>
+              </div>
+            ))}
+          </div>
+          <span className="text-[11.5px] font-bold text-slate-800">Excellent</span>
         </div>
-      ))}
+        <div className="flex items-center gap-1">
+          <svg width="52" height="12" viewBox="0 0 130 30" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <text x="0" y="22" fontFamily="Arial,sans-serif" fontWeight="bold" fontSize="20" fill="#00B67A">Trustpilot</text>
+          </svg>
+        </div>
+      </div>
     </div>
   );
 }
@@ -964,27 +991,19 @@ export default function AstroRankHero() {
     setEmail("");
   }
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[60px]">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[54px]">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[680px] h-[680px] rounded-full bg-gradient-to-br from-blue-50/80 via-violet-50/50 to-transparent blur-[80px]" />
         <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-sky-50/70 to-transparent blur-[80px]" />
         <div className="absolute inset-0 opacity-[0.015]"
           style={{ backgroundImage: "linear-gradient(rgba(15,23,42,1) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,1) 1px,transparent 1px)", backgroundSize: "56px 56px" }} />
       </div>
-      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-0 lg:min-h-screen flex items-center">
+      <div className="relative z-10 w-full max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-0 lg:min-h-screen flex items-center">
         <div className="w-full grid lg:grid-cols-[54fr_46fr] gap-10 xl:gap-20 items-center">
 
           {/* Left: copy */}
           <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-start">
-            <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.08, duration: 0.4 }}
-              className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-blue-200/70 bg-blue-50/80 text-[13px] font-medium text-blue-700 mb-6">
-              <Sparkles size={13} className="text-blue-500" />
-              <span>Early Access</span>
-              <span className="w-px h-3.5 bg-blue-200" />
-              <span className="font-semibold">First 10 pages free</span>
-            </motion.div>
             <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.14, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="text-[2.5rem] sm:text-[3rem] lg:text-[3.35rem] xl:text-[3.75rem] font-extrabold leading-[1.08] tracking-[-0.025em] text-slate-900 mb-5">
@@ -1000,12 +1019,12 @@ export default function AstroRankHero() {
             <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
               className="w-full max-w-[460px] flex flex-col sm:flex-row gap-2.5 mb-3">
-              <input ref={inputRef} type="email" value={email} onChange={e => setEmail(e.target.value)}
-                placeholder="Enter your work email"
+              <input ref={inputRef} type="text" value={email} onChange={e => setEmail(e.target.value)}
+                placeholder="yourwebsite.com"
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-[14px] placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm transition-all duration-200" />
               <button type="submit"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-sm shadow-blue-200/80 hover:bg-blue-500 active:scale-[0.98] transition-all duration-150 whitespace-nowrap">
-                Join Early Access <ArrowRight size={14} strokeWidth={2.25} />
+                Get 10 Pages FREE <ArrowRight size={14} strokeWidth={2.25} />
               </button>
             </motion.form>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
@@ -1013,14 +1032,8 @@ export default function AstroRankHero() {
               No credit card required &nbsp;·&nbsp; Cancel anytime
             </motion.p>
             <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.46, duration: 0.4 }} className="flex items-center gap-3.5">
-              <AvatarRow />
-              <div className="flex flex-col gap-0.5">
-                <div className="flex items-center gap-0.5">
-                  {Array.from({ length: 5 }).map((_, i) => <Star key={i} size={12} className="fill-amber-400 text-amber-400" />)}
-                </div>
-                <span className="text-[12px] text-slate-400">Trusted by growing teams</span>
-              </div>
+              transition={{ delay: 0.46, duration: 0.4 }}>
+              <TrustpilotWidget />
             </motion.div>
           </motion.div>
 
@@ -1052,7 +1065,7 @@ export function MetricsStrip() {
   return (
     <section ref={ref} className="w-full bg-white border-y border-slate-100">
       <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ duration: 0.5 }}
-        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-5">
+        className="max-w-[1100px] mx-auto px-5 sm:px-8 lg:px-12 py-5">
         <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-0 sm:divide-x sm:divide-slate-100">
           {METRICS.map((m, i) => (
             <motion.div key={m.label} initial={{ opacity: 0, y: 8 }} animate={inView ? { opacity: 1, y: 0 } : {}}
