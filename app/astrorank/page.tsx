@@ -3,6 +3,7 @@ import AstroRankHero, { MetricsStrip } from './hero';
 import FeaturesSection from './features';
 import MarqueeSection from './marquee';
 import PricingSection from './pricing';
+import ReviewsSection from './reviews';
 import FAQSection from './faq';
 import AstroRankFooter from './footer';
 
@@ -21,6 +22,7 @@ export default function AstroRankPage() {
         <FeaturesSection />
         <MarqueeSection />
         <PricingSection />
+        <ReviewsSection />
         <FAQSection />
         <AstroRankFooter />
       </main>

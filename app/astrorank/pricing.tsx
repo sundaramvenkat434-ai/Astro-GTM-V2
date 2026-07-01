@@ -67,19 +67,18 @@ function ExpandableFeatures({ visible, hidden, accent = false }: { visible: stri
       <ul className="flex flex-col gap-2.5">
         {visible.map(f => <FeatureRow key={f} text={f} accent={accent} />)}
         <AnimatePresence initial={false}>
-          {open && (
-            <motion.div
+          {open && hidden.map(f => (
+            <motion.li
+              key={f}
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
               className="overflow-hidden"
             >
-              <ul className="flex flex-col gap-2.5 pt-2.5">
-                {hidden.map(f => <FeatureRow key={f} text={f} accent={accent} />)}
-              </ul>
-            </motion.div>
-          )}
+              <FeatureRow text={f} accent={accent} />
+            </motion.li>
+          ))}
         </AnimatePresence>
       </ul>
       <button

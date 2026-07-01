@@ -133,12 +133,11 @@ export default function AstroRankFooter() {
       {/* ── Background wordmark ─────────────────────────────────── */}
       <div
         aria-hidden
-        className="absolute inset-x-0 bottom-0 flex justify-center pointer-events-none select-none"
-        style={{ overflow: "hidden" }}
+        className="absolute inset-0 flex items-end justify-center pointer-events-none select-none overflow-hidden"
       >
         <span
-          className="whitespace-nowrap font-black text-slate-900"
-          style={{ fontSize: "clamp(60px, 14vw, 220px)", opacity: 0.05, letterSpacing: "-0.04em", lineHeight: 1.1, paddingBottom: "8px" }}
+          className="whitespace-nowrap font-black text-slate-900 w-full text-center"
+          style={{ fontSize: "clamp(48px, 16vw, 260px)", opacity: 0.045, letterSpacing: "-0.04em", lineHeight: 1 }}
         >
           ASTRORANK
         </span>
