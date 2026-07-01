@@ -1148,24 +1148,28 @@ export function MetricsStrip() {
         initial={{ opacity: 0 }}
         animate={inView ? { opacity: 1 } : {}}
         transition={{ duration: 0.5 }}
-        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-8 sm:py-10"
+        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-6 sm:py-7"
       >
-        <div className="grid grid-cols-3 gap-4 sm:gap-0 sm:flex sm:items-center sm:justify-center sm:divide-x sm:divide-slate-100">
+        {/* Mobile: horizontal scroll · Desktop: flex row */}
+        <div className="flex items-center gap-0 overflow-x-auto scrollbar-none sm:justify-center sm:divide-x sm:divide-slate-100 -mx-5 px-5 sm:mx-0 sm:px-0">
           {METRICS.map((m, i) => (
             <motion.div
               key={m.label}
-              initial={{ opacity: 0, y: 8 }}
+              initial={{ opacity: 0, y: 6 }}
               animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.08 }}
-              className={`flex flex-col sm:flex-row items-center sm:items-center gap-3 sm:gap-4 sm:px-12 lg:px-20 rounded-2xl sm:rounded-none ${m.bg} sm:bg-transparent border ${m.border} sm:border-transparent p-4 sm:p-0`}
+              className="flex items-center gap-3 sm:px-8 lg:px-12 shrink-0 sm:shrink py-1 pr-6 sm:pr-0"
             >
               <m.Icon />
-              <div className="flex flex-col items-center sm:items-start">
-                <span className={`text-[1.6rem] sm:text-[1.85rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>
-                  {m.value}
-                </span>
-                <span className="text-[12px] font-semibold text-slate-800 leading-tight mt-0.5">{m.label}</span>
-                <span className="text-[11px] text-slate-400 leading-tight mt-0.5 hidden sm:block">{m.sublabel}</span>
+              <div className="flex flex-col">
+                <div className="flex items-baseline gap-1.5">
+                  <span className="text-[10px] font-medium text-slate-400 leading-none">Avg</span>
+                  <span className={`text-[1.45rem] sm:text-[1.6rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>
+                    {m.value}
+                  </span>
+                  <span className="text-[12px] font-semibold text-slate-700 leading-none">{m.label}</span>
+                </div>
+                <span className="text-[10.5px] text-slate-400 leading-tight mt-[3px]">{m.sublabel}</span>
               </div>
             </motion.div>
           ))}
