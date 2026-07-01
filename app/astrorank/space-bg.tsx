@@ -314,6 +314,3 @@ const STARS: { x: number; y: number; size: number; op: number; dur: number; dela
   { x: 10, y: 60, size: 2,   op: 0.33, dur: 6.7, delay: 3.2             },
   { x: 55, y: 45, size: 2.5, op: 0.44, dur: 5.3, delay: 1.0             },
 ];
-
-
-export default SpaceBg
