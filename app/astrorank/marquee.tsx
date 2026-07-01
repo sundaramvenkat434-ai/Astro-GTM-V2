@@ -64,7 +64,7 @@ export default function MarqueeSection() {
 
   return (
     <section ref={ref} id="how-it-works" className="bg-white border-t border-b border-slate-100 py-14 overflow-hidden">
-      <div className="max-w-[1100px] mx-auto px-6 lg:px-12 mb-12">
+      <div className="max-w-[1280px] mx-auto px-6 lg:px-10 mb-12">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}

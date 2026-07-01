@@ -609,7 +609,7 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
 export default function FeaturesSection() {
   return (
     <section id="features" className="py-14 bg-white border-t border-slate-100">
-      <div className="max-w-[1100px] mx-auto px-5 lg:px-8">
+      <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
         {/* Section header */}
         <motion.div
           initial={{ opacity: 0, y: 16 }}

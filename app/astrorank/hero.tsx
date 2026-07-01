@@ -1011,15 +1011,15 @@ export default function AstroRankHero() {
     setEmail("");
   }
   return (
-    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[54px]">
+    <section className="relative min-h-screen flex items-center overflow-hidden bg-white pt-[58px]">
       <div className="absolute inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-40 -right-40 w-[680px] h-[680px] rounded-full bg-gradient-to-br from-blue-50/80 via-violet-50/50 to-transparent blur-[80px]" />
         <div className="absolute bottom-0 -left-32 w-[500px] h-[500px] rounded-full bg-gradient-to-tr from-sky-50/70 to-transparent blur-[80px]" />
         <div className="absolute inset-0 opacity-[0.015]"
           style={{ backgroundImage: "linear-gradient(rgba(15,23,42,1) 1px,transparent 1px),linear-gradient(90deg,rgba(15,23,42,1) 1px,transparent 1px)", backgroundSize: "56px 56px" }} />
       </div>
-      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-16 lg:py-0 lg:min-h-screen flex items-center">
-        <div className="w-full grid lg:grid-cols-[54fr_46fr] gap-10 xl:gap-20 items-center">
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-12 sm:py-16 lg:py-0 lg:min-h-screen flex items-center">
+        <div className="w-full grid sm:grid-cols-2 lg:grid-cols-[54fr_46fr] gap-10 xl:gap-20 items-center">
 
           {/* Left: copy */}
           <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
@@ -1044,7 +1044,7 @@ export default function AstroRankHero() {
                 className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-[14px] placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm transition-all duration-200" />
               <button type="submit"
                 className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-sm shadow-blue-200/80 hover:bg-blue-500 active:scale-[0.98] transition-all duration-150 whitespace-nowrap">
-                Get 10 Pages FREE <ArrowRight size={14} strokeWidth={2.25} />
+                Get FREE Audit <ArrowRight size={14} strokeWidth={2.25} />
               </button>
             </motion.form>
             <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.4 }}
@@ -1060,7 +1060,7 @@ export default function AstroRankHero() {
           {/* Right: animation panel */}
           <motion.div initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="relative w-full max-w-[520px] mx-auto lg:mx-0">
+            className="relative w-full max-w-[520px] mx-auto sm:mx-0 sm:max-w-none lg:max-w-[520px] lg:mx-0">
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-100/50 via-violet-100/30 to-sky-100/50 blur-2xl pointer-events-none" />
             <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 sm:p-5 overflow-hidden">
               <ContentLibraryPanel />
@@ -1074,10 +1074,39 @@ export default function AstroRankHero() {
 }
 
 // ─── Metrics strip ────────────────────────────────────────────────────────────
+function LighthouseIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2L8 6H4l2 4-4 2 4 2-2 4h4l4 4 4-4h4l-2-4 4-2-4-2 2-4h-4L12 2z" fill="#F63" opacity="0.15"/>
+      <path d="M12 3l-3.5 3.5H5l1.5 3L3 11l3.5 1.5L5 16h3.5L12 19.5 15.5 16H19l-1.5-3.5L21 11l-3.5-1.5L19 6.5h-3.5L12 3z" fill="none" stroke="#F63" strokeWidth="1.5" strokeLinejoin="round"/>
+      <circle cx="12" cy="11" r="2.5" fill="#F63"/>
+      <path d="M12 11l-3-5" stroke="#F63" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function EEATIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="#4285F4" opacity="0.12"/>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z" fill="none" stroke="#4285F4" strokeWidth="1.5"/>
+      <path d="M8 9h8M8 12h8M8 15h5" stroke="#4285F4" strokeWidth="1.5" strokeLinecap="round"/>
+    </svg>
+  );
+}
+function GrammarlyIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <circle cx="12" cy="12" r="10" fill="#15C39A" opacity="0.12"/>
+      <circle cx="12" cy="12" r="10" fill="none" stroke="#15C39A" strokeWidth="1.5"/>
+      <path d="M8 12l3 3 5-5" stroke="#15C39A" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+    </svg>
+  );
+}
+
 const METRICS = [
-  { value: "95+", label: "Lighthouse Score",    color: "text-blue-600"    },
-  { value: "85+", label: "EEAT Score",          color: "text-amber-500"   },
-  { value: "95%", label: "Content Originality", color: "text-emerald-600" },
+  { value: "95+", label: "Lighthouse Score",    sublabel: "Google Lighthouse",   Icon: LighthouseIcon, color: "text-orange-500" },
+  { value: "85+", label: "EEAT Score",          sublabel: "Google Search",        Icon: EEATIcon,       color: "text-blue-600"  },
+  { value: "95%", label: "Content Originality", sublabel: "Grammarly",            Icon: GrammarlyIcon,  color: "text-emerald-600" },
 ];
 export function MetricsStrip() {
   const ref = useRef<HTMLElement>(null);
@@ -1085,14 +1114,18 @@ export function MetricsStrip() {
   return (
     <section ref={ref} className="w-full bg-white border-y border-slate-100">
       <motion.div initial={{ opacity: 0 }} animate={inView ? { opacity: 1 } : {}} transition={{ duration: 0.5 }}
-        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-12 py-5">
-        <div className="flex flex-col sm:flex-row items-center justify-center gap-5 sm:gap-0 sm:divide-x sm:divide-slate-100">
+        className="max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-4">
+        <div className="flex flex-row items-center justify-center gap-0 divide-x divide-slate-100">
           {METRICS.map((m, i) => (
-            <motion.div key={m.label} initial={{ opacity: 0, y: 8 }} animate={inView ? { opacity: 1, y: 0 } : {}}
+            <motion.div key={m.label} initial={{ opacity: 0, y: 6 }} animate={inView ? { opacity: 1, y: 0 } : {}}
               transition={{ duration: 0.4, delay: i * 0.07 }}
-              className="flex items-center gap-2.5 sm:px-10 lg:px-14">
-              <span className={`text-[1.55rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>{m.value}</span>
-              <span className="text-[12px] font-medium text-slate-500 leading-snug">{m.label}</span>
+              className="flex items-center gap-2.5 px-4 sm:px-8 lg:px-12 first:pl-0 last:pr-0">
+              <m.Icon />
+              <div className="flex flex-col">
+                <span className={`text-[1.3rem] sm:text-[1.45rem] font-extrabold leading-none tracking-tight tabular-nums ${m.color}`}>{m.value}</span>
+                <span className="text-[10px] text-slate-400 leading-tight hidden sm:block">{m.sublabel}</span>
+              </div>
+              <span className="text-[11px] sm:text-[12px] font-medium text-slate-500 leading-snug max-w-[64px] sm:max-w-none">{m.label}</span>
             </motion.div>
           ))}
         </div>

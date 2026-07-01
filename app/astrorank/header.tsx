@@ -16,6 +16,25 @@ function scrollTo(href: string) {
   if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
+function AstroLogo({ className = "" }: { className?: string }) {
+  return (
+    <a href="/astrorank" className={`flex items-center gap-2 shrink-0 group ${className}`}>
+      {/* Icon mark */}
+      <div className="relative w-7 h-7 shrink-0">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect width="28" height="28" rx="7" fill="#2563EB"/>
+          <path d="M14 4L17.5 10.5H24L18.5 14.5L21 21L14 17L7 21L9.5 14.5L4 10.5H10.5L14 4Z" fill="white" fillOpacity="0.95"/>
+          <circle cx="14" cy="14" r="3" fill="#93C5FD" fillOpacity="0.7"/>
+        </svg>
+      </div>
+      {/* Wordmark */}
+      <span className="text-[15.5px] font-black tracking-[-0.04em] text-slate-900 leading-none">
+        Astro<span className="bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Rank</span>
+      </span>
+    </a>
+  );
+}
+
 export default function AstroRankHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -39,25 +58,21 @@ export default function AstroRankHeader() {
         transition={{ duration: 0.35, ease: "easeOut" }}
         className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${
           scrolled
-            ? "bg-white/95 backdrop-blur-md border-b border-slate-200/60 shadow-[0_1px_12px_rgba(15,23,42,0.06)]"
+            ? "bg-white/96 backdrop-blur-md border-b border-slate-200/70 shadow-[0_1px_16px_rgba(15,23,42,0.07)]"
             : "bg-transparent"
         }`}
       >
-        <div className="max-w-[1100px] mx-auto px-5 lg:px-8 h-[54px] flex items-center justify-between gap-6">
+        <div className="max-w-[1280px] mx-auto px-5 lg:px-10 h-[58px] flex items-center justify-between gap-6">
 
-          {/* Logo */}
-          <a href="/astrorank" className="flex items-center shrink-0">
-            <span className="text-[15px] font-black tracking-[-0.045em] text-slate-900">ASTRO</span>
-            <span className="text-[15px] font-black tracking-[-0.045em] bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">RANK</span>
-          </a>
+          <AstroLogo />
 
           {/* Desktop nav */}
-          <nav className="hidden md:flex items-center gap-0.5 flex-1">
+          <nav className="hidden md:flex items-center gap-0.5 flex-1 justify-center">
             {NAV_LINKS.map(link => (
               <button
                 key={link.label}
                 onClick={() => scrollTo(link.href)}
-                className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-150"
+                className="px-3.5 py-1.5 rounded-lg text-[13.5px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-150"
               >
                 {link.label}
               </button>
@@ -65,15 +80,21 @@ export default function AstroRankHeader() {
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center shrink-0">
+          <div className="hidden md:flex items-center gap-3 shrink-0">
+            <button
+              onClick={() => scrollTo("#pricing")}
+              className="text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors duration-150"
+            >
+              Sign in
+            </button>
             <motion.button
-              onClick={() => scrollTo("#hero")}
+              onClick={() => scrollTo("#pricing")}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
-              className="inline-flex items-center gap-1.5 px-4 py-[7px] bg-blue-600 text-white text-[13px] font-semibold rounded-lg hover:bg-blue-500 transition-colors duration-150"
+              className="inline-flex items-center gap-1.5 px-4 py-2 bg-blue-600 text-white text-[13px] font-semibold rounded-lg hover:bg-blue-500 transition-colors duration-150 shadow-sm shadow-blue-200/70"
             >
-              Get FREE Audit
+              Get 10 Pages FREE
               <ArrowRight size={12} strokeWidth={2.5} />
             </motion.button>
           </div>
@@ -110,10 +131,8 @@ export default function AstroRankHeader() {
               transition={{ type: "spring", stiffness: 340, damping: 32 }}
               className="absolute top-0 right-0 bottom-0 w-[75vw] max-w-[280px] bg-white shadow-2xl flex flex-col"
             >
-              <div className="flex items-center justify-between px-5 h-[54px] border-b border-slate-100">
-                <span className="text-[15px] font-black tracking-[-0.045em]">
-                  ASTRO<span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">RANK</span>
-                </span>
+              <div className="flex items-center justify-between px-5 h-[58px] border-b border-slate-100">
+                <AstroLogo />
                 <button
                   onClick={() => setMenuOpen(false)}
                   className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-500 hover:bg-slate-100 transition-colors"
@@ -137,12 +156,18 @@ export default function AstroRankHeader() {
                 ))}
               </nav>
 
-              <div className="px-4 pb-8">
+              <div className="px-4 pb-8 flex flex-col gap-2.5">
                 <button
-                  onClick={() => { scrollTo("#hero"); setMenuOpen(false); }}
+                  onClick={() => { scrollTo("#pricing"); setMenuOpen(false); }}
                   className="w-full py-2.5 text-center text-[13.5px] font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors"
                 >
-                  Get FREE Audit
+                  Get 10 Pages FREE
+                </button>
+                <button
+                  onClick={() => { scrollTo("#pricing"); setMenuOpen(false); }}
+                  className="w-full py-2 text-center text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
+                >
+                  Sign in
                 </button>
               </div>
             </motion.div>

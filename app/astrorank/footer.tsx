@@ -60,7 +60,7 @@ export default function AstroRankFooter() {
     <footer ref={ref} className="relative bg-white border-t border-slate-100 overflow-hidden">
 
       {/* ── CTA band ─────────────────────────────────────────── */}
-      <div className="relative z-10 max-w-[1100px] mx-auto px-6 lg:px-12 pt-20 pb-16">
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-10 pt-20 pb-16">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={inView ? { opacity: 1, y: 0 } : {}}
@@ -95,13 +95,22 @@ export default function AstroRankFooter() {
       </div>
 
       {/* ── Nav grid ─────────────────────────────────────────── */}
-      <div className="relative z-10 max-w-[1100px] mx-auto px-6 lg:px-12">
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-10">
         <div className="border-t border-slate-100 pt-12 pb-10">
           <div className="grid grid-cols-2 sm:grid-cols-[2fr_1fr_1fr_1fr] gap-10 lg:gap-16">
             <div className="col-span-2 sm:col-span-1">
-              <span className="text-[15px] font-black tracking-[-0.045em] text-slate-900 mb-3 block">
-                ASTRO<span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">RANK</span>
-              </span>
+              <a href="/astrorank" className="flex items-center gap-2 mb-3">
+                <div className="relative w-6 h-6 shrink-0">
+                  <svg width="24" height="24" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect width="28" height="28" rx="7" fill="#2563EB"/>
+                    <path d="M14 4L17.5 10.5H24L18.5 14.5L21 21L14 17L7 21L9.5 14.5L4 10.5H10.5L14 4Z" fill="white" fillOpacity="0.95"/>
+                    <circle cx="14" cy="14" r="3" fill="#93C5FD" fillOpacity="0.7"/>
+                  </svg>
+                </div>
+                <span className="text-[15px] font-black tracking-[-0.04em] text-slate-900 leading-none">
+                  Astro<span className="bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Rank</span>
+                </span>
+              </a>
               <p className="text-[13px] text-slate-400 leading-relaxed max-w-[210px]">
                 AI-powered SEO that writes, optimizes, and publishes content automatically.
               </p>
@@ -114,10 +123,9 @@ export default function AstroRankFooter() {
       </div>
 
       {/* ── Bottom bar ─────────────────────────────────────────── */}
-      <div className="relative z-10 max-w-[1100px] mx-auto px-6 lg:px-12">
-        <div className="border-t border-slate-100 py-5 flex flex-col sm:flex-row items-center justify-between gap-2">
+      <div className="relative z-10 max-w-[1280px] mx-auto px-6 lg:px-10">
+        <div className="border-t border-slate-100 py-5 flex items-center justify-center">
           <p className="text-[12px] text-slate-400">© 2026 AstroRank. All rights reserved.</p>
-          <p className="text-[12px] text-slate-400">Built with AI. Designed for growth.</p>
         </div>
       </div>
 
@@ -129,7 +137,7 @@ export default function AstroRankFooter() {
       >
         <span
           className="whitespace-nowrap font-black text-slate-900"
-          style={{ fontSize: "clamp(64px, 16vw, 260px)", opacity: 0.06, letterSpacing: "-0.05em", lineHeight: 1 }}
+          style={{ fontSize: "clamp(80px, 20vw, 300px)", opacity: 0.06, letterSpacing: "-0.05em", lineHeight: 1 }}
         >
           ASTRORANK
         </span>
