@@ -5,11 +5,16 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
 
 const NAV_LINKS = [
-  { label: "Features",      href: "#features"    },
-  { label: "How It Works",  href: "#how-it-works" },
-  { label: "Pricing",       href: "#pricing"     },
-  { label: "Blog",          href: "/articles"    },
+  { label: "Features",     href: "#features"     },
+  { label: "How It Works", href: "#how-it-works" },
+  { label: "Pricing",      href: "#pricing"      },
 ];
+
+function scrollTo(href: string) {
+  if (!href.startsWith("#")) { window.location.href = href; return; }
+  const el = document.querySelector(href);
+  if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+}
 
 export default function AstroRankHeader() {
   const [scrolled, setScrolled] = useState(false);
@@ -38,7 +43,7 @@ export default function AstroRankHeader() {
             : "bg-transparent"
         }`}
       >
-        <div className="max-w-[1280px] mx-auto px-6 lg:px-12 h-[60px] flex items-center justify-between gap-8">
+        <div className="max-w-[1100px] mx-auto px-5 lg:px-8 h-[54px] flex items-center justify-between gap-6">
 
           {/* Logo */}
           <a href="/astrorank" className="flex items-center shrink-0">
@@ -49,34 +54,28 @@ export default function AstroRankHeader() {
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-0.5 flex-1">
             {NAV_LINKS.map(link => (
-              <a
+              <button
                 key={link.label}
-                href={link.href}
-                className="px-3.5 py-1.5 rounded-lg text-[13.5px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-150"
+                onClick={() => scrollTo(link.href)}
+                className="px-3 py-1.5 rounded-lg text-[13px] font-medium text-slate-500 hover:text-slate-900 hover:bg-slate-100/80 transition-all duration-150"
               >
                 {link.label}
-              </a>
+              </button>
             ))}
           </nav>
 
           {/* Desktop CTA */}
-          <div className="hidden md:flex items-center gap-4 shrink-0">
-            <a
-              href="#"
-              className="text-[13.5px] font-medium text-slate-500 hover:text-slate-800 transition-colors duration-150"
-            >
-              Sign in
-            </a>
-            <motion.a
-              href="#"
+          <div className="hidden md:flex items-center shrink-0">
+            <motion.button
+              onClick={() => scrollTo("#hero")}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
               className="inline-flex items-center gap-1.5 px-4 py-[7px] bg-blue-600 text-white text-[13px] font-semibold rounded-lg hover:bg-blue-500 transition-colors duration-150"
             >
-              Join Early Access
+              Get FREE Audit
               <ArrowRight size={12} strokeWidth={2.5} />
-            </motion.a>
+            </motion.button>
           </div>
 
           {/* Mobile hamburger */}
@@ -109,9 +108,9 @@ export default function AstroRankHeader() {
               animate={{ x: 0 }}
               exit={{ x: "100%" }}
               transition={{ type: "spring", stiffness: 340, damping: 32 }}
-              className="absolute top-0 right-0 bottom-0 w-[75vw] max-w-[300px] bg-white shadow-2xl flex flex-col"
+              className="absolute top-0 right-0 bottom-0 w-[75vw] max-w-[280px] bg-white shadow-2xl flex flex-col"
             >
-              <div className="flex items-center justify-between px-5 h-[60px] border-b border-slate-100">
+              <div className="flex items-center justify-between px-5 h-[54px] border-b border-slate-100">
                 <span className="text-[15px] font-black tracking-[-0.045em]">
                   ASTRO<span className="bg-gradient-to-r from-blue-600 to-blue-500 bg-clip-text text-transparent">RANK</span>
                 </span>
@@ -125,33 +124,26 @@ export default function AstroRankHeader() {
 
               <nav className="flex flex-col px-3 pt-3 pb-5 gap-0.5 flex-1">
                 {NAV_LINKS.map((link, i) => (
-                  <motion.a
+                  <motion.button
                     key={link.label}
-                    href={link.href}
                     initial={{ opacity: 0, x: 12 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: i * 0.05 + 0.06 }}
-                    onClick={() => setMenuOpen(false)}
-                    className="px-3 py-2.5 rounded-xl text-[14.5px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors"
+                    onClick={() => { scrollTo(link.href); setMenuOpen(false); }}
+                    className="px-3 py-2.5 rounded-xl text-[14px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-50 transition-colors text-left"
                   >
                     {link.label}
-                  </motion.a>
+                  </motion.button>
                 ))}
               </nav>
 
-              <div className="px-4 pb-8 flex flex-col gap-2.5">
-                <a
-                  href="#"
-                  className="w-full py-2.5 text-center text-[13.5px] font-medium text-slate-600 border border-slate-200 rounded-xl hover:bg-slate-50 transition-colors"
-                >
-                  Sign in
-                </a>
-                <a
-                  href="#"
+              <div className="px-4 pb-8">
+                <button
+                  onClick={() => { scrollTo("#hero"); setMenuOpen(false); }}
                   className="w-full py-2.5 text-center text-[13.5px] font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors"
                 >
-                  Join Early Access
-                </a>
+                  Get FREE Audit
+                </button>
               </div>
             </motion.div>
           </motion.div>
