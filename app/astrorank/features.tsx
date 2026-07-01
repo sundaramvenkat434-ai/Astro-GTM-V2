@@ -27,7 +27,7 @@ function usePhaseLoop(delays: number[]) {
 // ─── Shared card shell ───────────────────────────────────────────────────────
 function AnimCard({ children, className = "" }: { children: React.ReactNode; className?: string }) {
   return (
-    <div className={`w-[340px] max-w-full h-[220px] bg-white rounded-[20px] border border-[#E5E7EB] shadow-[0_4px_28px_rgba(0,0,0,0.07)] overflow-hidden p-4 flex flex-col select-none ${className}`}>
+    <div className={`w-full max-w-[380px] h-[220px] bg-white rounded-[20px] border border-[#E5E7EB] shadow-[0_4px_28px_rgba(0,0,0,0.07)] overflow-hidden p-4 flex flex-col select-none ${className}`}>
       {children}
     </div>
   );
@@ -555,10 +555,10 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
       initial={{ opacity: 0, y: 36 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.55, ease: "easeOut" }}
-      className={`flex flex-col gap-10 lg:gap-0 lg:flex-row lg:items-center lg:gap-16 xl:gap-24 ${isReversed ? "lg:flex-row-reverse" : ""}`}
+      className={`flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-20 ${isReversed ? "lg:flex-row-reverse" : ""}`}
     >
-      {/* Text */}
-      <div className="flex-1 min-w-0">
+      {/* Text — exactly half width on desktop */}
+      <div className="w-full lg:w-1/2">
         <div className="flex items-center gap-2.5 mb-4">
           <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tracking-wide">
             {feature.number}
@@ -570,7 +570,7 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
         <h3 className="text-[1.55rem] sm:text-[1.7rem] font-bold text-slate-900 leading-snug tracking-tight mb-3">
           {feature.headline}
         </h3>
-        <p className="text-[15px] text-slate-500 leading-relaxed mb-5 max-w-[440px]">{feature.body}</p>
+        <p className="text-[15px] text-slate-500 leading-relaxed mb-5">{feature.body}</p>
         <ul className="flex flex-col gap-2.5">
           {feature.highlights.map((h) => (
             <li key={h} className="flex items-start gap-2.5">
@@ -583,8 +583,8 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
         </ul>
       </div>
 
-      {/* Card */}
-      <div className="shrink-0 flex justify-center lg:justify-start">
+      {/* Card — exactly half width on desktop */}
+      <div className="w-full lg:w-1/2 flex justify-center">
         <Card />
       </div>
     </motion.div>

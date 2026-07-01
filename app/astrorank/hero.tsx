@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { ArrowRight, Star, Zap, TrendingUp, FileText, ChartBar as BarChart3, Globe, CircleCheck as CheckCircle, Sparkles, Gauge, Trophy, PenLine } from "lucide-react";
+import { ArrowRight, Star, Zap, TrendingUp, FileText, ChartBar as BarChart3, Globe, CircleCheck as CheckCircle, Sparkles } from "lucide-react";
 
 // ─── Platform cycling animation ─────────────────────────────────────────────
 const PLATFORMS = ["Google", "ChatGPT", "Gemini", "Claude", "Perplexity", "Copilot"];
@@ -377,102 +377,39 @@ export default function AstroRankHero() {
 // ─── Metrics strip ───────────────────────────────────────────────────────────
 
 const METRICS = [
-  {
-    icon: Gauge,
-    value: "95+",
-    label: "Google Lighthouse Score",
-    description: "Fast-loading pages optimized for performance.",
-    iconBg: "bg-blue-50 text-blue-600",
-    gradient: "from-blue-500 to-sky-500",
-  },
-  {
-    icon: Trophy,
-    value: "85+",
-    label: "Google EEAT Score",
-    description: "Content structured to demonstrate expertise, experience, authority, and trust.",
-    iconBg: "bg-amber-50 text-amber-600",
-    gradient: "from-amber-400 to-orange-400",
-  },
-  {
-    icon: PenLine,
-    value: "95%",
-    label: "Grammarly Content Originality",
-    description: "Natural, human-like writing that avoids generic AI output.",
-    iconBg: "bg-emerald-50 text-emerald-600",
-    gradient: "from-emerald-500 to-teal-500",
-  },
+  { value: "95+",  label: "Lighthouse Score",       color: "text-blue-600"    },
+  { value: "85+",  label: "EEAT Score",             color: "text-amber-500"   },
+  { value: "95%",  label: "Content Originality",    color: "text-emerald-600" },
 ];
-
-function MetricCard({
-  metric,
-  index,
-  isLast,
-}: {
-  metric: typeof METRICS[0];
-  index: number;
-  isLast: boolean;
-}) {
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-60px" });
-  const Icon = metric.icon;
-
-  return (
-    <div className="relative flex-1 min-w-0">
-      <motion.div
-        ref={ref}
-        initial={{ opacity: 0, y: 20 }}
-        animate={inView ? { opacity: 1, y: 0 } : {}}
-        transition={{ duration: 0.5, delay: index * 0.12, ease: "easeOut" }}
-        whileHover={{ y: -4, boxShadow: "0 12px 32px -4px rgba(0,0,0,0.09)" }}
-        className="group flex flex-col items-center text-center px-8 py-8 rounded-2xl transition-all duration-300 cursor-default"
-      >
-        {/* Icon */}
-        <div className={`w-11 h-11 rounded-xl flex items-center justify-center mb-5 ${metric.iconBg} transition-transform duration-300 group-hover:scale-110`}>
-          <Icon size={20} strokeWidth={1.75} />
-        </div>
-
-        {/* Value */}
-        <div className={`text-[3rem] sm:text-[3.25rem] font-extrabold leading-none tracking-tight bg-gradient-to-r ${metric.gradient} bg-clip-text text-transparent mb-2`}>
-          {metric.value}
-        </div>
-
-        {/* Label */}
-        <div className="text-[11px] font-semibold uppercase tracking-widest text-slate-400 mb-2.5">
-          {metric.label}
-        </div>
-
-        {/* Description */}
-        <p className="text-sm text-slate-500 leading-relaxed max-w-[220px]">
-          {metric.description}
-        </p>
-      </motion.div>
-
-      {/* Vertical divider — desktop only */}
-      {!isLast && (
-        <div className="hidden lg:block absolute right-0 top-1/2 -translate-y-1/2 w-px h-16 bg-slate-200" />
-      )}
-    </div>
-  );
-}
 
 export function MetricsStrip() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-40px" });
 
   return (
-    <section
-      ref={ref}
-      className="w-full bg-[#FAFAFA] border-y border-slate-100"
-    >
+    <section ref={ref} className="w-full bg-[#FAFAFA] border-y border-slate-100">
       <motion.div
         initial={{ opacity: 0 }}
         animate={inView ? { opacity: 1 } : {}}
         transition={{ duration: 0.4 }}
-        className="max-w-[1280px] mx-auto px-6 lg:px-12 py-2"
+        className="max-w-[1280px] mx-auto px-6 lg:px-12 py-6"
       >
-        <div className="flex flex-col lg:flex-row lg:divide-x lg:divide-slate-100">
+        <div className="flex flex-col sm:flex-row items-center justify-center gap-6 sm:gap-0 sm:divide-x sm:divide-slate-200">
           {METRICS.map((m, i) => (
-            <MetricCard key={m.label} metric={m} index={i} isLast={i === METRICS.length - 1} />
+            <motion.div
+              key={m.label}
+              initial={{ opacity: 0, y: 10 }}
+              animate={inView ? { opacity: 1, y: 0 } : {}}
+              transition={{ duration: 0.4, delay: i * 0.08 }}
+              className="flex items-center gap-3 sm:px-10 lg:px-16"
+            >
+              <span className={`text-[1.6rem] font-extrabold leading-none tracking-tight ${m.color}`}>
+                {m.value}
+              </span>
+              <span className="text-[12px] font-medium text-slate-500 leading-snug max-w-[90px]">
+                {m.label}
+              </span>
+            </motion.div>
           ))}
         </div>
       </motion.div>
