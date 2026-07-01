@@ -3,8 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import {
-  ArrowRight, Star, Zap, TrendingUp, FileText,
-  ChartBar as BarChart3, Globe, CircleCheck as CheckCircle, Sparkles,
+  ArrowRight, Star, Sparkles, TrendingUp, Search, MousePointer,
 } from "lucide-react";
 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
@@ -34,142 +33,280 @@ function PlatformCycler() {
   );
 }
 
-// ─── Workflow step card ───────────────────────────────────────────────────────
-const STEPS = [
-  { icon: Globe,       label: "Brand Analysis",   color: "bg-blue-50 text-blue-600",     dot: "bg-blue-500",   },
-  { icon: TrendingUp,  label: "Content Strategy", color: "bg-violet-50 text-violet-600", dot: "bg-violet-500", },
-  { icon: Zap,         label: "AI Research",       color: "bg-sky-50 text-sky-600",       dot: "bg-sky-500",    },
-  { icon: FileText,    label: "AI Writing",        color: "bg-indigo-50 text-indigo-600", dot: "bg-indigo-500", },
-  { icon: CheckCircle, label: "Auto Publishing",   color: "bg-emerald-50 text-emerald-600", dot: "bg-emerald-500" },
-  { icon: BarChart3,   label: "Analytics",         color: "bg-teal-50 text-teal-600",     dot: "bg-teal-500",   },
+// ─── Content library animation ────────────────────────────────────────────────
+
+type LibraryArticle = { id: number; cat: string; catKey: string; title: string; slug: string };
+
+const LIBRARY_ARTICLES: LibraryArticle[] = [
+  { id: 1, cat: "SEO Strategy",    catKey: "blue",    title: "10 Best AI Tools for B2B Content Teams",     slug: "best-ai-tools-b2b"   },
+  { id: 2, cat: "How-To Guide",    catKey: "emerald", title: "Build a Keyword Strategy with AI Research",  slug: "keyword-strategy-ai" },
+  { id: 3, cat: "Industry Trends", catKey: "violet",  title: "AI Content: The New SaaS Growth Lever",      slug: "ai-content-saas"     },
+  { id: 4, cat: "Growth",          catKey: "teal",    title: "Content Velocity: 50 Articles per Month",    slug: "content-velocity"    },
+  { id: 5, cat: "Case Study",      catKey: "amber",   title: "From 0 to 10K Organic Visits in 90 Days",    slug: "zero-to-10k"         },
+  { id: 6, cat: "Comparison",      catKey: "sky",     title: "AstroRank vs Manual SEO: The Numbers",       slug: "astrorank-vs-manual" },
 ];
 
-const ARTICLE_CARDS = [
-  { title: "10 Best AI Sales Tools for B2B Teams in 2025",    seo: 94, ai: 88, opp: 91, status: "Published" },
-  { title: "How to Automate Lead Qualification with AI",       seo: 87, ai: 82, opp: 85, status: "Published" },
-  { title: "CRM Integration Guide: Connecting AI Workflows",  seo: 79, ai: 91, opp: 76, status: "Live"      },
+const CAT_STYLES: Record<string, { bg: string; text: string }> = {
+  blue:    { bg: "bg-blue-100",    text: "text-blue-700"    },
+  emerald: { bg: "bg-emerald-100", text: "text-emerald-700" },
+  violet:  { bg: "bg-violet-100",  text: "text-violet-700"  },
+  teal:    { bg: "bg-teal-100",    text: "text-teal-700"    },
+  amber:   { bg: "bg-amber-100",   text: "text-amber-700"   },
+  sky:     { bg: "bg-sky-100",     text: "text-sky-700"     },
+};
+
+const GRAD: Record<string, string> = {
+  blue:    "from-blue-100 to-indigo-50",
+  emerald: "from-emerald-100 to-teal-50",
+  violet:  "from-violet-100 to-purple-50",
+  teal:    "from-teal-100 to-cyan-50",
+  amber:   "from-amber-100 to-orange-50",
+  sky:     "from-sky-100 to-blue-50",
+};
+
+const ANALYTICS = [
+  { label: "Organic Traffic",   value: 2847, suffix: "/mo", Icon: TrendingUp,  cc: "text-blue-600 bg-blue-50"      },
+  { label: "Ranking Keywords",  value: 124,  suffix: "",    Icon: Search,      cc: "text-violet-600 bg-violet-50"  },
+  { label: "AI Visibility",     value: 89,   suffix: "%",   Icon: Sparkles,    cc: "text-amber-600 bg-amber-50"    },
+  { label: "CTA Clicks",        value: 342,  suffix: "/mo", Icon: MousePointer,cc: "text-emerald-600 bg-emerald-50"},
 ];
 
-function ScorePill({ label, value, color }: { label: string; value: number; color: string }) {
-  return (
-    <div className={`rounded-lg px-2 py-1.5 flex flex-col items-center ${color}`}>
-      <span className="text-[13px] font-bold leading-none">{value}</span>
-      <span className="text-[8.5px] mt-0.5 opacity-60 leading-none text-center tracking-wide uppercase">{label}</span>
-    </div>
-  );
+// phase durations in ms
+// 0:grid-3  1:+4  2:+5  3:+6  4:hold  5:zoom  6:open  7:read  8:stats  9:return
+const PHASE_DUR = [700, 430, 430, 430, 1100, 650, 650, 2300, 3100, 650];
+
+function AnimCounter({ target, run }: { target: number; run: boolean }) {
+  const [v, setV] = useState(0);
+  const raf = useRef<number | null>(null);
+  useEffect(() => {
+    if (!run) { setV(0); return; }
+    let t0: number | null = null;
+    const dur = 1400;
+    const tick = (ts: number) => {
+      if (!t0) t0 = ts;
+      const p = Math.min((ts - t0) / dur, 1);
+      setV(Math.floor((1 - (1 - p) ** 3) * target));
+      if (p < 1) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+    return () => { if (raf.current) cancelAnimationFrame(raf.current); };
+  }, [run, target]);
+  return <>{v.toLocaleString()}</>;
 }
 
-function WorkflowPanel() {
-  const [activeStep, setActiveStep] = useState(0);
-  const [visibleCards, setVisibleCards] = useState(0);
+function ContentLibraryPanel() {
+  const [phase, setPhase] = useState(0);
 
   useEffect(() => {
-    const t = setInterval(() => {
-      setActiveStep(s => {
-        const next = (s + 1) % STEPS.length;
-        if (next === 0) setVisibleCards(0);
-        return next;
-      });
-    }, 1000);
-    return () => clearInterval(t);
-  }, []);
+    const t = setTimeout(() => setPhase(p => (p + 1) % PHASE_DUR.length), PHASE_DUR[phase]);
+    return () => clearTimeout(t);
+  }, [phase]);
 
-  useEffect(() => {
-    if (activeStep === STEPS.length - 1) {
-      const timers = ARTICLE_CARDS.map((_, i) =>
-        setTimeout(() => setVisibleCards(v => Math.max(v, i + 1)), i * 500)
-      );
-      return () => timers.forEach(clearTimeout);
-    }
-  }, [activeStep]);
+  const numVisible  = phase <= 0 ? 3 : phase === 1 ? 4 : phase === 2 ? 5 : 6;
+  const zoomedIdx   = phase === 5 ? 0 : -1;
+  const inArticle   = phase >= 6 && phase <= 8;
+  const readScroll  = phase === 7;
+  const showStats   = phase === 8;
+  const focused     = LIBRARY_ARTICLES[0];
+  const url         = inArticle
+    ? `yourwebsite.com/articles/${focused.slug}`
+    : "yourwebsite.com/articles";
 
   return (
-    <div className="relative w-full h-full flex gap-4 items-start">
-      {/* Steps column */}
-      <div className="flex flex-col gap-[7px] min-w-[168px]">
-        {STEPS.map((step, i) => {
-          const Icon = step.icon;
-          const isActive = i === activeStep;
-          const isDone = i < activeStep || (activeStep === 0 && i === STEPS.length - 1);
-          return (
-            <div key={step.label} className="relative">
-              <motion.div
-                animate={{
-                  scale: isActive ? 1.02 : 1,
-                  boxShadow: isActive
-                    ? "0 0 0 2px rgba(99,102,241,0.3), 0 4px 12px rgba(99,102,241,0.1)"
-                    : "none",
-                }}
-                transition={{ duration: 0.2 }}
-                className={`flex items-center gap-2.5 px-3 py-2 rounded-xl border transition-all duration-300 ${
-                  isActive
-                    ? "bg-white border-indigo-200"
-                    : isDone
-                    ? "bg-white border-slate-100 opacity-55"
-                    : "bg-slate-50/80 border-slate-100 opacity-35"
-                }`}
-              >
-                <span className={`w-6 h-6 rounded-lg flex items-center justify-center shrink-0 ${step.color}`}>
-                  <Icon size={13} />
-                </span>
-                <span className="text-[11.5px] font-medium text-slate-700 leading-tight">{step.label}</span>
-                {isDone && (
-                  <motion.span
-                    initial={{ scale: 0, opacity: 0 }}
-                    animate={{ scale: 1, opacity: 1 }}
-                    className={`ml-auto w-1.5 h-1.5 rounded-full block shrink-0 ${step.dot}`}
-                  />
-                )}
-              </motion.div>
-              {i < STEPS.length - 1 && (
-                <div className="absolute left-[22px] -bottom-[7px] w-px h-[7px] bg-slate-200 overflow-hidden">
-                  <motion.div
-                    animate={{ scaleY: i < activeStep ? 1 : 0 }}
-                    transition={{ duration: 0.25 }}
-                    className="w-full h-full bg-indigo-400 origin-top"
-                  />
-                </div>
-              )}
-            </div>
-          );
-        })}
+    <div className="flex flex-col">
+      {/* Browser chrome */}
+      <div className="flex items-center gap-1.5 mb-3.5">
+        <div className="w-[11px] h-[11px] rounded-full bg-[#FF5F57]" />
+        <div className="w-[11px] h-[11px] rounded-full bg-[#FEBC2E]" />
+        <div className="w-[11px] h-[11px] rounded-full bg-[#28C840]" />
+        <div className="flex-1 mx-2.5 h-5 rounded-md bg-slate-100 flex items-center px-2.5 overflow-hidden">
+          <AnimatePresence mode="wait">
+            <motion.span
+              key={url}
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.18 }}
+              className="text-[9.5px] text-slate-400 font-mono truncate"
+            >
+              {url}
+            </motion.span>
+          </AnimatePresence>
+        </div>
       </div>
 
-      {/* Article cards */}
-      <div className="flex flex-col gap-2 flex-1 min-w-0">
-        <div className="text-[9.5px] font-semibold text-slate-400 uppercase tracking-widest mb-0.5 px-0.5">
-          Generated Pages
-        </div>
-        <AnimatePresence>
-          {ARTICLE_CARDS.slice(0, visibleCards).map((card) => (
+      {/* Browser viewport */}
+      <div
+        className="relative rounded-xl border border-slate-100 bg-white overflow-hidden"
+        style={{ minHeight: 310 }}
+      >
+        <AnimatePresence mode="wait">
+          {/* ── GRID VIEW ─────────────────────────────────────── */}
+          {!inArticle && (
             <motion.div
-              key={card.title}
-              initial={{ opacity: 0, y: 8, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
-              className="bg-white rounded-xl border border-slate-100 p-3 shadow-[0_1px_6px_rgba(0,0,0,0.05)]"
+              key="grid"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.28 }}
+              className="absolute inset-0 p-3"
             >
-              <div className="flex items-start justify-between gap-2 mb-2">
-                <p className="text-[10.5px] font-medium text-slate-800 leading-snug line-clamp-2">{card.title}</p>
-                <span className="shrink-0 text-[8.5px] font-semibold px-1.5 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">
-                  {card.status}
-                </span>
+              {/* Page header */}
+              <div className="flex items-center justify-between mb-2.5">
+                <div>
+                  <p className="text-[10.5px] font-bold text-slate-900 leading-none mb-0.5">Content Library</p>
+                  <p className="text-[8.5px] text-slate-400 tabular-nums">{numVisible} articles published</p>
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="text-[7.5px] font-semibold bg-slate-900 text-white px-2 py-[2.5px] rounded-full">All</span>
+                  <span className="text-[7.5px] text-slate-500 bg-slate-100 px-2 py-[2.5px] rounded-full">SEO</span>
+                  <span className="text-[7.5px] text-slate-500 bg-slate-100 px-2 py-[2.5px] rounded-full">Guides</span>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-1">
-                <ScorePill label="SEO" value={card.seo} color="text-blue-600 bg-blue-50" />
-                <ScorePill label="AI Vis." value={card.ai} color="text-violet-600 bg-violet-50" />
-                <ScorePill label="Opp." value={card.opp} color="text-teal-600 bg-teal-50" />
+
+              {/* 3-column article grid */}
+              <div className="grid grid-cols-3 gap-2">
+                {LIBRARY_ARTICLES.map((article, i) => {
+                  const visible  = i < numVisible;
+                  const cat      = CAT_STYLES[article.catKey];
+                  const grad     = GRAD[article.catKey];
+                  const isZoomed = i === zoomedIdx;
+                  return (
+                    <div key={article.id}>
+                      {visible ? (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10, scale: 0.92 }}
+                          animate={{ opacity: 1, y: 0, scale: isZoomed ? 1.06 : 1 }}
+                          transition={{ duration: 0.32, ease: "easeOut" }}
+                          className={`rounded-xl border overflow-hidden bg-white ${
+                            isZoomed
+                              ? "border-blue-400 shadow-[0_0_0_2px_rgba(59,130,246,0.2),0_6px_18px_rgba(59,130,246,0.14)] z-10 relative"
+                              : "border-slate-100 shadow-[0_1px_4px_rgba(15,23,42,0.05)]"
+                          }`}
+                        >
+                          <div className={`h-9 bg-gradient-to-br ${grad}`} />
+                          <div className="p-1.5">
+                            <span className={`inline-block text-[6.5px] font-bold px-1.5 py-[1.5px] rounded-full mb-0.5 ${cat.bg} ${cat.text}`}>
+                              {article.cat}
+                            </span>
+                            <p className="text-[7.5px] font-semibold text-slate-800 leading-snug line-clamp-2">{article.title}</p>
+                          </div>
+                        </motion.div>
+                      ) : (
+                        <div className="rounded-xl border border-dashed border-slate-100 bg-slate-50/40 h-[72px]" />
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
-          ))}
+          )}
+
+          {/* ── ARTICLE VIEW ──────────────────────────────────── */}
+          {inArticle && (
+            <motion.div
+              key="article"
+              initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              transition={{ duration: 0.28 }}
+              className="absolute inset-0 overflow-hidden"
+            >
+              {/* Scrolling content */}
+              <motion.div
+                animate={{ y: readScroll ? -96 : 0 }}
+                transition={{ duration: 2.3, ease: "easeInOut" }}
+                className="p-3"
+              >
+                {/* Hero image */}
+                <div className={`h-14 rounded-xl bg-gradient-to-br ${GRAD[focused.catKey]} mb-2.5 flex items-end p-2`}>
+                  <span className={`text-[7px] font-bold px-1.5 py-[1.5px] rounded-full ${CAT_STYLES[focused.catKey].bg} ${CAT_STYLES[focused.catKey].text}`}>
+                    {focused.cat}
+                  </span>
+                </div>
+                {/* Title */}
+                <p className="text-[11px] font-bold text-slate-900 leading-tight mb-1.5">{focused.title}</p>
+                {/* Meta */}
+                <div className="flex items-center gap-1.5 mb-3">
+                  <div className={`w-3 h-3 rounded-full bg-gradient-to-br ${GRAD[focused.catKey]}`} />
+                  <span className="text-[8px] text-slate-400">AstroRank AI · 8 min read · Jan 2025</span>
+                </div>
+                {/* Body skeleton */}
+                <div className="flex flex-col gap-1.5">
+                  {[98, 93, 100, 87, 0, 95, 90, 98, 83, 0, 100, 88, 75, 0].map((w, i) =>
+                    w === 0 ? (
+                      <div key={i} className="h-1" />
+                    ) : (
+                      <div key={i} className="h-[5px] rounded-full bg-slate-100" style={{ width: `${w}%` }} />
+                    )
+                  )}
+                  <div className="h-[7px] rounded-full bg-slate-200 w-[40%] mt-1 mb-1.5" />
+                  {[96, 89, 100, 84, 93, 78].map((w, i) => (
+                    <div key={`b${i}`} className="h-[5px] rounded-full bg-slate-100" style={{ width: `${w}%` }} />
+                  ))}
+                </div>
+              </motion.div>
+
+              {/* Reading scan line */}
+              {readScroll && (
+                <motion.div
+                  initial={{ top: 60 }}
+                  animate={{ top: 290 }}
+                  transition={{ duration: 2.3, ease: "easeInOut" }}
+                  className="absolute left-3 right-3 h-px bg-gradient-to-r from-transparent via-blue-400/70 to-transparent pointer-events-none"
+                  style={{ position: "absolute" }}
+                />
+              )}
+
+              {/* Analytics overlay */}
+              <AnimatePresence>
+                {showStats && (
+                  <motion.div
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="absolute inset-0 bg-white/[0.97] p-3 flex flex-col"
+                  >
+                    {/* Article reference */}
+                    <div className="flex items-center gap-2 mb-2 pb-2 border-b border-slate-100">
+                      <div className={`w-5 h-5 rounded-lg bg-gradient-to-br ${GRAD[focused.catKey]} shrink-0`} />
+                      <span className="text-[9px] font-semibold text-slate-700 line-clamp-1 flex-1">{focused.title}</span>
+                    </div>
+                    <p className="text-[7.5px] font-semibold text-slate-400 uppercase tracking-widest mb-2.5">Performance · Last 30 days</p>
+
+                    {/* 2×2 metrics */}
+                    <div className="grid grid-cols-2 gap-1.5 flex-1">
+                      {ANALYTICS.map((m, i) => {
+                        const Icon = m.Icon;
+                        return (
+                          <motion.div
+                            key={m.label}
+                            initial={{ opacity: 0, y: 6 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: i * 0.07, duration: 0.25 }}
+                            className="bg-slate-50 rounded-xl p-2 flex flex-col gap-1.5"
+                          >
+                            <div className={`w-5 h-5 rounded-lg flex items-center justify-center ${m.cc}`}>
+                              <Icon size={10} strokeWidth={2} />
+                            </div>
+                            <div>
+                              <p className="text-[15px] font-extrabold text-slate-900 leading-none tabular-nums">
+                                <AnimCounter target={m.value} run={showStats} />{m.suffix}
+                              </p>
+                              <p className="text-[7px] text-slate-400 mt-0.5 leading-none">{m.label}</p>
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+
+                    {/* Trend footer */}
+                    <div className="mt-2 pt-2 border-t border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-1">
+                        <TrendingUp size={9} className="text-emerald-500" />
+                        <span className="text-[8px] text-emerald-600 font-semibold">+127% vs last month</span>
+                      </div>
+                      <span className="text-[7.5px] text-slate-400">AstroRank Analytics</span>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
         </AnimatePresence>
-        {visibleCards === 0 && (
-          <div className="flex flex-col gap-2">
-            {[0, 1].map(i => (
-              <div key={i} className="bg-slate-50 rounded-xl border border-slate-100 h-[76px] animate-pulse" />
-            ))}
-          </div>
-        )}
       </div>
     </div>
   );
@@ -230,7 +367,6 @@ export default function AstroRankHero() {
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
             className="flex flex-col items-start"
           >
-            {/* Badge */}
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -243,7 +379,6 @@ export default function AstroRankHero() {
               <span className="font-semibold">First 10 pages free</span>
             </motion.div>
 
-            {/* Headline */}
             <motion.h1
               initial={{ opacity: 0, y: 18 }}
               animate={{ opacity: 1, y: 0 }}
@@ -258,7 +393,6 @@ export default function AstroRankHero() {
               {" "}advantage.
             </motion.h1>
 
-            {/* Sub */}
             <motion.p
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
@@ -270,7 +404,6 @@ export default function AstroRankHero() {
               <PlatformCycler />.
             </motion.p>
 
-            {/* Email CTA */}
             <motion.form
               onSubmit={handleSubmit}
               initial={{ opacity: 0, y: 10 }}
@@ -288,7 +421,7 @@ export default function AstroRankHero() {
               />
               <button
                 type="submit"
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-sm shadow-blue-200/80 hover:bg-blue-500 hover:shadow-blue-300/80 active:scale-[0.98] transition-all duration-150 whitespace-nowrap"
+                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-sm shadow-blue-200/80 hover:bg-blue-500 active:scale-[0.98] transition-all duration-150 whitespace-nowrap"
               >
                 Join Early Access
                 <ArrowRight size={14} strokeWidth={2.25} />
@@ -304,7 +437,6 @@ export default function AstroRankHero() {
               No credit card required &nbsp;·&nbsp; Cancel anytime
             </motion.p>
 
-            {/* Trust row */}
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -330,37 +462,9 @@ export default function AstroRankHero() {
             transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
             className="relative"
           >
-            {/* Outer glow */}
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-100/50 via-violet-100/30 to-sky-100/50 blur-2xl pointer-events-none" />
-
             <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-5 overflow-hidden">
-              {/* Window chrome */}
-              <div className="flex items-center gap-1.5 mb-4">
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FF5F57]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#FEBC2E]" />
-                <div className="w-2.5 h-2.5 rounded-full bg-[#28C840]" />
-                <div className="flex-1 mx-3 h-5 rounded-md bg-slate-100 flex items-center px-2.5">
-                  <span className="text-[10px] text-slate-400 font-mono">app.astrorank.ai/researcher</span>
-                </div>
-              </div>
-
-              {/* Workflow */}
-              <div className="min-h-[320px] lg:min-h-[360px]">
-                <WorkflowPanel />
-              </div>
-
-              {/* Status bar */}
-              <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <motion.div
-                    animate={{ opacity: [1, 0.3, 1] }}
-                    transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-                    className="w-1.5 h-1.5 rounded-full bg-emerald-500"
-                  />
-                  <span className="text-[11px] text-slate-400">AI pipeline running</span>
-                </div>
-                <span className="text-[11px] text-slate-400 font-mono tabular-nums">3 articles generated</span>
-              </div>
+              <ContentLibraryPanel />
             </div>
           </motion.div>
 
@@ -372,9 +476,9 @@ export default function AstroRankHero() {
 
 // ─── Metrics strip ────────────────────────────────────────────────────────────
 const METRICS = [
-  { value: "95+",  label: "Lighthouse Score",    color: "text-blue-600"    },
-  { value: "85+",  label: "EEAT Score",          color: "text-amber-500"   },
-  { value: "95%",  label: "Content Originality", color: "text-emerald-600" },
+  { value: "95+", label: "Lighthouse Score",    color: "text-blue-600"    },
+  { value: "85+", label: "EEAT Score",          color: "text-amber-500"   },
+  { value: "95%", label: "Content Originality", color: "text-emerald-600" },
 ];
 
 export function MetricsStrip() {
