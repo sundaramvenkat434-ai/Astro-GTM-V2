@@ -542,65 +542,140 @@ const FEATURES = [
   },
 ];
 
-// ─── Feature block ────────────────────────────────────────────────────────────
-function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: number }) {
+// ─── Bento card ───────────────────────────────────────────────────────────────
+function FeatureBentoCard({ feature, index }: { feature: typeof FEATURES[0]; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-80px" });
-  const isReversed = index % 2 !== 0;
+  const inView = useInView(ref, { once: true, margin: "-60px" });
   const { Card } = feature;
-
-  const textCol = (
-    <div className="flex flex-col justify-center py-2">
-      <div className="flex items-center gap-2.5 mb-3">
-        <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
-          {feature.number}
-        </span>
-        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
-          {feature.tag}
-        </span>
-      </div>
-      <h3 className="text-[1.45rem] font-bold text-slate-900 leading-[1.22] tracking-[-0.02em] mb-3">
-        {feature.headline}
-      </h3>
-      <p className="text-[14px] text-slate-500 leading-[1.65] mb-5">{feature.body}</p>
-      <ul className="flex flex-col gap-2">
-        {feature.highlights.map((h) => (
-          <li key={h} className="flex items-start gap-2.5">
-            <span className="mt-[3px] w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-              <Check size={8} className="text-emerald-600" strokeWidth={3} />
-            </span>
-            <span className="text-[13px] text-slate-600 leading-relaxed">{h}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-
-  const cardCol = (
-    <div className="h-[260px] lg:h-[280px]">
-      <Card />
-    </div>
-  );
 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 28 }}
+      initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-      className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center"
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: (index % 2) * 0.08 }}
+      className="group relative bg-white rounded-2xl border border-slate-200/80 shadow-[0_2px_16px_rgba(15,23,42,0.06)] hover:shadow-[0_8px_40px_rgba(15,23,42,0.1)] hover:border-blue-200/60 transition-all duration-300 overflow-hidden flex flex-col"
     >
-      {isReversed ? (
-        <>
-          {cardCol}
-          {textCol}
-        </>
-      ) : (
-        <>
-          {textCol}
-          {cardCol}
-        </>
-      )}
+      {/* Subtle gradient top accent */}
+      <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
+
+      {/* Animation area */}
+      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-b border-slate-100 overflow-hidden flex items-center justify-center px-4 py-4">
+        <Card />
+      </div>
+
+      {/* Text area */}
+      <div className="p-6 flex flex-col flex-1">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
+            {feature.number}
+          </span>
+          <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-widest">
+            {feature.tag}
+          </span>
+        </div>
+        <h3 className="text-[1.1rem] font-bold text-slate-900 leading-[1.25] tracking-[-0.02em] mb-2">
+          {feature.headline}
+        </h3>
+        <p className="text-[13px] text-slate-500 leading-relaxed mb-4 flex-1">{feature.body}</p>
+        <ul className="flex flex-col gap-1.5">
+          {feature.highlights.map((h) => (
+            <li key={h} className="flex items-start gap-2">
+              <span className="mt-[3px] w-3.5 h-3.5 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <Check size={7} className="text-emerald-600" strokeWidth={3} />
+              </span>
+              <span className="text-[12px] text-slate-600 leading-relaxed">{h}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </motion.div>
+  );
+}
+
+function ComingSoonCard({ index }: { index: number }) {
+  const ref = useRef<HTMLDivElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+
+  const upcomingFeatures = [
+    { icon: "🔗", label: "CMS Integrations", desc: "WordPress, Webflow, Framer, Ghost" },
+    { icon: "🌐", label: "Multi-language SEO", desc: "Publish in 12+ languages automatically" },
+    { icon: "📧", label: "Email Reports", desc: "Weekly ranking & traffic digests" },
+    { icon: "🤖", label: "AI Chat Interface", desc: "Ask AstroRank to create new content" },
+  ];
+
+  return (
+    <motion.div
+      ref={ref}
+      initial={{ opacity: 0, y: 24 }}
+      animate={inView ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1], delay: (index % 2) * 0.08 }}
+      className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-2xl border border-slate-700/60 shadow-[0_2px_16px_rgba(15,23,42,0.14)] overflow-hidden flex flex-col"
+    >
+      {/* Starfield background */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        {[...Array(28)].map((_, i) => (
+          <motion.div
+            key={i}
+            className="absolute rounded-full bg-white"
+            style={{
+              width: i % 4 === 0 ? 2 : 1,
+              height: i % 4 === 0 ? 2 : 1,
+              top: `${(i * 37 + 11) % 100}%`,
+              left: `${(i * 53 + 7) % 100}%`,
+              opacity: 0.15 + (i % 5) * 0.1,
+            }}
+            animate={{ opacity: [0.1 + (i % 5) * 0.08, 0.4 + (i % 3) * 0.1, 0.1 + (i % 5) * 0.08] }}
+            transition={{ duration: 2 + (i % 4), repeat: Infinity, delay: (i * 0.3) % 3 }}
+          />
+        ))}
+        <div className="absolute top-0 right-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-40 h-40 bg-violet-500/10 rounded-full blur-3xl" />
+      </div>
+
+      {/* Upcoming list area */}
+      <div className="relative h-[230px] flex items-center justify-center px-6 border-b border-white/[0.07]">
+        <div className="w-full space-y-2.5">
+          {upcomingFeatures.map((f, i) => (
+            <motion.div
+              key={f.label}
+              initial={{ opacity: 0, x: -8 }}
+              animate={inView ? { opacity: 1, x: 0 } : {}}
+              transition={{ delay: 0.3 + i * 0.1, duration: 0.4 }}
+              className="flex items-center gap-3 bg-white/[0.05] border border-white/[0.08] rounded-xl px-3.5 py-2.5"
+            >
+              <span className="text-base leading-none">{f.icon}</span>
+              <div>
+                <p className="text-[12px] font-semibold text-white/90">{f.label}</p>
+                <p className="text-[10.5px] text-white/40">{f.desc}</p>
+              </div>
+              <div className="ml-auto">
+                <span className="text-[9px] font-bold text-blue-300 bg-blue-500/20 border border-blue-400/30 rounded-full px-2 py-[2px] uppercase tracking-wide">
+                  Soon
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      {/* Text area */}
+      <div className="relative p-6">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[10px] font-bold text-blue-400 bg-blue-500/20 border border-blue-400/30 rounded-full px-2.5 py-[3px]">
+            06
+          </span>
+          <span className="text-[10.5px] font-semibold text-white/40 uppercase tracking-widest">
+            Roadmap
+          </span>
+        </div>
+        <h3 className="text-[1.1rem] font-bold text-white leading-[1.25] tracking-[-0.02em] mb-2">
+          More powerful features coming soon.
+        </h3>
+        <p className="text-[13px] text-white/50 leading-relaxed">
+          We&apos;re shipping fast. CMS integrations, multilingual SEO, smart alerts, and an AI content interface are all on the way.
+        </p>
+      </div>
     </motion.div>
   );
 }
@@ -608,7 +683,7 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
 // ─── Section export ───────────────────────────────────────────────────────────
 export default function FeaturesSection() {
   return (
-    <section id="features" className="py-14 bg-white border-t border-slate-100">
+    <section id="features" className="py-16 bg-white border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-5 lg:px-10">
         {/* Section header */}
         <motion.div
@@ -616,7 +691,7 @@ export default function FeaturesSection() {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5 }}
-          className="text-center mb-16"
+          className="text-center mb-12"
         >
           <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-widest mb-4">How It Works</p>
           <h2 className="text-[2rem] sm:text-[2.4rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
@@ -628,11 +703,12 @@ export default function FeaturesSection() {
           </h2>
         </motion.div>
 
-        {/* Blocks */}
-        <div className="flex flex-col gap-16 lg:gap-20">
+        {/* Bento grid: 2 columns, 3 rows */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
           {FEATURES.map((f, i) => (
-            <FeatureBlock key={f.number} feature={f} index={i} />
+            <FeatureBentoCard key={f.number} feature={f} index={i} />
           ))}
+          <ComingSoonCard index={5} />
         </div>
       </div>
     </section>
