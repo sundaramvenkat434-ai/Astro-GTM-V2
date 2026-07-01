@@ -1019,21 +1019,21 @@ export default function AstroRankHero() {
         <div className="absolute -top-40 -right-40 w-[600px] h-[600px] rounded-full bg-gradient-to-br from-blue-100/40 via-sky-50/30 to-transparent blur-[90px]" />
         <div className="absolute bottom-0 -left-32 w-[440px] h-[440px] rounded-full bg-gradient-to-tr from-slate-100/60 to-transparent blur-[80px]" />
       </div>
-      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 sm:px-8 lg:px-10 py-10 sm:py-14 lg:py-20 flex items-center">
-        <div className="w-full grid sm:grid-cols-2 lg:grid-cols-[54fr_46fr] gap-10 xl:gap-20 items-center">
+      <div className="relative z-10 w-full max-w-[1280px] mx-auto px-5 md:px-8 lg:px-10 py-10 md:py-14 lg:py-20 flex items-center">
+        <div className="w-full grid md:grid-cols-2 lg:grid-cols-[54fr_46fr] gap-10 xl:gap-20 items-center">
 
           {/* Left: copy */}
           <motion.div initial={{ opacity: 0, y: 28 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }} className="flex flex-col items-start">
             <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.14, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="text-[2.5rem] sm:text-[3rem] lg:text-[3.35rem] xl:text-[3.75rem] font-extrabold leading-[1.08] tracking-[-0.025em] text-slate-900 mb-5">
+              className="text-[2.5rem] md:text-[3rem] lg:text-[3.35rem] xl:text-[3.75rem] font-extrabold leading-[1.08] tracking-[-0.025em] text-slate-900 mb-5">
               Give your brand an<br />
               <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-violet-600 bg-clip-text text-transparent">astronomical SEO</span> advantage.
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.55 }}
-              className="text-[16px] sm:text-[17px] text-slate-500 leading-relaxed mb-6 max-w-[500px]">
+              className="text-[16px] text-slate-500 leading-relaxed mb-6 max-w-[500px]">
               Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to perform on{" "}
               <PlatformCycler />.
             </motion.p>
@@ -1041,7 +1041,7 @@ export default function AstroRankHero() {
             {/* Mobile only: animation panel between subtext and CTA */}
             <motion.div initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
               transition={{ delay: 0.28, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
-              className="sm:hidden w-full mb-6">
+              className="md:hidden w-full mb-6">
               <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 overflow-hidden" style={{ minHeight: "340px" }}>
                 <ContentLibraryPanel />
               </div>
@@ -1067,9 +1067,9 @@ export default function AstroRankHero() {
           {/* Right: animation panel — hidden on mobile (shown inline above) */}
           <motion.div initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ delay: 0.25, duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
-            className="hidden sm:block relative w-full max-w-[520px] mx-auto sm:mx-0 sm:max-w-none lg:max-w-[520px] lg:mx-0">
+            className="hidden md:block relative w-full max-w-[520px] mx-auto md:mx-0 md:max-w-none lg:max-w-[520px] lg:mx-0">
             <div className="absolute -inset-4 rounded-[2rem] bg-gradient-to-br from-blue-100/50 via-violet-100/30 to-sky-100/50 blur-2xl pointer-events-none" />
-            <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 sm:p-5 overflow-hidden">
+            <div className="relative bg-white rounded-[20px] border border-slate-200/80 shadow-[0_8px_48px_rgba(15,23,42,0.1),0_2px_8px_rgba(15,23,42,0.06)] p-4 md:p-5 overflow-hidden">
               <ContentLibraryPanel />
             </div>
           </motion.div>
