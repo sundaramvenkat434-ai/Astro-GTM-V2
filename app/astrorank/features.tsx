@@ -552,38 +552,38 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
   return (
     <motion.div
       ref={ref}
-      initial={{ opacity: 0, y: 36 }}
+      initial={{ opacity: 0, y: 32 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
-      transition={{ duration: 0.55, ease: "easeOut" }}
+      transition={{ duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
       className={`flex flex-col gap-10 lg:flex-row lg:items-center lg:gap-20 ${isReversed ? "lg:flex-row-reverse" : ""}`}
     >
-      {/* Text — exactly half width on desktop */}
+      {/* Text */}
       <div className="w-full lg:w-1/2">
         <div className="flex items-center gap-2.5 mb-4">
-          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tracking-wide">
+          <span className="text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
             {feature.number}
           </span>
           <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest">
             {feature.tag}
           </span>
         </div>
-        <h3 className="text-[1.55rem] sm:text-[1.7rem] font-bold text-slate-900 leading-snug tracking-tight mb-3">
+        <h3 className="text-[1.6rem] sm:text-[1.75rem] font-bold text-slate-900 leading-[1.2] tracking-[-0.02em] mb-3.5">
           {feature.headline}
         </h3>
-        <p className="text-[15px] text-slate-500 leading-relaxed mb-5">{feature.body}</p>
-        <ul className="flex flex-col gap-2.5">
+        <p className="text-[15px] text-slate-500 leading-[1.7] mb-6">{feature.body}</p>
+        <ul className="flex flex-col gap-2">
           {feature.highlights.map((h) => (
             <li key={h} className="flex items-start gap-2.5">
-              <span className="mt-[1px] w-[18px] h-[18px] rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
-                <Check size={9} className="text-emerald-600" strokeWidth={2.5} />
+              <span className="mt-[2px] w-4 h-4 rounded-full bg-emerald-100 flex items-center justify-center shrink-0">
+                <Check size={8} className="text-emerald-600" strokeWidth={3} />
               </span>
-              <span className="text-[13px] text-slate-600 leading-relaxed">{h}</span>
+              <span className="text-[13.5px] text-slate-600 leading-relaxed">{h}</span>
             </li>
           ))}
         </ul>
       </div>
 
-      {/* Card — exactly half width on desktop */}
+      {/* Card */}
       <div className="w-full lg:w-1/2 flex justify-center">
         <Card />
       </div>
@@ -594,7 +594,7 @@ function FeatureBlock({ feature, index }: { feature: typeof FEATURES[0]; index: 
 // ─── Section export ───────────────────────────────────────────────────────────
 export default function FeaturesSection() {
   return (
-    <section className="py-24 bg-white border-t border-slate-100">
+    <section className="py-28 bg-white border-t border-slate-100">
       <div className="max-w-[1280px] mx-auto px-6 lg:px-12">
         {/* Section header */}
         <motion.div
@@ -604,18 +604,18 @@ export default function FeaturesSection() {
           transition={{ duration: 0.5 }}
           className="text-center mb-20"
         >
-          <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-widest mb-3">How It Works</p>
-          <h2 className="text-4xl sm:text-[2.6rem] font-extrabold text-slate-900 tracking-tight leading-tight">
+          <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-widest mb-4">How It Works</p>
+          <h2 className="text-[2.25rem] sm:text-[2.65rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1]">
             From brand to rankings.
-            <br className="hidden sm:block" />
+            <br />
             <span className="bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
-              {" "}Fully automated.
+              Fully automated.
             </span>
           </h2>
         </motion.div>
 
         {/* Blocks */}
-        <div className="flex flex-col gap-20 lg:gap-28">
+        <div className="flex flex-col gap-24 lg:gap-32">
           {FEATURES.map((f, i) => (
             <FeatureBlock key={f.number} feature={f} index={i} />
           ))}
