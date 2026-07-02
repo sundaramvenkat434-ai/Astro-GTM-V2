@@ -559,13 +559,8 @@ function FeatureBentoCard({ feature, index }: { feature: typeof FEATURES[0]; ind
       {/* Subtle gradient top accent */}
       <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
 
-      {/* Animation area */}
-      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-b border-slate-100 overflow-hidden flex items-center justify-center px-4 py-4">
-        <Card />
-      </div>
-
       {/* Text area */}
-      <div className="p-6 flex flex-col flex-1">
+      <div className="p-6 flex flex-col">
         <div className="flex items-center gap-2 mb-3">
           <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
             {feature.number}
@@ -577,7 +572,7 @@ function FeatureBentoCard({ feature, index }: { feature: typeof FEATURES[0]; ind
         <h3 className="text-[1.1rem] font-bold text-slate-900 leading-[1.25] tracking-[-0.02em] mb-2">
           {feature.headline}
         </h3>
-        <p className="text-[13px] text-slate-500 leading-relaxed mb-4 flex-1">{feature.body}</p>
+        <p className="text-[13px] text-slate-500 leading-relaxed mb-4">{feature.body}</p>
         <ul className="flex flex-col gap-1.5">
           {feature.highlights.map((h) => (
             <li key={h} className="flex items-start gap-2">
@@ -588,6 +583,11 @@ function FeatureBentoCard({ feature, index }: { feature: typeof FEATURES[0]; ind
             </li>
           ))}
         </ul>
+      </div>
+
+      {/* Animation area */}
+      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-t border-slate-100 overflow-hidden flex items-center justify-center px-4 py-4">
+        <Card />
       </div>
     </motion.div>
   );
@@ -615,8 +615,26 @@ function ComingSoonCard({ index }: { index: number }) {
       {/* Top accent */}
       <div className="absolute top-0 inset-x-0 h-[2px] bg-gradient-to-r from-blue-500 to-blue-400 opacity-0 group-hover:opacity-100 transition-opacity duration-300 rounded-t-2xl" />
 
+      {/* Text area */}
+      <div className="p-6 flex flex-col">
+        <div className="flex items-center gap-2 mb-3">
+          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
+            06
+          </span>
+          <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-widest">
+            Roadmap
+          </span>
+        </div>
+        <h3 className="text-[1.1rem] font-bold text-slate-900 leading-[1.25] tracking-[-0.02em] mb-2">
+          More powerful features coming soon.
+        </h3>
+        <p className="text-[13px] text-slate-500 leading-relaxed">
+          We&apos;re shipping fast. CMS integrations, multilingual SEO, smart alerts, and an AI content interface are all on the way.
+        </p>
+      </div>
+
       {/* Animation area */}
-      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-b border-slate-100 overflow-hidden flex items-center justify-center px-5 py-5">
+      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-t border-slate-100 overflow-hidden flex items-center justify-center px-5 py-5">
         <div className="w-full space-y-2">
           {upcomingFeatures.map((f, i) => (
             <motion.div
@@ -637,24 +655,6 @@ function ComingSoonCard({ index }: { index: number }) {
             </motion.div>
           ))}
         </div>
-      </div>
-
-      {/* Text area */}
-      <div className="p-6 flex flex-col flex-1">
-        <div className="flex items-center gap-2 mb-3">
-          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 border border-blue-100 rounded-full px-2.5 py-[3px] tabular-nums">
-            06
-          </span>
-          <span className="text-[10.5px] font-semibold text-slate-400 uppercase tracking-widest">
-            Roadmap
-          </span>
-        </div>
-        <h3 className="text-[1.1rem] font-bold text-slate-900 leading-[1.25] tracking-[-0.02em] mb-2">
-          More powerful features coming soon.
-        </h3>
-        <p className="text-[13px] text-slate-500 leading-relaxed">
-          We&apos;re shipping fast. CMS integrations, multilingual SEO, smart alerts, and an AI content interface are all on the way.
-        </p>
       </div>
     </motion.div>
   );
