@@ -20,8 +20,8 @@ function AstroLogo({ className = "" }: { className?: string }) {
   return (
     <a href="/astrorank" className={`flex items-center gap-2.5 shrink-0 group ${className}`}>
       {/* Icon mark */}
-      <div className="relative w-8 h-8 shrink-0">
-        <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <div className="relative w-10 h-10 shrink-0">
+        <svg width="40" height="40" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
           <rect width="32" height="32" rx="8" fill="#1D4ED8"/>
           <rect width="32" height="32" rx="8" fill="url(#logo_grad)" opacity="0.6"/>
           <path d="M16 5L19.5 11.5H26L20.5 15.8L23 23L16 19L9 23L11.5 15.8L6 11.5H12.5L16 5Z" fill="white"/>
@@ -35,7 +35,7 @@ function AstroLogo({ className = "" }: { className?: string }) {
         </svg>
       </div>
       {/* Wordmark */}
-      <span className="text-[17px] font-black tracking-[-0.045em] text-slate-900 leading-none">
+      <span className="text-[21px] font-black tracking-[-0.045em] text-slate-900 leading-none">
         Astro<span className="bg-gradient-to-r from-blue-600 to-blue-400 bg-clip-text text-transparent">Rank</span>
       </span>
     </a>
