@@ -1036,8 +1036,8 @@ export default function AstroRankHero() {
               transition={{ delay: 0.22, duration: 0.55 }}
               className="text-slate-500 leading-relaxed mb-6 max-w-[500px]"
               style={{ fontSize: 'clamp(1rem, 4.5vw, 1.125rem)' }}>
-              Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to{" "}
-              <span className="whitespace-nowrap">perform on <PlatformCycler />.</span>
+              Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to perform on{" "}
+              <span className="whitespace-nowrap"><PlatformCycler />.</span>
             </motion.p>
 
             {/* Mobile only: animation panel between subtext and CTA */}
