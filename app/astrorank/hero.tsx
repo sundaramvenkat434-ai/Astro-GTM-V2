@@ -1028,14 +1028,14 @@ export default function AstroRankHero() {
             <motion.h1 initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.14, duration: 0.6, ease: [0.22, 1, 0.36, 1] }}
               className="font-extrabold leading-[1.08] tracking-[-0.025em] text-slate-900 mb-5 md:text-[3.5rem] lg:text-[4rem] xl:text-[4.5rem]"
-              style={{ fontSize: 'clamp(1.65rem, 7vw, 3rem)' }}>
+              style={{ fontSize: 'clamp(2rem, 8vw, 3rem)' }}>
               Give your brand an<br />
               <span className="bg-gradient-to-r from-blue-600 via-blue-500 to-violet-600 bg-clip-text text-transparent">astronomical SEO</span> advantage.
             </motion.h1>
             <motion.p initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.22, duration: 0.55 }}
               className="text-slate-500 leading-relaxed mb-6 max-w-[500px]"
-              style={{ fontSize: 'clamp(0.875rem, 3.8vw, 1.125rem)' }}>
+              style={{ fontSize: 'clamp(1rem, 4.5vw, 1.125rem)' }}>
               Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to perform on{" "}
               <PlatformCycler />.
             </motion.p>
