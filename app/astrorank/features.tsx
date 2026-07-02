@@ -572,7 +572,16 @@ function FeatureBentoCard({ feature, index }: { feature: typeof FEATURES[0]; ind
         <h3 className="text-[1.1rem] font-bold text-slate-900 leading-[1.25] tracking-[-0.02em] mb-2">
           {feature.headline}
         </h3>
-        <p className="text-[13px] text-slate-500 leading-relaxed mb-4">{feature.body}</p>
+        <p className="text-[13px] text-slate-500 leading-relaxed mb-0">{feature.body}</p>
+      </div>
+
+      {/* Animation area */}
+      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-t border-b border-slate-100 overflow-hidden flex items-center justify-center px-4 py-4">
+        <Card />
+      </div>
+
+      {/* Highlights */}
+      <div className="px-6 py-5">
         <ul className="flex flex-col gap-1.5">
           {feature.highlights.map((h) => (
             <li key={h} className="flex items-start gap-2">
@@ -583,11 +592,6 @@ function FeatureBentoCard({ feature, index }: { feature: typeof FEATURES[0]; ind
             </li>
           ))}
         </ul>
-      </div>
-
-      {/* Animation area */}
-      <div className="h-[230px] bg-gradient-to-br from-slate-50 to-white border-t border-slate-100 overflow-hidden flex items-center justify-center px-4 py-4">
-        <Card />
       </div>
     </motion.div>
   );
