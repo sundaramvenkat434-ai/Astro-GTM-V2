@@ -29,7 +29,7 @@ function PlatformCycler() {
   useEffect(() => { const t = setInterval(() => setI(v => (v + 1) % PLATFORMS.length), 2200); return () => clearInterval(t); }, []);
   const p = PLATFORMS[i];
   return (
-    <span className="inline-flex items-center gap-1.5 align-middle">
+    <span className="inline-flex items-center gap-1.5 align-middle" style={{ minWidth: "7.5rem" }}>
       <AnimatePresence mode="wait">
         <motion.span key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }}
           transition={{ duration: 0.3 }}
@@ -1036,8 +1036,8 @@ export default function AstroRankHero() {
               transition={{ delay: 0.22, duration: 0.55 }}
               className="text-slate-500 leading-relaxed mb-6 max-w-[500px]"
               style={{ fontSize: 'clamp(1rem, 4.5vw, 1.125rem)' }}>
-              Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to perform on{" "}
-              <PlatformCycler />.
+              Scale high-quality SEO content with AI and publish hundreds of research-backed articles designed to{" "}
+              <span className="whitespace-nowrap">perform on <PlatformCycler />.</span>
             </motion.p>
 
             {/* Mobile only: animation panel between subtext and CTA */}
