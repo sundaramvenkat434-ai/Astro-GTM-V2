@@ -755,7 +755,17 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
       ]);
 
       if (strategyRes.data) {
-        setStrategy(strategyRes.data);
+        const raw = strategyRes.data;
+        // Normalize: AI may return keyword objects instead of strings
+        if (raw.themes) {
+          raw.themes = raw.themes.map((t: any) => ({
+            ...t,
+            keywords: (t.keywords || []).map((kw: any) =>
+              typeof kw === 'string' ? kw : (kw.keyword || kw.term || JSON.stringify(kw))
+            ),
+          }));
+        }
+        setStrategy(raw);
         setStep('results');
       }
       if (brandRes.data) {
@@ -904,7 +914,16 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
         return;
       }
       const data = await res.json();
-      setStrategy(data.data);
+      const raw = data.data;
+      if (raw && raw.themes) {
+        raw.themes = raw.themes.map((t: any) => ({
+          ...t,
+          keywords: (t.keywords || []).map((kw: any) =>
+            typeof kw === 'string' ? kw : (kw.keyword || kw.term || JSON.stringify(kw))
+          ),
+        }));
+      }
+      setStrategy(raw);
       setStep('results');
     } catch (err) {
       setError(String(err));
@@ -1501,9 +1520,9 @@ function KeywordStrategyView({ strategy, onNewStrategy, industry }: { strategy: 
             <div className="mb-4">
               <label className="block text-xs font-medium text-gray-500 mb-2">Keywords ({(theme.keywords || []).length})</label>
               <div className="flex flex-wrap gap-1.5">
-                {(theme.keywords || []).map((kw, ki) => (
+                {(theme.keywords || []).map((kw: any, ki: number) => (
                   <span key={ki} className="inline-flex px-2.5 py-1 text-xs font-medium rounded-full bg-gray-100 text-gray-700 border border-gray-200">
-                    {kw}
+                    {typeof kw === 'string' ? kw : (kw.keyword || kw.term || JSON.stringify(kw))}
                   </span>
                 ))}
               </div>
