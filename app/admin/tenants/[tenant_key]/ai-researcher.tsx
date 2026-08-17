@@ -1244,7 +1244,7 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
 /* ─── Keyword Strategy Results View ─────────────────────── */
 
 function slugify(text: string): string {
-  return text
+  return (text || '')
     .toLowerCase()
     .replace(/[^a-z0-9\s-]/g, '')
     .trim()
@@ -1378,7 +1378,7 @@ function KeywordStrategyView({ strategy, onNewStrategy, industry }: { strategy: 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `keyword-strategy-${strategy.search_term.replace(/\s+/g, '-').toLowerCase()}-${new Date(strategy.created_at).toISOString().slice(0, 10)}.txt`;
+    a.download = `keyword-strategy-${(strategy.search_term || '').replace(/\s+/g, '-').toLowerCase()}-${new Date(strategy.created_at).toISOString().slice(0, 10)}.txt`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1416,7 +1416,7 @@ function KeywordStrategyView({ strategy, onNewStrategy, industry }: { strategy: 
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `keyword-strategy-${strategy.search_term.replace(/\s+/g, '-').toLowerCase()}.csv`;
+    a.download = `keyword-strategy-${(strategy.search_term || '').replace(/\s+/g, '-').toLowerCase()}.csv`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1793,7 +1793,7 @@ function PageIdeasTab({ tenantId }: { tenantId: string }) {
           body: JSON.stringify({
             action: 'generate-opportunities',
             tenant_id: tenantId,
-            country_code: brandProfile.brand?.location_focus?.toLowerCase().slice(0, 2) || 'us',
+            country_code: (brandProfile.brand?.location_focus || '').toLowerCase().slice(0, 2) || 'us',
             brand_intelligence: {
               id: brandProfile.id,
               brand: brandProfile.brand,
