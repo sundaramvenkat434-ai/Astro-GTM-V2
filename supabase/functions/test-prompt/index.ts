@@ -51,7 +51,17 @@ Deno.serve(async (req: Request) => {
 
     const startTime = Date.now();
 
-    const openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    const requestBody = {
+      model,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: user_input },
+      ],
+      temperature: 0.7,
+      max_tokens: 4000,
+      provider: { allow_fallbacks: true },
+    };
+    const requestOptions = {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${openrouterKey}`,
@@ -59,19 +69,18 @@ Deno.serve(async (req: Request) => {
         "HTTP-Referer": supabaseUrl,
         "X-Title": "Prompt Test",
       },
-      body: JSON.stringify({
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: user_input },
-        ],
-        temperature: 0.7,
-        max_tokens: 4000,
-      }),
-    });
+      body: JSON.stringify(requestBody),
+    };
+
+    let openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
+    let data = await openrouterRes.json();
+
+    if (!openrouterRes.ok && openrouterRes.status >= 500) {
+      openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
+      data = await openrouterRes.json();
+    }
 
     const elapsed = Date.now() - startTime;
-    const data = await openrouterRes.json();
 
     if (!openrouterRes.ok) {
       return new Response(
