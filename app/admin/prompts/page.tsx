@@ -61,6 +61,7 @@ const OPENROUTER_MODELS = [
   { value: 'openai/gpt-oss-120b:free', label: 'OpenAI GPT-OSS-120b', provider: 'OpenRouter' },
   { value: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'NVIDIA Nemotron 3 Super', provider: 'OpenRouter' },
   { value: 'minimax/minimax-m2.5:free', label: 'MiniMax M2.5', provider: 'OpenRouter' },
+  { value: 'google/gemma-4-31b-it:free', label: 'Google Gemma 4 31B', provider: 'OpenRouter' },
 ];
 
 function getModelLabel(value: string) {
