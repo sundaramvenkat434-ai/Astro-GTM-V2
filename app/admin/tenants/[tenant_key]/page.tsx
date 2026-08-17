@@ -1212,7 +1212,7 @@ function NavigationSubTab({ tenant, onUpdate }: { tenant: TenantData; onUpdate: 
               <p className="text-xs font-medium text-gray-500 mb-3">Preview</p>
               <div className="border border-gray-200 rounded-lg px-4 py-3 bg-white flex items-center justify-between">
                 <span className="text-sm font-bold text-gray-900 italic" style={{ fontFamily: "'Georgia', serif" }}>
-                  {tenant.site_name.toLowerCase()}
+                  {(tenant.site_name || '').toLowerCase()}
                 </span>
                 <nav className="flex items-center gap-5">
                   {headerItems.filter(i => i.label).map((item, i) => (
