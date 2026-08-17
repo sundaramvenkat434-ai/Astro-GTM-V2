@@ -1288,12 +1288,12 @@ function KeywordStrategyView({ strategy, onNewStrategy, industry }: { strategy: 
   const [volumes, setVolumes] = useState<Record<string, VolumeEntry>>(strategy.page_search_volumes || {});
   const [enriching, setEnriching] = useState(false);
 
-  const totalKeywords = strategy.themes.reduce((acc, t) => acc + (t.keywords?.length || 0), 0);
-  const totalPages = strategy.themes.reduce((acc, t) => acc + (t.suggested_pages?.length || 0), 0);
+  const totalKeywords = (strategy.themes || []).reduce((acc, t) => acc + ((t.keywords || []).length || 0), 0);
+  const totalPages = (strategy.themes || []).reduce((acc, t) => acc + ((t.suggested_pages || []).length || 0), 0);
 
   // Collect all pages — send existing_keyword as the primary signal for the AI
-  const allPages = strategy.themes.flatMap((theme) =>
-    (theme.suggested_pages || []).map((p) => ({
+  const allPages = (strategy.themes || []).flatMap((theme) =>
+    ((theme.suggested_pages || [])).map((p) => ({
       title: p.title,
       slug: slugify(p.title),
       existing_keyword: p.keyword,
@@ -1481,7 +1481,7 @@ function KeywordStrategyView({ strategy, onNewStrategy, industry }: { strategy: 
       </div>
 
       {/* Themes */}
-      {strategy.themes.map((theme, i) => {
+      {(strategy.themes || []).map((theme, i) => {
         const scoreColor = theme.opportunity_score >= 80 ? 'text-emerald-600 bg-emerald-50 border-emerald-200'
           : theme.opportunity_score >= 60 ? 'text-amber-600 bg-amber-50 border-amber-200'
           : 'text-red-500 bg-red-50 border-red-200';
@@ -1932,7 +1932,7 @@ function PageIdeasTab({ tenantId }: { tenantId: string }) {
     );
   }
 
-  const sortedKeywords = [...record.keywords].map((kw, origIdx) => ({ ...kw, _idx: origIdx }));
+  const sortedKeywords = [...(record.keywords || [])].map((kw, origIdx) => ({ ...kw, _idx: origIdx }));
   sortedKeywords.sort((a, b) => {
     const aVal = a[sortField] ?? 0;
     const bVal = b[sortField] ?? 0;
@@ -1946,7 +1946,7 @@ function PageIdeasTab({ tenantId }: { tenantId: string }) {
           <div>
             <h3 className="text-sm font-semibold text-gray-900">Keyword Opportunities</h3>
             <p className="text-xs text-gray-500 mt-0.5">
-              {record.keywords.length} opportunities | Generated {new Date(record.created_at).toLocaleDateString()} | Country: {record.country_code?.toUpperCase()}
+              {(record.keywords || []).length} opportunities | Generated {new Date(record.created_at).toLocaleDateString()} | Country: {record.country_code?.toUpperCase()}
             </p>
           </div>
           <Button variant="outline" size="sm" onClick={handleGenerate} disabled={generating} className="gap-1.5 text-xs">
@@ -1957,19 +1957,19 @@ function PageIdeasTab({ tenantId }: { tenantId: string }) {
 
         <div className="grid grid-cols-4 gap-3">
           <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-lg text-center">
-            <p className="text-xl font-bold text-emerald-700">{record.keywords.filter(k => k.search_volume >= 10000).length}</p>
+            <p className="text-xl font-bold text-emerald-700">{(record.keywords || []).filter(k => k.search_volume >= 10000).length}</p>
             <p className="text-[10px] text-emerald-600 mt-0.5">High Volume</p>
           </div>
           <div className="p-3 bg-sky-50 border border-sky-200 rounded-lg text-center">
-            <p className="text-xl font-bold text-sky-700">{record.keywords.filter(k => k.difficulty <= 30).length}</p>
+            <p className="text-xl font-bold text-sky-700">{(record.keywords || []).filter(k => k.difficulty <= 30).length}</p>
             <p className="text-[10px] text-sky-600 mt-0.5">Low Difficulty</p>
           </div>
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg text-center">
-            <p className="text-xl font-bold text-amber-700">{record.keywords.filter(k => k.intent === 'commercial' || k.intent === 'transactional').length}</p>
+            <p className="text-xl font-bold text-amber-700">{(record.keywords || []).filter(k => k.intent === 'commercial' || k.intent === 'transactional').length}</p>
             <p className="text-[10px] text-amber-600 mt-0.5">Commercial+</p>
           </div>
           <div className="p-3 bg-teal-50 border border-teal-200 rounded-lg text-center">
-            <p className="text-xl font-bold text-teal-700">{record.keywords.filter(k => k.opportunity_score >= 70).length}</p>
+            <p className="text-xl font-bold text-teal-700">{(record.keywords || []).filter(k => k.opportunity_score >= 70).length}</p>
             <p className="text-[10px] text-teal-600 mt-0.5">Score 70+</p>
           </div>
         </div>

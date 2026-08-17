@@ -62,15 +62,7 @@ async function callLLM(
   userMessage: string,
   opts: { temperature?: number; maxTokens?: number; title?: string } = {}
 ): Promise<{ content: string; error?: string }> {
-  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "HTTP-Referer": supabaseUrl,
-      "X-Title": opts.title || "AstroGTM Keyword Pipeline",
-    },
-    body: JSON.stringify({
+  const requestBody = {
       model,
       messages: [
         { role: "system", content: systemPrompt },
@@ -79,8 +71,27 @@ async function callLLM(
       temperature: opts.temperature ?? 0.7,
       max_tokens: opts.maxTokens ?? 8000,
       response_format: { type: "json_object" },
-    }),
-  });
+      provider: { allow_fallbacks: true },
+    };
+    const requestOptions = {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "HTTP-Referer": supabaseUrl,
+        "X-Title": opts.title || "AstroGTM Keyword Pipeline",
+      },
+      body: JSON.stringify(requestBody),
+    };
+
+    let res = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
+    if (!res.ok && res.status >= 500) {
+      res = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
+    }
+    if (!res.ok && res.status === 429) {
+      await new Promise((r) => setTimeout(r, 5000));
+      res = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
+    }
 
   if (!res.ok) {
     const errText = await res.text();
@@ -348,8 +359,33 @@ CRITICAL REQUIREMENTS:
           temperature: 0.7,
           max_tokens: Math.max(8000, pagesCount * 200 + keywordsCount * 50 + themesCount * 500),
           response_format: { type: "json_object" },
+          provider: { allow_fallbacks: true },
         }),
       });
+
+      if (!aiRes.ok && aiRes.status === 429) {
+        await new Promise((r) => setTimeout(r, 5000));
+        aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": SUPABASE_URL,
+            "X-Title": "AstroGTM Keyword Research",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+            ],
+            temperature: 0.7,
+            max_tokens: Math.max(8000, pagesCount * 200 + keywordsCount * 50 + themesCount * 500),
+            response_format: { type: "json_object" },
+            provider: { allow_fallbacks: true },
+          }),
+        });
+      }
 
       if (!aiRes.ok) {
         const errText = await aiRes.text();
@@ -475,8 +511,33 @@ Return ONLY valid JSON:
           temperature: 0,
           max_tokens: pages.length * 100 + 500,
           response_format: { type: "json_object" },
+          provider: { allow_fallbacks: true },
         }),
       });
+
+      if (!aiRes.ok && aiRes.status === 429) {
+        await new Promise((r) => setTimeout(r, 5000));
+        aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": SUPABASE_URL,
+            "X-Title": "AstroGTM Volume Enrichment",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+            ],
+            temperature: 0,
+            max_tokens: pages.length * 100 + 500,
+            response_format: { type: "json_object" },
+            provider: { allow_fallbacks: true },
+          }),
+        });
+      }
 
       if (!aiRes.ok) {
         const errText = await aiRes.text();
@@ -1157,8 +1218,33 @@ Return ONLY valid JSON:
           temperature: 0.7,
           max_tokens: 2000,
           response_format: { type: "json_object" },
+          provider: { allow_fallbacks: true },
         }),
       });
+
+      if (!aiRes.ok && aiRes.status === 429) {
+        await new Promise((r) => setTimeout(r, 5000));
+        aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": SUPABASE_URL,
+            "X-Title": "AstroGTM Page Ideas",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessage },
+            ],
+            temperature: 0.7,
+            max_tokens: 2000,
+            response_format: { type: "json_object" },
+            provider: { allow_fallbacks: true },
+          }),
+        });
+      }
 
       if (!aiRes.ok) {
         const errText = await aiRes.text();
