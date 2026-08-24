@@ -58,6 +58,7 @@ interface ChangelogEntry {
 // ── Model catalogue ───────────────────────────────────────────────────────────
 
 const OPENROUTER_MODELS = [
+  { value: 'stealth/ox-alpha', label: 'Stealth Ox Alpha', provider: 'OpenRouter' },
   { value: 'openai/gpt-oss-120b:free', label: 'OpenAI GPT-OSS-120b', provider: 'OpenRouter' },
   { value: 'openai/gpt-oss-20b:free', label: 'OpenAI GPT-OSS-20b', provider: 'OpenRouter' },
   { value: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'NVIDIA Nemotron 3 Super', provider: 'OpenRouter' },
