@@ -30,7 +30,7 @@ interface RateLimitConfig {
   windowSeconds: number;
 }
 
-const RATE_LIMITS: Record<string, RateLimitConfig> = {
+const FALLBACK_LIMITS: Record<string, RateLimitConfig> = {
   get: { maxCount: 60, windowSeconds: 60 },
   create: { maxCount: 5, windowSeconds: 3600 },
   "analyze-brand": { maxCount: 10, windowSeconds: 3600 },
@@ -38,12 +38,61 @@ const RATE_LIMITS: Record<string, RateLimitConfig> = {
   "scrape-competitors": { maxCount: 10, windowSeconds: 3600 },
 };
 
+const SETTING_KEY_TO_ACTION: Record<string, string> = {
+  free_audit_create_limit: "create",
+  free_audit_analyze_limit: "analyze-brand",
+  free_audit_serp_limit: "search-serp",
+  free_audit_scrape_limit: "scrape-competitors",
+};
+
+interface AuditSettings {
+  limits: Record<string, RateLimitConfig>;
+  whitelistedIPs: Set<string>;
+}
+
+async function loadAuditSettings(
+  supabase: ReturnType<typeof createClient>
+): Promise<AuditSettings> {
+  const limits: Record<string, RateLimitConfig> = { ...FALLBACK_LIMITS };
+  const whitelistedIPs = new Set<string>();
+
+  const { data } = await supabase
+    .from("admin_settings")
+    .select("key, value")
+    .in("key", [
+      "free_audit_create_limit",
+      "free_audit_analyze_limit",
+      "free_audit_serp_limit",
+      "free_audit_scrape_limit",
+      "free_audit_ip_whitelist",
+    ]);
+
+  if (data) {
+    for (const row of data) {
+      const action = SETTING_KEY_TO_ACTION[row.key];
+      if (action) {
+        const maxCount = parseInt(row.value, 10);
+        if (maxCount > 0) limits[action] = { maxCount, windowSeconds: FALLBACK_LIMITS[action]?.windowSeconds || 3600 };
+      } else if (row.key === "free_audit_ip_whitelist") {
+        for (const ip of row.value.split(/[\s,]+/).map((s) => s.trim()).filter(Boolean)) {
+          whitelistedIPs.add(ip);
+        }
+      }
+    }
+  }
+
+  return { limits, whitelistedIPs };
+}
+
 async function checkRateLimit(
   supabase: ReturnType<typeof createClient>,
   ip: string,
-  action: string
+  action: string,
+  settings: AuditSettings
 ): Promise<{ allowed: boolean; resetIn?: number }> {
-  const config = RATE_LIMITS[action];
+  if (settings.whitelistedIPs.has(ip)) return { allowed: true };
+
+  const config = settings.limits[action];
   if (!config) return { allowed: true };
 
   const { data, error } = await supabase.rpc("check_free_audit_rate_limit", {
@@ -116,11 +165,13 @@ Deno.serve(async (req: Request) => {
     const body = await req.json();
     const { action } = body;
 
+    const settings = await loadAuditSettings(supabase);
+
     // ═══════════════════════════════════════════════════════════
     // ACTION: get — fetch audit by id (light rate limit)
     // ═══════════════════════════════════════════════════════════
     if (action === "get") {
-      const rl = await checkRateLimit(supabase, clientIP, "get");
+      const rl = await checkRateLimit(supabase, clientIP, "get", settings);
       if (!rl.allowed) {
         return jsonResponse({
           error: "Too many requests. Please wait a moment and try again.",
@@ -148,7 +199,7 @@ Deno.serve(async (req: Request) => {
     // ACTION: create — insert new audit row
     // ═══════════════════════════════════════════════════════════
     if (action === "create") {
-      const rl = await checkRateLimit(supabase, clientIP, "create");
+      const rl = await checkRateLimit(supabase, clientIP, "create", settings);
       if (!rl.allowed) {
         return jsonResponse({
           error: "You've started a lot of audits recently. Please try again later.",
@@ -186,7 +237,7 @@ Deno.serve(async (req: Request) => {
     // ACTION: analyze-brand — fetch URL, extract content, call OpenRouter
     // ═══════════════════════════════════════════════════════════
     if (action === "analyze-brand") {
-      const rl = await checkRateLimit(supabase, clientIP, "analyze-brand");
+      const rl = await checkRateLimit(supabase, clientIP, "analyze-brand", settings);
       if (!rl.allowed) {
         return jsonResponse({
           error: "Too many analysis requests. Please try again later.",
@@ -438,7 +489,7 @@ Deno.serve(async (req: Request) => {
     // ACTION: search-serp — call Apify Google SERP scraper
     // ═══════════════════════════════════════════════════════════
     if (action === "search-serp") {
-      const rl = await checkRateLimit(supabase, clientIP, "search-serp");
+      const rl = await checkRateLimit(supabase, clientIP, "search-serp", settings);
       if (!rl.allowed) {
         return jsonResponse({
           error: "Too many search requests. Please try again later.",
@@ -455,6 +506,15 @@ Deno.serve(async (req: Request) => {
       const { audit_id, search_term, country_code } = body;
       if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
       if (!search_term) return jsonResponse({ error: "search_term is required" }, 400);
+
+      const { data: audit, error: auditError } = await supabase
+        .from("free_audits")
+        .select("id")
+        .eq("id", audit_id)
+        .maybeSingle();
+
+      if (auditError) return jsonResponse({ error: "Database error", detail: auditError.message }, 500);
+      if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
 
       const apifyPayload = {
         countryCode: country_code || "us",
@@ -519,7 +579,7 @@ Deno.serve(async (req: Request) => {
     // ACTION: scrape-competitors — fetch and clean competitor pages
     // ═══════════════════════════════════════════════════════════
     if (action === "scrape-competitors") {
-      const rl = await checkRateLimit(supabase, clientIP, "scrape-competitors");
+      const rl = await checkRateLimit(supabase, clientIP, "scrape-competitors", settings);
       if (!rl.allowed) {
         return jsonResponse({
           error: "Too many scraping requests. Please try again later.",
@@ -533,6 +593,15 @@ Deno.serve(async (req: Request) => {
       if (!urls || !Array.isArray(urls) || urls.length === 0) {
         return jsonResponse({ error: "urls array is required" }, 400);
       }
+
+      const { data: audit, error: auditError } = await supabase
+        .from("free_audits")
+        .select("id")
+        .eq("id", audit_id)
+        .maybeSingle();
+
+      if (auditError) return jsonResponse({ error: "Database error", detail: auditError.message }, 500);
+      if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
 
       const results: { url: string; content: string; error?: string }[] = [];
       for (const pageUrl of urls.slice(0, 5)) {

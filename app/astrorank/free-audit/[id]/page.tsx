@@ -661,7 +661,6 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState<TabId>("brand");
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [analyzeRateLimited, setAnalyzeRateLimited] = useState(false);
@@ -673,12 +672,13 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     try {
       const data = await callFreeAudit("get", { audit_id: params.id });
       setAudit(data.data);
-    } catch (err: any) {
-      setLoadError(err.message || "Failed to load audit");
+    } catch {
+      router.replace("/astrorank");
+      return;
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params.id, router]);
 
   useEffect(() => {
     loadAudit();
@@ -748,22 +748,19 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     );
   }
 
-  // Error state
-  if (loadError || !audit) {
+  if (!audit) {
     return (
       <div className="relative min-h-screen bg-slate-50">
         <SpaceBg />
         <div className="relative z-10 flex items-center justify-center min-h-screen">
           <div className="flex flex-col items-center">
-            <AlertCircle size={32} className="text-red-400 mb-3" />
-            <p className="text-[15px] font-semibold text-slate-600 mb-1">Audit Not Found</p>
-            <p className="text-[13px] text-slate-400 mb-6">{loadError || "This audit may have been deleted or the link is invalid."}</p>
-            <button
-              onClick={() => router.push("/astrorank")}
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors"
-            >
-              <ArrowLeft size={14} /> Back to AstroRank
-            </button>
+            <motion.div
+              animate={{ rotate: 360 }}
+              transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+              className="w-10 h-10 border-3 border-blue-100 border-t-blue-500 rounded-full"
+              style={{ borderWidth: "3px" }}
+            />
+            <p className="text-[14px] text-slate-400 mt-4">Redirecting...</p>
           </div>
         </div>
       </div>

@@ -21,7 +21,20 @@ import {
   RotateCcw,
   Globe,
   CircleCheck as CheckCircle2,
+  Shield,
 } from 'lucide-react';
+
+const SETTING_KEYS = [
+  'site_meta_title',
+  'site_meta_description',
+  'free_audit_create_limit',
+  'free_audit_analyze_limit',
+  'free_audit_serp_limit',
+  'free_audit_scrape_limit',
+  'free_audit_ip_whitelist',
+] as const;
+
+type SettingKey = typeof SETTING_KEYS[number];
 
 export default function SiteSettingsAdmin() {
   const router = useRouter();
@@ -29,23 +42,33 @@ export default function SiteSettingsAdmin() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const [metaTitle, setMetaTitle] = useState('');
-  const [metaDescription, setMetaDescription] = useState('');
-  const [originalTitle, setOriginalTitle] = useState('');
-  const [originalDescription, setOriginalDescription] = useState('');
+  const [values, setValues] = useState<Record<SettingKey, string>>({
+    site_meta_title: '',
+    site_meta_description: '',
+    free_audit_create_limit: '',
+    free_audit_analyze_limit: '',
+    free_audit_serp_limit: '',
+    free_audit_scrape_limit: '',
+    free_audit_ip_whitelist: '',
+  });
+  const [originals, setOriginals] = useState<Record<SettingKey, string>>({ ...values });
 
   const fetchSettings = useCallback(async () => {
     const { data } = await supabase
       .from('admin_settings')
       .select('key, value')
-      .in('key', ['site_meta_title', 'site_meta_description']);
+      .in('key', [...SETTING_KEYS]);
 
+    const next = { ...values };
     if (data) {
       for (const row of data) {
-        if (row.key === 'site_meta_title') { setMetaTitle(row.value); setOriginalTitle(row.value); }
-        if (row.key === 'site_meta_description') { setMetaDescription(row.value); setOriginalDescription(row.value); }
+        if (SETTING_KEYS.includes(row.key as SettingKey)) {
+          next[row.key as SettingKey] = row.value || '';
+        }
       }
     }
+    setValues(next);
+    setOriginals(next);
     setLoading(false);
   }, []);
 
@@ -56,18 +79,22 @@ export default function SiteSettingsAdmin() {
     });
   }, [router, fetchSettings]);
 
-  const hasChanges = metaTitle !== originalTitle || metaDescription !== originalDescription;
+  const hasChanges = SETTING_KEYS.some((k) => values[k] !== originals[k]);
+
+  function update(key: SettingKey, val: string) {
+    setValues((prev) => ({ ...prev, [key]: val }));
+  }
 
   async function handleSave() {
     setSaving(true);
     setSaved(false);
     const now = new Date().toISOString();
-    await Promise.all([
-      supabase.from('admin_settings').upsert({ key: 'site_meta_title', value: metaTitle, updated_at: now }, { onConflict: 'key' }),
-      supabase.from('admin_settings').upsert({ key: 'site_meta_description', value: metaDescription, updated_at: now }, { onConflict: 'key' }),
-    ]);
-    setOriginalTitle(metaTitle);
-    setOriginalDescription(metaDescription);
+    await Promise.all(
+      SETTING_KEYS.map((key) =>
+        supabase.from('admin_settings').upsert({ key, value: values[key], updated_at: now }, { onConflict: 'key' })
+      )
+    );
+    setOriginals({ ...values });
     setSaving(false);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
@@ -77,11 +104,11 @@ export default function SiteSettingsAdmin() {
 
   return (
     <AdminShell>
-      <div className="p-6 max-w-3xl">
-        <div className="flex items-center justify-between mb-6">
+      <div className="p-6 max-w-3xl space-y-6">
+        <div className="flex items-center justify-between">
           <div>
             <h1 className="text-lg font-bold text-slate-900">Site Settings</h1>
-            <p className="text-sm text-slate-500 mt-1">Configure your site-wide meta title and description for search engines.</p>
+            <p className="text-sm text-slate-500 mt-1">Configure site-wide meta tags and free audit rate limits.</p>
           </div>
           <div className="flex items-center gap-2">
             {saved && <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 text-[10px]"><CheckCircle2 className="w-3 h-3 mr-1" />Saved</Badge>}
@@ -89,6 +116,7 @@ export default function SiteSettingsAdmin() {
           </div>
         </div>
 
+        {/* SEO Meta Tags */}
         <Card className="border-slate-200 shadow-sm">
           <CardHeader className="pb-4">
             <div className="flex items-start gap-3">
@@ -106,19 +134,19 @@ export default function SiteSettingsAdmin() {
           <CardContent className="space-y-5">
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-700">Meta Title</label>
-              <Input value={metaTitle} onChange={(e) => setMetaTitle(e.target.value)} placeholder="Your site title..." className="text-sm border-slate-200 focus-visible:ring-sky-500/20 focus-visible:border-sky-400" />
+              <Input value={values.site_meta_title} onChange={(e) => update('site_meta_title', e.target.value)} placeholder="Your site title..." className="text-sm border-slate-200 focus-visible:ring-sky-500/20 focus-visible:border-sky-400" />
               <div className="flex items-center justify-between">
                 <p className="text-[11px] text-slate-400">Recommended: 50-60 characters</p>
-                <span className={`text-[11px] tabular-nums ${metaTitle.length > 60 ? 'text-amber-600' : 'text-slate-400'}`}>{metaTitle.length}/60</span>
+                <span className={`text-[11px] tabular-nums ${values.site_meta_title.length > 60 ? 'text-amber-600' : 'text-slate-400'}`}>{values.site_meta_title.length}/60</span>
               </div>
             </div>
 
             <div className="space-y-2">
               <label className="text-xs font-semibold text-slate-700">Meta Description</label>
-              <Textarea value={metaDescription} onChange={(e) => setMetaDescription(e.target.value)} placeholder="A brief description of your site..." rows={3} className="text-sm border-slate-200 focus-visible:ring-sky-500/20 focus-visible:border-sky-400 resize-y" />
+              <Textarea value={values.site_meta_description} onChange={(e) => update('site_meta_description', e.target.value)} placeholder="A brief description of your site..." rows={3} className="text-sm border-slate-200 focus-visible:ring-sky-500/20 focus-visible:border-sky-400 resize-y" />
               <div className="flex items-center justify-between">
                 <p className="text-[11px] text-slate-400">Recommended: 120-160 characters</p>
-                <span className={`text-[11px] tabular-nums ${metaDescription.length > 160 ? 'text-amber-600' : 'text-slate-400'}`}>{metaDescription.length}/160</span>
+                <span className={`text-[11px] tabular-nums ${values.site_meta_description.length > 160 ? 'text-amber-600' : 'text-slate-400'}`}>{values.site_meta_description.length}/160</span>
               </div>
             </div>
 
@@ -126,22 +154,70 @@ export default function SiteSettingsAdmin() {
             <div className="space-y-2 pt-2">
               <p className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Search Preview</p>
               <div className="rounded-lg border border-slate-200 bg-white p-4">
-                <p className="text-sm text-sky-700 font-medium leading-snug truncate">{metaTitle || 'Your site title'}</p>
+                <p className="text-sm text-sky-700 font-medium leading-snug truncate">{values.site_meta_title || 'Your site title'}</p>
                 <p className="text-xs text-emerald-700 mt-1 truncate">{process.env.NEXT_PUBLIC_SITE_URL || 'https://yoursite.com'}</p>
-                <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">{metaDescription || 'Your site description will appear here...'}</p>
+                <p className="text-xs text-slate-600 mt-1 line-clamp-2 leading-relaxed">{values.site_meta_description || 'Your site description will appear here...'}</p>
               </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
-              <Button variant="outline" size="sm" onClick={() => { setMetaTitle(originalTitle); setMetaDescription(originalDescription); }} disabled={!hasChanges || saving} className="h-8 text-xs">
-                <RotateCcw className="w-3 h-3 mr-1.5" />Discard
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={!metaTitle.trim() || saving} className="h-8 text-xs bg-slate-900 hover:bg-slate-800 text-white">
-                {saving ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Save className="w-3 h-3 mr-1.5" />}Save Changes
-              </Button>
             </div>
           </CardContent>
         </Card>
+
+        {/* Free Audit Rate Limits */}
+        <Card className="border-slate-200 shadow-sm">
+          <CardHeader className="pb-4">
+            <div className="flex items-start gap-3">
+              <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center shrink-0">
+                <Shield className="w-4 h-4 text-emerald-600" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Free Audit Rate Limits</CardTitle>
+                <CardDescription className="mt-1 text-xs leading-relaxed">
+                  Control how many free audit actions a visitor can perform per hour. Set to 0 to use the default. Whitelisted IPs bypass all limits.
+                </CardDescription>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">Create Audit Limit / hour</label>
+                <Input type="number" min={0} value={values.free_audit_create_limit} onChange={(e) => update('free_audit_create_limit', e.target.value)} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400" />
+                <p className="text-[11px] text-slate-400">Default: 5</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">Brand Analysis Limit / hour</label>
+                <Input type="number" min={0} value={values.free_audit_analyze_limit} onChange={(e) => update('free_audit_analyze_limit', e.target.value)} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400" />
+                <p className="text-[11px] text-slate-400">Default: 10</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">SERP Search Limit / hour</label>
+                <Input type="number" min={0} value={values.free_audit_serp_limit} onChange={(e) => update('free_audit_serp_limit', e.target.value)} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400" />
+                <p className="text-[11px] text-slate-400">Default: 10</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">Competitor Scraping Limit / hour</label>
+                <Input type="number" min={0} value={values.free_audit_scrape_limit} onChange={(e) => update('free_audit_scrape_limit', e.target.value)} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400" />
+                <p className="text-[11px] text-slate-400">Default: 10</p>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-semibold text-slate-700">IP Whitelist</label>
+              <Textarea value={values.free_audit_ip_whitelist} onChange={(e) => update('free_audit_ip_whitelist', e.target.value)} placeholder="e.g. 192.168.1.1, 10.0.0.5" rows={3} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400 resize-y font-mono" />
+              <p className="text-[11px] text-slate-400">Comma-separated or one per line. These IPs skip all rate limits.</p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Save / Discard */}
+        <div className="flex items-center justify-end gap-2">
+          <Button variant="outline" size="sm" onClick={() => { setValues({ ...originals }); }} disabled={!hasChanges || saving} className="h-8 text-xs">
+            <RotateCcw className="w-3 h-3 mr-1.5" />Discard
+          </Button>
+          <Button size="sm" onClick={handleSave} disabled={!hasChanges || saving} className="h-8 text-xs bg-slate-900 hover:bg-slate-800 text-white">
+            {saving ? <Loader2 className="w-3 h-3 mr-1.5 animate-spin" /> : <Save className="w-3 h-3 mr-1.5" />}Save Changes
+          </Button>
+        </div>
       </div>
     </AdminShell>
   );
