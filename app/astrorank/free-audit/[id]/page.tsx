@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, FileText, Brain, Lightbulb } from "lucide-react";
@@ -310,14 +310,54 @@ function SubTabBar({ active, onChange }: { active: SubTabId; onChange: (t: SubTa
   );
 }
 
-function ScraperSubTab({ audit, onScrape, scraping, scrapeError }: {
+function formatScrapedContent(raw: string): { label: string; text: string; kind: "title" | "meta" | "heading" | "body" }[] {
+  const lines = raw.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  const blocks: { label: string; text: string; kind: "title" | "meta" | "heading" | "body" }[] = [];
+  const keywordRe = /\b(product|solution|feature|pricing|customer|about|service|platform|how it work|benefit|use case|testimonial|review|faq|contact|team|mission|value|integrat|api|demo|trial|free|starter|pro|enterprise|plan)/i;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i];
+    const lower = line.toLowerCase();
+
+    if (i === 0 && line.length < 200 && lines.length > 1) {
+      blocks.push({ label: "Title", text: line, kind: "title" });
+      continue;
+    }
+    if (line.length < 300 && (lower.startsWith("meta") || lower.includes("description:"))) {
+      blocks.push({ label: "Meta Description", text: line.replace(/^meta\s*(description)?\s*:?\\s*/i, ""), kind: "meta" });
+      continue;
+    }
+    const isShortHeading = line.length <= 120 && line.length >= 2;
+    const looksLikeHeading = isShortHeading && (
+      /^(h[1-6]|heading|section|chapter)/i.test(line) ||
+      /^[A-Z][A-Z0-9 \\-:&'/]+$/ .test(line) ||
+      (line.split(" ").length <= 12 && /^[A-Z]/.test(line) && !line.endsWith("."))
+    );
+    if (looksLikeHeading) {
+      const level = /^(h1|title)/i.test(line) ? "H1" : /^(h2)/i.test(line) ? "H2" : /^(h3)/i.test(line) ? "H3" : "Heading";
+      blocks.push({ label: level, text: line.replace(/^h[1-6]\\s*/i, ""), kind: "heading" });
+      continue;
+    }
+    if (line.length > 60) {
+      const isKeywordSection = keywordRe.test(line);
+      blocks.push({ label: isKeywordSection ? "Key Section" : "Paragraph", text: line, kind: "body" });
+      continue;
+    }
+    blocks.push({ label: "Text", text: line, kind: "body" });
+  }
+  return blocks;
+}
+
+function ScraperSubTab({ audit, onScrape, scraping, scrapeError, scrapeTime }: {
   audit: AuditData;
   onScrape: () => void;
   scraping: boolean;
   scrapeError: string | null;
+  scrapeTime: number | null;
 }) {
   const content = audit.scraped_content || "";
   const hasContent = content.length > 0;
+  const blocks = hasContent ? formatScrapedContent(content) : [];
 
   return (
     <div className="space-y-4">
@@ -373,11 +413,33 @@ function ScraperSubTab({ audit, onScrape, scraping, scrapeError }: {
           <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
             <FileText size={15} className="text-slate-400" />
             <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Formatted Text Payload</span>
-            <span className="text-[11px] text-slate-400 ml-auto">{content.length.toLocaleString()} chars</span>
+            <span className="text-[11px] text-slate-400 ml-auto">{content.length.toLocaleString()} chars{scrapeTime ? ` · ${scrapeTime.toFixed(1)}s` : ""}</span>
           </div>
-          <pre className="text-[12.5px] text-slate-700 leading-relaxed whitespace-pre-wrap break-words max-h-[500px] overflow-y-auto">
-{content}
-          </pre>
+          <div className="space-y-2.5 max-h-[500px] overflow-y-auto">
+            {blocks.map((block, i) => {
+              const isTitle = block.kind === "title";
+              const isMeta = block.kind === "meta";
+              const isHeading = block.kind === "heading";
+              return (
+                <motion.div
+                  key={i}
+                  initial={{ opacity: 0, y: 4 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: Math.min(i * 0.02, 0.4) }}
+                  className={`rounded-lg p-3 border ${isTitle ? "border-blue-200 bg-blue-50/40" : isMeta ? "border-slate-200 bg-slate-50" : isHeading ? "border-slate-200 bg-white" : "border-transparent"}`}
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-[10px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded ${isTitle ? "bg-blue-100 text-blue-700" : isMeta ? "bg-slate-200 text-slate-600" : isHeading ? "bg-slate-100 text-slate-500" : "bg-emerald-50 text-emerald-600"}`}>
+                      {block.label}
+                    </span>
+                  </div>
+                  <p className={`text-[13px] leading-relaxed ${isTitle ? "font-bold text-slate-900 text-[15px]" : isHeading ? "font-semibold text-slate-800" : "text-slate-600"}`}>
+                    {block.text}
+                  </p>
+                </motion.div>
+              );
+            })}
+          </div>
         </motion.div>
       )}
 
@@ -393,11 +455,12 @@ function ScraperSubTab({ audit, onScrape, scraping, scrapeError }: {
   );
 }
 
-function UnderstanderSubTab({ audit, onRun, running, runError }: {
+function UnderstanderSubTab({ audit, onRun, running, runError, runTime }: {
   audit: AuditData;
   onRun: () => void;
   running: boolean;
   runError: string | null;
+  runTime: number | null;
 }) {
   const analysis = (audit.understander_analysis || {}) as UnderstanderAnalysis;
   const hasAnalysis = Boolean(analysis.what_it_does);
@@ -418,14 +481,15 @@ function UnderstanderSubTab({ audit, onRun, running, runError }: {
           <h3 className="text-[17px] font-bold text-slate-900">AI Understanding</h3>
           <p className="text-[12.5px] text-slate-400 mt-0.5">The AI's structured analysis of the business based on the scraped website text</p>
         </div>
-        <button
-          onClick={onRun}
-          disabled={running}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
-        >
-          {running ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-          {hasAnalysis ? "Re-run" : "Run Understander"}
-        </button>
+          <span className="text-[11px] text-slate-400">{runTime ? `${runTime.toFixed(1)}s` : ""}</span>
+          <button
+            onClick={onRun}
+            disabled={running}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
+          >
+            {running ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            {hasAnalysis ? "Re-run" : "Run Understander"}
+          </button>
       </div>
 
       {running && (
@@ -506,7 +570,7 @@ function UnderstanderSubTab({ audit, onRun, running, runError }: {
   );
 }
 
-function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError }: {
+function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, scrapeTime, understanderTime, queryTime }: {
   audit: AuditData;
   onGenerate: () => void;
   generating: boolean;
@@ -519,6 +583,9 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
   onRunUnderstander: () => void;
   runningUnderstander: boolean;
   understanderError: string | null;
+  scrapeTime: number | null;
+  understanderTime: number | null;
+  queryTime: number | null;
 }) {
   const queries = audit.search_queries || [];
   const hasResults = queries.length > 0;
@@ -535,11 +602,11 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
       <SubTabBar active={subTab} onChange={setSubTab} />
 
       {subTab === "scraper" && (
-        <ScraperSubTab audit={audit} onScrape={onScrape} scraping={scraping} scrapeError={scrapeError} />
+        <ScraperSubTab audit={audit} onScrape={onScrape} scraping={scraping} scrapeError={scrapeError} scrapeTime={scrapeTime} />
       )}
 
       {subTab === "understander" && (
-        <UnderstanderSubTab audit={audit} onRun={onRunUnderstander} running={runningUnderstander} runError={understanderError} />
+        <UnderstanderSubTab audit={audit} onRun={onRunUnderstander} running={runningUnderstander} runError={understanderError} runTime={understanderTime} />
       )}
 
       {subTab === "queries" && (
@@ -551,7 +618,7 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
           {!generating && !rateLimited && hasResults && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <p className="text-[13px] text-slate-500">{queries.length} search queries generated</p>
+                <p className="text-[13px] text-slate-500">{queries.length} search queries generated{queryTime ? ` · ${queryTime.toFixed(1)}s` : ""}</p>
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setShowRaw(true)}
@@ -702,13 +769,14 @@ function RateLimitMessage({ resetIn }: { resetIn?: number }) {
   );
 }
 
-function BrandTab({ audit, onAnalyze, analyzing, analyzeError, rateLimited, resetIn }: {
+function BrandTab({ audit, onAnalyze, analyzing, analyzeError, rateLimited, resetIn, analyzeTime }: {
   audit: AuditData;
   onAnalyze: () => void;
   analyzing: boolean;
   analyzeError: string | null;
   rateLimited: boolean;
   resetIn?: number;
+  analyzeTime: number | null;
 }) {
   const brand = (audit.brand_analysis || {}) as BrandAnalysis;
   const hasResults = audit.status === "complete" && brand.about_brand;
@@ -725,12 +793,15 @@ function BrandTab({ audit, onAnalyze, analyzing, analyzeError, rateLimited, rese
           <h2 className="text-[20px] font-bold text-slate-900">Brand Intelligence</h2>
           <p className="text-[13px] text-slate-400 mt-0.5">AI-powered analysis of {audit.website_url}</p>
         </div>
-        <button
-          onClick={onAnalyze}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors"
-        >
-          <RefreshCw size={13} /> Re-analyze
-        </button>
+        <div className="flex items-center gap-3">
+          {analyzeTime && <span className="text-[11px] text-slate-400">{analyzeTime.toFixed(1)}s</span>}
+          <button
+            onClick={onAnalyze}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors"
+          >
+            <RefreshCw size={13} /> Re-analyze
+          </button>
+        </div>
       </div>
 
       {/* Top row: 4 fields */}
@@ -1126,8 +1197,10 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [runningUnderstander, setRunningUnderstander] = useState(false);
   const [understanderError, setUnderstanderError] = useState<string | null>(null);
-  const hasTriggeredScrape = useRef(false);
-  const hasTriggeredQueries = useRef(false);
+  const [scrapeTime, setScrapeTime] = useState<number | null>(null);
+  const [understanderTime, setUnderstanderTime] = useState<number | null>(null);
+  const [queryTime, setQueryTime] = useState<number | null>(null);
+  const [analyzeTime, setAnalyzeTime] = useState<number | null>(null);
 
   // Load audit on mount
   const loadAudit = useCallback(async () => {
@@ -1146,14 +1219,16 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     loadAudit();
   }, [loadAudit]);
 
-  // Auto-trigger brand analysis
   const analyzeBrand = useCallback(async () => {
     setAnalyzing(true);
     setAnalyzeError(null);
     setAnalyzeRateLimited(false);
+    setAnalyzeTime(null);
+    const start = performance.now();
     try {
       const data = await callFreeAudit("analyze-brand", { audit_id: params.id });
       setAudit(data.data);
+      setAnalyzeTime((performance.now() - start) / 1000);
     } catch (err: any) {
       if (err.rateLimited) {
         setAnalyzeRateLimited(true);
@@ -1166,14 +1241,16 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
-  // Auto-trigger search queries generation
   const generateSearchQueries = useCallback(async () => {
     setGeneratingQueries(true);
     setGenerateQueriesError(null);
     setGenerateQueriesRateLimited(false);
+    setQueryTime(null);
+    const start = performance.now();
     try {
       const data = await callFreeAudit("generate-search-queries", { audit_id: params.id });
       setAudit(data.data);
+      setQueryTime((performance.now() - start) / 1000);
     } catch (err: any) {
       if (err.rateLimited) {
         setGenerateQueriesRateLimited(true);
@@ -1186,13 +1263,15 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
-  // Scrape website
   const scrapeWebsite = useCallback(async () => {
     setScraping(true);
     setScrapeError(null);
+    setScrapeTime(null);
+    const start = performance.now();
     try {
       const data = await callFreeAudit("scrape-website", { audit_id: params.id });
       setAudit(data.data);
+      setScrapeTime((performance.now() - start) / 1000);
     } catch (err: any) {
       setScrapeError(err.message || "Scraping failed");
     } finally {
@@ -1200,53 +1279,21 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
-  // Run understander
   const runUnderstander = useCallback(async () => {
     setRunningUnderstander(true);
     setUnderstanderError(null);
+    setUnderstanderTime(null);
+    const start = performance.now();
     try {
       const data = await callFreeAudit("run-understander", { audit_id: params.id });
       setAudit(data.data);
+      setUnderstanderTime((performance.now() - start) / 1000);
     } catch (err: any) {
       setUnderstanderError(err.message || "Understanding failed");
     } finally {
       setRunningUnderstander(false);
     }
   }, [params.id]);
-
-  useEffect(() => {
-    if (!audit || hasTriggeredScrape.current) return;
-    const content = audit.scraped_content || "";
-    if (!content) {
-      hasTriggeredScrape.current = true;
-      scrapeWebsite();
-    } else if (!audit.understander_analysis || Object.keys(audit.understander_analysis).length <= 1) {
-      hasTriggeredScrape.current = true;
-      runUnderstander();
-    }
-  }, [audit, scrapeWebsite, runUnderstander]);
-
-  useEffect(() => {
-    if (!audit || !hasTriggeredScrape.current) return;
-    const content = audit.scraped_content || "";
-    const analysis = audit.understander_analysis;
-    const hasAnalysis = analysis && Object.keys(analysis).length > 1;
-    if (content && !hasAnalysis && !runningUnderstander) {
-      runUnderstander();
-    }
-  }, [audit, runningUnderstander, runUnderstander]);
-
-  // Auto-trigger search queries generation after understander completes
-  useEffect(() => {
-    if (!audit || hasTriggeredQueries.current) return;
-    const analysis = audit.understander_analysis;
-    const hasAnalysis = analysis && Object.keys(analysis).length > 1;
-    const queries = audit.search_queries || [];
-    if (hasAnalysis && queries.length === 0 && !generatingQueries) {
-      hasTriggeredQueries.current = true;
-      generateSearchQueries();
-    }
-  }, [audit, generatingQueries, generateSearchQueries]);
 
   // SERP search handler
   const handleSearch = useCallback(async (term: string): Promise<{ results?: SerpResult[] }> => {
@@ -1357,6 +1404,9 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 onRunUnderstander={runUnderstander}
                 runningUnderstander={runningUnderstander}
                 understanderError={understanderError}
+                scrapeTime={scrapeTime}
+                understanderTime={understanderTime}
+                queryTime={queryTime}
               />
             )}
             {activeTab === "brand" && (
@@ -1367,6 +1417,7 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 analyzeError={analyzeError}
                 rateLimited={analyzeRateLimited}
                 resetIn={analyzeResetIn}
+                analyzeTime={analyzeTime}
               />
             )}
             {activeTab === "competition" && (
