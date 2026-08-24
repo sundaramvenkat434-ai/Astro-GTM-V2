@@ -7,6 +7,8 @@ import { AdminShell } from '@/components/admin-shell';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
 import {
   Card,
   CardContent,
@@ -28,7 +30,6 @@ import {
   Play,
   Copy,
   CopyCheck,
-  RefreshCw,
   Activity,
   X,
   Clock,
@@ -38,9 +39,9 @@ import {
   Key,
   Plus,
   Trash2,
+  Pencil,
+  ScrollText,
 } from 'lucide-react';
-
-import { Input } from '@/components/ui/input';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -59,26 +60,23 @@ interface ChangelogEntry {
   changed_at: string;
 }
 
+interface PromptLogEntry {
+  id: string;
+  prompt_key: string;
+  model: string;
+  input_content: string;
+  output_content: string;
+  finish_reason: string | null;
+  input_tokens: number;
+  output_tokens: number;
+  elapsed_ms: number;
+  created_at: string;
+}
+
 interface ModelOption {
   value: string;
   label: string;
   provider: string;
-  custom?: boolean;
-}
-
-// ── Model catalogue ───────────────────────────────────────────────────────────
-
-const OPENROUTER_MODELS: ModelOption[] = [
-  { value: 'stealth/ox-alpha', label: 'Stealth Ox Alpha', provider: 'OpenRouter' },
-  { value: 'openai/gpt-oss-120b:free', label: 'OpenAI GPT-OSS-120b', provider: 'OpenRouter' },
-  { value: 'openai/gpt-oss-20b:free', label: 'OpenAI GPT-OSS-20b', provider: 'OpenRouter' },
-  { value: 'nvidia/nemotron-3-super-120b-a12b:free', label: 'NVIDIA Nemotron 3 Super', provider: 'OpenRouter' },
-  { value: 'minimax/minimax-m2.5:free', label: 'MiniMax M2.5', provider: 'OpenRouter' },
-  { value: 'google/gemma-4-31b-it:free', label: 'Google Gemma 4 31B', provider: 'OpenRouter' },
-];
-
-function getModelLabel(value: string, models: ModelOption[] = OPENROUTER_MODELS) {
-  return models.find((m) => m.value === value)?.label ?? value;
 }
 
 // ── Prompt definitions ────────────────────────────────────────────────────────
@@ -185,6 +183,9 @@ const PROMPT_KEYS = [
   },
 ];
 
+const MAX_TOKENS_KEY = (promptKey: string) => `ai_max_tokens_${promptKey}`;
+const LOG_ENABLED_KEY = (promptKey: string) => `ai_log_enabled_${promptKey}`;
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function estimateTokens(text: string): number {
@@ -198,6 +199,10 @@ function formatTime(ms: number): string {
   return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
 }
 
+function getModelLabel(value: string, models: ModelOption[]) {
+  return models.find((m) => m.value === value)?.label ?? value;
+}
+
 // ── Model Switcher ────────────────────────────────────────────────────────────
 
 function ModelSwitcher({
@@ -208,8 +213,9 @@ function ModelSwitcher({
   models,
   onChange,
   onShowChangelog,
-  onAddCustomModel,
-  onDeleteCustomModel,
+  onAddModel,
+  onEditModel,
+  onDeleteModel,
 }: {
   modelKey: string;
   countKey: string;
@@ -218,13 +224,17 @@ function ModelSwitcher({
   models: ModelOption[];
   onChange: (key: string, val: string) => void;
   onShowChangelog: (modelKey: string) => void;
-  onAddCustomModel: (model: ModelOption) => void;
-  onDeleteCustomModel: (value: string) => void;
+  onAddModel: (model: ModelOption) => void;
+  onEditModel: (model: ModelOption) => void;
+  onDeleteModel: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingValue, setEditingValue] = useState<string | null>(null);
   const [newModelId, setNewModelId] = useState('');
   const [newModelLabel, setNewModelLabel] = useState('');
+  const [editModelId, setEditModelId] = useState('');
+  const [editModelLabel, setEditModelLabel] = useState('');
   const ref = useRef<HTMLDivElement>(null);
   const current = models.find((m) => m.value === value) ?? { value, label: value, provider: 'OpenRouter' };
 
@@ -233,6 +243,7 @@ function ModelSwitcher({
       if (ref.current && !ref.current.contains(e.target as Node)) {
         setOpen(false);
         setShowAddForm(false);
+        setEditingValue(null);
       }
     }
     if (open) document.addEventListener('mousedown', handleClick);
@@ -241,14 +252,19 @@ function ModelSwitcher({
 
   function handleAdd() {
     if (!newModelId.trim() || !newModelLabel.trim()) return;
-    onAddCustomModel({ value: newModelId.trim(), label: newModelLabel.trim(), provider: 'OpenRouter', custom: true });
+    onAddModel({ value: newModelId.trim(), label: newModelLabel.trim(), provider: 'OpenRouter' });
     setNewModelId('');
     setNewModelLabel('');
     setShowAddForm(false);
   }
 
-  const builtInModels = models.filter((m) => !m.custom);
-  const customModelList = models.filter((m) => m.custom);
+  function handleEditSubmit() {
+    if (!editModelId.trim() || !editModelLabel.trim() || !editingValue) return;
+    onEditModel({ value: editModelId.trim(), label: editModelLabel.trim(), provider: 'OpenRouter' });
+    setEditingValue(null);
+    setEditModelId('');
+    setEditModelLabel('');
+  }
 
   return (
     <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -267,49 +283,63 @@ function ModelSwitcher({
         </button>
 
         {open && (
-          <div className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[300px]">
+          <div className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[320px]">
             <div className="px-3 py-2 border-b border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Switch Model</p>
             </div>
             <div className="max-h-56 overflow-y-auto py-1">
-              {builtInModels.map((m) => (
-                <button
+              {models.map((m) => (
+                <div
                   key={m.value}
-                  onClick={() => { onChange(modelKey, m.value); setOpen(false); }}
-                  className={`w-full text-left px-3 py-2 flex items-center justify-between gap-3 hover:bg-slate-50 transition-colors ${m.value === value ? 'bg-sky-50' : ''}`}
+                  className={`w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50 transition-colors group ${m.value === value ? 'bg-sky-50' : ''}`}
                 >
-                  <p className={`text-[12px] font-medium ${m.value === value ? 'text-sky-700' : 'text-slate-800'}`}>{m.label}</p>
-                  {m.value === value && <CheckCircle2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />}
-                </button>
-              ))}
-              {customModelList.length > 0 && (
-                <>
-                  <div className="px-3 py-1.5 border-t border-slate-100">
-                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Custom Models</p>
-                  </div>
-                  {customModelList.map((m) => (
-                    <div
-                      key={m.value}
-                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50 transition-colors ${m.value === value ? 'bg-sky-50' : ''}`}
-                    >
+                  {editingValue === m.value ? (
+                    <div className="flex-1 flex items-center gap-1.5">
+                      <Input
+                        value={editModelId}
+                        onChange={(e) => setEditModelId(e.target.value)}
+                        className="h-7 text-[11px] font-mono border-slate-200 flex-1"
+                        autoFocus
+                      />
+                      <Input
+                        value={editModelLabel}
+                        onChange={(e) => setEditModelLabel(e.target.value)}
+                        className="h-7 text-[11px] border-slate-200 flex-1"
+                      />
+                      <button onClick={handleEditSubmit} className="p-1 rounded hover:bg-emerald-50">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                      </button>
+                      <button onClick={() => setEditingValue(null)} className="p-1 rounded hover:bg-slate-100">
+                        <X className="w-3.5 h-3.5 text-slate-400" />
+                      </button>
+                    </div>
+                  ) : (
+                    <>
                       <button
                         onClick={() => { onChange(modelKey, m.value); setOpen(false); }}
                         className="flex-1 text-left flex items-center gap-2"
                       >
                         <p className={`text-[12px] font-medium ${m.value === value ? 'text-sky-700' : 'text-slate-800'}`}>{m.label}</p>
-                        <span className="text-[9px] text-sky-500 bg-sky-50 border border-sky-100 px-1 py-px rounded">custom</span>
                         {m.value === value && <CheckCircle2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />}
                       </button>
-                      <button
-                        onClick={(e) => { e.stopPropagation(); onDeleteCustomModel(m.value); }}
-                        className="p-1 rounded hover:bg-red-50 transition-colors shrink-0"
-                      >
-                        <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
-                      </button>
-                    </div>
-                  ))}
-                </>
-              )}
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setEditingValue(m.value); setEditModelId(m.value); setEditModelLabel(m.label); }}
+                          className="p-1 rounded hover:bg-slate-200"
+                        >
+                          <Pencil className="w-3 h-3 text-slate-400" />
+                        </button>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); onDeleteModel(m.value); }}
+                          className="p-1 rounded hover:bg-red-50"
+                        >
+                          <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
             </div>
             <div className="border-t border-slate-100">
               {showAddForm ? (
@@ -343,7 +373,7 @@ function ModelSwitcher({
                   className="w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-slate-50 transition-colors"
                 >
                   <Plus className="w-3.5 h-3.5 text-slate-400" />
-                  <p className="text-[11px] font-medium text-slate-500">Add custom model</p>
+                  <p className="text-[11px] font-medium text-slate-500">Add model</p>
                 </button>
               )}
             </div>
@@ -429,9 +459,92 @@ function ChangelogModal({ modelKey, models, onClose }: { modelKey: string; model
   );
 }
 
+// ── Prompt Log Modal ──────────────────────────────────────────────────────────
+
+function PromptLogModal({ promptKey, models, onClose }: { promptKey: string; models: ModelOption[]; onClose: () => void }) {
+  const [logs, setLogs] = useState<PromptLogEntry[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  useEffect(() => {
+    supabase
+      .from('ai_prompt_logs')
+      .select('*')
+      .eq('prompt_key', promptKey)
+      .order('created_at', { ascending: false })
+      .limit(10)
+      .then(({ data }) => {
+        setLogs((data as PromptLogEntry[]) || []);
+        setLoading(false);
+      });
+  }, [promptKey]);
+
+  return (
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-2xl mx-4 max-h-[80vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
+          <div className="flex items-center gap-2">
+            <ScrollText className="w-4 h-4 text-sky-600" />
+            <h3 className="text-sm font-bold text-slate-900">Request Logs (latest 10)</h3>
+          </div>
+          <button onClick={onClose} className="p-1 rounded-lg hover:bg-slate-100 transition-colors">
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-4">
+          {loading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 animate-spin text-slate-400" />
+            </div>
+          ) : logs.length === 0 ? (
+            <p className="text-center text-sm text-slate-400 py-8">No logs yet. Enable logging and run a request.</p>
+          ) : (
+            <div className="space-y-3">
+              {logs.map((log) => (
+                <div key={log.id} className="bg-slate-50 border border-slate-200 rounded-lg overflow-hidden">
+                  <button
+                    onClick={() => setExpandedId(expandedId === log.id ? null : log.id)}
+                    className="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-100 transition-colors"
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="text-[11px] font-semibold text-slate-700 truncate">{getModelLabel(log.model, models)}</span>
+                      {log.finish_reason === 'length' && (
+                        <span className="text-[9px] font-bold text-amber-600 bg-amber-50 border border-amber-200 px-1.5 py-px rounded">truncated</span>
+                      )}
+                      <span className="text-[10px] text-slate-400 shrink-0">
+                        {log.input_tokens} in / {log.output_tokens} out
+                      </span>
+                      <span className="text-[10px] text-slate-400 shrink-0">{formatTime(log.elapsed_ms)}</span>
+                    </div>
+                    <span className="text-[10px] text-slate-400 shrink-0">
+                      {new Date(log.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                    </span>
+                  </button>
+                  {expandedId === log.id && (
+                    <div className="px-4 pb-3 space-y-2 border-t border-slate-200">
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Input</p>
+                        <pre className="text-[10px] font-mono text-slate-600 bg-white border border-slate-200 rounded-lg p-2 max-h-32 overflow-auto whitespace-pre-wrap break-words">{log.input_content}</pre>
+                      </div>
+                      <div>
+                        <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider mb-1">Output</p>
+                        <pre className="text-[10px] font-mono text-slate-600 bg-white border border-slate-200 rounded-lg p-2 max-h-48 overflow-auto whitespace-pre-wrap break-words">{log.output_content}</pre>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // ── Test Modal ───────────────────────────────────────────────────────────────
 
-function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: string; modelValue: string; models: ModelOption[]; onClose: () => void }) {
+function TestModal({ promptKey, modelValue, maxTokens, models, onClose }: { promptKey: string; modelValue: string; maxTokens: number; models: ModelOption[]; onClose: () => void }) {
   const [input, setInput] = useState('');
   const [payload, setPayload] = useState<object | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -443,7 +556,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
   const [inputTokens, setInputTokens] = useState(0);
   const [outputTokens, setOutputTokens] = useState(0);
 
-  // Build payload preview live as user types
   useEffect(() => {
     if (!input.trim()) { setPayload(null); return; }
     const timer = setTimeout(async () => {
@@ -456,12 +568,12 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
           { role: 'user', content: input },
         ],
         temperature: 0.7,
-        max_tokens: 4000,
+        max_tokens: maxTokens,
       });
       setInputTokens(estimateTokens(sp + input));
     }, 400);
     return () => clearTimeout(timer);
-  }, [input, promptKey, modelValue]);
+  }, [input, promptKey, modelValue, maxTokens]);
 
   async function handleGenerate() {
     if (!input.trim()) return;
@@ -482,7 +594,7 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
           'Authorization': `Bearer ${session?.access_token ?? anonKey}`,
           'apikey': anonKey,
         },
-        body: JSON.stringify({ prompt_key: promptKey, model: modelValue, user_input: input }),
+        body: JSON.stringify({ prompt_key: promptKey, model: modelValue, user_input: input, max_tokens: maxTokens }),
       });
 
       const data = await res.json();
@@ -512,7 +624,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
       <div className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl mx-4 max-h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
-        {/* Header */}
         <div className="flex items-center justify-between px-6 py-3.5 border-b border-slate-100 shrink-0">
           <div className="flex items-center gap-2.5">
             <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-sky-500 to-blue-700 flex items-center justify-center">
@@ -520,7 +631,7 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
             </div>
             <div>
               <h3 className="text-[13px] font-bold text-slate-900">Prompt Playground</h3>
-              <p className="text-[10px] text-slate-400">{getModelLabel(modelValue, models)}</p>
+              <p className="text-[10px] text-slate-400">{getModelLabel(modelValue, models)} · max_tokens: {maxTokens}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -528,12 +639,8 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
           </button>
         </div>
 
-        {/* Body */}
         <div className="flex-1 grid grid-cols-2 divide-x divide-slate-100 overflow-hidden min-h-0">
-
-          {/* LEFT: input + json payload */}
           <div className="flex flex-col divide-y divide-slate-100 overflow-hidden">
-            {/* Input box */}
             <div className="p-4 flex flex-col gap-2 shrink-0">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">User Input</p>
               <Textarea
@@ -544,8 +651,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
                 placeholder="Enter the user message to test against the system prompt..."
               />
             </div>
-
-            {/* JSON Payload preview */}
             <div className="flex-1 p-4 flex flex-col gap-2 overflow-hidden min-h-0">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">JSON Payload</p>
@@ -569,8 +674,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
                 </div>
               )}
             </div>
-
-            {/* Generate button */}
             <div className="p-4 shrink-0">
               <Button
                 onClick={handleGenerate}
@@ -583,9 +686,7 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
             </div>
           </div>
 
-          {/* RIGHT: AI output */}
           <div className="flex flex-col overflow-hidden">
-            {/* Output header */}
             <div className="flex items-center justify-between px-4 py-3 border-b border-slate-100 shrink-0">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">AI Output</p>
               <div className="flex items-center gap-2">
@@ -606,8 +707,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
                 )}
               </div>
             </div>
-
-            {/* Output body */}
             <div className="flex-1 overflow-auto p-4 min-h-0">
               {generating && (
                 <div className="h-full flex flex-col items-center justify-center gap-4">
@@ -620,7 +719,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
                   <p className="text-[11px] text-slate-500">Running {getModelLabel(modelValue, models)}...</p>
                 </div>
               )}
-
               {!generating && !result && (
                 <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
                   <div className="w-12 h-12 rounded-xl bg-slate-100 flex items-center justify-center">
@@ -629,7 +727,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
                   <p className="text-[11px] text-slate-400">Output will appear here</p>
                 </div>
               )}
-
               {!generating && result && (
                 showRaw ? (
                   <pre className="text-[10px] font-mono bg-slate-950 text-slate-100 p-4 rounded-xl overflow-auto leading-relaxed whitespace-pre-wrap break-words h-full">
@@ -642,8 +739,6 @@ function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: stri
                 )
               )}
             </div>
-
-            {/* Stats bar */}
             <div className="px-4 py-3 border-t border-slate-100 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="flex items-center gap-1.5">
@@ -686,14 +781,20 @@ export default function PromptsAdmin() {
   const [saving, setSaving] = useState<Record<string, boolean>>({});
   const [saved, setSaved] = useState<Record<string, boolean>>({});
   const [modelDrafts, setModelDrafts] = useState<Record<string, string>>({});
+  const [maxTokensDrafts, setMaxTokensDrafts] = useState<Record<string, number>>({});
+  const [logEnabledDrafts, setLogEnabledDrafts] = useState<Record<string, boolean>>({});
   const [requestCounts, setRequestCounts] = useState<Record<string, number>>({});
   const [changelogKey, setChangelogKey] = useState<string | null>(null);
-  const [testModal, setTestModal] = useState<{ key: string; model: string } | null>(null);
-  const [customModels, setCustomModels] = useState<ModelOption[]>([]);
+  const [logModalKey, setLogModalKey] = useState<string | null>(null);
+  const [testModal, setTestModal] = useState<{ key: string; model: string; maxTokens: number } | null>(null);
+  const [models, setModels] = useState<ModelOption[]>([]);
 
   const ALL_SETTINGS_KEYS = [
+    'openrouter_models',
     'openrouter_custom_models',
     ...PROMPT_KEYS.map((p) => p.key),
+    ...PROMPT_KEYS.map((p) => MAX_TOKENS_KEY(p.key)),
+    ...PROMPT_KEYS.map((p) => LOG_ENABLED_KEY(p.key)),
     ...PROMPT_KEYS.filter((p) => p.modelKey).map((p) => p.modelKey!),
     ...PROMPT_KEYS.filter((p) => p.countKey).map((p) => p.countKey!),
   ];
@@ -709,8 +810,10 @@ export default function PromptsAdmin() {
       const map: Record<string, PromptSetting> = {};
       const draftMap: Record<string, string> = {};
       const modelMap: Record<string, string> = {};
+      const maxTokensMap: Record<string, number> = {};
+      const logEnabledMap: Record<string, boolean> = {};
       const countMap: Record<string, number> = {};
-      let customModelsList: ModelOption[] = [];
+      let modelsList: ModelOption[] = [];
 
       for (const row of data as PromptSetting[]) {
         map[row.key] = row;
@@ -720,25 +823,51 @@ export default function PromptsAdmin() {
         if (row.key.startsWith('ai_model_')) {
           modelMap[row.key] = row.value;
         }
+        if (row.key.startsWith('ai_max_tokens_')) {
+          maxTokensMap[row.key] = parseInt(row.value) || 4000;
+        }
+        if (row.key.startsWith('ai_log_enabled_')) {
+          logEnabledMap[row.key] = row.value === 'true';
+        }
         if (row.key.startsWith('ai_request_count_')) {
           countMap[row.key] = parseInt(row.value) || 0;
         }
-        if (row.key === 'openrouter_custom_models') {
-          try { customModelsList = JSON.parse(row.value) as ModelOption[]; } catch { customModelsList = []; }
+        if (row.key === 'openrouter_models') {
+          try { modelsList = JSON.parse(row.value) as ModelOption[]; } catch { modelsList = []; }
         }
       }
 
-      setCustomModels(customModelsList);
+      // Migrate old custom models into the unified list
+      if (map['openrouter_custom_models']) {
+        try {
+          const oldCustom = JSON.parse(map['openrouter_custom_models'].value) as ModelOption[];
+          for (const m of oldCustom) {
+            if (!modelsList.some((existing) => existing.value === m.value)) {
+              modelsList.push({ value: m.value, label: m.label, provider: m.provider || 'OpenRouter' });
+            }
+          }
+        } catch { /* ignore */ }
+      }
+
+      setModels(modelsList);
 
       for (const p of PROMPT_KEYS) {
         if (p.modelKey && !modelMap[p.modelKey]) {
           modelMap[p.modelKey] = p.defaultModel ?? 'openai/gpt-oss-120b:free';
+        }
+        if (!maxTokensMap[MAX_TOKENS_KEY(p.key)]) {
+          maxTokensMap[MAX_TOKENS_KEY(p.key)] = 4000;
+        }
+        if (!(LOG_ENABLED_KEY(p.key) in logEnabledMap)) {
+          logEnabledMap[LOG_ENABLED_KEY(p.key)] = false;
         }
       }
 
       setPrompts(map);
       setDrafts(draftMap);
       setModelDrafts(modelMap);
+      setMaxTokensDrafts(maxTokensMap);
+      setLogEnabledDrafts(logEnabledMap);
       setRequestCounts(countMap);
     }
     setLoading(false);
@@ -752,22 +881,42 @@ export default function PromptsAdmin() {
   }, [router, fetchPrompts]);
 
   const totalRequests = Object.values(requestCounts).reduce((a, b) => a + b, 0);
-  const allModels = [...OPENROUTER_MODELS, ...customModels];
 
-  async function handleAddCustomModel(model: ModelOption) {
-    const updated = [...customModels, model];
-    setCustomModels(updated);
+  async function persistModels(updated: ModelOption[]) {
+    setModels(updated);
     await supabase
       .from('admin_settings')
-      .upsert({ key: 'openrouter_custom_models', value: JSON.stringify(updated), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      .upsert({ key: 'openrouter_models', value: JSON.stringify(updated), updated_at: new Date().toISOString() }, { onConflict: 'key' });
   }
 
-  async function handleDeleteCustomModel(modelValue: string) {
-    const updated = customModels.filter((m) => m.value !== modelValue);
-    setCustomModels(updated);
+  async function handleAddModel(model: ModelOption) {
+    if (models.some((m) => m.value === model.value)) return;
+    await persistModels([...models, model]);
+  }
+
+  async function handleEditModel(model: ModelOption) {
+    await persistModels(models.map((m) => m.value === model.value ? model : m));
+  }
+
+  async function handleDeleteModel(modelValue: string) {
+    await persistModels(models.filter((m) => m.value !== modelValue));
+  }
+
+  async function handleSaveMaxTokens(promptKey: string) {
+    const settingsKey = MAX_TOKENS_KEY(promptKey);
+    const value = maxTokensDrafts[settingsKey];
+    if (value === undefined) return;
     await supabase
       .from('admin_settings')
-      .upsert({ key: 'openrouter_custom_models', value: JSON.stringify(updated), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+      .upsert({ key: settingsKey, value: String(value), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  }
+
+  async function handleToggleLog(promptKey: string, enabled: boolean) {
+    const settingsKey = LOG_ENABLED_KEY(promptKey);
+    setLogEnabledDrafts((prev) => ({ ...prev, [settingsKey]: enabled }));
+    await supabase
+      .from('admin_settings')
+      .upsert({ key: settingsKey, value: String(enabled), updated_at: new Date().toISOString() }, { onConflict: 'key' });
   }
 
   async function handleSave(key: string) {
@@ -789,20 +938,18 @@ export default function PromptsAdmin() {
   }
 
   async function handleModelChange(modelKey: string, newModel: string) {
-    const oldModel = modelDrafts[modelKey];
     setModelDrafts((prev) => ({ ...prev, [modelKey]: newModel }));
 
     await supabase
       .from('admin_settings')
       .upsert({ key: modelKey, value: newModel, updated_at: new Date().toISOString() }, { onConflict: 'key' });
 
-    // Log change
     const { data: { session } } = await supabase.auth.getSession();
     await supabase.from('ai_model_usage_log').insert({
       prompt_key: PROMPT_KEYS.find(p => p.modelKey === modelKey)?.key ?? '',
       model_key: modelKey,
       model_value: newModel,
-      model_label: getModelLabel(newModel, allModels),
+      model_label: getModelLabel(newModel, models),
       is_backup: false,
       changed_by: session?.user?.id ?? null,
     });
@@ -862,6 +1009,9 @@ export default function PromptsAdmin() {
             const count = config.countKey ? (requestCounts[config.countKey] ?? 0) : 0;
             const charLen = draft.length;
             const tokenLen = estimateTokens(draft);
+            const maxTokensKey = MAX_TOKENS_KEY(config.key);
+            const maxTokens = maxTokensDrafts[maxTokensKey] ?? 4000;
+            const logEnabled = logEnabledDrafts[LOG_ENABLED_KEY(config.key)] ?? false;
 
             return (
               <Card key={config.key} className="border-slate-200 shadow-sm overflow-visible">
@@ -915,13 +1065,52 @@ export default function PromptsAdmin() {
                       countKey={config.countKey ?? ''}
                       value={modelValue}
                       count={count}
-                      models={allModels}
+                      models={models}
                       onChange={handleModelChange}
                       onShowChangelog={(k) => setChangelogKey(k)}
-                      onAddCustomModel={handleAddCustomModel}
-                      onDeleteCustomModel={handleDeleteCustomModel}
+                      onAddModel={handleAddModel}
+                      onEditModel={handleEditModel}
+                      onDeleteModel={handleDeleteModel}
                     />
                   )}
+
+                  {/* Max tokens + Log toggle row */}
+                  <div className="flex items-center gap-4 flex-wrap">
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Max Tokens</label>
+                      <Input
+                        type="number"
+                        min={256}
+                        max={32000}
+                        value={maxTokens}
+                        onChange={(e) => {
+                          const val = Math.min(32000, Math.max(256, Number(e.target.value) || 4000));
+                          setMaxTokensDrafts((prev) => ({ ...prev, [maxTokensKey]: val }));
+                        }}
+                        onBlur={() => handleSaveMaxTokens(config.key)}
+                        className="h-8 w-24 text-[12px] font-semibold tabular-nums border-slate-200"
+                      />
+                    </div>
+
+                    <div className="w-px h-6 bg-slate-200" />
+
+                    <div className="flex items-center gap-2">
+                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Log Requests</label>
+                      <Switch
+                        checked={logEnabled}
+                        onCheckedChange={(checked) => handleToggleLog(config.key, checked)}
+                      />
+                      {logEnabled && (
+                        <button
+                          onClick={() => setLogModalKey(config.key)}
+                          className="flex items-center gap-1 text-[10px] font-medium text-sky-600 hover:text-sky-800 transition-colors ml-1"
+                        >
+                          <ScrollText className="w-3 h-3" />
+                          View logs
+                        </button>
+                      )}
+                    </div>
+                  </div>
 
                   <Textarea
                     value={draft}
@@ -941,7 +1130,7 @@ export default function PromptsAdmin() {
                       </span>
                       {config.testable && modelValue && (
                         <button
-                          onClick={() => setTestModal({ key: config.key, model: modelValue })}
+                          onClick={() => setTestModal({ key: config.key, model: modelValue, maxTokens })}
                           className="flex items-center gap-1.5 text-[11px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
                         >
                           <FlaskConical className="w-3.5 h-3.5" />
@@ -982,8 +1171,9 @@ export default function PromptsAdmin() {
       </div>
 
       {/* Modals */}
-      {changelogKey && <ChangelogModal modelKey={changelogKey} models={allModels} onClose={() => setChangelogKey(null)} />}
-      {testModal && <TestModal promptKey={testModal.key} modelValue={testModal.model} models={allModels} onClose={() => setTestModal(null)} />}
+      {changelogKey && <ChangelogModal modelKey={changelogKey} models={models} onClose={() => setChangelogKey(null)} />}
+      {logModalKey && <PromptLogModal promptKey={logModalKey} models={models} onClose={() => setLogModalKey(null)} />}
+      {testModal && <TestModal promptKey={testModal.key} modelValue={testModal.model} maxTokens={testModal.maxTokens} models={models} onClose={() => setTestModal(null)} />}
     </AdminShell>
   );
 }

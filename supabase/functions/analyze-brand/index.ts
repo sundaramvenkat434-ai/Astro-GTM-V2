@@ -119,6 +119,8 @@ Deno.serve(async (req: Request) => {
         "brand_analyzer_prompt",
         "ai_model_brand_analyzer",
         "ai_request_count_brand_analyzer",
+        "ai_max_tokens_brand_analyzer_prompt",
+        "ai_log_enabled_brand_analyzer_prompt",
       ]);
 
     const settingsMap: Record<string, string> = {};
@@ -130,6 +132,8 @@ Deno.serve(async (req: Request) => {
       settingsMap["brand_analyzer_prompt"] || "Analyze this brand and return JSON.";
     const model =
       settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
+    const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
+    const logEnabled = settingsMap["ai_log_enabled_brand_analyzer_prompt"] === "true";
 
     // Increment request counter (fire-and-forget)
     const currentCount =
@@ -271,7 +275,7 @@ Deno.serve(async (req: Request) => {
               },
             ],
             temperature: 0.7,
-            max_tokens: 4000,
+            max_tokens: maxTokens,
             response_format: { type: "json_object" },
           }),
         }
@@ -305,6 +309,9 @@ Deno.serve(async (req: Request) => {
 
     const aiData = await aiResponse.json();
     const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+    const finishReason: string | null = aiData.choices?.[0]?.finish_reason || null;
+    const inputTokens: number = aiData.usage?.prompt_tokens || 0;
+    const outputTokens: number = aiData.usage?.completion_tokens || 0;
 
     if (!rawContent) {
       return errorResponse({
@@ -314,9 +321,43 @@ Deno.serve(async (req: Request) => {
       }, 502);
     }
 
+    // Check for truncation
+    if (finishReason === "length") {
+      if (logEnabled) {
+        supabase.from("ai_prompt_logs").insert({
+          prompt_key: "brand_analyzer_prompt",
+          model,
+          input_content: contentToAnalyze.slice(0, 10000),
+          output_content: rawContent.slice(0, 10000),
+          finish_reason: finishReason,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          elapsed_ms: 0,
+        }).then(() => {});
+      }
+      return errorResponse({
+        step: "ai_response_truncated",
+        message: "AI response was truncated due to token limit. The model ran out of output tokens before completing the JSON. Try increasing max_tokens in AI Prompts settings.",
+        detail: `finish_reason: length, output_tokens: ${outputTokens}, max_tokens: ${maxTokens}`,
+        rawSnippet: rawContent.slice(0, 1000),
+      }, 502);
+    }
+
     // Step 6: AI response parsing - robust JSON extraction
     const extractionResult = extractJsonFromContent(rawContent);
     if (!extractionResult.ok) {
+      if (logEnabled) {
+        supabase.from("ai_prompt_logs").insert({
+          prompt_key: "brand_analyzer_prompt",
+          model,
+          input_content: contentToAnalyze.slice(0, 10000),
+          output_content: rawContent.slice(0, 10000),
+          finish_reason: finishReason,
+          input_tokens: inputTokens,
+          output_tokens: outputTokens,
+          elapsed_ms: 0,
+        }).then(() => {});
+      }
       return errorResponse({
         step: "ai_response_parsing",
         message: "Failed to parse AI response as JSON. The model may have returned conversational text instead of structured data.",
@@ -353,6 +394,20 @@ Deno.serve(async (req: Request) => {
         message: "Failed to save brand intelligence results to the database.",
         detail: saveError.message,
       }, 500);
+    }
+
+    // Log successful request if enabled
+    if (logEnabled) {
+      supabase.from("ai_prompt_logs").insert({
+        prompt_key: "brand_analyzer_prompt",
+        model,
+        input_content: contentToAnalyze.slice(0, 10000),
+        output_content: rawContent.slice(0, 10000),
+        finish_reason: finishReason,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        elapsed_ms: 0,
+      }).then(() => {});
     }
 
     return new Response(JSON.stringify({ success: true, data: saved }), {

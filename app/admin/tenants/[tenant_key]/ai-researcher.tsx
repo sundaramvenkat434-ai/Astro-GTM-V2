@@ -118,6 +118,7 @@ const STEP_LABELS: Record<string, string> = {
   content_extraction: 'Content Extraction',
   openrouter_request: 'AI Service Request',
   ai_response_parsing: 'AI Response Parsing',
+  ai_response_truncated: 'AI Response Truncated',
   database_save: 'Database Save',
   server_config: 'Server Configuration',
   unexpected: 'Unexpected Error',

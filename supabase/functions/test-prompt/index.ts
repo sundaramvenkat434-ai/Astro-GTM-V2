@@ -11,6 +11,7 @@ interface TestRequest {
   prompt_key: string;
   model: string;
   user_input: string;
+  max_tokens?: number;
 }
 
 Deno.serve(async (req: Request) => {
@@ -33,6 +34,7 @@ Deno.serve(async (req: Request) => {
 
     const body: TestRequest = await req.json();
     const { prompt_key, model, user_input } = body;
+    const max_tokens = body.max_tokens ?? 4000;
 
     if (!prompt_key || !model || !user_input) {
       return new Response(
@@ -49,6 +51,14 @@ Deno.serve(async (req: Request) => {
 
     const systemPrompt = settingRow?.value || "(no prompt saved)";
 
+    // Check if logging is enabled for this prompt
+    const { data: logSettingRow } = await db
+      .from("admin_settings")
+      .select("value")
+      .eq("key", `ai_log_enabled_${prompt_key}`)
+      .maybeSingle();
+    const logEnabled = logSettingRow?.value === "true";
+
     const startTime = Date.now();
 
     const requestBody = {
@@ -58,7 +68,7 @@ Deno.serve(async (req: Request) => {
         { role: "user", content: user_input },
       ],
       temperature: 0.7,
-      max_tokens: 4000,
+      max_tokens,
       provider: { allow_fallbacks: true },
     };
     const requestOptions = {
@@ -94,8 +104,23 @@ Deno.serve(async (req: Request) => {
     }
 
     const output = data?.choices?.[0]?.message?.content || "";
+    const finishReason = data?.choices?.[0]?.finish_reason || null;
     const inputTokens = data?.usage?.prompt_tokens || 0;
     const outputTokens = data?.usage?.completion_tokens || 0;
+
+    // Log if enabled
+    if (logEnabled) {
+      await db.from("ai_prompt_logs").insert({
+        prompt_key,
+        model,
+        input_content: user_input.slice(0, 10000),
+        output_content: output.slice(0, 10000),
+        finish_reason: finishReason,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        elapsed_ms: elapsed,
+      }).then(() => {});
+    }
 
     return new Response(
       JSON.stringify({
@@ -104,6 +129,7 @@ Deno.serve(async (req: Request) => {
         output_tokens: outputTokens,
         elapsed_ms: elapsed,
         model_used: model,
+        finish_reason: finishReason,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
