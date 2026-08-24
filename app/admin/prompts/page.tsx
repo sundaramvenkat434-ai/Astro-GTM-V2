@@ -36,7 +36,11 @@ import {
   FileText,
   Brain,
   Key,
+  Plus,
+  Trash2,
 } from 'lucide-react';
+
+import { Input } from '@/components/ui/input';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -55,9 +59,16 @@ interface ChangelogEntry {
   changed_at: string;
 }
 
+interface ModelOption {
+  value: string;
+  label: string;
+  provider: string;
+  custom?: boolean;
+}
+
 // ── Model catalogue ───────────────────────────────────────────────────────────
 
-const OPENROUTER_MODELS = [
+const OPENROUTER_MODELS: ModelOption[] = [
   { value: 'stealth/ox-alpha', label: 'Stealth Ox Alpha', provider: 'OpenRouter' },
   { value: 'openai/gpt-oss-120b:free', label: 'OpenAI GPT-OSS-120b', provider: 'OpenRouter' },
   { value: 'openai/gpt-oss-20b:free', label: 'OpenAI GPT-OSS-20b', provider: 'OpenRouter' },
@@ -66,8 +77,8 @@ const OPENROUTER_MODELS = [
   { value: 'google/gemma-4-31b-it:free', label: 'Google Gemma 4 31B', provider: 'OpenRouter' },
 ];
 
-function getModelLabel(value: string) {
-  return OPENROUTER_MODELS.find((m) => m.value === value)?.label ?? value;
+function getModelLabel(value: string, models: ModelOption[] = OPENROUTER_MODELS) {
+  return models.find((m) => m.value === value)?.label ?? value;
 }
 
 // ── Prompt definitions ────────────────────────────────────────────────────────
@@ -194,27 +205,50 @@ function ModelSwitcher({
   countKey,
   value,
   count,
+  models,
   onChange,
   onShowChangelog,
+  onAddCustomModel,
+  onDeleteCustomModel,
 }: {
   modelKey: string;
   countKey: string;
   value: string;
   count: number;
+  models: ModelOption[];
   onChange: (key: string, val: string) => void;
   onShowChangelog: (modelKey: string) => void;
+  onAddCustomModel: (model: ModelOption) => void;
+  onDeleteCustomModel: (value: string) => void;
 }) {
   const [open, setOpen] = useState(false);
+  const [showAddForm, setShowAddForm] = useState(false);
+  const [newModelId, setNewModelId] = useState('');
+  const [newModelLabel, setNewModelLabel] = useState('');
   const ref = useRef<HTMLDivElement>(null);
-  const current = OPENROUTER_MODELS.find((m) => m.value === value) ?? { value, label: value, provider: 'OpenRouter' };
+  const current = models.find((m) => m.value === value) ?? { value, label: value, provider: 'OpenRouter' };
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+        setShowAddForm(false);
+      }
     }
     if (open) document.addEventListener('mousedown', handleClick);
     return () => document.removeEventListener('mousedown', handleClick);
   }, [open]);
+
+  function handleAdd() {
+    if (!newModelId.trim() || !newModelLabel.trim()) return;
+    onAddCustomModel({ value: newModelId.trim(), label: newModelLabel.trim(), provider: 'OpenRouter', custom: true });
+    setNewModelId('');
+    setNewModelLabel('');
+    setShowAddForm(false);
+  }
+
+  const builtInModels = models.filter((m) => !m.custom);
+  const customModelList = models.filter((m) => m.custom);
 
   return (
     <div className="flex items-center gap-2 flex-wrap mb-4">
@@ -233,12 +267,12 @@ function ModelSwitcher({
         </button>
 
         {open && (
-          <div className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[280px]">
+          <div className="absolute top-full left-0 mt-1.5 z-50 bg-white border border-slate-200 rounded-xl shadow-lg overflow-hidden min-w-[300px]">
             <div className="px-3 py-2 border-b border-slate-100">
               <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Switch Model</p>
             </div>
             <div className="max-h-56 overflow-y-auto py-1">
-              {OPENROUTER_MODELS.map((m) => (
+              {builtInModels.map((m) => (
                 <button
                   key={m.value}
                   onClick={() => { onChange(modelKey, m.value); setOpen(false); }}
@@ -248,6 +282,70 @@ function ModelSwitcher({
                   {m.value === value && <CheckCircle2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />}
                 </button>
               ))}
+              {customModelList.length > 0 && (
+                <>
+                  <div className="px-3 py-1.5 border-t border-slate-100">
+                    <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Custom Models</p>
+                  </div>
+                  {customModelList.map((m) => (
+                    <div
+                      key={m.value}
+                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 hover:bg-slate-50 transition-colors ${m.value === value ? 'bg-sky-50' : ''}`}
+                    >
+                      <button
+                        onClick={() => { onChange(modelKey, m.value); setOpen(false); }}
+                        className="flex-1 text-left flex items-center gap-2"
+                      >
+                        <p className={`text-[12px] font-medium ${m.value === value ? 'text-sky-700' : 'text-slate-800'}`}>{m.label}</p>
+                        <span className="text-[9px] text-sky-500 bg-sky-50 border border-sky-100 px-1 py-px rounded">custom</span>
+                        {m.value === value && <CheckCircle2 className="w-3.5 h-3.5 text-sky-500 shrink-0" />}
+                      </button>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); onDeleteCustomModel(m.value); }}
+                        className="p-1 rounded hover:bg-red-50 transition-colors shrink-0"
+                      >
+                        <Trash2 className="w-3 h-3 text-slate-400 hover:text-red-500" />
+                      </button>
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+            <div className="border-t border-slate-100">
+              {showAddForm ? (
+                <div className="p-3 space-y-2">
+                  <Input
+                    value={newModelId}
+                    onChange={(e) => setNewModelId(e.target.value)}
+                    placeholder="Model ID (e.g. openai/gpt-4o)"
+                    className="h-8 text-[11px] font-mono border-slate-200"
+                    autoFocus
+                  />
+                  <Input
+                    value={newModelLabel}
+                    onChange={(e) => setNewModelLabel(e.target.value)}
+                    placeholder="Display label (e.g. GPT-4o)"
+                    className="h-8 text-[11px] border-slate-200"
+                  />
+                  <div className="flex items-center gap-2">
+                    <Button size="sm" onClick={handleAdd} disabled={!newModelId.trim() || !newModelLabel.trim()} className="h-7 text-[11px] flex-1">
+                      <Plus className="w-3 h-3 mr-1" />
+                      Add Model
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => { setShowAddForm(false); setNewModelId(''); setNewModelLabel(''); }} className="h-7 text-[11px]">
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAddForm(true)}
+                  className="w-full text-left px-3 py-2.5 flex items-center gap-2 hover:bg-slate-50 transition-colors"
+                >
+                  <Plus className="w-3.5 h-3.5 text-slate-400" />
+                  <p className="text-[11px] font-medium text-slate-500">Add custom model</p>
+                </button>
+              )}
             </div>
           </div>
         )}
@@ -272,7 +370,7 @@ function ModelSwitcher({
 
 // ── Changelog Modal ──────────────────────────────────────────────────────────
 
-function ChangelogModal({ modelKey, onClose }: { modelKey: string; onClose: () => void }) {
+function ChangelogModal({ modelKey, models, onClose }: { modelKey: string; models: ModelOption[]; onClose: () => void }) {
   const [entries, setEntries] = useState<ChangelogEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -313,7 +411,7 @@ function ChangelogModal({ modelKey, onClose }: { modelKey: string; onClose: () =
               {entries.map((e) => (
                 <div key={e.id} className="bg-slate-50 border border-slate-200 rounded-lg px-4 py-3">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[12px] font-semibold text-slate-800">{e.model_label || getModelLabel(e.model_value)}</span>
+                    <span className="text-[12px] font-semibold text-slate-800">{e.model_label || getModelLabel(e.model_value, models)}</span>
                     <span className="text-[10px] text-slate-400">
                       {new Date(e.changed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </span>
@@ -333,7 +431,7 @@ function ChangelogModal({ modelKey, onClose }: { modelKey: string; onClose: () =
 
 // ── Test Modal ───────────────────────────────────────────────────────────────
 
-function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; modelValue: string; onClose: () => void }) {
+function TestModal({ promptKey, modelValue, models, onClose }: { promptKey: string; modelValue: string; models: ModelOption[]; onClose: () => void }) {
   const [input, setInput] = useState('');
   const [payload, setPayload] = useState<object | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -422,7 +520,7 @@ function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; mode
             </div>
             <div>
               <h3 className="text-[13px] font-bold text-slate-900">Prompt Playground</h3>
-              <p className="text-[10px] text-slate-400">{getModelLabel(modelValue)}</p>
+              <p className="text-[10px] text-slate-400">{getModelLabel(modelValue, models)}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -519,7 +617,7 @@ function TestModal({ promptKey, modelValue, onClose }: { promptKey: string; mode
                       <Sparkles className="w-5 h-5 text-sky-500 animate-pulse" />
                     </div>
                   </div>
-                  <p className="text-[11px] text-slate-500">Running {getModelLabel(modelValue)}...</p>
+                  <p className="text-[11px] text-slate-500">Running {getModelLabel(modelValue, models)}...</p>
                 </div>
               )}
 
@@ -591,8 +689,10 @@ export default function PromptsAdmin() {
   const [requestCounts, setRequestCounts] = useState<Record<string, number>>({});
   const [changelogKey, setChangelogKey] = useState<string | null>(null);
   const [testModal, setTestModal] = useState<{ key: string; model: string } | null>(null);
+  const [customModels, setCustomModels] = useState<ModelOption[]>([]);
 
   const ALL_SETTINGS_KEYS = [
+    'openrouter_custom_models',
     ...PROMPT_KEYS.map((p) => p.key),
     ...PROMPT_KEYS.filter((p) => p.modelKey).map((p) => p.modelKey!),
     ...PROMPT_KEYS.filter((p) => p.countKey).map((p) => p.countKey!),
@@ -610,6 +710,7 @@ export default function PromptsAdmin() {
       const draftMap: Record<string, string> = {};
       const modelMap: Record<string, string> = {};
       const countMap: Record<string, number> = {};
+      let customModelsList: ModelOption[] = [];
 
       for (const row of data as PromptSetting[]) {
         map[row.key] = row;
@@ -622,7 +723,12 @@ export default function PromptsAdmin() {
         if (row.key.startsWith('ai_request_count_')) {
           countMap[row.key] = parseInt(row.value) || 0;
         }
+        if (row.key === 'openrouter_custom_models') {
+          try { customModelsList = JSON.parse(row.value) as ModelOption[]; } catch { customModelsList = []; }
+        }
       }
+
+      setCustomModels(customModelsList);
 
       for (const p of PROMPT_KEYS) {
         if (p.modelKey && !modelMap[p.modelKey]) {
@@ -646,6 +752,23 @@ export default function PromptsAdmin() {
   }, [router, fetchPrompts]);
 
   const totalRequests = Object.values(requestCounts).reduce((a, b) => a + b, 0);
+  const allModels = [...OPENROUTER_MODELS, ...customModels];
+
+  async function handleAddCustomModel(model: ModelOption) {
+    const updated = [...customModels, model];
+    setCustomModels(updated);
+    await supabase
+      .from('admin_settings')
+      .upsert({ key: 'openrouter_custom_models', value: JSON.stringify(updated), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  }
+
+  async function handleDeleteCustomModel(modelValue: string) {
+    const updated = customModels.filter((m) => m.value !== modelValue);
+    setCustomModels(updated);
+    await supabase
+      .from('admin_settings')
+      .upsert({ key: 'openrouter_custom_models', value: JSON.stringify(updated), updated_at: new Date().toISOString() }, { onConflict: 'key' });
+  }
 
   async function handleSave(key: string) {
     const value = drafts[key];
@@ -679,7 +802,7 @@ export default function PromptsAdmin() {
       prompt_key: PROMPT_KEYS.find(p => p.modelKey === modelKey)?.key ?? '',
       model_key: modelKey,
       model_value: newModel,
-      model_label: getModelLabel(newModel),
+      model_label: getModelLabel(newModel, allModels),
       is_backup: false,
       changed_by: session?.user?.id ?? null,
     });
@@ -792,8 +915,11 @@ export default function PromptsAdmin() {
                       countKey={config.countKey ?? ''}
                       value={modelValue}
                       count={count}
+                      models={allModels}
                       onChange={handleModelChange}
                       onShowChangelog={(k) => setChangelogKey(k)}
+                      onAddCustomModel={handleAddCustomModel}
+                      onDeleteCustomModel={handleDeleteCustomModel}
                     />
                   )}
 
@@ -856,8 +982,8 @@ export default function PromptsAdmin() {
       </div>
 
       {/* Modals */}
-      {changelogKey && <ChangelogModal modelKey={changelogKey} onClose={() => setChangelogKey(null)} />}
-      {testModal && <TestModal promptKey={testModal.key} modelValue={testModal.model} onClose={() => setTestModal(null)} />}
+      {changelogKey && <ChangelogModal modelKey={changelogKey} models={allModels} onClose={() => setChangelogKey(null)} />}
+      {testModal && <TestModal promptKey={testModal.key} modelValue={testModal.model} models={allModels} onClose={() => setTestModal(null)} />}
     </AdminShell>
   );
 }
