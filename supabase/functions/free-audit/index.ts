@@ -578,6 +578,18 @@ Deno.serve(async (req: Request) => {
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_search_queries_prompt"]) || 4000;
 
+      const userMessageContent = `Analyze the following website content and generate 10 realistic search queries:\n\n${contentToAnalyze}`;
+      const requestBody = {
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessageContent },
+        ],
+        temperature: 0.7,
+        max_tokens: maxTokens,
+        response_format: { type: "json_object" },
+      };
+
       // Step 4: Call OpenRouter
       let aiResponse: Response;
       try {
@@ -591,19 +603,7 @@ Deno.serve(async (req: Request) => {
               "HTTP-Referer": SUPABASE_URL,
               "X-Title": "AstroRank Free Audit",
             },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                {
-                  role: "user",
-                  content: `Analyze the following website content and generate 10 realistic search queries:\n\n${contentToAnalyze}`,
-                },
-              ],
-              temperature: 0.7,
-              max_tokens: maxTokens,
-              response_format: { type: "json_object" },
-            }),
+            body: JSON.stringify(requestBody),
           }
         );
       } catch {
@@ -615,19 +615,48 @@ Deno.serve(async (req: Request) => {
       }
 
       if (!aiResponse.ok) {
+        const errText = await aiResponse.text().catch(() => "");
+        await supabase
+          .from("free_audits")
+          .update({
+            search_queries_raw_input: { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody },
+            search_queries_raw_output: { http_status: aiResponse.status, error_body: errText.slice(0, 5000) },
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", audit_id);
         return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
       }
 
       const aiData = await aiResponse.json();
       const rawContent: string = aiData.choices?.[0]?.message?.content || "";
 
+      // Save raw I/O regardless of whether parsing succeeds
+      const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody };
+      const rawOutput = aiData;
+
       if (!rawContent) {
+        await supabase
+          .from("free_audits")
+          .update({
+            search_queries_raw_input: rawInput,
+            search_queries_raw_output: rawOutput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", audit_id);
         return jsonResponse({ error: "AI returned an empty response." }, 502);
       }
 
       // Step 5: Parse JSON
       const extractionResult = extractJsonFromContent(rawContent);
       if (!extractionResult.ok) {
+        await supabase
+          .from("free_audits")
+          .update({
+            search_queries_raw_input: rawInput,
+            search_queries_raw_output: rawOutput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", audit_id);
         return jsonResponse({ error: "Failed to parse AI response as JSON." }, 502);
       }
 
@@ -639,6 +668,8 @@ Deno.serve(async (req: Request) => {
         .from("free_audits")
         .update({
           search_queries: queries,
+          search_queries_raw_input: rawInput,
+          search_queries_raw_output: rawOutput,
           updated_at: new Date().toISOString(),
         })
         .eq("id", audit_id)

@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2 } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X } from "lucide-react";
 import SpaceBg from "../../space-bg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -42,6 +42,8 @@ interface AuditData {
   error_message: string | null;
   created_at: string;
   updated_at: string;
+  search_queries_raw_input?: Record<string, unknown> | null;
+  search_queries_raw_output?: Record<string, unknown> | null;
 }
 
 type TabId = "queries" | "brand" | "competition" | "opportunity";
@@ -209,6 +211,53 @@ function SearchQueriesErrorState({ message, onRetry }: { message: string; onRetr
   );
 }
 
+function RawDataPopup({ audit, onClose }: { audit: AuditData; onClose: () => void }) {
+  const rawInput = audit.search_queries_raw_input || null;
+  const rawOutput = audit.search_queries_raw_output || null;
+
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4"
+      onClick={onClose}
+    >
+      <motion.div
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.95, opacity: 0 }}
+        className="bg-white rounded-2xl shadow-2xl max-w-[720px] w-full max-h-[85vh] flex flex-col overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-200">
+          <div className="flex items-center gap-2">
+            <Bug size={16} className="text-amber-500" />
+            <h3 className="text-[15px] font-bold text-slate-900">Raw AI Input / Output</h3>
+          </div>
+          <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
+            <X size={18} className="text-slate-500" />
+          </button>
+        </div>
+        <div className="flex-1 overflow-y-auto p-5 space-y-5">
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Raw Input (sent to AI)</p>
+            <pre className="text-[11.5px] text-slate-700 bg-slate-50 rounded-xl border border-slate-200 p-3.5 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
+{rawInput ? JSON.stringify(rawInput, null, 2) : "No raw input saved"}
+            </pre>
+          </div>
+          <div>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Raw Output (from AI)</p>
+            <pre className="text-[11.5px] text-slate-700 bg-slate-50 rounded-xl border border-slate-200 p-3.5 overflow-x-auto whitespace-pre-wrap break-words leading-relaxed">
+{rawOutput ? JSON.stringify(rawOutput, null, 2) : "No raw output saved"}
+            </pre>
+          </div>
+        </div>
+      </motion.div>
+    </motion.div>
+  );
+}
+
 function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn }: {
   audit: AuditData;
   onGenerate: () => void;
@@ -219,6 +268,7 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
 }) {
   const queries = audit.search_queries || [];
   const hasResults = queries.length > 0;
+  const [showRaw, setShowRaw] = useState(false);
 
   if (generating) return <SearchQueriesLoadingState />;
   if (rateLimited) return <RateLimitMessage resetIn={resetIn} />;
@@ -232,12 +282,20 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
           <h2 className="text-[20px] font-bold text-slate-900">Search Queries</h2>
           <p className="text-[13px] text-slate-400 mt-0.5">Realistic search queries potential customers use to find businesses like {audit.website_url}</p>
         </div>
-        <button
-          onClick={onGenerate}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors"
-        >
-          <RefreshCw size={13} /> Regenerate
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowRaw(true)}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-50 text-amber-600 text-[12.5px] font-semibold hover:bg-amber-100 transition-colors"
+          >
+            <Bug size={13} /> Raw I/O
+          </button>
+          <button
+            onClick={onGenerate}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors"
+          >
+            <RefreshCw size={13} /> Regenerate
+          </button>
+        </div>
       </div>
 
       <div className="space-y-3">
@@ -256,6 +314,10 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
           </motion.div>
         ))}
       </div>
+
+      <AnimatePresence>
+        {showRaw && <RawDataPopup audit={audit} onClose={() => setShowRaw(false)} />}
+      </AnimatePresence>
     </div>
   );
 }
