@@ -36,6 +36,7 @@ interface AuditData {
   website_url: string;
   status: string;
   brand_analysis: BrandAnalysis | Record<string, unknown>;
+  search_queries: string[];
   serp_results: SerpResult[];
   scraped_competitors: ScrapedCompetitor[];
   error_message: string | null;
@@ -43,7 +44,7 @@ interface AuditData {
   updated_at: string;
 }
 
-type TabId = "brand" | "competition" | "opportunity";
+type TabId = "queries" | "brand" | "competition" | "opportunity";
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 async function callFreeAudit(action: string, payload: Record<string, unknown> = {}) {
@@ -101,6 +102,7 @@ function AstroLogo() {
 
 // ─── Tab Bar ──────────────────────────────────────────────────────────────────
 const TABS: { id: TabId; label: string }[] = [
+  { id: "queries", label: "Search Queries" },
   { id: "brand", label: "Your Brand" },
   { id: "competition", label: "Your Competition" },
   { id: "opportunity", label: "Your Opportunity" },
@@ -139,6 +141,121 @@ function TabBar({ active, onChange }: { active: TabId; onChange: (t: TabId) => v
           </button>
         );
       })}
+    </div>
+  );
+}
+
+// ─── Search Queries Tab ──────────────────────────────────────────────────────
+function SearchQueriesLoadingState() {
+  const steps = ["Fetching website content", "Extracting page text", "Analyzing business", "Generating search queries"];
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentStep((s) => (s + 1) % steps.length);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+        className="w-12 h-12 border-3 border-blue-100 border-t-blue-500 rounded-full mb-6"
+        style={{ borderWidth: "3px" }}
+      />
+      <p className="text-[16px] font-bold text-slate-700 mb-4">Generating search queries...</p>
+      <div className="flex flex-col gap-2 w-full max-w-[320px]">
+        {steps.map((step, i) => (
+          <motion.div
+            key={step}
+            initial={{ opacity: 0.3 }}
+            animate={{ opacity: i <= currentStep ? 1 : 0.3 }}
+            className="flex items-center gap-2"
+          >
+            {i < currentStep ? (
+              <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+            ) : i === currentStep ? (
+              <Loader2 size={15} className="text-blue-500 shrink-0 animate-spin" />
+            ) : (
+              <div className="w-[15px] h-[15px] rounded-full border-1.5 border-slate-200 shrink-0" />
+            )}
+            <span className={`text-[13px] ${i <= currentStep ? "text-slate-600 font-medium" : "text-slate-300"}`}>
+              {step}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function SearchQueriesErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
+        <AlertCircle size={26} className="text-red-500" />
+      </div>
+      <p className="text-[16px] font-bold text-slate-700 mb-2">Generation Failed</p>
+      <p className="text-[13px] text-slate-500 mb-6 text-center max-w-[400px]">{message}</p>
+      <button
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors"
+      >
+        <RefreshCw size={14} /> Try Again
+      </button>
+    </div>
+  );
+}
+
+function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn }: {
+  audit: AuditData;
+  onGenerate: () => void;
+  generating: boolean;
+  generateError: string | null;
+  rateLimited: boolean;
+  resetIn?: number;
+}) {
+  const queries = audit.search_queries || [];
+  const hasResults = queries.length > 0;
+
+  if (generating) return <SearchQueriesLoadingState />;
+  if (rateLimited) return <RateLimitMessage resetIn={resetIn} />;
+  if (generateError && !hasResults) return <SearchQueriesErrorState message={generateError} onRetry={onGenerate} />;
+  if (!hasResults) return <SearchQueriesErrorState message="No search queries generated yet." onRetry={onGenerate} />;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-[20px] font-bold text-slate-900">Search Queries</h2>
+          <p className="text-[13px] text-slate-400 mt-0.5">Realistic search queries potential customers use to find businesses like {audit.website_url}</p>
+        </div>
+        <button
+          onClick={onGenerate}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors"
+        >
+          <RefreshCw size={13} /> Regenerate
+        </button>
+      </div>
+
+      <div className="space-y-3">
+        {queries.map((query, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: i * 0.05 }}
+            className="flex items-center gap-3 bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+          >
+            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+              <span className="text-[13px] font-bold text-blue-600 tabular-nums">{i + 1}</span>
+            </div>
+            <p className="text-[14px] text-slate-700 font-medium leading-relaxed flex-1">{query}</p>
+          </motion.div>
+        ))}
+      </div>
     </div>
   );
 }
@@ -658,13 +775,17 @@ function OpportunityTab() {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("brand");
+  const [activeTab, setActiveTab] = useState<TabId>("queries");
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [analyzeError, setAnalyzeError] = useState<string | null>(null);
   const [analyzeRateLimited, setAnalyzeRateLimited] = useState(false);
   const [analyzeResetIn, setAnalyzeResetIn] = useState<number | undefined>();
+  const [generatingQueries, setGeneratingQueries] = useState(false);
+  const [generateQueriesError, setGenerateQueriesError] = useState<string | null>(null);
+  const [generateQueriesRateLimited, setGenerateQueriesRateLimited] = useState(false);
+  const [generateQueriesResetIn, setGenerateQueriesResetIn] = useState<number | undefined>();
   const hasTriggeredAnalysis = useRef(false);
 
   // Load audit on mount
@@ -704,13 +825,34 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
+  // Auto-trigger search queries generation
+  const generateSearchQueries = useCallback(async () => {
+    setGeneratingQueries(true);
+    setGenerateQueriesError(null);
+    setGenerateQueriesRateLimited(false);
+    try {
+      const data = await callFreeAudit("generate-search-queries", { audit_id: params.id });
+      setAudit(data.data);
+    } catch (err: any) {
+      if (err.rateLimited) {
+        setGenerateQueriesRateLimited(true);
+        setGenerateQueriesResetIn(err.resetIn);
+      } else {
+        setGenerateQueriesError(err.message || "Failed to generate search queries");
+      }
+    } finally {
+      setGeneratingQueries(false);
+    }
+  }, [params.id]);
+
   useEffect(() => {
     if (!audit || hasTriggeredAnalysis.current) return;
-    if (audit.status === "pending" || audit.status === "error") {
+    const queries = audit.search_queries || [];
+    if (queries.length === 0) {
       hasTriggeredAnalysis.current = true;
-      analyzeBrand();
+      generateSearchQueries();
     }
-  }, [audit, analyzeBrand]);
+  }, [audit, generateSearchQueries]);
 
   // SERP search handler
   const handleSearch = useCallback(async (term: string): Promise<{ results?: SerpResult[] }> => {
@@ -807,6 +949,16 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
           >
+            {activeTab === "queries" && (
+              <SearchQueriesTab
+                audit={audit}
+                onGenerate={generateSearchQueries}
+                generating={generatingQueries}
+                generateError={generateQueriesError}
+                rateLimited={generateQueriesRateLimited}
+                resetIn={generateQueriesResetIn}
+              />
+            )}
             {activeTab === "brand" && (
               <BrandTab
                 audit={audit}

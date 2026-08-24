@@ -151,6 +151,109 @@ interface SerpResult {
   description: string;
 }
 
+const FALLBACK_SEARCH_QUERIES_PROMPT = `You are an expert SEO strategist and search behavior researcher.
+
+Analyze the provided company website content and identify how real potential customers would search to find this business, its products, services, or solutions.
+
+Generate exactly 10 realistic, non-branded search queries.
+
+The queries must be:
+- Based on the actual business and offerings described in the website content
+- Phrases that a real person could plausibly type into Google
+- Meaningfully distinct from each other, not just minor keyword variations
+- Focused on the best ways a potential customer could discover this business category or solution
+- A mix of relevant search intents where appropriate, such as category, product, service, problem/solution, tool/software, audience-specific, commercial, or comparison queries
+
+Do not use the company's brand name unless it is genuinely necessary to describe a generic search behavior. Prefer non-branded discovery queries.
+
+Avoid:
+- Generic keywords that do not accurately represent the business
+- Made-up phrases that people are unlikely to search
+- Ten variations of the same keyword
+- Keywords based only on isolated words rather than understanding the overall business
+
+Return ONLY valid JSON:
+{
+  "search_queries": [
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    "",
+    ""
+  ]
+}`;
+
+async function fetchWebsiteContent(url: string): Promise<{ ok: true; html: string } | { ok: false; error: string; status?: number }> {
+  let pageResponse: Response;
+  try {
+    pageResponse = await fetch(url, {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+      },
+      redirect: "follow",
+    });
+  } catch (fetchErr) {
+    return { ok: false, error: `Failed to connect: ${String(fetchErr)}` };
+  }
+
+  if (!pageResponse.ok) {
+    return { ok: false, error: `HTTP ${pageResponse.status}`, status: pageResponse.status };
+  }
+
+  const html = await pageResponse.text();
+  return { ok: true, html: html.length > 1_500_000 ? html.slice(0, 1_500_000) : html };
+}
+
+function extractTextFromHtml(html: string, sourceUrl: string): string {
+  try {
+    const parsed = parseHTML(html);
+    const document = parsed.document;
+
+    try {
+      const base = document.createElement("base");
+      base.setAttribute("href", sourceUrl);
+      document.head.appendChild(base);
+    } catch { /* ignore */ }
+
+    const removeSelectors = [
+      "script", "style", "noscript", "iframe", "svg",
+      "nav", "header", "footer", "aside",
+      "[role='navigation']", "[role='banner']", "[role='contentinfo']",
+    ];
+    for (const sel of removeSelectors) {
+      try {
+        document.querySelectorAll(sel).forEach((el: any) => el.remove());
+      } catch { /* linkedom may not support all selectors */ }
+    }
+
+    try {
+      const reader = new Readability(document);
+      const readabilityResult = reader.parse();
+      if (readabilityResult?.textContent) {
+        return readabilityResult.textContent
+          .replace(/\s+\n/g, "\n")
+          .replace(/\n{3,}/g, "\n\n")
+          .trim()
+          .slice(0, 30000);
+      }
+    } catch { /* fall through */ }
+  } catch { /* fall through */ }
+
+  return html
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 15000);
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -272,93 +375,17 @@ Deno.serve(async (req: Request) => {
       const sourceUrl = audit.website_url;
 
       // Step 1: Fetch website
-      let pageResponse: Response;
-      try {
-        pageResponse = await fetch(sourceUrl, {
-          headers: {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-            Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-          },
-          redirect: "follow",
-        });
-      } catch (fetchErr) {
+      const fetchResult = await fetchWebsiteContent(sourceUrl);
+      if (!fetchResult.ok) {
         await supabase
           .from("free_audits")
-          .update({ status: "error", error_message: `Failed to connect: ${String(fetchErr)}`, updated_at: new Date().toISOString() })
+          .update({ status: "error", error_message: fetchResult.error, updated_at: new Date().toISOString() })
           .eq("id", audit_id);
-        return jsonResponse({ error: "Failed to connect to the website. The URL may be unreachable." }, 400);
+        return jsonResponse({ error: fetchResult.error.includes("HTTP") ? `Website returned an error (${fetchResult.error}).` : "Failed to connect to the website. The URL may be unreachable." }, 400);
       }
 
-      if (!pageResponse.ok) {
-        await supabase
-          .from("free_audits")
-          .update({ status: "error", error_message: `HTTP ${pageResponse.status}`, updated_at: new Date().toISOString() })
-          .eq("id", audit_id);
-        return jsonResponse({ error: `Website returned an error (HTTP ${pageResponse.status}).` }, 400);
-      }
-
-      const html = await pageResponse.text();
-      const trimmed = html.length > 1_500_000 ? html.slice(0, 1_500_000) : html;
-
-      // Step 2: Parse HTML and extract content
-      let contentToAnalyze = "";
-      try {
-        const parsed = parseHTML(trimmed);
-        const document = parsed.document;
-
-        try {
-          const base = document.createElement("base");
-          base.setAttribute("href", sourceUrl);
-          document.head.appendChild(base);
-        } catch { /* ignore */ }
-
-        const removeSelectors = [
-          "script", "style", "noscript", "iframe", "svg",
-          "nav", "header", "footer", "aside",
-          "[role='navigation']", "[role='banner']", "[role='contentinfo']",
-        ];
-        for (const sel of removeSelectors) {
-          try {
-            document.querySelectorAll(sel).forEach((el: any) => el.remove());
-          } catch { /* linkedom may not support all selectors */ }
-        }
-
-        try {
-          const reader = new Readability(document);
-          const readabilityResult = reader.parse();
-          if (readabilityResult?.textContent) {
-            contentToAnalyze = readabilityResult.textContent
-              .replace(/\s+\n/g, "\n")
-              .replace(/\n{3,}/g, "\n\n")
-              .trim()
-              .slice(0, 30000);
-          } else {
-            contentToAnalyze = html
-              .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-              .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-              .replace(/<[^>]+>/g, " ")
-              .replace(/\s+/g, " ")
-              .trim()
-              .slice(0, 15000);
-          }
-        } catch {
-          contentToAnalyze = html
-            .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-            .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-            .replace(/<[^>]+>/g, " ")
-            .replace(/\s+/g, " ")
-            .trim()
-            .slice(0, 15000);
-        }
-      } catch {
-        contentToAnalyze = html
-          .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
-          .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
-          .replace(/<[^>]+>/g, " ")
-          .replace(/\s+/g, " ")
-          .trim()
-          .slice(0, 15000);
-      }
+      // Step 2: Extract text content
+      const contentToAnalyze = extractTextFromHtml(fetchResult.html, sourceUrl);
 
       if (!contentToAnalyze || contentToAnalyze.length < 50) {
         await supabase
@@ -480,6 +507,146 @@ Deno.serve(async (req: Request) => {
 
       if (saveError) {
         return jsonResponse({ error: "Failed to save analysis", detail: saveError.message }, 500);
+      }
+
+      return jsonResponse({ success: true, data: updated });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ACTION: generate-search-queries — scrape website, call OpenRouter for 10 search queries
+    // ═══════════════════════════════════════════════════════════
+    if (action === "generate-search-queries") {
+      const rl = await checkRateLimit(supabase, clientIP, "analyze-brand", settings);
+      if (!rl.allowed) {
+        return jsonResponse({
+          error: "Too many analysis requests. Please try again later.",
+          rate_limited: true,
+          reset_in_seconds: rl.resetIn,
+        }, 429);
+      }
+
+      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+      if (!OPENROUTER_API_KEY) {
+        return jsonResponse({ error: "OpenRouter API key is not configured." }, 500);
+      }
+
+      const { audit_id } = body;
+      if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
+
+      const { data: audit, error: fetchError } = await supabase
+        .from("free_audits")
+        .select("*")
+        .eq("id", audit_id)
+        .maybeSingle();
+
+      if (fetchError) return jsonResponse({ error: "Database error", detail: fetchError.message }, 500);
+      if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
+
+      const sourceUrl = audit.website_url;
+
+      // Step 1: Fetch website (reuse shared scraper)
+      const fetchResult = await fetchWebsiteContent(sourceUrl);
+      if (!fetchResult.ok) {
+        return jsonResponse({ error: fetchResult.error.includes("HTTP") ? `Website returned an error (${fetchResult.error}).` : "Failed to connect to the website. The URL may be unreachable." }, 400);
+      }
+
+      // Step 2: Extract text content
+      const contentToAnalyze = extractTextFromHtml(fetchResult.html, sourceUrl);
+
+      if (!contentToAnalyze || contentToAnalyze.length < 50) {
+        return jsonResponse({ error: "Insufficient content to analyze. The page may be empty or require JavaScript." }, 400);
+      }
+
+      // Step 3: Load prompt and model settings
+      const { data: settingsRows } = await supabase
+        .from("admin_settings")
+        .select("key, value")
+        .in("key", [
+          "free_audit_search_queries_prompt",
+          "ai_model_brand_analyzer",
+          "ai_max_tokens_brand_analyzer_prompt",
+        ]);
+
+      const settingsMap: Record<string, string> = {};
+      for (const row of settingsRows || []) {
+        settingsMap[row.key] = row.value;
+      }
+
+      const systemPrompt =
+        settingsMap["free_audit_search_queries_prompt"] || FALLBACK_SEARCH_QUERIES_PROMPT;
+      const model =
+        settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
+      const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
+
+      // Step 4: Call OpenRouter
+      let aiResponse: Response;
+      try {
+        aiResponse = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": SUPABASE_URL,
+              "X-Title": "AstroRank Free Audit",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: systemPrompt },
+                {
+                  role: "user",
+                  content: `Analyze the following website content and generate 10 realistic search queries:\n\n${contentToAnalyze}`,
+                },
+              ],
+              temperature: 0.7,
+              max_tokens: maxTokens,
+              response_format: { type: "json_object" },
+            }),
+          }
+        );
+      } catch {
+        return jsonResponse({ error: "Failed to reach the AI service." }, 502);
+      }
+
+      if (aiResponse.status === 429) {
+        return jsonResponse({ error: "AI service is busy. Please try again in a moment." }, 429);
+      }
+
+      if (!aiResponse.ok) {
+        return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
+      }
+
+      const aiData = await aiResponse.json();
+      const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+
+      if (!rawContent) {
+        return jsonResponse({ error: "AI returned an empty response." }, 502);
+      }
+
+      // Step 5: Parse JSON
+      const extractionResult = extractJsonFromContent(rawContent);
+      if (!extractionResult.ok) {
+        return jsonResponse({ error: "Failed to parse AI response as JSON." }, 502);
+      }
+
+      const parsed = extractionResult.data as Record<string, unknown>;
+      const queries = Array.isArray(parsed.search_queries) ? parsed.search_queries.filter((q: unknown) => typeof q === "string") : [];
+
+      // Step 6: Save to database
+      const { data: updated, error: saveError } = await supabase
+        .from("free_audits")
+        .update({
+          search_queries: queries,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", audit_id)
+        .select()
+        .single();
+
+      if (saveError) {
+        return jsonResponse({ error: "Failed to save search queries", detail: saveError.message }, 500);
       }
 
       return jsonResponse({ success: true, data: updated });
