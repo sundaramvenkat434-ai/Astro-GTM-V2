@@ -330,7 +330,7 @@ function formatScrapedContent(raw: string): { label: string; text: string; kind:
     const isShortHeading = line.length <= 120 && line.length >= 2;
     const looksLikeHeading = isShortHeading && (
       /^(h[1-6]|heading|section|chapter)/i.test(line) ||
-      /^[A-Z][A-Z0-9 \\-:&'/]+$/ .test(line) ||
+      /^[A-Z][A-Z0-9 \-:&'/]+$/.test(line) ||
       (line.split(" ").length <= 12 && /^[A-Z]/.test(line) && !line.endsWith("."))
     );
     if (looksLikeHeading) {
