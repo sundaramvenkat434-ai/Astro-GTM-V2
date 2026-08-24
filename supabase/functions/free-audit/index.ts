@@ -513,7 +513,7 @@ Deno.serve(async (req: Request) => {
     }
 
     // ═══════════════════════════════════════════════════════════
-    // ACTION: generate-search-queries — scrape website, call OpenRouter for 10 search queries
+    // ACTION: generate-search-queries — read understander output, call OpenRouter for 10 search queries
     // ═══════════════════════════════════════════════════════════
     if (action === "generate-search-queries") {
       const rl = await checkRateLimit(supabase, clientIP, "analyze-brand", settings);
@@ -542,22 +542,12 @@ Deno.serve(async (req: Request) => {
       if (fetchError) return jsonResponse({ error: "Database error", detail: fetchError.message }, 500);
       if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
 
-      const sourceUrl = audit.website_url;
-
-      // Step 1: Fetch website (reuse shared scraper)
-      const fetchResult = await fetchWebsiteContent(sourceUrl);
-      if (!fetchResult.ok) {
-        return jsonResponse({ error: fetchResult.error.includes("HTTP") ? `Website returned an error (${fetchResult.error}).` : "Failed to connect to the website. The URL may be unreachable." }, 400);
+      const understanderAnalysis = audit.understander_analysis;
+      if (!understanderAnalysis || typeof understanderAnalysis !== "object" || Object.keys(understanderAnalysis).length <= 1) {
+        return jsonResponse({ error: "No understander analysis found. Run the understander first." }, 400);
       }
 
-      // Step 2: Extract text content
-      const contentToAnalyze = extractTextFromHtml(fetchResult.html, sourceUrl);
-
-      if (!contentToAnalyze || contentToAnalyze.length < 50) {
-        return jsonResponse({ error: "Insufficient content to analyze. The page may be empty or require JavaScript." }, 400);
-      }
-
-      // Step 3: Load prompt and model settings
+      // Step 1: Load prompt and model settings
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
@@ -578,7 +568,7 @@ Deno.serve(async (req: Request) => {
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_search_queries_prompt"]) || 4000;
 
-      const userMessageContent = `Analyze the following website content and generate 10 realistic search queries:\n\n${contentToAnalyze}`;
+      const userMessageContent = `Based on the following structured business understanding, generate 10 realistic search queries that potential customers would use to find this business:\n\n${JSON.stringify(understanderAnalysis, null, 2)}`;
       const requestBody = {
         model,
         messages: [

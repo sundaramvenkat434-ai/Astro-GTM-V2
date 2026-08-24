@@ -1127,6 +1127,7 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [runningUnderstander, setRunningUnderstander] = useState(false);
   const [understanderError, setUnderstanderError] = useState<string | null>(null);
   const hasTriggeredScrape = useRef(false);
+  const hasTriggeredQueries = useRef(false);
 
   // Load audit on mount
   const loadAudit = useCallback(async () => {
@@ -1234,6 +1235,18 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
       runUnderstander();
     }
   }, [audit, runningUnderstander, runUnderstander]);
+
+  // Auto-trigger search queries generation after understander completes
+  useEffect(() => {
+    if (!audit || hasTriggeredQueries.current) return;
+    const analysis = audit.understander_analysis;
+    const hasAnalysis = analysis && Object.keys(analysis).length > 1;
+    const queries = audit.search_queries || [];
+    if (hasAnalysis && queries.length === 0 && !generatingQueries) {
+      hasTriggeredQueries.current = true;
+      generateSearchQueries();
+    }
+  }, [audit, generatingQueries, generateSearchQueries]);
 
   // SERP search handler
   const handleSearch = useCallback(async (term: string): Promise<{ results?: SerpResult[] }> => {
