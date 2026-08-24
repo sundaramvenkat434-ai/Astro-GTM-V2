@@ -210,11 +210,190 @@ async function fetchWebsiteContent(url: string): Promise<{ ok: true; html: strin
   return { ok: true, html: html.length > 1_500_000 ? html.slice(0, 1_500_000) : html };
 }
 
+function getMetaContent(document: Document, selector: string): string {
+  try {
+    const el = document.querySelector(selector);
+    const val = el?.getAttribute("content");
+    return val ? val.trim() : "";
+  } catch { return ""; }
+}
+
+function normalizeText(s: string): string {
+  return s.trim().replace(/\s+/g, " ").toLowerCase();
+}
+
+interface ParsedJsonLd {
+  type?: string;
+  name?: string;
+  description?: string;
+  "@type"?: string | string[];
+  "@graph"?: unknown[];
+  mainEntity?: unknown | unknown[];
+  [key: string]: unknown;
+}
+
+function flattenJsonLd(obj: unknown): ParsedJsonLd[] {
+  if (Array.isArray(obj)) {
+    return obj.flatMap(flattenJsonLd);
+  }
+  if (obj && typeof obj === "object") {
+    const o = obj as ParsedJsonLd;
+    if (Array.isArray(o["@graph"])) {
+      return o["@graph"].flatMap(flattenJsonLd);
+    }
+    return [o];
+  }
+  return [];
+}
+
+function getTypeStr(entry: ParsedJsonLd): string {
+  const t = entry["@type"] || entry.type;
+  if (typeof t === "string") return t;
+  if (Array.isArray(t)) return t.join(", ");
+  return "";
+}
+
+function extractJsonLdInfo(document: Document): { orgLines: string[]; faqLines: string[] } {
+  const orgLines: string[] = [];
+  const faqLines: string[] = [];
+
+  let scripts: NodeListOf<HTMLScriptElement> | HTMLScriptElement[] = [];
+  try {
+    scripts = document.querySelectorAll('script[type="application/ld+json"]');
+  } catch { /* linkedom fallback */ }
+
+  if (!scripts || (scripts as HTMLScriptElement[]).length === 0) {
+    const rawMatches = document.innerHTML?.match(/<script[^>]*type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi) || [];
+    for (const raw of rawMatches) {
+      const contentMatch = raw.match(/>([\s\S]*?)<\/script>/);
+      if (contentMatch) {
+        try {
+          const parsed = JSON.parse(contentMatch[1].trim());
+          processJsonLdEntries(flattenJsonLd(parsed), orgLines, faqLines);
+        } catch { /* skip unparseable */ }
+      }
+    }
+    return { orgLines, faqLines };
+  }
+
+  for (const script of scripts as HTMLScriptElement[]) {
+    const raw = script.textContent || script.text || "";
+    if (!raw.trim()) continue;
+    try {
+      const parsed = JSON.parse(raw.trim());
+      processJsonLdEntries(flattenJsonLd(parsed), orgLines, faqLines);
+    } catch { /* skip unparseable */ }
+  }
+
+  return { orgLines, faqLines };
+}
+
+function processJsonLdEntries(entries: ParsedJsonLd[], orgLines: string[], faqLines: string[]): void {
+  for (const entry of entries) {
+    const typeStr = getTypeStr(entry);
+    const lowerType = typeStr.toLowerCase();
+
+    if (lowerType.includes("faqpage")) {
+      const mainEntity = entry.mainEntity;
+      const questions = Array.isArray(mainEntity) ? mainEntity : mainEntity ? [mainEntity] : [];
+      for (const q of questions) {
+        if (q && typeof q === "object") {
+          const qObj = q as Record<string, unknown>;
+          const qName = (qObj.name as string || "").trim();
+          const acceptedAnswer = qObj.acceptedAnswer as Record<string, unknown> | undefined;
+          const aText = acceptedAnswer ? ((acceptedAnswer.text as string) || "").trim() : "";
+          if (qName) {
+            faqLines.push(`Q: ${qName}`);
+            if (aText) faqLines.push(`A: ${aText}`);
+          }
+        }
+      }
+      continue;
+    }
+
+    const isOrgType =
+      lowerType.includes("organization") ||
+      lowerType.includes("localbusiness") ||
+      lowerType.includes("website") ||
+      lowerType.includes("softwareapplication") ||
+      lowerType.includes("product") ||
+      lowerType.includes("service") ||
+      lowerType.includes("brand");
+
+    if (isOrgType && entry.name) {
+      let line = `Organization: ${entry.name.trim()}`;
+      if (entry.description) {
+        line += ` — ${entry.description.trim()}`;
+      }
+      orgLines.push(line);
+    }
+  }
+}
+
 function extractTextFromHtml(html: string, sourceUrl: string): string {
+  const seen = new Set<string>();
+  function dedupe(text: string): boolean {
+    const key = normalizeText(text);
+    if (!key || key.length < 10) return false;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  }
+
+  const sections: string[] = [];
+
   try {
     const parsed = parseHTML(html);
     const document = parsed.document;
 
+    // ── Head metadata ──────────────────────────────────────
+    let title = "";
+    try { title = (document.querySelector("title")?.textContent || "").trim(); } catch { /* ignore */ }
+    if (title && dedupe(title)) {
+      sections.push(`Title: ${title}`);
+    }
+
+    const metaDesc = getMetaContent(document, 'meta[name="description"]');
+    if (metaDesc && dedupe(metaDesc)) {
+      sections.push(`Meta Description: ${metaDesc}`);
+    }
+
+    const ogTitle = getMetaContent(document, 'meta[property="og:title"]');
+    const ogDesc = getMetaContent(document, 'meta[property="og:description"]');
+    const ogSiteName = getMetaContent(document, 'meta[property="og:site_name"]');
+    const ogType = getMetaContent(document, 'meta[property="og:type"]');
+    const ogLines: string[] = [];
+    if (ogTitle && dedupe(ogTitle)) ogLines.push(`Title: ${ogTitle}`);
+    if (ogDesc && dedupe(ogDesc)) ogLines.push(`Description: ${ogDesc}`);
+    if (ogSiteName && dedupe(ogSiteName)) ogLines.push(`Site Name: ${ogSiteName}`);
+    if (ogType && dedupe(ogType)) ogLines.push(`Type: ${ogType}`);
+    if (ogLines.length > 0) {
+      sections.push(`Open Graph:\n${ogLines.join("\n")}`);
+    }
+
+    const twTitle = getMetaContent(document, 'meta[name="twitter:title"]');
+    const twDesc = getMetaContent(document, 'meta[name="twitter:description"]');
+    const twCard = getMetaContent(document, 'meta[name="twitter:card"]');
+    const twLines: string[] = [];
+    if (twTitle && dedupe(twTitle)) twLines.push(`Title: ${twTitle}`);
+    if (twDesc && dedupe(twDesc)) twLines.push(`Description: ${twDesc}`);
+    if (twCard && dedupe(twCard)) twLines.push(`Card: ${twCard}`);
+    if (twLines.length > 0) {
+      sections.push(`Twitter Card:\n${twLines.join("\n")}`);
+    }
+
+    // ── JSON-LD structured data ────────────────────────────
+    const { orgLines, faqLines } = extractJsonLdInfo(document);
+    const dedupedOrg = orgLines.filter(dedupe);
+    if (dedupedOrg.length > 0) {
+      sections.push(`Structured Data:\n${dedupedOrg.join("\n")}`);
+    }
+    const dedupedFaq = faqLines.filter(dedupe);
+    if (dedupedFaq.length > 0) {
+      sections.push(`FAQ:\n${dedupedFaq.join("\n")}`);
+    }
+
+    // ── Body content via Readability ───────────────────────
     try {
       const base = document.createElement("base");
       base.setAttribute("href", sourceUrl);
@@ -236,15 +415,22 @@ function extractTextFromHtml(html: string, sourceUrl: string): string {
       const reader = new Readability(document);
       const readabilityResult = reader.parse();
       if (readabilityResult?.textContent) {
-        return readabilityResult.textContent
+        const bodyText = readabilityResult.textContent
           .replace(/\s+\n/g, "\n")
           .replace(/\n{3,}/g, "\n\n")
-          .trim()
-          .slice(0, 30000);
+          .trim();
+        if (bodyText && dedupe(bodyText)) {
+          sections.push(`Page Content:\n${bodyText}`);
+        }
       }
     } catch { /* fall through */ }
   } catch { /* fall through */ }
 
+  if (sections.length > 0) {
+    return sections.join("\n\n").slice(0, 30000);
+  }
+
+  // ── Final fallback: strip tags ──────────────────────────
   return html
     .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, "")
