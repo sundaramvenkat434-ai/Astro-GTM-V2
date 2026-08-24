@@ -368,21 +368,22 @@ Deno.serve(async (req: Request) => {
 
     const parsed = extractionResult.data as Record<string, unknown>;
 
-    // Step 7: Database save
+    // Step 7: Database save -- new flat schema
     const { data: saved, error: saveError } = await supabase
       .from("gifaa_brand_intelligence")
       .insert({
         tenant_id,
         source_url: source_url || null,
         source_filename: source_filename || null,
-        brand_intelligence_score: (parsed.brand_intelligence_score as number) || 0,
-        brand: parsed.brand || {},
-        audience: parsed.audience || {},
-        offerings: parsed.offerings || {},
-        seo: parsed.seo || {},
+        brand_intelligence_score: 0,
+        about_brand: (parsed.about_brand as string) || "",
+        primary_business_segment: (parsed.primary_business_segment as string) || "",
+        primary_geography: (parsed.primary_geography as string) || "",
+        target_audience: (parsed.target_audience as string) || "",
+        primary_search_keyword: (parsed.primary_search_keyword as string) || "",
+        secondary_search_keywords: parsed.secondary_search_keywords || [],
+        long_tail_keyword_examples: parsed.long_tail_keyword_examples || [],
         content_opportunities: parsed.content_opportunities || [],
-        market_discovery: parsed.market_discovery || {},
-        confidence_reason: parsed.confidence_reason || null,
         raw_ai_response: parsed,
       })
       .select()

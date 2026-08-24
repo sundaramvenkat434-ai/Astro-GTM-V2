@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info, Download, RefreshCw, TrendingUp, CircleAlert as AlertCircle, ChevronDown } from 'lucide-react';
+import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info, Download, RefreshCw, TrendingUp, CircleAlert as AlertCircle, ChevronDown } from 'lucide-react';
 
 type AIResearcherSubTab = 'brand' | 'competitors' | 'keywords' | 'page-ideas' | 'interlinking';
 
@@ -23,37 +23,14 @@ interface BrandIntelligence {
   source_url: string | null;
   source_filename: string | null;
   brand_intelligence_score: number;
-  brand: {
-    name?: string;
-    category?: string;
-    description?: string;
-    value_proposition?: string;
-    location_focus?: string;
-    business_model?: string;
-  };
-  audience: {
-    segments?: string[];
-    pain_points?: string[];
-    search_intents?: string[];
-  };
-  offerings: {
-    products?: string[];
-    features?: string[];
-    differentiators?: string[];
-  };
-  seo: {
-    primary_keywords?: string[];
-    secondary_keywords?: string[];
-    long_tail_keywords?: string[];
-  };
-  market_discovery: {
-    primary_search_keyword?: string;
-    confidence_score?: number;
-    alternative_keywords?: string[];
-    selection_reason?: string;
-    rejected_keywords?: { keyword: string; reason: string }[];
-  };
-  content_opportunities: { topic: string; reason: string }[];
+  about_brand: string | null;
+  primary_business_segment: string | null;
+  primary_geography: string | null;
+  target_audience: string | null;
+  primary_search_keyword: string | null;
+  secondary_search_keywords: string[] | null;
+  long_tail_keyword_examples: string[] | null;
+  content_opportunities: string[] | null;
   confidence_reason: string | null;
   created_at: string;
   updated_at: string;
@@ -402,24 +379,30 @@ function BrandProfileView({
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  // Editable state
-  const [brand, setBrand] = useState(profile.brand);
-  const [audience, setAudience] = useState(profile.audience);
-  const [offerings, setOfferings] = useState(profile.offerings);
-  const [seo, setSeo] = useState(profile.seo);
-  const [marketDiscovery, setMarketDiscovery] = useState(profile.market_discovery || {});
-  const [contentOpps, setContentOpps] = useState(profile.content_opportunities || []);
+  // Editable state -- flat fields
+  const [aboutBrand, setAboutBrand] = useState(profile.about_brand || '');
+  const [primaryBusinessSegment, setPrimaryBusinessSegment] = useState(profile.primary_business_segment || '');
+  const [primaryGeography, setPrimaryGeography] = useState(profile.primary_geography || '');
+  const [targetAudience, setTargetAudience] = useState(profile.target_audience || '');
+  const [primarySearchKeyword, setPrimarySearchKeyword] = useState(profile.primary_search_keyword || '');
+  const [secondaryKeywords, setSecondaryKeywords] = useState<string[]>(profile.secondary_search_keywords || []);
+  const [longTailKeywords, setLongTailKeywords] = useState<string[]>(profile.long_tail_keyword_examples || []);
+  const [contentOpps, setContentOpps] = useState<string[]>(
+    (profile.content_opportunities || []).map((opp) => typeof opp === 'string' ? opp : (opp as { topic?: string })?.topic || '')
+  );
 
   async function handleSave() {
     setSaving(true);
     await supabase
       .from('gifaa_brand_intelligence')
       .update({
-        brand,
-        audience,
-        offerings,
-        seo,
-        market_discovery: marketDiscovery,
+        about_brand: aboutBrand,
+        primary_business_segment: primaryBusinessSegment,
+        primary_geography: primaryGeography,
+        target_audience: targetAudience,
+        primary_search_keyword: primarySearchKeyword,
+        secondary_search_keywords: secondaryKeywords,
+        long_tail_keyword_examples: longTailKeywords,
         content_opportunities: contentOpps,
         updated_at: new Date().toISOString(),
       })
@@ -430,21 +413,17 @@ function BrandProfileView({
     setTimeout(() => setSaved(false), 2000);
   }
 
-  const score = profile.brand_intelligence_score;
-  const scoreColor = score >= 80 ? 'text-emerald-600' : score >= 60 ? 'text-amber-600' : 'text-red-500';
-  const scoreBg = score >= 80 ? 'bg-emerald-50 border-emerald-200' : score >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
-
   return (
     <div className="space-y-6">
       {/* Score Card */}
-      <div className={`rounded-xl border p-6 ${scoreBg}`}>
+      <div className="rounded-xl border p-6 bg-sky-50 border-sky-200">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-16 h-16 rounded-full bg-white border-2 border-current flex items-center justify-center shadow-sm">
-              <span className={`text-2xl font-bold ${scoreColor}`}>{score}</span>
+            <div className="w-12 h-12 rounded-lg bg-white border border-sky-200 flex items-center justify-center shadow-sm">
+              <Brain className="w-6 h-6 text-sky-600" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold text-gray-900">Brand Intelligence Score</h2>
+              <h2 className="text-lg font-semibold text-gray-900">Brand Intelligence</h2>
               <p className="text-sm text-gray-600 mt-0.5 max-w-md">
                 {profile.confidence_reason || 'Analysis complete.'}
               </p>
@@ -462,112 +441,85 @@ function BrandProfileView({
         )}
       </div>
 
-      {/* Brand Overview */}
-      <EditableSection
-        title="Brand Overview"
-        icon={<Target className="w-4 h-4 text-sky-600" />}
-      >
+      {/* About the Brand */}
+      <EditableSection title="About the Brand" icon={<Brain className="w-4 h-4 text-sky-600" />}>
+        <textarea
+          value={aboutBrand}
+          onChange={(e) => setAboutBrand(e.target.value)}
+          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-20"
+          placeholder="Short summary, max 50 words"
+        />
+      </EditableSection>
+
+      {/* Primary Business Segment + Geography */}
+      <EditableSection title="Business & Geography" icon={<Target className="w-4 h-4 text-teal-600" />}>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <EditableField label="Brand Name" value={brand.name || ''} onChange={(v) => setBrand({ ...brand, name: v })} />
-          <EditableField label="Category" value={brand.category || ''} onChange={(v) => setBrand({ ...brand, category: v })} />
-          <EditableField label="Description" value={brand.description || ''} onChange={(v) => setBrand({ ...brand, description: v })} multiline />
-          <EditableField label="Value Proposition" value={brand.value_proposition || ''} onChange={(v) => setBrand({ ...brand, value_proposition: v })} multiline />
-          <EditableField label="Geographic Focus" value={brand.location_focus || ''} onChange={(v) => setBrand({ ...brand, location_focus: v })} />
-          <EditableField label="Business Model" value={brand.business_model || ''} onChange={(v) => setBrand({ ...brand, business_model: v })} />
+          <EditableField label="Primary Business Segment" value={primaryBusinessSegment} onChange={setPrimaryBusinessSegment} />
+          <EditableField label="Primary Geography" value={primaryGeography} onChange={setPrimaryGeography} />
         </div>
       </EditableSection>
 
-      {/* Audience */}
-      <EditableSection
-        title="Audience"
-        icon={<Users className="w-4 h-4 text-teal-600" />}
-      >
+      {/* Target Audience */}
+      <EditableSection title="Target Audience" icon={<Users className="w-4 h-4 text-teal-600" />}>
+        <textarea
+          value={targetAudience}
+          onChange={(e) => setTargetAudience(e.target.value)}
+          className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-20"
+          placeholder="Short summary, max 50 words"
+        />
+      </EditableSection>
+
+      {/* Search Keywords */}
+      <EditableSection title="Search Keywords" icon={<Search className="w-4 h-4 text-orange-600" />}>
         <div className="space-y-4">
-          <EditableList label="Customer Segments" items={audience.segments || []} onChange={(v) => setAudience({ ...audience, segments: v })} />
-          <EditableList label="Pain Points" items={audience.pain_points || []} onChange={(v) => setAudience({ ...audience, pain_points: v })} />
-          <EditableList label="Search Intents" items={audience.search_intents || []} onChange={(v) => setAudience({ ...audience, search_intents: v })} />
+          <div>
+            <label className="block text-xs font-medium text-gray-500 mb-1">Primary Search Keyword</label>
+            <Input
+              value={primarySearchKeyword}
+              onChange={(e) => setPrimarySearchKeyword(e.target.value)}
+              placeholder="e.g. gift registry india"
+              className="text-sm"
+            />
+          </div>
+          <ChipList label="Secondary Search Keywords (3)" items={secondaryKeywords} onChange={setSecondaryKeywords} color="teal" />
+          <ChipList label="Long-tail Keyword Examples (5)" items={longTailKeywords} onChange={setLongTailKeywords} color="gray" />
         </div>
       </EditableSection>
-
-      {/* Products & Features */}
-      <EditableSection
-        title="Products & Features"
-        icon={<Package className="w-4 h-4 text-blue-600" />}
-      >
-        <div className="space-y-4">
-          <EditableList label="Products / Services" items={offerings.products || []} onChange={(v) => setOfferings({ ...offerings, products: v })} />
-          <EditableList label="Key Features" items={offerings.features || []} onChange={(v) => setOfferings({ ...offerings, features: v })} />
-          <EditableList label="Differentiators" items={offerings.differentiators || []} onChange={(v) => setOfferings({ ...offerings, differentiators: v })} />
-        </div>
-      </EditableSection>
-
-      {/* SEO Keywords */}
-      <EditableSection
-        title="SEO Keywords"
-        icon={<Search className="w-4 h-4 text-orange-600" />}
-      >
-        <div className="space-y-4">
-          <ChipList label="Primary Keywords" items={seo.primary_keywords || []} onChange={(v) => setSeo({ ...seo, primary_keywords: v })} color="sky" />
-          <ChipList label="Secondary Keywords" items={seo.secondary_keywords || []} onChange={(v) => setSeo({ ...seo, secondary_keywords: v })} color="teal" />
-          <ChipList label="Long-Tail Keywords" items={seo.long_tail_keywords || []} onChange={(v) => setSeo({ ...seo, long_tail_keywords: v })} color="gray" />
-        </div>
-      </EditableSection>
-
-      {/* Market Discovery */}
-      <MarketDiscoverySection
-        marketDiscovery={marketDiscovery}
-        onChange={setMarketDiscovery}
-      />
 
       {/* Content Opportunities */}
-      <EditableSection
-        title="Content Opportunities"
-        icon={<Lightbulb className="w-4 h-4 text-amber-600" />}
-      >
-        <div className="space-y-3">
+      <EditableSection title="Content Opportunities" icon={<Lightbulb className="w-4 h-4 text-amber-600" />}>
+        <div className="space-y-2">
           {contentOpps.map((opp, i) => (
-            <div key={i} className="p-3 border border-gray-200 rounded-lg bg-gray-50/50 group">
-              <div className="flex items-start gap-3">
-                <div className="flex-1 space-y-2">
-                  <Input
-                    value={opp.topic}
-                    onChange={(e) => {
-                      const updated = [...contentOpps];
-                      updated[i] = { ...updated[i], topic: e.target.value };
-                      setContentOpps(updated);
-                    }}
-                    placeholder="Topic"
-                    className="text-sm font-medium"
-                  />
-                  <Input
-                    value={opp.reason}
-                    onChange={(e) => {
-                      const updated = [...contentOpps];
-                      updated[i] = { ...updated[i], reason: e.target.value };
-                      setContentOpps(updated);
-                    }}
-                    placeholder="Reason / rationale"
-                    className="text-sm"
-                  />
-                </div>
-                <button
-                  onClick={() => setContentOpps(contentOpps.filter((_, idx) => idx !== i))}
-                  className="p-1.5 text-gray-400 hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
+            <div key={i} className="flex items-center gap-2 group">
+              <Input
+                value={opp}
+                onChange={(e) => {
+                  const updated = [...contentOpps];
+                  updated[i] = e.target.value;
+                  setContentOpps(updated);
+                }}
+                placeholder="Very short content opportunity"
+                className="text-sm"
+              />
+              <button
+                onClick={() => setContentOpps(contentOpps.filter((_, idx) => idx !== i))}
+                className="p-1.5 text-gray-400 hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
             </div>
           ))}
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setContentOpps([...contentOpps, { topic: '', reason: '' }])}
-            className="gap-1.5 text-xs"
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Add Opportunity
-          </Button>
+          {contentOpps.length < 5 && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setContentOpps([...contentOpps, ''])}
+              className="gap-1.5 text-xs"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              Add Opportunity
+            </Button>
+          )}
         </div>
       </EditableSection>
 
@@ -833,8 +785,8 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
       }
       if (brandRes.data) {
         setBrandProfile(brandRes.data);
-        if (brandRes.data.market_discovery?.primary_search_keyword) {
-          setSearchTerm(brandRes.data.market_discovery.primary_search_keyword);
+        if (brandRes.data.primary_search_keyword) {
+          setSearchTerm(brandRes.data.primary_search_keyword);
         }
       }
       setLoading(false);
@@ -956,11 +908,13 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
             num_keywords: numKeywords,
             num_pages: numPages,
             brand_intelligence: brandProfile ? {
-              brand: brandProfile.brand,
-              audience: brandProfile.audience,
-              offerings: brandProfile.offerings,
-              seo: brandProfile.seo,
-              market_discovery: brandProfile.market_discovery,
+              about_brand: brandProfile.about_brand,
+              primary_business_segment: brandProfile.primary_business_segment,
+              primary_geography: brandProfile.primary_geography,
+              target_audience: brandProfile.target_audience,
+              primary_search_keyword: brandProfile.primary_search_keyword,
+              secondary_search_keywords: brandProfile.secondary_search_keywords,
+              long_tail_keyword_examples: brandProfile.long_tail_keyword_examples,
               content_opportunities: brandProfile.content_opportunities,
             } : null,
             serp_results: serpResults,
@@ -1010,7 +964,7 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
 
   if (step === 'results' && strategy) {
     const industryContext = brandProfile
-      ? [brandProfile.brand?.category, brandProfile.brand?.description].filter(Boolean).join(' — ').slice(0, 200)
+      ? [brandProfile.primary_business_segment, brandProfile.about_brand].filter(Boolean).join(' — ').slice(0, 200)
       : undefined;
     return <KeywordStrategyView strategy={strategy} onNewStrategy={handleNewStrategy} industry={industryContext} />;
   }
@@ -1208,7 +1162,7 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
             <div className="mt-4 p-3 bg-sky-50 border border-sky-200 rounded-lg flex items-start gap-2">
               <Brain className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
               <p className="text-xs text-sky-700">
-                Brand Intelligence will be included: <span className="font-medium">{brandProfile.brand?.name || 'Brand'}</span> ({brandProfile.brand?.category || 'uncategorized'}) with {brandProfile.seo?.primary_keywords?.length || 0} primary keywords, {brandProfile.audience?.segments?.length || 0} audience segments, and {brandProfile.content_opportunities?.length || 0} content opportunities.
+                Brand Intelligence will be included: <span className="font-medium">{brandProfile.primary_business_segment || 'Brand'}</span> with primary keyword "{brandProfile.primary_search_keyword || 'none'}" and {(brandProfile.content_opportunities || []).length} content opportunities.
               </p>
             </div>
           )}
@@ -1259,7 +1213,7 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
           <div className="mb-5 p-3 bg-sky-50 border border-sky-100 rounded-lg flex items-start gap-2">
             <Brain className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
             <p className="text-xs text-sky-700">
-              Brand profile loaded: <span className="font-medium">{brandProfile.brand?.name || 'Unknown'}</span>. Keywords and audience data will be used to improve research quality.
+              Brand profile loaded: <span className="font-medium">{brandProfile.primary_business_segment || 'Unknown'}</span>. Keywords and audience data will be used to improve research quality.
             </p>
           </div>
         )}
@@ -1287,8 +1241,8 @@ function KeywordsTab({ tenantId }: { tenantId: string }) {
               />
             </div>
             <p className="text-xs text-gray-400 mt-1.5">
-              {brandProfile?.market_discovery?.primary_search_keyword
-                ? `Suggested from brand analysis: "${brandProfile.market_discovery.primary_search_keyword}"`
+              {brandProfile?.primary_search_keyword
+                ? `Suggested from brand analysis: "${brandProfile.primary_search_keyword}"`
                 : 'Enter the primary keyword your competitors would rank for. This discovers who is ranking in your space.'
               }
             </p>
@@ -1624,173 +1578,6 @@ function KeywordStrategyView({ strategy, onNewStrategy, industry }: { strategy: 
   );
 }
 
-/* ─── Market Discovery Section ───────────────────────────── */
-
-interface MarketDiscoveryData {
-  primary_search_keyword?: string;
-  confidence_score?: number;
-  alternative_keywords?: string[];
-  selection_reason?: string;
-  rejected_keywords?: { keyword: string; reason: string }[];
-}
-
-function MarketDiscoverySection({
-  marketDiscovery,
-  onChange,
-}: {
-  marketDiscovery: MarketDiscoveryData;
-  onChange: (v: MarketDiscoveryData) => void;
-}) {
-  const [newAltKeyword, setNewAltKeyword] = useState('');
-
-  const confidenceScore = marketDiscovery.confidence_score || 0;
-  const confColor = confidenceScore >= 80 ? 'text-emerald-600' : confidenceScore >= 60 ? 'text-amber-600' : 'text-red-500';
-  const confBg = confidenceScore >= 80 ? 'bg-emerald-50 border-emerald-200' : confidenceScore >= 60 ? 'bg-amber-50 border-amber-200' : 'bg-red-50 border-red-200';
-
-  function addAltKeyword() {
-    const trimmed = newAltKeyword.trim();
-    if (!trimmed) return;
-    const current = marketDiscovery.alternative_keywords || [];
-    if (current.includes(trimmed)) return;
-    onChange({ ...marketDiscovery, alternative_keywords: [...current, trimmed] });
-    setNewAltKeyword('');
-  }
-
-  return (
-    <EditableSection
-      title="Market Discovery"
-      icon={<Globe className="w-4 h-4 text-indigo-600" />}
-    >
-      <div className="space-y-5">
-        {/* Primary keyword highlight */}
-        <div className={`rounded-lg border p-4 ${confBg}`}>
-          <div className="flex items-center justify-between mb-2">
-            <label className="text-xs font-medium text-gray-600">Selected Search Keyword</label>
-            <span className={`text-xs font-semibold ${confColor}`}>
-              Confidence: {confidenceScore}/100
-            </span>
-          </div>
-          <Input
-            value={marketDiscovery.primary_search_keyword || ''}
-            onChange={(e) => onChange({ ...marketDiscovery, primary_search_keyword: e.target.value })}
-            placeholder="e.g. gift registry india"
-            className="text-sm font-medium bg-white"
-          />
-          <p className="text-xs text-gray-500 mt-2">
-            This keyword will be used for competitor SERP discovery.
-          </p>
-        </div>
-
-        {/* Confidence score editable */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-1">Confidence Score (0-100)</label>
-            <Input
-              type="number"
-              min={0}
-              max={100}
-              value={confidenceScore}
-              onChange={(e) => onChange({ ...marketDiscovery, confidence_score: Math.min(100, Math.max(0, Number(e.target.value) || 0)) })}
-              className="text-sm"
-            />
-          </div>
-        </div>
-
-        {/* Selection reason */}
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-1">Why This Keyword Was Selected</label>
-          <textarea
-            value={marketDiscovery.selection_reason || ''}
-            onChange={(e) => onChange({ ...marketDiscovery, selection_reason: e.target.value })}
-            className="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:border-gray-400 resize-none h-16"
-            placeholder="AI reasoning for why this keyword best discovers competitors..."
-          />
-        </div>
-
-        {/* Alternative keywords */}
-        <div>
-          <label className="block text-xs font-medium text-gray-500 mb-2">Alternative Keywords</label>
-          <div className="flex flex-wrap gap-2 mb-3">
-            {(marketDiscovery.alternative_keywords || []).map((kw, i) => (
-              <span key={i} className="inline-flex items-center gap-1.5 px-2.5 py-1 text-xs font-medium rounded-full border bg-blue-50 text-blue-700 border-blue-200">
-                {kw}
-                <button
-                  onClick={() => {
-                    const updated = (marketDiscovery.alternative_keywords || []).filter((_, idx) => idx !== i);
-                    onChange({ ...marketDiscovery, alternative_keywords: updated });
-                  }}
-                  className="text-current opacity-40 hover:opacity-100 transition-opacity"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-            {(marketDiscovery.alternative_keywords || []).length === 0 && (
-              <span className="text-xs text-gray-400">No alternative keywords.</span>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            <Input
-              value={newAltKeyword}
-              onChange={(e) => setNewAltKeyword(e.target.value)}
-              placeholder="Add alternative keyword..."
-              className="text-sm max-w-xs"
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addAltKeyword(); } }}
-            />
-            <Button onClick={addAltKeyword} disabled={!newAltKeyword.trim()} variant="outline" size="sm" className="text-xs gap-1">
-              <Plus className="w-3 h-3" /> Add
-            </Button>
-          </div>
-        </div>
-
-        {/* Rejected keywords */}
-        {(marketDiscovery.rejected_keywords || []).length > 0 && (
-          <div>
-            <label className="block text-xs font-medium text-gray-500 mb-2">Rejected Keywords</label>
-            <div className="space-y-2">
-              {(marketDiscovery.rejected_keywords || []).map((rk, i) => (
-                <div key={i} className="flex items-start gap-3 p-2.5 border border-gray-100 rounded-lg bg-gray-50/50 group">
-                  <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2">
-                    <Input
-                      value={rk.keyword}
-                      onChange={(e) => {
-                        const updated = [...(marketDiscovery.rejected_keywords || [])];
-                        updated[i] = { ...updated[i], keyword: e.target.value };
-                        onChange({ ...marketDiscovery, rejected_keywords: updated });
-                      }}
-                      placeholder="Keyword"
-                      className="text-sm"
-                    />
-                    <Input
-                      value={rk.reason}
-                      onChange={(e) => {
-                        const updated = [...(marketDiscovery.rejected_keywords || [])];
-                        updated[i] = { ...updated[i], reason: e.target.value };
-                        onChange({ ...marketDiscovery, rejected_keywords: updated });
-                      }}
-                      placeholder="Reason for rejection"
-                      className="text-sm"
-                    />
-                  </div>
-                  <button
-                    onClick={() => {
-                      const updated = (marketDiscovery.rejected_keywords || []).filter((_, idx) => idx !== i);
-                      onChange({ ...marketDiscovery, rejected_keywords: updated });
-                    }}
-                    className="p-1 text-gray-400 hover:text-red-500 rounded opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-      </div>
-    </EditableSection>
-  );
-}
-
 /* ─── Page Ideas Tab (Keyword Opportunity Research) ─────── */
 
 interface KeywordOpportunity {
@@ -1875,14 +1662,16 @@ function PageIdeasTab({ tenantId }: { tenantId: string }) {
           body: JSON.stringify({
             action: 'generate-opportunities',
             tenant_id: tenantId,
-            country_code: (brandProfile.brand?.location_focus || '').toLowerCase().slice(0, 2) || 'us',
+            country_code: (brandProfile.primary_geography || '').toLowerCase().slice(0, 2) || 'us',
             brand_intelligence: {
               id: brandProfile.id,
-              brand: brandProfile.brand,
-              audience: brandProfile.audience,
-              offerings: brandProfile.offerings,
-              seo: brandProfile.seo,
-              market_discovery: brandProfile.market_discovery,
+              about_brand: brandProfile.about_brand,
+              primary_business_segment: brandProfile.primary_business_segment,
+              primary_geography: brandProfile.primary_geography,
+              target_audience: brandProfile.target_audience,
+              primary_search_keyword: brandProfile.primary_search_keyword,
+              secondary_search_keywords: brandProfile.secondary_search_keywords,
+              long_tail_keyword_examples: brandProfile.long_tail_keyword_examples,
               content_opportunities: brandProfile.content_opportunities,
             },
           }),
@@ -1990,7 +1779,7 @@ function PageIdeasTab({ tenantId }: { tenantId: string }) {
             <div className="mb-5 p-3 bg-sky-50 border border-sky-100 rounded-lg flex items-start gap-2 max-w-md mx-auto text-left">
               <Brain className="w-4 h-4 text-sky-600 mt-0.5 shrink-0" />
               <p className="text-xs text-sky-700">
-                Brand loaded: <span className="font-medium">{brandProfile.brand?.name || 'Unknown'}</span> ({brandProfile.brand?.category || 'uncategorized'}). Ready to research.
+                Brand loaded: <span className="font-medium">{brandProfile.primary_business_segment || 'Unknown'}</span>. Ready to research.
               </p>
             </div>
           )}

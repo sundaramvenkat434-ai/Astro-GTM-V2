@@ -618,7 +618,7 @@ Return ONLY valid JSON:
       }
       const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
       const countryVal = country_code || "us";
-      const industry = brand_intelligence.brand?.category || brand_intelligence.brand?.industry || "general";
+      const industry = brand_intelligence.primary_business_segment || "general";
 
       // ──────────────────────────────────────────────────────────
       // STEP 1: KEYWORD DISCOVERY AGENT
@@ -994,9 +994,10 @@ Return ONLY valid JSON:
       }));
 
       const step5User = `## Brand Intelligence\n${JSON.stringify({
-        brand: brand_intelligence.brand,
-        audience: brand_intelligence.audience,
-        offerings: brand_intelligence.offerings,
+        about_brand: brand_intelligence.about_brand,
+        primary_business_segment: brand_intelligence.primary_business_segment,
+        target_audience: brand_intelligence.target_audience,
+        primary_search_keyword: brand_intelligence.primary_search_keyword,
       }, null, 2)}\n\n## Keywords to evaluate\n${JSON.stringify(step5Input, null, 2)}`;
 
       const step5Res = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, step5System, step5User, {
