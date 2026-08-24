@@ -1,5 +1,5 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { Readability } from "npm:@mozilla/readability@0.5.0";
 import { parseHTML } from "npm:linkedom@0.16.11";
 
@@ -10,6 +10,60 @@ const corsHeaders = {
     "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
+interface StepError {
+  step: string;
+  message: string;
+  detail?: string;
+  httpStatus?: number;
+  rawSnippet?: string;
+}
+
+function errorResponse(err: StepError, status = 500) {
+  return new Response(
+    JSON.stringify({ error: err.message, step: err.step, detail: err.detail, httpStatus: err.httpStatus, rawSnippet: err.rawSnippet }),
+    { status, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+  );
+}
+
+function extractJsonFromContent(raw: string): { ok: true; data: unknown } | { ok: false; reason: string } {
+  const trimmed = raw.trim();
+
+  // Strategy 1: direct parse
+  try {
+    return { ok: true, data: JSON.parse(trimmed) };
+  } catch { /* try next */ }
+
+  // Strategy 2: extract content between ```json fences anywhere in the text
+  const fenceMatch = trimmed.match(/```(?:json)?\s*\n?([\s\S]*?)\n?```/);
+  if (fenceMatch) {
+    try {
+      return { ok: true, data: JSON.parse(fenceMatch[1].trim()) };
+    } catch { /* try next */ }
+  }
+
+  // Strategy 3: extract outermost { ... } substring
+  const firstBrace = trimmed.indexOf("{");
+  const lastBrace = trimmed.lastIndexOf("}");
+  if (firstBrace !== -1 && lastBrace !== -1 && lastBrace > firstBrace) {
+    const candidate = trimmed.slice(firstBrace, lastBrace + 1);
+    try {
+      return { ok: true, data: JSON.parse(candidate) };
+    } catch { /* try next */ }
+  }
+
+  // Strategy 4: extract outermost [ ... ] substring
+  const firstBracket = trimmed.indexOf("[");
+  const lastBracket = trimmed.lastIndexOf("]");
+  if (firstBracket !== -1 && lastBracket !== -1 && lastBracket > firstBracket) {
+    const candidate = trimmed.slice(firstBracket, lastBracket + 1);
+    try {
+      return { ok: true, data: JSON.parse(candidate) };
+    } catch { /* try next */ }
+  }
+
+  return { ok: false, reason: "No valid JSON found in AI response" };
+}
+
 Deno.serve(async (req: Request) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 200, headers: corsHeaders });
@@ -18,10 +72,10 @@ Deno.serve(async (req: Request) => {
   try {
     const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
     if (!OPENROUTER_API_KEY) {
-      return new Response(
-        JSON.stringify({ error: "OPENROUTER_API_KEY not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse({
+        step: "server_config",
+        message: "OpenRouter API key is not configured on the server.",
+      }, 500);
     }
 
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
@@ -30,18 +84,31 @@ Deno.serve(async (req: Request) => {
 
     const { tenant_id, source_url, source_text, source_filename } = await req.json();
 
+    // Step 1: URL validation
     if (!tenant_id) {
-      return new Response(
-        JSON.stringify({ error: "tenant_id is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse({
+        step: "url_validation",
+        message: "Tenant ID is required.",
+      }, 400);
     }
 
     if (!source_url && !source_text) {
-      return new Response(
-        JSON.stringify({ error: "Either source_url or source_text is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse({
+        step: "url_validation",
+        message: "Either a website URL or document text is required.",
+      }, 400);
+    }
+
+    if (source_url) {
+      try {
+        new URL(source_url);
+      } catch {
+        return errorResponse({
+          step: "url_validation",
+          message: `Invalid URL format: "${source_url}". Please provide a valid URL starting with http:// or https://.`,
+          detail: source_url,
+        }, 400);
+      }
     }
 
     // Load prompt and model settings
@@ -79,52 +146,78 @@ Deno.serve(async (req: Request) => {
       )
       .then(() => {});
 
-    // If URL provided, fetch and extract text
+    // Step 2: Website fetch
     let contentToAnalyze = source_text || "";
 
     if (source_url && !source_text) {
+      let pageResponse: Response;
       try {
-        const pageResponse = await fetch(source_url, {
+        pageResponse = await fetch(source_url, {
           headers: {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
             Accept: "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
           },
           redirect: "follow",
         });
-        if (!pageResponse.ok) {
-          return new Response(
-            JSON.stringify({ error: `Failed to fetch URL: ${pageResponse.status}` }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        const html = await pageResponse.text();
-        const trimmed = html.length > 1_500_000 ? html.slice(0, 1_500_000) : html;
-        const { document } = parseHTML(trimmed);
+      } catch (fetchErr) {
+        return errorResponse({
+          step: "website_fetch",
+          message: `Failed to connect to the website. The URL may be unreachable or blocked.`,
+          detail: String(fetchErr),
+        }, 400);
+      }
 
-        if (source_url) {
-          try {
-            const base = document.createElement("base");
-            base.setAttribute("href", source_url);
-            document.head.appendChild(base);
-          } catch { /* ignore */ }
-        }
+      if (!pageResponse.ok) {
+        return errorResponse({
+          step: "http_response",
+          message: `The website returned an error (HTTP ${pageResponse.status}).`,
+          httpStatus: pageResponse.status,
+          detail: pageResponse.statusText || undefined,
+        }, 400);
+      }
 
-        const removeSelectors = [
-          "script", "style", "noscript", "iframe", "svg",
-          "nav", "header", "footer", "aside",
-          "[role='navigation']", "[role='banner']", "[role='contentinfo']",
-        ];
-        for (const sel of removeSelectors) {
-          try {
-            document.querySelectorAll(sel).forEach((el: any) => el.remove());
-          } catch { /* linkedom may not support all selectors */ }
-        }
+      const html = await pageResponse.text();
+      const trimmed = html.length > 1_500_000 ? html.slice(0, 1_500_000) : html;
 
+      // Step 3: HTML parsing
+      let document: Document;
+      try {
+        const parsed = parseHTML(trimmed);
+        document = parsed.document;
+      } catch (parseErr) {
+        return errorResponse({
+          step: "html_parsing",
+          message: "Failed to parse the HTML content of the page.",
+          detail: String(parseErr),
+        }, 500);
+      }
+
+      if (source_url) {
+        try {
+          const base = document.createElement("base");
+          base.setAttribute("href", source_url);
+          document.head.appendChild(base);
+        } catch { /* ignore */ }
+      }
+
+      const removeSelectors = [
+        "script", "style", "noscript", "iframe", "svg",
+        "nav", "header", "footer", "aside",
+        "[role='navigation']", "[role='banner']", "[role='contentinfo']",
+      ];
+      for (const sel of removeSelectors) {
+        try {
+          document.querySelectorAll(sel).forEach((el: any) => el.remove());
+        } catch { /* linkedom may not support all selectors */ }
+      }
+
+      // Step 4: Content extraction
+      try {
         const reader = new Readability(document);
-        const parsed = reader.parse();
+        const readabilityResult = reader.parse();
 
-        if (parsed?.textContent) {
-          contentToAnalyze = parsed.textContent
+        if (readabilityResult?.textContent) {
+          contentToAnalyze = readabilityResult.textContent
             .replace(/\s+\n/g, "\n")
             .replace(/\n{3,}/g, "\n\n")
             .trim()
@@ -138,91 +231,110 @@ Deno.serve(async (req: Request) => {
             .trim()
             .slice(0, 15000);
         }
-      } catch (fetchErr) {
-        return new Response(
-          JSON.stringify({ error: `Failed to fetch URL: ${String(fetchErr)}` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
+      } catch (extractErr) {
+        return errorResponse({
+          step: "content_extraction",
+          message: "Failed to extract readable content from the page.",
+          detail: String(extractErr),
+        }, 500);
       }
     }
 
     if (!contentToAnalyze || contentToAnalyze.length < 50) {
-      return new Response(
-        JSON.stringify({ error: "Insufficient content to analyze. Please provide more text or a URL with content." }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse({
+        step: "content_extraction",
+        message: "Insufficient content to analyze. The page may be empty, require JavaScript, or block automated access.",
+        detail: `Only ${contentToAnalyze.length} characters of content were extracted (minimum 50 required).`,
+      }, 400);
     }
 
-    // Call OpenRouter
-    const aiResponse = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": SUPABASE_URL,
-          "X-Title": "AstroGTM Brand Analyzer",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            {
-              role: "user",
-              content: `Analyze the following website/document content and extract brand intelligence:\n\n${contentToAnalyze}`,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 4000,
-          response_format: { type: "json_object" },
-        }),
-      }
-    );
+    // Step 5: OpenRouter API request
+    let aiResponse: Response;
+    try {
+      aiResponse = await fetch(
+        "https://openrouter.ai/api/v1/chat/completions",
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+            "Content-Type": "application/json",
+            "HTTP-Referer": SUPABASE_URL,
+            "X-Title": "AstroGTM Brand Analyzer",
+          },
+          body: JSON.stringify({
+            model,
+            messages: [
+              { role: "system", content: systemPrompt },
+              {
+                role: "user",
+                content: `Analyze the following website/document content and extract brand intelligence:\n\n${contentToAnalyze}`,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 4000,
+            response_format: { type: "json_object" },
+          }),
+        }
+      );
+    } catch (apiErr) {
+      return errorResponse({
+        step: "openrouter_request",
+        message: "Failed to reach the AI service (OpenRouter).",
+        detail: String(apiErr),
+      }, 502);
+    }
 
     if (aiResponse.status === 429) {
       const retryAfter = aiResponse.headers.get("retry-after") || "30";
-      return new Response(
-        JSON.stringify({ error: `Rate limited. Retry after ${retryAfter}s.` }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse({
+        step: "openrouter_request",
+        message: `Rate limited by AI service. Please retry after ${retryAfter}s.`,
+        httpStatus: 429,
+      }, 429);
     }
 
     if (!aiResponse.ok) {
-      const errText = await aiResponse.text();
-      return new Response(
-        JSON.stringify({ error: `AI API error: ${aiResponse.status}`, details: errText }),
-        { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      const errText = await aiResponse.text().catch(() => "");
+      return errorResponse({
+        step: "openrouter_request",
+        message: `AI service returned an error (HTTP ${aiResponse.status}).`,
+        httpStatus: aiResponse.status,
+        detail: errText.slice(0, 500) || undefined,
+      }, 502);
     }
 
     const aiData = await aiResponse.json();
-    let rawContent = aiData.choices?.[0]?.message?.content || "";
+    const rawContent: string = aiData.choices?.[0]?.message?.content || "";
 
-    // Strip markdown fences
-    rawContent = rawContent
-      .replace(/^```(?:json)?\n?/i, "")
-      .replace(/\n?```$/, "")
-      .trim();
-
-    let parsed;
-    try {
-      parsed = JSON.parse(rawContent);
-    } catch {
-      return new Response(
-        JSON.stringify({ error: "Failed to parse AI response as JSON", raw: rawContent }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+    if (!rawContent) {
+      return errorResponse({
+        step: "ai_response_parsing",
+        message: "AI returned an empty response. The model may have failed to generate output.",
+        detail: JSON.stringify(aiData).slice(0, 500),
+      }, 502);
     }
 
-    // Save to database
+    // Step 6: AI response parsing - robust JSON extraction
+    const extractionResult = extractJsonFromContent(rawContent);
+    if (!extractionResult.ok) {
+      return errorResponse({
+        step: "ai_response_parsing",
+        message: "Failed to parse AI response as JSON. The model may have returned conversational text instead of structured data.",
+        detail: extractionResult.reason,
+        rawSnippet: rawContent.slice(0, 1000),
+      }, 502);
+    }
+
+    const parsed = extractionResult.data as Record<string, unknown>;
+
+    // Step 7: Database save
     const { data: saved, error: saveError } = await supabase
       .from("gifaa_brand_intelligence")
       .insert({
         tenant_id,
         source_url: source_url || null,
         source_filename: source_filename || null,
-        brand_intelligence_score: parsed.brand_intelligence_score || 0,
+        brand_intelligence_score: (parsed.brand_intelligence_score as number) || 0,
         brand: parsed.brand || {},
         audience: parsed.audience || {},
         offerings: parsed.offerings || {},
@@ -236,19 +348,21 @@ Deno.serve(async (req: Request) => {
       .single();
 
     if (saveError) {
-      return new Response(
-        JSON.stringify({ error: "Failed to save results", details: saveError.message }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return errorResponse({
+        step: "database_save",
+        message: "Failed to save brand intelligence results to the database.",
+        detail: saveError.message,
+      }, 500);
     }
 
     return new Response(JSON.stringify({ success: true, data: saved }), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {
-    return new Response(
-      JSON.stringify({ error: String(err) }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return errorResponse({
+      step: "unexpected",
+      message: "An unexpected error occurred during brand analysis.",
+      detail: String(err),
+    }, 500);
   }
 });

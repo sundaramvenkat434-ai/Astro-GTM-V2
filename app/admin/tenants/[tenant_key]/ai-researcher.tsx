@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info, Download, RefreshCw, TrendingUp } from 'lucide-react';
+import { Sparkles, Globe, Upload, FileText, X, Check, Loader as Loader2, Target, Users, Package, Search, Lightbulb, Brain, Link2, Swords, Key, LayoutList, Pencil, Trash2, Plus, ArrowRight, ChartBar as BarChart3, Info, Download, RefreshCw, TrendingUp, CircleAlert as AlertCircle, ChevronDown } from 'lucide-react';
 
 type AIResearcherSubTab = 'brand' | 'competitors' | 'keywords' | 'page-ideas' | 'interlinking';
 
@@ -110,11 +110,33 @@ function ComingSoonTab({ title, description }: { title: string; description: str
 
 /* ─── Brand Tab ──────────────────────────────────────────── */
 
+const STEP_LABELS: Record<string, string> = {
+  url_validation: 'URL Validation',
+  website_fetch: 'Website Fetch',
+  http_response: 'HTTP Response',
+  html_parsing: 'HTML Parsing',
+  content_extraction: 'Content Extraction',
+  openrouter_request: 'AI Service Request',
+  ai_response_parsing: 'AI Response Parsing',
+  database_save: 'Database Save',
+  server_config: 'Server Configuration',
+  unexpected: 'Unexpected Error',
+};
+
+interface BrandAnalysisError {
+  step: string;
+  message: string;
+  detail?: string;
+  httpStatus?: number;
+  rawSnippet?: string;
+}
+
 function BrandTab({ tenantId }: { tenantId: string }) {
   const [profile, setProfile] = useState<BrandIntelligence | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [structuredError, setStructuredError] = useState<BrandAnalysisError | null>(null);
 
   // Input state
   const [sourceUrl, setSourceUrl] = useState('');
@@ -143,6 +165,7 @@ function BrandTab({ tenantId }: { tenantId: string }) {
       return;
     }
     setError(null);
+    setStructuredError(null);
     setAnalyzing(true);
 
     try {
@@ -163,16 +186,20 @@ function BrandTab({ tenantId }: { tenantId: string }) {
         }
       );
 
-      if (res.status === 429) {
-        const data = await res.json();
-        setError(`Rate limited. Please try again in a moment.`);
-        setAnalyzing(false);
-        return;
-      }
-
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        setError((data as { error?: string }).error || `Error ${res.status}`);
+        const errData = data as { error?: string; step?: string; detail?: string; httpStatus?: number; rawSnippet?: string };
+        if (errData.step) {
+          setStructuredError({
+            step: errData.step,
+            message: errData.error || `Error ${res.status}`,
+            detail: errData.detail,
+            httpStatus: errData.httpStatus,
+            rawSnippet: errData.rawSnippet,
+          });
+        } else {
+          setError(errData.error || `Error ${res.status}`);
+        }
         setAnalyzing(false);
         return;
       }
@@ -288,6 +315,41 @@ function BrandTab({ tenantId }: { tenantId: string }) {
         {error && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
             <p className="text-xs text-red-700">{error}</p>
+          </div>
+        )}
+
+        {structuredError && (
+          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg space-y-3">
+            <div className="flex items-start gap-2">
+              <AlertCircle className="w-4 h-4 text-red-600 mt-0.5 shrink-0" />
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-red-900">
+                  {STEP_LABELS[structuredError.step] || structuredError.step} Failed
+                </p>
+                <p className="text-xs text-red-700 mt-1">{structuredError.message}</p>
+                {structuredError.httpStatus && (
+                  <p className="text-[11px] text-red-500 mt-1 font-mono">
+                    HTTP Status: {structuredError.httpStatus}
+                  </p>
+                )}
+                {structuredError.detail && (
+                  <p className="text-[11px] text-red-500 mt-1 font-mono break-all">
+                    {structuredError.detail}
+                  </p>
+                )}
+              </div>
+            </div>
+            {structuredError.rawSnippet && (
+              <details className="mt-2">
+                <summary className="text-xs text-red-600 cursor-pointer flex items-center gap-1 hover:text-red-800">
+                  <ChevronDown className="w-3 h-3" />
+                  Show raw AI response (debug)
+                </summary>
+                <pre className="text-[10px] text-red-600 mt-2 whitespace-pre-wrap break-all bg-red-100/50 p-2 rounded border border-red-200 max-h-48 overflow-y-auto">
+                  {structuredError.rawSnippet}
+                </pre>
+              </details>
+            )}
           </div>
         )}
 
