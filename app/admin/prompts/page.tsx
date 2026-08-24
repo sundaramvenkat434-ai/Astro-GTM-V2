@@ -193,6 +193,17 @@ const PROMPT_KEYS = [
     usedBy: 'free-audit',
     testable: true,
   },
+  {
+    key: 'free_audit_understander_prompt',
+    modelKey: 'ai_model_brand_analyzer',
+    countKey: 'ai_request_count_brand_analyzer',
+    defaultModel: 'openai/gpt-oss-120b:free',
+    label: 'Free Audit — Understander',
+    description: 'Reads the scraped website text and returns a structured understanding of the business: what it does, primary offering, category, target customer, problems solved, likely search intent, and reasoning.',
+    icon: Brain,
+    usedBy: 'free-audit',
+    testable: true,
+  },
 ];
 
 const MAX_TOKENS_KEY = (promptKey: string) => `ai_max_tokens_${promptKey}`;

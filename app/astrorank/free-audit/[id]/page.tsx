@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, FileText, Brain, Lightbulb } from "lucide-react";
 import SpaceBg from "../../space-bg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -31,6 +31,16 @@ interface ScrapedCompetitor {
   error?: string;
 }
 
+interface UnderstanderAnalysis {
+  what_it_does?: string;
+  primary_offering?: string;
+  business_category?: string;
+  target_customer?: string;
+  problems_solved?: string;
+  likely_search_intent?: string;
+  reasoning?: string;
+}
+
 interface AuditData {
   id: string;
   website_url: string;
@@ -44,6 +54,8 @@ interface AuditData {
   updated_at: string;
   search_queries_raw_input?: Record<string, unknown> | null;
   search_queries_raw_output?: Record<string, unknown> | null;
+  scraped_content?: string | null;
+  understander_analysis?: UnderstanderAnalysis | Record<string, unknown> | null;
 }
 
 type TabId = "queries" | "brand" | "competition" | "opportunity";
@@ -258,62 +270,324 @@ function RawDataPopup({ audit, onClose }: { audit: AuditData; onClose: () => voi
   );
 }
 
-function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn }: {
+type SubTabId = "scraper" | "understander" | "queries";
+
+const SUB_TABS: { id: SubTabId; label: string; icon: typeof FileText }[] = [
+  { id: "scraper", label: "Scraper", icon: FileText },
+  { id: "understander", label: "Understander", icon: Brain },
+  { id: "queries", label: "Search Queries", icon: Search },
+];
+
+function SubTabBar({ active, onChange }: { active: SubTabId; onChange: (t: SubTabId) => void }) {
+  return (
+    <div className="flex items-center gap-1 p-1 bg-slate-100/80 rounded-xl border border-slate-200/60 mb-6">
+      {SUB_TABS.map((tab) => {
+        const Icon = tab.icon;
+        const isActive = active === tab.id;
+        return (
+          <button
+            key={tab.id}
+            onClick={() => onChange(tab.id)}
+            className={`relative px-4 py-2 rounded-lg text-[13px] font-semibold transition-all duration-200 flex items-center gap-1.5 ${
+              isActive ? "text-white" : "text-slate-500 hover:text-slate-700"
+            }`}
+          >
+            {isActive && (
+              <motion.div
+                layoutId="subtab-bg"
+                className="absolute inset-0 bg-blue-600 rounded-lg shadow-md shadow-blue-600/25"
+                transition={{ type: "spring", stiffness: 400, damping: 30 }}
+              />
+            )}
+            <span className="relative flex items-center gap-1.5">
+              <Icon size={14} />
+              {tab.label}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function ScraperSubTab({ audit, onScrape, scraping, scrapeError }: {
+  audit: AuditData;
+  onScrape: () => void;
+  scraping: boolean;
+  scrapeError: string | null;
+}) {
+  const content = audit.scraped_content || "";
+  const hasContent = content.length > 0;
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-[17px] font-bold text-slate-900">Scraped Website Content</h3>
+          <p className="text-[12.5px] text-slate-400 mt-0.5">The exact cleaned text extracted from {audit.website_url} that will be sent to the AI Understander</p>
+        </div>
+        <button
+          onClick={onScrape}
+          disabled={scraping}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
+        >
+          {scraping ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+          {hasContent ? "Re-scrape" : "Scrape"}
+        </button>
+      </div>
+
+      {scraping && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-10 h-10 border-3 border-blue-100 border-t-blue-500 rounded-full mb-4"
+            style={{ borderWidth: "3px" }}
+          />
+          <p className="text-[14px] font-medium text-slate-500">Scraping website...</p>
+        </div>
+      )}
+
+      {scrapeError && !scraping && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
+            <AlertCircle size={22} className="text-red-500" />
+          </div>
+          <p className="text-[14px] font-bold text-slate-700 mb-1">Scraping Failed</p>
+          <p className="text-[12.5px] text-slate-500 mb-4 text-center max-w-[400px]">{scrapeError}</p>
+          <button
+            onClick={onScrape}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors"
+          >
+            <RefreshCw size={13} /> Try Again
+          </button>
+        </div>
+      )}
+
+      {hasContent && !scraping && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm"
+        >
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+            <FileText size={15} className="text-slate-400" />
+            <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Formatted Text Payload</span>
+            <span className="text-[11px] text-slate-400 ml-auto">{content.length.toLocaleString()} chars</span>
+          </div>
+          <pre className="text-[12.5px] text-slate-700 leading-relaxed whitespace-pre-wrap break-words max-h-[500px] overflow-y-auto">
+{content}
+          </pre>
+        </motion.div>
+      )}
+
+      {!hasContent && !scraping && !scrapeError && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <FileText size={24} className="text-slate-300" />
+          </div>
+          <p className="text-[14px] text-slate-400">No scraped content yet. Click "Scrape" to extract the website text.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function UnderstanderSubTab({ audit, onRun, running, runError }: {
+  audit: AuditData;
+  onRun: () => void;
+  running: boolean;
+  runError: string | null;
+}) {
+  const analysis = (audit.understander_analysis || {}) as UnderstanderAnalysis;
+  const hasAnalysis = Boolean(analysis.what_it_does);
+
+  const fields: { label: string; value: string | undefined; icon: typeof Lightbulb }[] = [
+    { label: "What the Business Does", value: analysis.what_it_does, icon: Lightbulb },
+    { label: "Primary Offering", value: analysis.primary_offering, icon: Zap },
+    { label: "Business Category", value: analysis.business_category, icon: Globe },
+    { label: "Target Customer", value: analysis.target_customer, icon: Search },
+    { label: "Problems Solved", value: analysis.problems_solved, icon: AlertCircle },
+    { label: "Likely Search Intent", value: analysis.likely_search_intent, icon: Search },
+  ];
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-[17px] font-bold text-slate-900">AI Understanding</h3>
+          <p className="text-[12.5px] text-slate-400 mt-0.5">The AI's structured analysis of the business based on the scraped website text</p>
+        </div>
+        <button
+          onClick={onRun}
+          disabled={running}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
+        >
+          {running ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+          {hasAnalysis ? "Re-run" : "Run Understander"}
+        </button>
+      </div>
+
+      {running && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-10 h-10 border-3 border-blue-100 border-t-blue-500 rounded-full mb-4"
+            style={{ borderWidth: "3px" }}
+          />
+          <p className="text-[14px] font-medium text-slate-500">Understanding the business...</p>
+        </div>
+      )}
+
+      {runError && !running && (
+        <div className="flex flex-col items-center justify-center py-12">
+          <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
+            <AlertCircle size={22} className="text-red-500" />
+          </div>
+          <p className="text-[14px] font-bold text-slate-700 mb-1">Understanding Failed</p>
+          <p className="text-[12.5px] text-slate-500 mb-4 text-center max-w-[400px]">{runError}</p>
+          <button
+            onClick={onRun}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors"
+          >
+            <RefreshCw size={13} /> Try Again
+          </button>
+        </div>
+      )}
+
+      {hasAnalysis && !running && (
+        <div className="space-y-3">
+          {fields.map((field, i) => {
+            const Icon = field.icon;
+            return (
+              <motion.div
+                key={field.label}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.05 }}
+                className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm"
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Icon size={14} className="text-slate-400" />
+                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{field.label}</p>
+                </div>
+                <p className="text-[14px] text-slate-700 leading-relaxed">{field.value || "—"}</p>
+              </motion.div>
+            );
+          })}
+
+          {analysis.reasoning && (
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.3 }}
+              className="bg-amber-50/60 rounded-xl border border-amber-100 p-4"
+            >
+              <div className="flex items-center gap-2 mb-2">
+                <Lightbulb size={14} className="text-amber-500" />
+                <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Reasoning & Evidence</p>
+              </div>
+              <p className="text-[13px] text-amber-900 leading-relaxed">{analysis.reasoning}</p>
+            </motion.div>
+          )}
+        </div>
+      )}
+
+      {!hasAnalysis && !running && !runError && (
+        <div className="flex flex-col items-center justify-center py-16">
+          <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <Brain size={24} className="text-slate-300" />
+          </div>
+          <p className="text-[14px] text-slate-400">No understanding yet. Click "Run Understander" to analyze the scraped text.</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError }: {
   audit: AuditData;
   onGenerate: () => void;
   generating: boolean;
   generateError: string | null;
   rateLimited: boolean;
   resetIn?: number;
+  onScrape: () => void;
+  scraping: boolean;
+  scrapeError: string | null;
+  onRunUnderstander: () => void;
+  runningUnderstander: boolean;
+  understanderError: string | null;
 }) {
   const queries = audit.search_queries || [];
   const hasResults = queries.length > 0;
   const [showRaw, setShowRaw] = useState(false);
-
-  if (generating) return <SearchQueriesLoadingState />;
-  if (rateLimited) return <RateLimitMessage resetIn={resetIn} />;
-  if (generateError && !hasResults) return <SearchQueriesErrorState message={generateError} onRetry={onGenerate} />;
-  if (!hasResults) return <SearchQueriesErrorState message="No search queries generated yet." onRetry={onGenerate} />;
+  const [subTab, setSubTab] = useState<SubTabId>("scraper");
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-[20px] font-bold text-slate-900">Search Queries</h2>
-          <p className="text-[13px] text-slate-400 mt-0.5">Realistic search queries potential customers use to find businesses like {audit.website_url}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowRaw(true)}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-50 text-amber-600 text-[12.5px] font-semibold hover:bg-amber-100 transition-colors"
-          >
-            <Bug size={13} /> Raw I/O
-          </button>
-          <button
-            onClick={onGenerate}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors"
-          >
-            <RefreshCw size={13} /> Regenerate
-          </button>
-        </div>
+      <div>
+        <h2 className="text-[20px] font-bold text-slate-900">Search Queries</h2>
+        <p className="text-[13px] text-slate-400 mt-0.5">Inspect the pipeline: scraped text, AI understanding, and generated search queries</p>
       </div>
 
-      <div className="space-y-3">
-        {queries.map((query, i) => (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.05 }}
-            className="flex items-center gap-3 bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-          >
-            <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-              <span className="text-[13px] font-bold text-blue-600 tabular-nums">{i + 1}</span>
+      <SubTabBar active={subTab} onChange={setSubTab} />
+
+      {subTab === "scraper" && (
+        <ScraperSubTab audit={audit} onScrape={onScrape} scraping={scraping} scrapeError={scrapeError} />
+      )}
+
+      {subTab === "understander" && (
+        <UnderstanderSubTab audit={audit} onRun={onRunUnderstander} running={runningUnderstander} runError={understanderError} />
+      )}
+
+      {subTab === "queries" && (
+        <>
+          {generating && <SearchQueriesLoadingState />}
+          {!generating && rateLimited && <RateLimitMessage resetIn={resetIn} />}
+          {!generating && !rateLimited && generateError && !hasResults && <SearchQueriesErrorState message={generateError} onRetry={onGenerate} />}
+          {!generating && !rateLimited && !generateError && !hasResults && <SearchQueriesErrorState message="No search queries generated yet." onRetry={onGenerate} />}
+          {!generating && !rateLimited && hasResults && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <p className="text-[13px] text-slate-500">{queries.length} search queries generated</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setShowRaw(true)}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-amber-50 text-amber-600 text-[12.5px] font-semibold hover:bg-amber-100 transition-colors"
+                  >
+                    <Bug size={13} /> Raw I/O
+                  </button>
+                  <button
+                    onClick={onGenerate}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors"
+                  >
+                    <RefreshCw size={13} /> Regenerate
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                {queries.map((query, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, y: 8 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-3 bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                      <span className="text-[13px] font-bold text-blue-600 tabular-nums">{i + 1}</span>
+                    </div>
+                    <p className="text-[14px] text-slate-700 font-medium leading-relaxed flex-1">{query}</p>
+                  </motion.div>
+                ))}
+              </div>
             </div>
-            <p className="text-[14px] text-slate-700 font-medium leading-relaxed flex-1">{query}</p>
-          </motion.div>
-        ))}
-      </div>
+          )}
+        </>
+      )}
 
       <AnimatePresence>
         {showRaw && <RawDataPopup audit={audit} onClose={() => setShowRaw(false)} />}
@@ -848,7 +1122,11 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [generateQueriesError, setGenerateQueriesError] = useState<string | null>(null);
   const [generateQueriesRateLimited, setGenerateQueriesRateLimited] = useState(false);
   const [generateQueriesResetIn, setGenerateQueriesResetIn] = useState<number | undefined>();
-  const hasTriggeredAnalysis = useRef(false);
+  const [scraping, setScraping] = useState(false);
+  const [scrapeError, setScrapeError] = useState<string | null>(null);
+  const [runningUnderstander, setRunningUnderstander] = useState(false);
+  const [understanderError, setUnderstanderError] = useState<string | null>(null);
+  const hasTriggeredScrape = useRef(false);
 
   // Load audit on mount
   const loadAudit = useCallback(async () => {
@@ -907,14 +1185,55 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
-  useEffect(() => {
-    if (!audit || hasTriggeredAnalysis.current) return;
-    const queries = audit.search_queries || [];
-    if (queries.length === 0) {
-      hasTriggeredAnalysis.current = true;
-      generateSearchQueries();
+  // Scrape website
+  const scrapeWebsite = useCallback(async () => {
+    setScraping(true);
+    setScrapeError(null);
+    try {
+      const data = await callFreeAudit("scrape-website", { audit_id: params.id });
+      setAudit(data.data);
+    } catch (err: any) {
+      setScrapeError(err.message || "Scraping failed");
+    } finally {
+      setScraping(false);
     }
-  }, [audit, generateSearchQueries]);
+  }, [params.id]);
+
+  // Run understander
+  const runUnderstander = useCallback(async () => {
+    setRunningUnderstander(true);
+    setUnderstanderError(null);
+    try {
+      const data = await callFreeAudit("run-understander", { audit_id: params.id });
+      setAudit(data.data);
+    } catch (err: any) {
+      setUnderstanderError(err.message || "Understanding failed");
+    } finally {
+      setRunningUnderstander(false);
+    }
+  }, [params.id]);
+
+  useEffect(() => {
+    if (!audit || hasTriggeredScrape.current) return;
+    const content = audit.scraped_content || "";
+    if (!content) {
+      hasTriggeredScrape.current = true;
+      scrapeWebsite();
+    } else if (!audit.understander_analysis || Object.keys(audit.understander_analysis).length <= 1) {
+      hasTriggeredScrape.current = true;
+      runUnderstander();
+    }
+  }, [audit, scrapeWebsite, runUnderstander]);
+
+  useEffect(() => {
+    if (!audit || !hasTriggeredScrape.current) return;
+    const content = audit.scraped_content || "";
+    const analysis = audit.understander_analysis;
+    const hasAnalysis = analysis && Object.keys(analysis).length > 1;
+    if (content && !hasAnalysis && !runningUnderstander) {
+      runUnderstander();
+    }
+  }, [audit, runningUnderstander, runUnderstander]);
 
   // SERP search handler
   const handleSearch = useCallback(async (term: string): Promise<{ results?: SerpResult[] }> => {
@@ -1019,6 +1338,12 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 generateError={generateQueriesError}
                 rateLimited={generateQueriesRateLimited}
                 resetIn={generateQueriesResetIn}
+                onScrape={scrapeWebsite}
+                scraping={scraping}
+                scrapeError={scrapeError}
+                onRunUnderstander={runUnderstander}
+                runningUnderstander={runningUnderstander}
+                understanderError={understanderError}
               />
             )}
             {activeTab === "brand" && (

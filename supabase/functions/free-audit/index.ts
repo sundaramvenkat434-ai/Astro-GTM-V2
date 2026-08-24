@@ -838,6 +838,185 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, results });
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // ACTION: scrape-website — fetch URL, extract clean text, save to scraped_content
+    // ═══════════════════════════════════════════════════════════
+    if (action === "scrape-website") {
+      const rl = await checkRateLimit(supabase, clientIP, "analyze-brand", settings);
+      if (!rl.allowed) {
+        return jsonResponse({
+          error: "Too many requests. Please try again later.",
+          rate_limited: true,
+          reset_in_seconds: rl.resetIn,
+        }, 429);
+      }
+
+      const { audit_id } = body;
+      if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
+
+      const { data: audit, error: fetchError } = await supabase
+        .from("free_audits")
+        .select("*")
+        .eq("id", audit_id)
+        .maybeSingle();
+
+      if (fetchError) return jsonResponse({ error: "Database error", detail: fetchError.message }, 500);
+      if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
+
+      const sourceUrl = audit.website_url;
+
+      const fetchResult = await fetchWebsiteContent(sourceUrl);
+      if (!fetchResult.ok) {
+        return jsonResponse({ error: fetchResult.error.includes("HTTP") ? `Website returned an error (${fetchResult.error}).` : "Failed to connect to the website. The URL may be unreachable." }, 400);
+      }
+
+      const contentToAnalyze = extractTextFromHtml(fetchResult.html, sourceUrl);
+
+      if (!contentToAnalyze || contentToAnalyze.length < 50) {
+        return jsonResponse({ error: "Insufficient content extracted. The page may be empty or require JavaScript." }, 400);
+      }
+
+      const { data: updated, error: saveError } = await supabase
+        .from("free_audits")
+        .update({
+          scraped_content: contentToAnalyze,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", audit_id)
+        .select()
+        .single();
+
+      if (saveError) {
+        return jsonResponse({ error: "Failed to save scraped content", detail: saveError.message }, 500);
+      }
+
+      return jsonResponse({ success: true, data: updated });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ACTION: run-understander — read saved scraped_content, call AI, save to understander_analysis
+    // ═══════════════════════════════════════════════════════════
+    if (action === "run-understander") {
+      const rl = await checkRateLimit(supabase, clientIP, "analyze-brand", settings);
+      if (!rl.allowed) {
+        return jsonResponse({
+          error: "Too many requests. Please try again later.",
+          rate_limited: true,
+          reset_in_seconds: rl.resetIn,
+        }, 429);
+      }
+
+      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+      if (!OPENROUTER_API_KEY) {
+        return jsonResponse({ error: "OpenRouter API key is not configured." }, 500);
+      }
+
+      const { audit_id } = body;
+      if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
+
+      const { data: audit, error: fetchError } = await supabase
+        .from("free_audits")
+        .select("*")
+        .eq("id", audit_id)
+        .maybeSingle();
+
+      if (fetchError) return jsonResponse({ error: "Database error", detail: fetchError.message }, 500);
+      if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
+
+      const scrapedContent = audit.scraped_content;
+      if (!scrapedContent || scrapedContent.length < 50) {
+        return jsonResponse({ error: "No scraped content found. Run the scraper first." }, 400);
+      }
+
+      const { data: settingsRows } = await supabase
+        .from("admin_settings")
+        .select("key, value")
+        .in("key", [
+          "free_audit_understander_prompt",
+          "ai_model_brand_analyzer",
+          "ai_max_tokens_free_audit_understander_prompt",
+        ]);
+
+      const settingsMap: Record<string, string> = {};
+      for (const row of settingsRows || []) {
+        settingsMap[row.key] = row.value;
+      }
+
+      const systemPrompt =
+        settingsMap["free_audit_understander_prompt"] || "Analyze this business and return JSON.";
+      const model =
+        settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
+      const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_understander_prompt"]) || 4000;
+
+      const userMessageContent = `Analyze the following website content and provide a structured understanding of this business:\n\n${scrapedContent}`;
+
+      let aiResponse: Response;
+      try {
+        aiResponse = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": SUPABASE_URL,
+              "X-Title": "AstroRank Free Audit",
+            },
+            body: JSON.stringify({
+              model,
+              messages: [
+                { role: "system", content: systemPrompt },
+                { role: "user", content: userMessageContent },
+              ],
+              temperature: 0.7,
+              max_tokens: maxTokens,
+              response_format: { type: "json_object" },
+            }),
+          }
+        );
+      } catch {
+        return jsonResponse({ error: "Failed to reach the AI service." }, 502);
+      }
+
+      if (aiResponse.status === 429) {
+        return jsonResponse({ error: "AI service is busy. Please try again in a moment." }, 429);
+      }
+
+      if (!aiResponse.ok) {
+        return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
+      }
+
+      const aiData = await aiResponse.json();
+      const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+
+      if (!rawContent) {
+        return jsonResponse({ error: "AI returned an empty response." }, 502);
+      }
+
+      const extractionResult = extractJsonFromContent(rawContent);
+      if (!extractionResult.ok) {
+        return jsonResponse({ error: "Failed to parse AI response as JSON." }, 502);
+      }
+
+      const parsed = extractionResult.data as Record<string, unknown>;
+
+      const { data: updated, error: saveError } = await supabase
+        .from("free_audits")
+        .update({
+          understander_analysis: parsed,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", audit_id)
+        .select()
+        .single();
+
+      if (saveError) {
+        return jsonResponse({ error: "Failed to save understanding", detail: saveError.message }, 500);
+      }
+
+      return jsonResponse({ success: true, data: updated });
+    }
+
     return jsonResponse({ error: `Unknown action: ${action}` }, 400);
   } catch (err) {
     return jsonResponse({ error: (err as Error).message || "unknown error" }, 500);
