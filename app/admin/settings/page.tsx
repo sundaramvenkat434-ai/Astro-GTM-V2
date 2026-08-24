@@ -22,7 +22,6 @@ import {
   Globe,
   CircleCheck as CheckCircle2,
   Shield,
-  MessageSquare,
 } from 'lucide-react';
 
 const SETTING_KEYS = [
@@ -33,7 +32,6 @@ const SETTING_KEYS = [
   'free_audit_serp_limit',
   'free_audit_scrape_limit',
   'free_audit_ip_whitelist',
-  'free_audit_search_queries_prompt',
 ] as const;
 
 type SettingKey = typeof SETTING_KEYS[number];
@@ -52,7 +50,6 @@ export default function SiteSettingsAdmin() {
     free_audit_serp_limit: '',
     free_audit_scrape_limit: '',
     free_audit_ip_whitelist: '',
-    free_audit_search_queries_prompt: '',
   });
   const [originals, setOriginals] = useState<Record<SettingKey, string>>({ ...values });
 
@@ -208,30 +205,6 @@ export default function SiteSettingsAdmin() {
               <label className="text-xs font-semibold text-slate-700">IP Whitelist</label>
               <Textarea value={values.free_audit_ip_whitelist} onChange={(e) => update('free_audit_ip_whitelist', e.target.value)} placeholder="e.g. 192.168.1.1, 10.0.0.5" rows={3} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400 resize-y font-mono" />
               <p className="text-[11px] text-slate-400">Comma-separated or one per line. These IPs skip all rate limits.</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Free Audit AI Prompts */}
-        <Card className="border-slate-200 shadow-sm">
-          <CardHeader className="pb-4">
-            <div className="flex items-start gap-3">
-              <div className="w-9 h-9 rounded-lg bg-violet-50 flex items-center justify-center shrink-0">
-                <MessageSquare className="w-4 h-4 text-violet-600" />
-              </div>
-              <div>
-                <CardTitle className="text-base">Free Audit AI Prompts</CardTitle>
-                <CardDescription className="mt-1 text-xs leading-relaxed">
-                  System prompts used by the AI when generating content for the free audit flow.
-                </CardDescription>
-              </div>
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-5">
-            <div className="space-y-2">
-              <label className="text-xs font-semibold text-slate-700">Search Queries Prompt</label>
-              <Textarea value={values.free_audit_search_queries_prompt} onChange={(e) => update('free_audit_search_queries_prompt', e.target.value)} placeholder="System prompt for generating 10 realistic search queries..." rows={10} className="text-xs border-slate-200 focus-visible:ring-violet-500/20 focus-visible:border-violet-400 resize-y font-mono" />
-              <p className="text-[11px] text-slate-400">Used when generating search queries from the website content. Falls back to a built-in default if left empty.</p>
             </div>
           </CardContent>
         </Card>

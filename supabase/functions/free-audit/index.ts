@@ -564,7 +564,7 @@ Deno.serve(async (req: Request) => {
         .in("key", [
           "free_audit_search_queries_prompt",
           "ai_model_brand_analyzer",
-          "ai_max_tokens_brand_analyzer_prompt",
+          "ai_max_tokens_free_audit_search_queries_prompt",
         ]);
 
       const settingsMap: Record<string, string> = {};
@@ -576,7 +576,7 @@ Deno.serve(async (req: Request) => {
         settingsMap["free_audit_search_queries_prompt"] || FALLBACK_SEARCH_QUERIES_PROMPT;
       const model =
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
-      const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
+      const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_search_queries_prompt"]) || 4000;
 
       // Step 4: Call OpenRouter
       let aiResponse: Response;
