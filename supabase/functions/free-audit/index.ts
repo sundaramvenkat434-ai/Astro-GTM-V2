@@ -1099,7 +1099,10 @@ Deno.serve(async (req: Request) => {
       if (fetchError) return jsonResponse({ error: "Database error", detail: fetchError.message }, 500);
       if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
 
-      const scrapedContent = audit.scraped_content;
+      const summary: string | undefined = body.summary;
+      const scrapedContent = summary && summary.length >= 50
+        ? summary
+        : audit.scraped_content;
       if (!scrapedContent || scrapedContent.length < 50) {
         return jsonResponse({ error: "No scraped content found. Run the scraper first." }, 400);
       }

@@ -348,12 +348,67 @@ function formatScrapedContent(raw: string): { label: string; text: string; kind:
   return blocks;
 }
 
-function ScraperSubTab({ audit, onScrape, scraping, scrapeError, scrapeTime }: {
+function generateWebsiteBrief(raw: string): string {
+  const blocks = formatScrapedContent(raw);
+  if (blocks.length === 0) return "";
+
+  const businessKeywords = /\b(product|solution|feature|pricing|customer|about|service|platform|how it work|benefit|use case|testimonial|review|faq|contact|team|mission|value|integrat|api|demo|trial|free|starter|pro|enterprise|plan|offer|market|industries?|help|support|resource|blog|case stud|success stor|capabilit|technology|software|tool|saas|app|application)/i;
+  const faqRe = /\b(faq|frequently asked|question|answer|q\s*[:a])/i;
+  const seen = new Set<string>();
+
+  const scored = blocks.map((block, i) => {
+    const text = block.text.trim();
+    const lower = text.toLowerCase();
+    let score = 0;
+
+    if (block.kind === "title") score += 30;
+    if (block.kind === "meta") score += 25;
+    if (block.kind === "heading") score += 15;
+
+    if (businessKeywords.test(text)) score += 12;
+    if (faqRe.test(text)) score += 10;
+
+    if (block.kind === "heading" && i + 1 < blocks.length) {
+      const next = blocks[i + 1];
+      if (next.kind === "body" && next.text.length > 60) score += 8;
+    }
+    if (block.kind === "body" && i > 0 && blocks[i - 1].kind === "heading") score += 6;
+
+    if (text.length >= 80 && text.length <= 500) score += 5;
+    if (text.length < 30) score -= 8;
+    if (text.length > 800) score -= 4;
+
+    score += Math.max(0, 5 - Math.floor(i / 10));
+
+    const dedupKey = lower.replace(/[^a-z0-9]/g, "").slice(0, 80);
+    if (seen.has(dedupKey)) score -= 20;
+    else seen.add(dedupKey);
+
+    return { text, score, kind: block.kind, index: i };
+  });
+
+  scored.sort((a, b) => b.score - a.score);
+  const top = scored.filter(s => s.score > 0).slice(0, 10);
+  top.sort((a, b) => a.index - b.index);
+
+  const parts = top.map(t => t.text);
+  let brief = parts.join(" ");
+  const words = brief.split(/\s+/);
+  if (words.length > 500) {
+    brief = words.slice(0, 500).join(" ");
+  }
+  return brief;
+}
+
+function ScraperSubTab({ audit, onScrape, scraping, scrapeError, scrapeTime, summary, onSummarize, summarizing }: {
   audit: AuditData;
   onScrape: () => void;
   scraping: boolean;
   scrapeError: string | null;
   scrapeTime: number | null;
+  summary: string | null;
+  onSummarize: () => void;
+  summarizing: boolean;
 }) {
   const content = audit.scraped_content || "";
   const hasContent = content.length > 0;
@@ -366,14 +421,24 @@ function ScraperSubTab({ audit, onScrape, scraping, scrapeError, scrapeTime }: {
           <h3 className="text-[17px] font-bold text-slate-900">Scraped Website Content</h3>
           <p className="text-[12.5px] text-slate-400 mt-0.5">The exact cleaned text extracted from {audit.website_url} that will be sent to the AI Understander</p>
         </div>
-        <button
-          onClick={onScrape}
-          disabled={scraping}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
-        >
-          {scraping ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-          {hasContent ? "Re-scrape" : "Scrape"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={onSummarize}
+            disabled={summarizing || !hasContent}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-50 text-blue-600 text-[12.5px] font-semibold hover:bg-blue-100 transition-colors disabled:opacity-60"
+          >
+            {summarizing ? <Loader2 size={13} className="animate-spin" /> : <FileText size={13} />}
+            Summarize
+          </button>
+          <button
+            onClick={onScrape}
+            disabled={scraping}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
+          >
+            {scraping ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
+            {hasContent ? "Re-scrape" : "Scrape"}
+          </button>
+        </div>
       </div>
 
       {scraping && (
@@ -450,6 +515,21 @@ function ScraperSubTab({ audit, onScrape, scraping, scrapeError, scrapeTime }: {
           </div>
           <p className="text-[14px] text-slate-400">No scraped content yet. Click "Scrape" to extract the website text.</p>
         </div>
+      )}
+
+      {summary && hasContent && !scraping && (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-blue-50/40 rounded-xl border border-blue-200/60 p-5 shadow-sm"
+        >
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-blue-100">
+            <FileText size={15} className="text-blue-500" />
+            <span className="text-[12px] font-bold text-blue-700 uppercase tracking-wider">Website Brief</span>
+            <span className="text-[11px] text-blue-400 ml-auto">{summary.split(/\s+/).filter(Boolean).length} words · sent to Understander</span>
+          </div>
+          <p className="text-[13px] text-slate-700 leading-relaxed">{summary}</p>
+        </motion.div>
       )}
     </div>
   );
@@ -570,7 +650,7 @@ function UnderstanderSubTab({ audit, onRun, running, runError, runTime }: {
   );
 }
 
-function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, scrapeTime, understanderTime, queryTime }: {
+function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, scrapeTime, understanderTime, queryTime, summary, onSummarize, summarizing }: {
   audit: AuditData;
   onGenerate: () => void;
   generating: boolean;
@@ -586,6 +666,9 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
   scrapeTime: number | null;
   understanderTime: number | null;
   queryTime: number | null;
+  summary: string | null;
+  onSummarize: () => void;
+  summarizing: boolean;
 }) {
   const queries = audit.search_queries || [];
   const hasResults = queries.length > 0;
@@ -602,7 +685,7 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
       <SubTabBar active={subTab} onChange={setSubTab} />
 
       {subTab === "scraper" && (
-        <ScraperSubTab audit={audit} onScrape={onScrape} scraping={scraping} scrapeError={scrapeError} scrapeTime={scrapeTime} />
+        <ScraperSubTab audit={audit} onScrape={onScrape} scraping={scraping} scrapeError={scrapeError} scrapeTime={scrapeTime} summary={summary} onSummarize={onSummarize} summarizing={summarizing} />
       )}
 
       {subTab === "understander" && (
@@ -1201,6 +1284,8 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [understanderTime, setUnderstanderTime] = useState<number | null>(null);
   const [queryTime, setQueryTime] = useState<number | null>(null);
   const [analyzeTime, setAnalyzeTime] = useState<number | null>(null);
+  const [websiteBrief, setWebsiteBrief] = useState<string | null>(null);
+  const [summarizing, setSummarizing] = useState(false);
 
   // Load audit on mount
   const loadAudit = useCallback(async () => {
@@ -1285,7 +1370,11 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     setUnderstanderTime(null);
     const start = performance.now();
     try {
-      const data = await callFreeAudit("run-understander", { audit_id: params.id });
+      const payload: Record<string, unknown> = { audit_id: params.id };
+      if (websiteBrief && websiteBrief.length >= 50) {
+        payload.summary = websiteBrief;
+      }
+      const data = await callFreeAudit("run-understander", payload);
       setAudit(data.data);
       setUnderstanderTime((performance.now() - start) / 1000);
     } catch (err: any) {
@@ -1293,7 +1382,20 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     } finally {
       setRunningUnderstander(false);
     }
-  }, [params.id]);
+  }, [params.id, websiteBrief]);
+
+  const summarizeContent = useCallback(() => {
+    setSummarizing(true);
+    try {
+      const content = audit?.scraped_content || "";
+      if (content.length > 0) {
+        const brief = generateWebsiteBrief(content);
+        setWebsiteBrief(brief || null);
+      }
+    } finally {
+      setSummarizing(false);
+    }
+  }, [audit?.scraped_content]);
 
   // SERP search handler
   const handleSearch = useCallback(async (term: string): Promise<{ results?: SerpResult[] }> => {
@@ -1407,6 +1509,9 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 scrapeTime={scrapeTime}
                 understanderTime={understanderTime}
                 queryTime={queryTime}
+                summary={websiteBrief}
+                onSummarize={summarizeContent}
+                summarizing={summarizing}
               />
             )}
             {activeTab === "brand" && (
