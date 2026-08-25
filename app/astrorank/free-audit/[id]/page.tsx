@@ -725,7 +725,7 @@ function RateLimitMessage({ resetIn }: { resetIn?: number }) {
 type BrandPhase = "initial" | "scanning" | "complete";
 type PipelineStep = "idle" | "scraping" | "understanding" | "done";
 
-function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, onGenerateQueries, generatingQueries, generateQueriesError, generateQueriesRateLimited, generateQueriesResetIn, queryTime, scrapeTime, understanderTime, summary, onSummarize }: {
+function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, onGenerateQueries, generatingQueries, generateQueriesError, generateQueriesRateLimited, generateQueriesResetIn, queryTime, scrapeTime, understanderTime, summary, onSummarize, onNext }: {
   audit: AuditData;
   onScrape: () => void;
   scraping: boolean;
@@ -743,6 +743,7 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   understanderTime: number | null;
   summary: string | null;
   onSummarize: () => void;
+  onNext: (topKeyword: string) => void;
 }) {
   const [phase, setPhase] = useState<BrandPhase>("initial");
   const [pipelineStep, setPipelineStep] = useState<PipelineStep>("idle");
@@ -1095,26 +1096,37 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
           {scrapeTime && <span>Scraped in {scrapeTime.toFixed(1)}s</span>}
           {understanderTime && <span> · Understood in {understanderTime.toFixed(1)}s</span>}
         </div>
-        <button
-          onClick={startAnalysis}
-          disabled={scraping || runningUnderstander}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
-        >
-          <RefreshCw size={13} /> Re-run Analysis
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={startAnalysis}
+            disabled={scraping || runningUnderstander}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
+          >
+            <RefreshCw size={13} /> Re-run Analysis
+          </button>
+          {hasQueries && !generatingQueries && rankedKeywords.length > 0 && (
+            <button
+              onClick={() => onNext(rankedKeywords[0])}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-[12.5px] font-semibold hover:bg-blue-700 transition-colors"
+            >
+              Next <ChevronRight size={13} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 // ─── Competition Tab ──────────────────────────────────────────────────────────
-function CompetitionTab({ audit, onSearch, onScrape }: {
+function CompetitionTab({ audit, onSearch, onScrape, autoSearchTerm }: {
   audit: AuditData;
   onSearch: (term: string) => Promise<{ results?: SerpResult[] }>;
   onScrape: (urls: string[]) => Promise<{ results?: ScrapedCompetitor[] }>;
+  autoSearchTerm?: string;
 }) {
   const brand = (audit.brand_analysis || {}) as BrandAnalysis;
-  const [searchTerm, setSearchTerm] = useState(brand.primary_search_keyword || "");
+  const [searchTerm, setSearchTerm] = useState(autoSearchTerm || brand.primary_search_keyword || "");
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
@@ -1125,6 +1137,7 @@ function CompetitionTab({ audit, onSearch, onScrape }: {
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [scrapedResults, setScrapedResults] = useState<ScrapedCompetitor[]>(audit.scraped_competitors || []);
   const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+  const autoSearchRanRef = useRef(false);
 
   useEffect(() => {
     if (audit.serp_results?.length) setSerpResults(audit.serp_results);
@@ -1137,13 +1150,23 @@ function CompetitionTab({ audit, onSearch, onScrape }: {
     }
   }, [brand.primary_search_keyword]);
 
-  async function handleSearch() {
-    if (!searchTerm || searching) return;
+  // Auto-search when arriving from the Brand tab with a keyword
+  useEffect(() => {
+    if (autoSearchTerm && !autoSearchRanRef.current && !searching && serpResults.length === 0) {
+      autoSearchRanRef.current = true;
+      setSearchTerm(autoSearchTerm);
+      handleSearch(autoSearchTerm);
+    }
+  }, [autoSearchTerm, searching, serpResults.length]);
+
+  async function handleSearch(termOverride?: string) {
+    const term = termOverride || searchTerm;
+    if (!term || searching) return;
     setSearching(true);
     setSearchError(null);
     setRateLimited(false);
     try {
-      const data = await onSearch(searchTerm);
+      const data = await onSearch(term);
       setSerpResults(data.results || []);
     } catch (err: any) {
       if (err.rateLimited) {
@@ -1205,7 +1228,7 @@ function CompetitionTab({ audit, onSearch, onScrape }: {
           />
         </div>
         <button
-          onClick={handleSearch}
+          onClick={() => handleSearch()}
           disabled={searching || !searchTerm}
           className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold hover:bg-blue-700 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
         >
@@ -1420,6 +1443,7 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [volumeRateLimited, setVolumeRateLimited] = useState(false);
   const [volumeResetIn, setVolumeResetIn] = useState<number | undefined>();
   const [volumeTime, setVolumeTime] = useState<number | null>(null);
+  const [competitionSearchTerm, setCompetitionSearchTerm] = useState<string | undefined>(undefined);
 
   const loadAudit = useCallback(async () => {
     try {
@@ -1637,6 +1661,10 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 understanderTime={understanderTime}
                 summary={websiteBrief}
                 onSummarize={summarizeContent}
+                onNext={(kw) => {
+                  setCompetitionSearchTerm(kw);
+                  setActiveTab("competition");
+                }}
               />
             )}
             {activeTab === "queries" && (
@@ -1661,6 +1689,7 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 audit={audit}
                 onSearch={handleSearch}
                 onScrape={handleScrape}
+                autoSearchTerm={competitionSearchTerm}
               />
             )}
             {activeTab === "opportunity" && <OpportunityTab />}
