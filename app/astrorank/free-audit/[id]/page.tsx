@@ -400,35 +400,116 @@ function BrowserMockup({ url, children }: { url: string; children: React.ReactNo
   );
 }
 
-function SkeletonWebsite() {
+interface SkeletonSectionProps {
+  label: string;
+  lines: { width: string; height: string }[];
+  delay: number;
+}
+
+function SkeletonSection({ label, lines, delay }: SkeletonSectionProps) {
+  const [visible, setVisible] = useState(false);
+  const [analyzing, setAnalyzing] = useState(false);
+
+  useEffect(() => {
+    const t1 = setTimeout(() => {
+      setVisible(true);
+      setAnalyzing(true);
+    }, delay);
+    const t2 = setTimeout(() => setAnalyzing(false), delay + 900);
+    return () => { clearTimeout(t1); clearTimeout(t2); };
+  }, [delay]);
+
   return (
-    <div className="p-5 sm:p-6 space-y-5 bg-slate-50/50 min-h-[420px]">
-      <div className="space-y-2.5">
-        <div className="h-6 w-3/4 bg-slate-200/70 rounded animate-pulse" />
-        <div className="h-4 w-1/2 bg-slate-200/50 rounded animate-pulse" />
-        <div className="h-9 w-32 bg-blue-200/50 rounded-lg animate-pulse mt-1.5" />
+    <motion.div
+      initial={{ opacity: 0, y: 6 }}
+      animate={visible ? { opacity: 1, y: 0 } : {}}
+      transition={{ duration: 0.4, ease: "easeOut" }}
+      className={`rounded-lg border p-3 transition-colors duration-500 ${
+        analyzing
+          ? "border-blue-200 bg-blue-50/40"
+          : "border-slate-200/60 bg-white/50"
+      }`}
+    >
+      <div className="flex items-center gap-1.5 mb-2">
+        {analyzing ? (
+          <Loader2 size={11} className="text-blue-500 shrink-0 animate-spin" />
+        ) : (
+          <div className="w-2.5 h-2.5 rounded-full bg-slate-200 shrink-0" />
+        )}
+        <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
+          analyzing ? "text-blue-500" : "text-slate-300"
+        }`}>
+          {label}
+        </span>
       </div>
-      <div className="grid grid-cols-3 gap-3">
-        {[0, 1, 2].map(i => (
-          <div key={i} className="space-y-2 p-3 border border-slate-200/60 rounded-lg bg-white/50">
-            <div className="h-4 w-full bg-slate-200/50 rounded animate-pulse" />
-            <div className="h-3 w-3/4 bg-slate-200/40 rounded animate-pulse" />
-          </div>
+      <div className="space-y-1.5">
+        {lines.map((line, i) => (
+          <div
+            key={i}
+            className={`rounded animate-pulse ${analyzing ? "bg-blue-200/40" : "bg-slate-200/50"}`}
+            style={{ width: line.width, height: line.height }}
+          />
         ))}
       </div>
-      <div className="space-y-2">
-        <div className="h-3 w-full bg-slate-200/40 rounded animate-pulse" />
-        <div className="h-3 w-5/6 bg-slate-200/40 rounded animate-pulse" />
-        <div className="h-3 w-4/6 bg-slate-200/40 rounded animate-pulse" />
+    </motion.div>
+  );
+}
+
+function ProgressiveSkeleton() {
+  return (
+    <div className="bg-white min-h-[340px]">
+      {/* Hero area — static placeholder for brand name + URL */}
+      <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
+        <div className="flex items-center gap-2 mb-2">
+          <div className="w-3.5 h-3.5 rounded-full bg-slate-100 animate-pulse" />
+          <div className="h-3 w-40 bg-slate-100 rounded animate-pulse" />
+        </div>
+        <div className="h-6 w-2/3 bg-slate-200/70 rounded animate-pulse mb-2" />
+        <div className="h-3 w-full bg-slate-100 rounded animate-pulse" />
+        <div className="h-3 w-4/5 bg-slate-100 rounded animate-pulse mt-1.5" />
       </div>
-      <div className="grid grid-cols-2 gap-3">
-        {[0, 1].map(i => (
-          <div key={i} className="space-y-2 p-3 border border-slate-200/60 rounded-lg bg-white/50">
-            <div className="h-3.5 w-2/3 bg-slate-200/50 rounded animate-pulse" />
-            <div className="h-3 w-full bg-slate-200/40 rounded animate-pulse" />
-            <div className="h-3 w-5/6 bg-slate-200/40 rounded animate-pulse" />
-          </div>
-        ))}
+
+      {/* Brand profile skeleton header */}
+      <div className="px-5 sm:px-6 pt-5 pb-3">
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-7 h-7 rounded-lg bg-slate-100 animate-pulse" />
+          <div className="h-4 w-36 bg-slate-200/60 rounded animate-pulse" />
+        </div>
+
+        {/* Four progressive skeleton sections matching Understander fields */}
+        <div className="space-y-3">
+          <SkeletonSection
+            label="About the brand"
+            delay={400}
+            lines={[
+              { width: "100%", height: "12px" },
+              { width: "85%", height: "12px" },
+            ]}
+          />
+          <SkeletonSection
+            label="Primary product or service"
+            delay={1200}
+            lines={[
+              { width: "100%", height: "12px" },
+              { width: "70%", height: "12px" },
+            ]}
+          />
+          <SkeletonSection
+            label="Geographies"
+            delay={2000}
+            lines={[
+              { width: "60%", height: "12px" },
+            ]}
+          />
+          <SkeletonSection
+            label="Target audience"
+            delay={2800}
+            lines={[
+              { width: "80%", height: "12px" },
+              { width: "50%", height: "12px" },
+            ]}
+          />
+        </div>
       </div>
     </div>
   );
@@ -776,8 +857,26 @@ function RateLimitMessage({ resetIn }: { resetIn?: number }) {
   );
 }
 
-type BrandPhase = "initial" | "scanning" | "complete";
+type BrandPhase = "initial" | "scanning" | "populating" | "complete";
 type PipelineStep = "idle" | "scraping" | "understanding" | "done";
+
+function PopulatedField({ label, value, delay }: { label: string; value: string; delay: number }) {
+  return (
+    <div className="relative">
+      <AnimatePresence mode="wait">
+        <motion.div
+          key="data"
+          initial={{ opacity: 0, filter: "blur(4px)" }}
+          animate={{ opacity: 1, filter: "blur(0px)" }}
+          transition={{ delay, duration: 0.5, ease: "easeOut" }}
+        >
+          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</p>
+          <p className="text-[13.5px] text-slate-700 leading-relaxed">{value}</p>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
 
 function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, onGenerateQueries, generatingQueries, generateQueriesError, generateQueriesRateLimited, generateQueriesResetIn, queryTime, scrapeTime, understanderTime, summary, onSummarize, onNext }: {
   audit: AuditData;
@@ -865,17 +964,25 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
     }
   }, [pipelineStep, hasScraped, onSummarize, onRunUnderstander]);
 
-  // When understanding completes and min time elapsed, go to complete
+  // When understanding completes and min time elapsed, go to populating then complete
   useEffect(() => {
     if (phase === "scanning" && hasUnderstanding && minTimeElapsed) {
       setPipelineStep("done");
-      setPhase("complete");
+      setPhase("populating");
     }
   }, [phase, hasUnderstanding, minTimeElapsed]);
 
-  // Auto-generate search queries once the brand profile is complete
+  // After populating transition finishes, go to complete
   useEffect(() => {
-    if (phase === "complete" && !hasQueries && !generatingQueries && !queriesTriggeredRef.current) {
+    if (phase === "populating") {
+      const t = setTimeout(() => setPhase("complete"), 1400);
+      return () => clearTimeout(t);
+    }
+  }, [phase]);
+
+  // Auto-generate search queries once the brand profile is populating
+  useEffect(() => {
+    if (phase === "populating" && !hasQueries && !generatingQueries && !queriesTriggeredRef.current) {
       queriesTriggeredRef.current = true;
       onGenerateQueries();
     }
@@ -888,13 +995,13 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
     }
   }, [hasQueries, selectedKeywords.size, sortedQueries]);
 
-  // Smooth auto-scroll to keywords section once queries are ready
+  // Smooth auto-scroll to keywords section after populating completes
   useEffect(() => {
     if (phase === "complete" && hasQueries && !generatingQueries && !hasScrolledRef.current) {
       hasScrolledRef.current = true;
       const t = setTimeout(() => {
-        keywordsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
-      }, 800);
+        keywordsSectionRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }, 400);
       return () => clearTimeout(t);
     }
   }, [phase, hasQueries, generatingQueries]);
@@ -938,7 +1045,7 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
     return (
       <div className="space-y-5">
         <BrowserMockup url={audit.website_url}>
-          <SkeletonWebsite />
+          <ProgressiveSkeleton />
           <ScannerOverlay />
           <SeoScanSignals />
         </BrowserMockup>
@@ -956,6 +1063,75 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
               </button>
             </div>
           )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Populating State (skeleton → real data cross-fade) ──
+  if (phase === "populating") {
+    const understanderData = (audit.understander_analysis as UnderstanderAnalysis) || {};
+    const briefSummary = summary || "";
+    const brandName = brand.about_brand?.split(/[.,;:]/)[0]?.trim() || audit.website_url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+
+    return (
+      <div className="space-y-5">
+        <BrowserMockup url={audit.website_url}>
+          <div className="bg-white min-h-[340px] relative">
+            {/* Hero section — cross-fades from skeleton hero */}
+            <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
+              <motion.div
+                initial={{ opacity: 0, filter: "blur(4px)" }}
+                animate={{ opacity: 1, filter: "blur(0px)" }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe size={14} className="text-slate-400" />
+                  <span className="text-[12px] text-slate-400 font-mono">{audit.website_url}</span>
+                </div>
+                <h2 className="text-[20px] font-bold text-slate-900 mb-1">{brandName}</h2>
+                {briefSummary && (
+                  <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 max-w-[600px]">
+                    {briefSummary.slice(0, 200)}{briefSummary.length > 200 ? "..." : ""}
+                  </p>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Brand profile — staggered cross-fade per field */}
+            <div className="px-5 sm:px-6 py-5">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+              >
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Brain size={14} className="text-blue-600" />
+                  </div>
+                  <h3 className="text-[15px] font-bold text-slate-900">Your brand profile</h3>
+                </div>
+                <div className="space-y-3">
+                  {understanderData.about_brand && (
+                    <PopulatedField label="About the brand" value={understanderData.about_brand} delay={0.1} />
+                  )}
+                  {understanderData.primary_product_or_service && (
+                    <PopulatedField label="Primary product or service" value={understanderData.primary_product_or_service} delay={0.25} />
+                  )}
+                  {understanderData.geographies && (
+                    <PopulatedField label="Geographies" value={understanderData.geographies} delay={0.4} />
+                  )}
+                  {understanderData.target_audience && (
+                    <PopulatedField label="Target audience" value={understanderData.target_audience} delay={0.55} />
+                  )}
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        </BrowserMockup>
+
+        <div className="flex flex-col items-center gap-3">
+          <ScanningStatus />
         </div>
       </div>
     );
