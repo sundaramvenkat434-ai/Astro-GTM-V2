@@ -743,7 +743,7 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   understanderTime: number | null;
   summary: string | null;
   onSummarize: () => void;
-  onNext: (topKeyword: string) => void;
+  onNext: (keywords: string[]) => void;
 }) {
   const [phase, setPhase] = useState<BrandPhase>("initial");
   const [pipelineStep, setPipelineStep] = useState<PipelineStep>("idle");
@@ -1106,7 +1106,7 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
           </button>
           {hasQueries && !generatingQueries && rankedKeywords.length > 0 && (
             <button
-              onClick={() => onNext(rankedKeywords[0])}
+              onClick={() => onNext(selectedKeywords.size > 0 ? Array.from(selectedKeywords) : rankedKeywords)}
               className="inline-flex items-center gap-1.5 px-4 py-2 rounded-lg bg-blue-600 text-white text-[12.5px] font-semibold hover:bg-blue-700 transition-colors"
             >
               Next <ChevronRight size={13} />
@@ -1118,15 +1118,114 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   );
 }
 
+// ─── Competition Tab Helpers ──────────────────────────────────────────────────
+function GoogleSearchMockup({ query, children }: { query: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl overflow-hidden shadow-2xl border border-slate-200 bg-white">
+      <div className="flex items-center gap-2 px-3 py-2.5 bg-slate-100 border-b border-slate-200">
+        <div className="flex gap-1.5 shrink-0">
+          <div className="w-2.5 h-2.5 rounded-full bg-red-400" />
+          <div className="w-2.5 h-2.5 rounded-full bg-yellow-400" />
+          <div className="w-2.5 h-2.5 rounded-full bg-green-400" />
+        </div>
+        <div className="flex items-center gap-0.5 ml-2 shrink-0">
+          <ChevronLeft size={14} className="text-slate-300" />
+          <ChevronRight size={14} className="text-slate-300" />
+        </div>
+        <div className="flex-1 ml-2">
+          <div className="flex items-center gap-1.5 px-2.5 py-1 bg-white rounded-md border border-slate-200">
+            <Search size={10} className="text-slate-400 shrink-0" />
+            <span className="text-[11px] text-slate-500 truncate font-mono">google.com/search?q={query.replace(/\s+/g, "+")}</span>
+          </div>
+        </div>
+      </div>
+      <div className="relative overflow-hidden">
+        {children}
+      </div>
+    </div>
+  );
+}
+
+function GoogleSkeletonResults() {
+  return (
+    <div className="px-6 py-5 space-y-5 bg-white min-h-[340px]">
+      {[0, 1, 2, 3, 4].map(i => (
+        <motion.div
+          key={i}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ delay: i * 0.1 }}
+          className="space-y-1.5"
+        >
+          <div className="flex items-center gap-1.5">
+            <div className="w-4 h-4 rounded-full bg-slate-100 animate-pulse" />
+            <div className="h-2 w-40 bg-slate-100 rounded animate-pulse" />
+          </div>
+          <div className="h-3.5 w-2/3 bg-blue-100/60 rounded animate-pulse" />
+          <div className="h-2.5 w-full bg-slate-100 rounded animate-pulse" />
+          <div className="h-2.5 w-5/6 bg-slate-100 rounded animate-pulse" />
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
+const COMPETITION_SCAN_STATUSES = ["Searching Google", "Scanning results", "Identifying competitors", "Analyzing top sites"];
+
+function CompetitionScanningStatus({ competitorCount }: { competitorCount: number }) {
+  const [idx, setIdx] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setIdx(i => Math.min(i + 1, COMPETITION_SCAN_STATUSES.length - 1));
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-2">
+      <div className="flex items-center gap-2 h-5">
+        <Loader2 size={13} className="text-blue-500 animate-spin shrink-0" />
+        <AnimatePresence mode="wait">
+          <motion.span
+            key={idx}
+            initial={{ opacity: 0, y: 4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={{ duration: 0.25 }}
+            className="text-[13px] font-semibold text-slate-600"
+          >
+            {COMPETITION_SCAN_STATUSES[idx]}...
+          </motion.span>
+        </AnimatePresence>
+      </div>
+      {competitorCount > 0 && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-50 border border-blue-100"
+        >
+          <CheckCircle2 size={12} className="text-blue-600" />
+          <span className="text-[12px] font-semibold text-blue-700">
+            {competitorCount} competitor{competitorCount === 1 ? "" : "s"} identified
+          </span>
+        </motion.div>
+      )}
+    </div>
+  );
+}
+
+type CompetitionPhase = "idle" | "scanning" | "results";
+
 // ─── Competition Tab ──────────────────────────────────────────────────────────
-function CompetitionTab({ audit, onSearch, onScrape, autoSearchTerm }: {
+function CompetitionTab({ audit, onSearch, onScrape, autoSearchKeywords }: {
   audit: AuditData;
   onSearch: (term: string) => Promise<{ results?: SerpResult[] }>;
   onScrape: (urls: string[]) => Promise<{ results?: ScrapedCompetitor[] }>;
-  autoSearchTerm?: string;
+  autoSearchKeywords?: string[];
 }) {
   const brand = (audit.brand_analysis || {}) as BrandAnalysis;
-  const [searchTerm, setSearchTerm] = useState(autoSearchTerm || brand.primary_search_keyword || "");
+  const [searchTerm, setSearchTerm] = useState(brand.primary_search_keyword || "");
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [rateLimited, setRateLimited] = useState(false);
@@ -1137,6 +1236,9 @@ function CompetitionTab({ audit, onSearch, onScrape, autoSearchTerm }: {
   const [scrapeError, setScrapeError] = useState<string | null>(null);
   const [scrapedResults, setScrapedResults] = useState<ScrapedCompetitor[]>(audit.scraped_competitors || []);
   const [expandedUrl, setExpandedUrl] = useState<string | null>(null);
+  const [phase, setPhase] = useState<CompetitionPhase>("idle");
+  const [animatedQuery, setAnimatedQuery] = useState("");
+  const [competitorCount, setCompetitorCount] = useState(0);
   const autoSearchRanRef = useRef(false);
 
   useEffect(() => {
@@ -1150,14 +1252,86 @@ function CompetitionTab({ audit, onSearch, onScrape, autoSearchTerm }: {
     }
   }, [brand.primary_search_keyword]);
 
-  // Auto-search when arriving from the Brand tab with a keyword
+  // Auto-search when arriving from the Brand tab with keywords
   useEffect(() => {
-    if (autoSearchTerm && !autoSearchRanRef.current && !searching && serpResults.length === 0) {
+    if (autoSearchKeywords && autoSearchKeywords.length > 0 && !autoSearchRanRef.current && !searching && serpResults.length === 0) {
       autoSearchRanRef.current = true;
-      setSearchTerm(autoSearchTerm);
-      handleSearch(autoSearchTerm);
+      const topKeyword = autoSearchKeywords[0];
+      setSearchTerm(topKeyword);
+      setPhase("scanning");
+      setTimeout(() => {
+        handleSearch(topKeyword);
+      }, 800);
     }
-  }, [autoSearchTerm, searching, serpResults.length]);
+  }, [autoSearchKeywords, searching, serpResults.length]);
+
+  // Typing animation for keywords during scanning
+  useEffect(() => {
+    if (phase !== "scanning" || !autoSearchKeywords || autoSearchKeywords.length === 0) return;
+    let kwIdx = 0;
+    let charIdx = 0;
+    let timer: ReturnType<typeof setTimeout>;
+    let cancelled = false;
+
+    const typeNext = () => {
+      if (cancelled) return;
+      const currentKw = autoSearchKeywords[kwIdx];
+      if (charIdx <= currentKw.length) {
+        setAnimatedQuery(currentKw.slice(0, charIdx));
+        charIdx++;
+        timer = setTimeout(typeNext, 50 + Math.random() * 40);
+      } else {
+        timer = setTimeout(() => {
+          if (cancelled) return;
+          kwIdx++;
+          charIdx = 0;
+          if (kwIdx < autoSearchKeywords.length) {
+            setAnimatedQuery("");
+            typeNext();
+          } else {
+            setAnimatedQuery(autoSearchKeywords[autoSearchKeywords.length - 1]);
+          }
+        }, 700);
+      }
+    };
+
+    typeNext();
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [phase, autoSearchKeywords]);
+
+  // Competitor counter animation during scanning
+  useEffect(() => {
+    if (phase !== "scanning") return;
+    setCompetitorCount(0);
+    let count = 0;
+    const interval = setInterval(() => {
+      count++;
+      if (count <= 10) {
+        setCompetitorCount(count);
+      } else {
+        clearInterval(interval);
+      }
+    }, 500);
+    return () => clearInterval(interval);
+  }, [phase]);
+
+  // When search completes during scanning phase, go to results
+  useEffect(() => {
+    if (phase === "scanning" && !searching && serpResults.length > 0) {
+      setCompetitorCount(serpResults.length);
+      setTimeout(() => setPhase("results"), 600);
+    }
+  }, [phase, searching, serpResults.length]);
+
+  // If search errors during scanning, go to results to show error
+  useEffect(() => {
+    if (phase === "scanning" && !searching && (searchError || rateLimited)) {
+      setPhase("results");
+    }
+  }, [phase, searching, searchError, rateLimited]);
 
   async function handleSearch(termOverride?: string) {
     const term = termOverride || searchTerm;
@@ -1207,6 +1381,28 @@ function CompetitionTab({ audit, onSearch, onScrape, autoSearchTerm }: {
     }
   }
 
+  // ── Scanning Phase ──
+  if (phase === "scanning") {
+    return (
+      <div className="space-y-5">
+        <div>
+          <h2 className="text-[20px] font-bold text-slate-900">Competitor Research</h2>
+          <p className="text-[13px] text-slate-400 mt-0.5">See who ranks for your keywords and analyze their content</p>
+        </div>
+
+        <GoogleSearchMockup query={animatedQuery}>
+          <GoogleSkeletonResults />
+          <ScannerOverlay />
+        </GoogleSearchMockup>
+
+        <div className="flex flex-col items-center gap-3">
+          <CompetitionScanningStatus competitorCount={competitorCount} />
+        </div>
+      </div>
+    );
+  }
+
+  // ── Idle / Results Phase ──
   return (
     <div className="space-y-6">
       <div>
@@ -1443,7 +1639,7 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [volumeRateLimited, setVolumeRateLimited] = useState(false);
   const [volumeResetIn, setVolumeResetIn] = useState<number | undefined>();
   const [volumeTime, setVolumeTime] = useState<number | null>(null);
-  const [competitionSearchTerm, setCompetitionSearchTerm] = useState<string | undefined>(undefined);
+  const [competitionKeywords, setCompetitionKeywords] = useState<string[]>([]);
 
   const loadAudit = useCallback(async () => {
     try {
@@ -1661,8 +1857,8 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 understanderTime={understanderTime}
                 summary={websiteBrief}
                 onSummarize={summarizeContent}
-                onNext={(kw) => {
-                  setCompetitionSearchTerm(kw);
+                onNext={(kws) => {
+                  setCompetitionKeywords(kws);
                   setActiveTab("competition");
                 }}
               />
@@ -1689,7 +1885,7 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 audit={audit}
                 onSearch={handleSearch}
                 onScrape={handleScrape}
-                autoSearchTerm={competitionSearchTerm}
+                autoSearchKeywords={competitionKeywords}
               />
             )}
             {activeTab === "opportunity" && <OpportunityTab />}
