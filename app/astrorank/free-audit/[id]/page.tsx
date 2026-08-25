@@ -436,31 +436,31 @@ function BrowserMockup({ url, children }: { url: string; children: React.ReactNo
 
 function SkeletonWebsite() {
   return (
-    <div className="p-5 sm:p-6 space-y-4 bg-slate-50/50 min-h-[340px]">
-      <div className="space-y-2">
-        <div className="h-5 w-2/3 bg-slate-200/70 rounded animate-pulse" />
-        <div className="h-3.5 w-1/2 bg-slate-200/50 rounded animate-pulse" />
-        <div className="h-8 w-28 bg-blue-200/50 rounded-lg animate-pulse mt-1" />
+    <div className="p-5 sm:p-6 space-y-5 bg-slate-50/50 min-h-[420px]">
+      <div className="space-y-2.5">
+        <div className="h-6 w-3/4 bg-slate-200/70 rounded animate-pulse" />
+        <div className="h-4 w-1/2 bg-slate-200/50 rounded animate-pulse" />
+        <div className="h-9 w-32 bg-blue-200/50 rounded-lg animate-pulse mt-1.5" />
       </div>
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-3 gap-3">
         {[0, 1, 2].map(i => (
-          <div key={i} className="space-y-1.5 p-2.5 border border-slate-200/60 rounded-lg bg-white/50">
-            <div className="h-3.5 w-full bg-slate-200/50 rounded animate-pulse" />
-            <div className="h-2.5 w-3/4 bg-slate-200/40 rounded animate-pulse" />
+          <div key={i} className="space-y-2 p-3 border border-slate-200/60 rounded-lg bg-white/50">
+            <div className="h-4 w-full bg-slate-200/50 rounded animate-pulse" />
+            <div className="h-3 w-3/4 bg-slate-200/40 rounded animate-pulse" />
           </div>
         ))}
       </div>
-      <div className="space-y-1.5">
-        <div className="h-2.5 w-full bg-slate-200/40 rounded animate-pulse" />
-        <div className="h-2.5 w-5/6 bg-slate-200/40 rounded animate-pulse" />
-        <div className="h-2.5 w-4/6 bg-slate-200/40 rounded animate-pulse" />
+      <div className="space-y-2">
+        <div className="h-3 w-full bg-slate-200/40 rounded animate-pulse" />
+        <div className="h-3 w-5/6 bg-slate-200/40 rounded animate-pulse" />
+        <div className="h-3 w-4/6 bg-slate-200/40 rounded animate-pulse" />
       </div>
-      <div className="grid grid-cols-2 gap-2.5">
+      <div className="grid grid-cols-2 gap-3">
         {[0, 1].map(i => (
-          <div key={i} className="space-y-1.5 p-2.5 border border-slate-200/60 rounded-lg bg-white/50">
-            <div className="h-3 w-2/3 bg-slate-200/50 rounded animate-pulse" />
-            <div className="h-2.5 w-full bg-slate-200/40 rounded animate-pulse" />
-            <div className="h-2.5 w-5/6 bg-slate-200/40 rounded animate-pulse" />
+          <div key={i} className="space-y-2 p-3 border border-slate-200/60 rounded-lg bg-white/50">
+            <div className="h-3.5 w-2/3 bg-slate-200/50 rounded animate-pulse" />
+            <div className="h-3 w-full bg-slate-200/40 rounded animate-pulse" />
+            <div className="h-3 w-5/6 bg-slate-200/40 rounded animate-pulse" />
           </div>
         ))}
       </div>
@@ -472,56 +472,139 @@ function ScannerOverlay() {
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
       <motion.div
-        className="absolute left-0 right-0 h-20 bg-gradient-to-b from-transparent via-blue-400/8 to-blue-400/15"
-        animate={{ top: ["-10%", "100%"] }}
-        transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+        className="absolute left-0 right-0 h-24 bg-gradient-to-b from-transparent via-blue-400/10 to-blue-500/20"
+        animate={{ top: ["-12%", "100%"] }}
+        transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
       >
-        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-400/50 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-blue-500/60 to-transparent" />
+        <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-blue-300/40 to-transparent translate-y-1" />
       </motion.div>
     </div>
   );
 }
 
-function AnimatedKeywords({ keywords }: { keywords: string[] }) {
-  const [visible, setVisible] = useState<{ text: string; id: number; x: number; y: number }[]>([]);
-  const idRef = useRef(0);
+interface SeoSignal {
+  label: string;
+  anchorTop: number;
+}
+
+const SEO_SIGNALS: SeoSignal[] = [
+  { label: "Analysing website content", anchorTop: 4 },
+  { label: "Checking page title", anchorTop: 12 },
+  { label: "Reading meta description", anchorTop: 19 },
+  { label: "Analysing headings", anchorTop: 30 },
+  { label: "Identifying H1", anchorTop: 36 },
+  { label: "Reviewing H2 sections", anchorTop: 44 },
+  { label: "Understanding products and services", anchorTop: 56 },
+  { label: "Checking FAQs", anchorTop: 68 },
+  { label: "Reading structured data", anchorTop: 80 },
+  { label: "Identifying key business information", anchorTop: 90 },
+];
+
+type SignalState = "pending" | "scanning" | "complete";
+
+function SeoScanSignals() {
+  const [currentSignal, setCurrentSignal] = useState(0);
+  const [signalStates, setSignalStates] = useState<SignalState[]>(
+    () => SEO_SIGNALS.map(() => "pending")
+  );
 
   useEffect(() => {
-    if (keywords.length === 0) return;
-    let idx = 0;
-
-    const showNext = () => {
-      const kw = keywords[idx % keywords.length];
-      idx++;
-      const kid = idRef.current++;
-      const x = 8 + Math.random() * 65;
-      const y = 12 + Math.random() * 68;
-      setVisible(prev => [...prev.slice(-4), { text: kw, id: kid, x, y }]);
-      setTimeout(() => {
-        setVisible(prev => prev.filter(k => k.id !== kid));
-      }, 2400);
-    };
-
-    const interval = setInterval(showNext, 550);
+    const stepDuration = 650;
+    const interval = setInterval(() => {
+      setCurrentSignal(prev => {
+        const next = prev + 1;
+        if (next >= SEO_SIGNALS.length) {
+          clearInterval(interval);
+          return prev;
+        }
+        return next;
+      });
+    }, stepDuration);
     return () => clearInterval(interval);
-  }, [keywords]);
+  }, []);
+
+  useEffect(() => {
+    if (currentSignal >= SEO_SIGNALS.length) return;
+    setSignalStates(prev => {
+      const next = [...prev];
+      if (currentSignal > 0) next[currentSignal - 1] = "complete";
+      next[currentSignal] = "scanning";
+      return next;
+    });
+  }, [currentSignal]);
+
+  useEffect(() => {
+    if (currentSignal !== SEO_SIGNALS.length - 1) return;
+    const timeout = setTimeout(() => {
+      setSignalStates(prev => {
+        const next = [...prev];
+        next[SEO_SIGNALS.length - 1] = "complete";
+        return next;
+      });
+    }, 650);
+    return () => clearTimeout(timeout);
+  }, [currentSignal]);
+
+  const visibleStart = Math.max(0, currentSignal - 1);
+  const visibleEnd = Math.min(SEO_SIGNALS.length, visibleStart + 4);
+  const visibleSignals = SEO_SIGNALS.slice(visibleStart, visibleEnd).map((sig, i) => ({
+    ...sig,
+    state: signalStates[visibleStart + i],
+    index: visibleStart + i,
+  }));
 
   return (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      <AnimatePresence>
-        {visible.map(kw => (
-          <motion.div
-            key={kw.id}
-            initial={{ opacity: 0, scale: 0.8, y: `${kw.y}%` }}
-            animate={{ opacity: 1, scale: 1, y: `${kw.y + 2}%` }}
-            exit={{ opacity: 0, scale: 0.9 }}
-            transition={{ duration: 0.5, ease: "easeOut" }}
-            style={{ left: `${kw.x}%` }}
-            className="absolute px-2 py-0.5 rounded-full bg-blue-500/90 text-white text-[10.5px] font-semibold shadow-lg whitespace-nowrap backdrop-blur-sm"
-          >
-            {kw.text}
-          </motion.div>
-        ))}
+      <AnimatePresence mode="popLayout">
+        {visibleSignals.map(sig => {
+          const isScanning = sig.state === "scanning";
+          const isComplete = sig.state === "complete";
+          return (
+            <motion.div
+              key={sig.index}
+              layout
+              initial={{ opacity: 0, y: 6, scale: 0.92 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: -6, scale: 0.92 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              style={{ top: `${sig.anchorTop}%`, left: "50%", x: "-50%" }}
+              className="absolute"
+            >
+              <div
+                className={`
+                  flex items-center gap-2 px-3 py-1.5 rounded-lg border shadow-sm whitespace-nowrap
+                  transition-colors duration-300
+                  ${isComplete
+                    ? "bg-emerald-50/95 border-emerald-200"
+                    : isScanning
+                    ? "bg-blue-50/95 border-blue-200"
+                    : "bg-white/90 border-slate-200"
+                  }`
+                }
+              >
+                {isComplete ? (
+                  <CheckCircle2 size={13} className="text-emerald-500 shrink-0" />
+                ) : isScanning ? (
+                  <Loader2 size={13} className="text-blue-500 shrink-0 animate-spin" />
+                ) : (
+                  <div className="w-[13px] h-[13px] rounded-full border-1.5 border-slate-300 shrink-0" />
+                )}
+                <span
+                  className={`text-[11.5px] font-semibold transition-colors duration-300 ${
+                    isComplete
+                      ? "text-emerald-700"
+                      : isScanning
+                      ? "text-blue-700"
+                      : "text-slate-400"
+                  }`}
+                >
+                  {sig.label}
+                </span>
+              </div>
+            </motion.div>
+          );
+        })}
       </AnimatePresence>
     </div>
   );
@@ -885,7 +968,7 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
         <BrowserMockup url={audit.website_url}>
           <SkeletonWebsite />
           <ScannerOverlay />
-          {keywords.length > 0 && <AnimatedKeywords keywords={keywords} />}
+          <SeoScanSignals />
         </BrowserMockup>
 
         <div className="flex flex-col items-center gap-3">
