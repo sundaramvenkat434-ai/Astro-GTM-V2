@@ -36,6 +36,8 @@ const FALLBACK_LIMITS: Record<string, RateLimitConfig> = {
   "analyze-brand": { maxCount: 10, windowSeconds: 3600 },
   "search-serp": { maxCount: 10, windowSeconds: 3600 },
   "scrape-competitors": { maxCount: 10, windowSeconds: 3600 },
+  "generate-search-queries": { maxCount: 10, windowSeconds: 3600 },
+  "run-understander": { maxCount: 10, windowSeconds: 3600 },
 };
 
 const SETTING_KEY_TO_ACTION: Record<string, string> = {
@@ -43,6 +45,8 @@ const SETTING_KEY_TO_ACTION: Record<string, string> = {
   free_audit_analyze_limit: "analyze-brand",
   free_audit_serp_limit: "search-serp",
   free_audit_scrape_limit: "scrape-competitors",
+  free_audit_search_queries_limit: "generate-search-queries",
+  free_audit_understander_limit: "run-understander",
 };
 
 interface AuditSettings {
@@ -64,6 +68,8 @@ async function loadAuditSettings(
       "free_audit_analyze_limit",
       "free_audit_serp_limit",
       "free_audit_scrape_limit",
+      "free_audit_search_queries_limit",
+      "free_audit_understander_limit",
       "free_audit_ip_whitelist",
     ]);
 
@@ -723,7 +729,7 @@ Deno.serve(async (req: Request) => {
     // ACTION: generate-search-queries — read understander output, call OpenRouter for 10 search queries
     // ═══════════════════════════════════════════════════════════
     if (action === "generate-search-queries") {
-      const rl = await checkRateLimit(supabase, clientIP, "analyze-brand", settings);
+      const rl = await checkRateLimit(supabase, clientIP, "generate-search-queries", settings);
       if (!rl.allowed) {
         return jsonResponse({
           error: "Too many analysis requests. Please try again later.",
@@ -1102,7 +1108,7 @@ Deno.serve(async (req: Request) => {
     // ACTION: run-understander — read saved scraped_content, call AI, save to understander_analysis
     // ═══════════════════════════════════════════════════════════
     if (action === "run-understander") {
-      const rl = await checkRateLimit(supabase, clientIP, "analyze-brand", settings);
+      const rl = await checkRateLimit(supabase, clientIP, "run-understander", settings);
       if (!rl.allowed) {
         return jsonResponse({
           error: "Too many requests. Please try again later.",
