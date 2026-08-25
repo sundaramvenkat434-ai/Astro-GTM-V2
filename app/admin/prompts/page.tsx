@@ -193,6 +193,14 @@ const PROMPT_KEYS = [
 
 const MAX_TOKENS_KEY = (promptKey: string) => `ai_max_tokens_${promptKey}`;
 const LOG_ENABLED_KEY = (promptKey: string) => `ai_log_enabled_${promptKey}`;
+const PROVIDER_KEY = (promptKey: string) => `ai_provider_${promptKey}`;
+
+type AIProvider = 'openrouter' | 'poolside';
+
+const PROVIDER_LABELS: Record<AIProvider, string> = {
+  openrouter: 'OpenRouter',
+  poolside: 'Poolside Official (srvenkat94@gmail.com)',
+};
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -212,6 +220,40 @@ function getModelLabel(value: string, models: ModelOption[]) {
 }
 
 // ── Model Switcher ────────────────────────────────────────────────────────────
+
+function ProviderSwitcher({
+  promptKey,
+  value,
+  onChange,
+}: {
+  promptKey: string;
+  value: AIProvider;
+  onChange: (promptKey: string, provider: AIProvider) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 mb-3">
+      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider whitespace-nowrap">Provider</span>
+      <div className="flex items-center gap-1 bg-white border border-slate-200 rounded-lg p-0.5">
+        {(['openrouter', 'poolside'] as AIProvider[]).map((p) => (
+          <button
+            key={p}
+            onClick={() => onChange(promptKey, p)}
+            className={`text-[10px] font-medium px-2.5 py-1 rounded-md transition-colors ${
+              value === p
+                ? 'bg-slate-900 text-white shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            {p === 'openrouter' ? 'OpenRouter' : 'Poolside Official'}
+          </button>
+        ))}
+      </div>
+      {value === 'poolside' && (
+        <span className="text-[9px] text-slate-400">srvenkat94@gmail.com</span>
+      )}
+    </div>
+  );
+}
 
 function ModelSwitcher({
   modelKey,
@@ -552,7 +594,7 @@ function PromptLogModal({ promptKey, models, onClose }: { promptKey: string; mod
 
 // ── Test Modal ───────────────────────────────────────────────────────────────
 
-function TestModal({ promptKey, modelValue, maxTokens, models, onClose }: { promptKey: string; modelValue: string; maxTokens: number; models: ModelOption[]; onClose: () => void }) {
+function TestModal({ promptKey, modelValue, maxTokens, provider, models, onClose }: { promptKey: string; modelValue: string; maxTokens: number; provider: AIProvider; models: ModelOption[]; onClose: () => void }) {
   const [input, setInput] = useState('');
   const [payload, setPayload] = useState<object | null>(null);
   const [generating, setGenerating] = useState(false);
@@ -602,7 +644,7 @@ function TestModal({ promptKey, modelValue, maxTokens, models, onClose }: { prom
           'Authorization': `Bearer ${session?.access_token ?? anonKey}`,
           'apikey': anonKey,
         },
-        body: JSON.stringify({ prompt_key: promptKey, model: modelValue, user_input: input, max_tokens: maxTokens }),
+        body: JSON.stringify({ prompt_key: promptKey, model: modelValue, user_input: input, max_tokens: maxTokens, provider }),
       });
 
       const data = await res.json();
@@ -639,7 +681,7 @@ function TestModal({ promptKey, modelValue, maxTokens, models, onClose }: { prom
             </div>
             <div>
               <h3 className="text-[13px] font-bold text-slate-900">Prompt Playground</h3>
-              <p className="text-[10px] text-slate-400">{getModelLabel(modelValue, models)} · max_tokens: {maxTokens}</p>
+              <p className="text-[10px] text-slate-400">{PROVIDER_LABELS[provider]} · {getModelLabel(modelValue, models)} · max_tokens: {maxTokens}</p>
             </div>
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 transition-colors">
@@ -794,15 +836,19 @@ export default function PromptsAdmin() {
   const [requestCounts, setRequestCounts] = useState<Record<string, number>>({});
   const [changelogKey, setChangelogKey] = useState<string | null>(null);
   const [logModalKey, setLogModalKey] = useState<string | null>(null);
-  const [testModal, setTestModal] = useState<{ key: string; model: string; maxTokens: number } | null>(null);
+  const [testModal, setTestModal] = useState<{ key: string; model: string; maxTokens: number; provider: AIProvider } | null>(null);
   const [models, setModels] = useState<ModelOption[]>([]);
+  const [poolsideModels, setPoolsideModels] = useState<ModelOption[]>([]);
+  const [providerDrafts, setProviderDrafts] = useState<Record<string, AIProvider>>({});
 
   const ALL_SETTINGS_KEYS = [
     'openrouter_models',
     'openrouter_custom_models',
+    'poolside_models',
     ...PROMPT_KEYS.map((p) => p.key),
     ...PROMPT_KEYS.map((p) => MAX_TOKENS_KEY(p.key)),
     ...PROMPT_KEYS.map((p) => LOG_ENABLED_KEY(p.key)),
+    ...PROMPT_KEYS.map((p) => PROVIDER_KEY(p.key)),
     ...PROMPT_KEYS.filter((p) => p.modelKey).map((p) => p.modelKey!),
     ...PROMPT_KEYS.filter((p) => p.countKey).map((p) => p.countKey!),
   ];
@@ -822,6 +868,8 @@ export default function PromptsAdmin() {
       const logEnabledMap: Record<string, boolean> = {};
       const countMap: Record<string, number> = {};
       let modelsList: ModelOption[] = [];
+      let poolsideList: ModelOption[] = [];
+      const providerMap: Record<string, AIProvider> = {};
 
       for (const row of data as PromptSetting[]) {
         map[row.key] = row;
@@ -843,6 +891,12 @@ export default function PromptsAdmin() {
         if (row.key === 'openrouter_models') {
           try { modelsList = JSON.parse(row.value) as ModelOption[]; } catch { modelsList = []; }
         }
+        if (row.key === 'poolside_models') {
+          try { poolsideList = JSON.parse(row.value) as ModelOption[]; } catch { poolsideList = []; }
+        }
+        if (row.key.startsWith('ai_provider_')) {
+          providerMap[row.key] = row.value === 'poolside' ? 'poolside' : 'openrouter';
+        }
       }
 
       // Migrate old custom models into the unified list
@@ -858,6 +912,7 @@ export default function PromptsAdmin() {
       }
 
       setModels(modelsList);
+      setPoolsideModels(poolsideList);
 
       for (const p of PROMPT_KEYS) {
         if (p.modelKey && !modelMap[p.modelKey]) {
@@ -869,6 +924,9 @@ export default function PromptsAdmin() {
         if (!(LOG_ENABLED_KEY(p.key) in logEnabledMap)) {
           logEnabledMap[LOG_ENABLED_KEY(p.key)] = false;
         }
+        if (!providerMap[PROVIDER_KEY(p.key)]) {
+          providerMap[PROVIDER_KEY(p.key)] = 'openrouter';
+        }
       }
 
       setPrompts(map);
@@ -877,6 +935,7 @@ export default function PromptsAdmin() {
       setMaxTokensDrafts(maxTokensMap);
       setLogEnabledDrafts(logEnabledMap);
       setRequestCounts(countMap);
+      setProviderDrafts(providerMap);
     }
     setLoading(false);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
@@ -963,6 +1022,26 @@ export default function PromptsAdmin() {
     });
   }
 
+  async function handleProviderChange(promptKey: string, provider: AIProvider) {
+    const settingsKey = PROVIDER_KEY(promptKey);
+    setProviderDrafts((prev) => ({ ...prev, [settingsKey]: provider }));
+    await supabase
+      .from('admin_settings')
+      .upsert({ key: settingsKey, value: provider, updated_at: new Date().toISOString() }, { onConflict: 'key' });
+
+    // Auto-switch model if the current model doesn't belong to the new provider
+    const config = PROMPT_KEYS.find((p) => p.key === promptKey);
+    if (config?.modelKey) {
+      const currentModel = modelDrafts[config.modelKey] ?? config.defaultModel ?? 'openai/gpt-oss-120b:free';
+      const availableModels = provider === 'poolside' ? poolsideModels : models;
+      const modelBelongsToProvider = availableModels.some((m) => m.value === currentModel);
+      if (!modelBelongsToProvider && availableModels.length > 0) {
+        const firstModel = availableModels[0].value;
+        await handleModelChange(config.modelKey, firstModel);
+      }
+    }
+  }
+
   function handleReset(key: string) {
     if (prompts[key]) setDrafts((prev) => ({ ...prev, [key]: prompts[key].value }));
   }
@@ -1020,6 +1099,8 @@ export default function PromptsAdmin() {
             const maxTokensKey = MAX_TOKENS_KEY(config.key);
             const maxTokens = maxTokensDrafts[maxTokensKey] ?? 4000;
             const logEnabled = logEnabledDrafts[LOG_ENABLED_KEY(config.key)] ?? false;
+            const provider = providerDrafts[PROVIDER_KEY(config.key)] ?? 'openrouter';
+            const availableModels = provider === 'poolside' ? poolsideModels : models;
 
             return (
               <Card key={config.key} className="border-slate-200 shadow-sm overflow-visible">
@@ -1068,18 +1149,25 @@ export default function PromptsAdmin() {
 
                 <CardContent className="space-y-3">
                   {config.modelKey && modelValue && (
-                    <ModelSwitcher
-                      modelKey={config.modelKey}
-                      countKey={config.countKey ?? ''}
-                      value={modelValue}
-                      count={count}
-                      models={models}
-                      onChange={handleModelChange}
-                      onShowChangelog={(k) => setChangelogKey(k)}
-                      onAddModel={handleAddModel}
-                      onEditModel={handleEditModel}
-                      onDeleteModel={handleDeleteModel}
-                    />
+                    <>
+                      <ProviderSwitcher
+                        promptKey={config.key}
+                        value={provider}
+                        onChange={handleProviderChange}
+                      />
+                      <ModelSwitcher
+                        modelKey={config.modelKey}
+                        countKey={config.countKey ?? ''}
+                        value={modelValue}
+                        count={count}
+                        models={availableModels}
+                        onChange={handleModelChange}
+                        onShowChangelog={(k) => setChangelogKey(k)}
+                        onAddModel={handleAddModel}
+                        onEditModel={handleEditModel}
+                        onDeleteModel={handleDeleteModel}
+                      />
+                    </>
                   )}
 
                   {/* Max tokens + Log toggle row */}
@@ -1138,7 +1226,7 @@ export default function PromptsAdmin() {
                       </span>
                       {config.testable && modelValue && (
                         <button
-                          onClick={() => setTestModal({ key: config.key, model: modelValue, maxTokens })}
+                          onClick={() => setTestModal({ key: config.key, model: modelValue, maxTokens, provider })}
                           className="flex items-center gap-1.5 text-[11px] font-medium text-sky-600 hover:text-sky-800 transition-colors"
                         >
                           <FlaskConical className="w-3.5 h-3.5" />
@@ -1181,7 +1269,7 @@ export default function PromptsAdmin() {
       {/* Modals */}
       {changelogKey && <ChangelogModal modelKey={changelogKey} models={models} onClose={() => setChangelogKey(null)} />}
       {logModalKey && <PromptLogModal promptKey={logModalKey} models={models} onClose={() => setLogModalKey(null)} />}
-      {testModal && <TestModal promptKey={testModal.key} modelValue={testModal.model} maxTokens={testModal.maxTokens} models={models} onClose={() => setTestModal(null)} />}
+      {testModal && <TestModal promptKey={testModal.key} modelValue={testModal.model} maxTokens={testModal.maxTokens} provider={testModal.provider} models={testModal.provider === 'poolside' ? poolsideModels : models} onClose={() => setTestModal(null)} />}
     </AdminShell>
   );
 }

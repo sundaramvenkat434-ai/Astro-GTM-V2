@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { callAI, getProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -44,7 +45,7 @@ Deno.serve(async (req: Request) => {
     const { data: formatRows } = await supabase
       .from("admin_settings")
       .select("key, value")
-      .in("key", ["seo_format_prompt", "ai_model_format_seo", "ai_request_count_format_seo"]);
+      .in("key", ["seo_format_prompt", "ai_model_format_seo", "ai_request_count_format_seo", "ai_provider_seo_format_prompt"]);
     const formatSettings: Record<string, string> = {};
     for (const row of (formatRows || []) as { key: string; value: string }[]) {
       formatSettings[row.key] = row.value;
@@ -69,66 +70,51 @@ ${content ? content.slice(0, 15000) : "N/A"}
 
 Please produce the SEO-optimized JSON response as instructed.`;
 
-    const openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openrouterKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": supabaseUrl,
-        "X-Title": "SEO Page Formatter",
-      },
-      body: JSON.stringify({
+    const provider = getProvider(formatSettings, "seo_format_prompt");
+
+    let result;
+    try {
+      result = await callAI({
+        provider,
         model: aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
         temperature: 0.7,
-        max_tokens: 3000,
-      }),
-    });
-
-    if (openrouterRes.status === 429) {
-      const retryAfter = openrouterRes.headers.get("retry-after");
-      return new Response(
-        JSON.stringify({
-          error: "rate_limit",
-          message: `The AI model is currently rate-limited. Please wait${retryAfter ? ` ${retryAfter} seconds` : " a moment"} and try again.`,
-          retry_after: retryAfter ? parseInt(retryAfter) : 60,
-        }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!openrouterRes.ok) {
-      const errData = await openrouterRes.json().catch(() => ({}));
-      const errMsg = (errData as { error?: { message?: string } })?.error?.message || `OpenRouter error ${openrouterRes.status}`;
+        maxTokens: 3000,
+        title: "SEO Page Formatter",
+      });
+    } catch (err: any) {
+      const errMsg = err?.message || `AI error`;
+      if (errMsg.includes("429") || err?.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "rate_limit", message: "The AI model is currently rate-limited. Please try again in a moment.", retry_after: 60 }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({ error: errMsg }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aiData = await openrouterRes.json();
-    const rawText: string = aiData?.choices?.[0]?.message?.content || "";
+    const cleaned = result.content;
 
-    // Strip markdown code fences if present
-    const cleaned = rawText.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
-
-    let result: SEOResult;
+    let parsedResult: SEOResult;
     try {
-      result = JSON.parse(cleaned);
+      parsedResult = JSON.parse(cleaned);
     } catch {
       return new Response(
         JSON.stringify({
           error: "The AI returned an unexpected format. Please try again.",
-          raw: rawText.slice(0, 500),
+          raw: result.content.slice(0, 500),
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    return new Response(JSON.stringify(result), {
+    return new Response(JSON.stringify(parsedResult), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err) {

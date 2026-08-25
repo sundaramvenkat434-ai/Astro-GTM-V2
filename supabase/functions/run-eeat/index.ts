@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { callAI, getProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -59,7 +60,7 @@ Deno.serve(async (req: Request) => {
     const { data: modelRows } = await supabase
       .from("admin_settings")
       .select("key, value")
-      .in("key", ["eeat_analysis_prompt", "ai_model_run_eeat", "ai_request_count_run_eeat"]);
+      .in("key", ["eeat_analysis_prompt", "ai_model_run_eeat", "ai_request_count_run_eeat", "ai_provider_eeat_analysis_prompt"]);
     const modelSettings: Record<string, string> = {};
     for (const row of (modelRows || []) as { key: string; value: string }[]) {
       modelSettings[row.key] = row.value;
@@ -107,66 +108,53 @@ FOCUS KEYWORD: ${focus_keyword || "N/A"}
 CONTENT (HTML):
 ${content.slice(0, 12000)}`;
 
-    const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openrouterKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": supabaseUrl,
-        "X-Title": "E-E-A-T Analyzer",
-      },
-      body: JSON.stringify({
+    const provider = getProvider(modelSettings, "eeat_analysis_prompt");
+
+    let result;
+    try {
+      result = await callAI({
+        provider,
         model: aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
         temperature: 0.3,
-        max_tokens: 1200,
-      }),
-    });
-
-    if (aiRes.status === 429) {
-      const retryAfter = aiRes.headers.get("retry-after");
-      return new Response(
-        JSON.stringify({
-          error: "rate_limit",
-          message: `AI model rate-limited. Please wait${retryAfter ? ` ${retryAfter} seconds` : " a moment"} and try again.`,
-          retry_after: retryAfter ? parseInt(retryAfter) : 60,
-        }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!aiRes.ok) {
-      const errData = await aiRes.json().catch(() => ({}));
-      const errMsg = (errData as { error?: { message?: string } })?.error?.message || `OpenRouter error ${aiRes.status}`;
+        maxTokens: 1200,
+        title: "E-E-A-T Analyzer",
+      });
+    } catch (err: any) {
+      const errMsg = err?.message || `AI error`;
+      if (errMsg.includes("429") || err?.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "rate_limit", message: "AI model rate-limited. Please wait a moment and try again.", retry_after: 60 }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({ error: errMsg }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aiData = await aiRes.json();
-    const rawText: string = aiData?.choices?.[0]?.message?.content || "";
-    const cleaned = rawText.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
+    const cleaned = result.content;
 
-    let result: EeatResult;
+    let eeatResult: EeatResult;
     try {
-      result = JSON.parse(cleaned);
+      eeatResult = JSON.parse(cleaned);
     } catch {
       return new Response(
-        JSON.stringify({ error: "AI returned unexpected format. Please try again.", raw: rawText.slice(0, 300) }),
+        JSON.stringify({ error: "AI returned unexpected format. Please try again.", raw: result.content.slice(0, 300) }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     // Clamp scores
-    result.overall_score = Math.min(100, Math.max(0, result.overall_score));
-    result.experience_score = Math.min(25, Math.max(0, result.experience_score));
-    result.expertise_score = Math.min(25, Math.max(0, result.expertise_score));
-    result.authoritativeness_score = Math.min(25, Math.max(0, result.authoritativeness_score));
-    result.trustworthiness_score = Math.min(25, Math.max(0, result.trustworthiness_score));
+    eeatResult.overall_score = Math.min(100, Math.max(0, eeatResult.overall_score));
+    eeatResult.experience_score = Math.min(25, Math.max(0, eeatResult.experience_score));
+    eeatResult.expertise_score = Math.min(25, Math.max(0, eeatResult.expertise_score));
+    eeatResult.authoritativeness_score = Math.min(25, Math.max(0, eeatResult.authoritativeness_score));
+    eeatResult.trustworthiness_score = Math.min(25, Math.max(0, eeatResult.trustworthiness_score));
 
     const analyzed_at = new Date().toISOString();
 
@@ -176,7 +164,7 @@ ${content.slice(0, 12000)}`;
         .upsert(
           {
             page_id,
-            ...result,
+            ...eeatResult,
             analyzed_at,
           },
           { onConflict: "page_id" }
@@ -191,7 +179,7 @@ ${content.slice(0, 12000)}`;
     }
 
     return new Response(
-      JSON.stringify({ ...(page_id ? { page_id } : {}), ...result, analyzed_at }),
+      JSON.stringify({ ...(page_id ? { page_id } : {}), ...eeatResult, analyzed_at }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   } catch (err) {

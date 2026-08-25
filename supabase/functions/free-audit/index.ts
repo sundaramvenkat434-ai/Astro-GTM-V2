@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { Readability } from "npm:@mozilla/readability@0.5.0";
 import { parseHTML } from "npm:linkedom@0.16.11";
+import { callAI, getProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -614,11 +615,6 @@ Deno.serve(async (req: Request) => {
         }, 429);
       }
 
-      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-      if (!OPENROUTER_API_KEY) {
-        return jsonResponse({ error: "OpenRouter API key is not configured." }, 500);
-      }
-
       const { audit_id } = body;
       if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
 
@@ -668,6 +664,7 @@ Deno.serve(async (req: Request) => {
           "brand_analyzer_prompt",
           "ai_model_brand_analyzer",
           "ai_max_tokens_brand_analyzer_prompt",
+          "ai_provider_brand_analyzer_prompt",
         ]);
 
       const settingsMap: Record<string, string> = {};
@@ -682,60 +679,31 @@ Deno.serve(async (req: Request) => {
       const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
 
       // Step 4: Call OpenRouter
-      let aiResponse: Response;
+      const provider = getProvider(settingsMap, "brand_analyzer_prompt");
+
+      let aiResult;
       try {
-        aiResponse = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": SUPABASE_URL,
-              "X-Title": "AstroRank Free Audit",
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                {
-                  role: "user",
-                  content: `Analyze the following website content and extract brand intelligence:\n\n${contentToAnalyze}`,
-                },
-              ],
-              temperature: 0.7,
-              max_tokens: maxTokens,
-              response_format: { type: "json_object" },
-            }),
-          }
-        );
-      } catch (apiErr) {
+        aiResult = await callAI({
+          provider,
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: `Analyze the following website content and extract brand intelligence:\n\n${contentToAnalyze}` },
+          ],
+          temperature: 0.7,
+          maxTokens,
+          responseFormat: { type: "json_object" },
+          title: "AstroRank Free Audit",
+        });
+      } catch (apiErr: any) {
         await supabase
           .from("free_audits")
-          .update({ status: "error", error_message: `OpenRouter request failed: ${String(apiErr)}`, updated_at: new Date().toISOString() })
+          .update({ status: "error", error_message: `AI request failed: ${String(apiErr?.message || apiErr)}`, updated_at: new Date().toISOString() })
           .eq("id", audit_id);
         return jsonResponse({ error: "Failed to reach the AI service." }, 502);
       }
 
-      if (aiResponse.status === 429) {
-        await supabase
-          .from("free_audits")
-          .update({ status: "error", error_message: "AI service rate limited", updated_at: new Date().toISOString() })
-          .eq("id", audit_id);
-        return jsonResponse({ error: "AI service is busy. Please try again in a moment." }, 429);
-      }
-
-      if (!aiResponse.ok) {
-        const errText = await aiResponse.text().catch(() => "");
-        await supabase
-          .from("free_audits")
-          .update({ status: "error", error_message: `AI error (${aiResponse.status}): ${errText.slice(0, 500)}`, updated_at: new Date().toISOString() })
-          .eq("id", audit_id);
-        return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
-      }
-
-      const aiData = await aiResponse.json();
-      const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+      const rawContent: string = aiResult.content || "";
 
       if (!rawContent) {
         await supabase
@@ -790,11 +758,6 @@ Deno.serve(async (req: Request) => {
         }, 429);
       }
 
-      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-      if (!OPENROUTER_API_KEY) {
-        return jsonResponse({ error: "OpenRouter API key is not configured." }, 500);
-      }
-
       const { audit_id } = body;
       if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
 
@@ -828,6 +791,7 @@ Deno.serve(async (req: Request) => {
           "free_audit_search_queries_prompt",
           "ai_model_brand_analyzer",
           "ai_max_tokens_free_audit_search_queries_prompt",
+          "ai_provider_free_audit_search_queries_prompt",
         ]);
 
       const settingsMap: Record<string, string> = {};
@@ -842,60 +806,32 @@ Deno.serve(async (req: Request) => {
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_search_queries_prompt"]) || 4000;
 
       const userMessageContent = `Based on the following business understanding, generate 10 realistic search queries that potential customers would use to find this business:\n\n${businessUnderstanding}`;
-      const requestBody = {
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessageContent },
-        ],
-        temperature: 0.7,
-        max_tokens: maxTokens,
-        response_format: { type: "json_object" },
-      };
 
-      // Step 4: Call OpenRouter
-      let aiResponse: Response;
+      const provider = getProvider(settingsMap, "free_audit_search_queries_prompt");
+
+      let aiResult;
       try {
-        aiResponse = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": SUPABASE_URL,
-              "X-Title": "AstroRank Free Audit",
-            },
-            body: JSON.stringify(requestBody),
-          }
-        );
+        aiResult = await callAI({
+          provider,
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessageContent },
+          ],
+          temperature: 0.7,
+          maxTokens,
+          responseFormat: { type: "json_object" },
+          title: "AstroRank Free Audit",
+        });
       } catch {
         return jsonResponse({ error: "Failed to reach the AI service." }, 502);
       }
 
-      if (aiResponse.status === 429) {
-        return jsonResponse({ error: "AI service is busy. Please try again in a moment." }, 429);
-      }
-
-      if (!aiResponse.ok) {
-        const errText = await aiResponse.text().catch(() => "");
-        await supabase
-          .from("free_audits")
-          .update({
-            search_queries_raw_input: { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody },
-            search_queries_raw_output: { http_status: aiResponse.status, error_body: errText.slice(0, 5000) },
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", audit_id);
-        return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
-      }
-
-      const aiData = await aiResponse.json();
-      const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+      const rawContent: string = aiResult.content || "";
 
       // Save raw I/O regardless of whether parsing succeeds
-      const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody };
-      const rawOutput = aiData;
+      const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent };
+      const rawOutput = aiResult.raw;
 
       if (!rawContent) {
         await supabase
@@ -1169,11 +1105,6 @@ Deno.serve(async (req: Request) => {
         }, 429);
       }
 
-      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-      if (!OPENROUTER_API_KEY) {
-        return jsonResponse({ error: "OpenRouter API key is not configured." }, 500);
-      }
-
       const { audit_id } = body;
       if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
 
@@ -1201,6 +1132,7 @@ Deno.serve(async (req: Request) => {
           "free_audit_understander_prompt",
           "ai_model_brand_analyzer",
           "ai_max_tokens_free_audit_understander_prompt",
+          "ai_provider_free_audit_understander_prompt",
         ]);
 
       const settingsMap: Record<string, string> = {};
@@ -1216,44 +1148,27 @@ Deno.serve(async (req: Request) => {
 
       const userMessageContent = `Analyze the following website content and write a single concise paragraph (80-120 words, max 150) that explains what the business is, what it offers, who it serves, the main problem it solves, and how potential customers would search for it:\n\n${scrapedContent}`;
 
-      let aiResponse: Response;
+      const provider = getProvider(settingsMap, "free_audit_understander_prompt");
+
+      let aiResult;
       try {
-        aiResponse = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": SUPABASE_URL,
-              "X-Title": "AstroRank Free Audit",
-            },
-            body: JSON.stringify({
-              model,
-              messages: [
-                { role: "system", content: systemPrompt },
-                { role: "user", content: userMessageContent },
-              ],
-              temperature: 0.7,
-              max_tokens: maxTokens,
-              response_format: { type: "json_object" },
-            }),
-          }
-        );
+        aiResult = await callAI({
+          provider,
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessageContent },
+          ],
+          temperature: 0.7,
+          maxTokens,
+          responseFormat: { type: "json_object" },
+          title: "AstroRank Free Audit",
+        });
       } catch {
         return jsonResponse({ error: "Failed to reach the AI service." }, 502);
       }
 
-      if (aiResponse.status === 429) {
-        return jsonResponse({ error: "AI service is busy. Please try again in a moment." }, 429);
-      }
-
-      if (!aiResponse.ok) {
-        return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
-      }
-
-      const aiData = await aiResponse.json();
-      const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+      const rawContent: string = aiResult.content || "";
 
       if (!rawContent) {
         return jsonResponse({ error: "AI returned an empty response." }, 502);
@@ -1296,11 +1211,6 @@ Deno.serve(async (req: Request) => {
         }, 429);
       }
 
-      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-      if (!OPENROUTER_API_KEY) {
-        return jsonResponse({ error: "OpenRouter API key is not configured." }, 500);
-      }
-
       const { audit_id } = body;
       if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
 
@@ -1326,6 +1236,7 @@ Deno.serve(async (req: Request) => {
           "free_audit_keyword_volume_prompt",
           "ai_model_free_audit_keyword_volume",
           "ai_max_tokens_free_audit_keyword_volume_prompt",
+          "ai_provider_free_audit_keyword_volume_prompt",
         ]);
 
       const settingsMap: Record<string, string> = {};
@@ -1340,44 +1251,26 @@ Deno.serve(async (req: Request) => {
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_keyword_volume_prompt"]) || 4000;
 
       const userMessageContent = `Classify the following ${queries.length} search queries into semantic clusters and assign volume factors for each:\n\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
-      const requestBody = {
-        model,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userMessageContent },
-        ],
-        temperature: 0.3,
-        max_tokens: maxTokens,
-        response_format: { type: "json_object" },
-      };
 
-      let aiResponse: Response;
+      const provider = getProvider(settingsMap, "free_audit_keyword_volume_prompt");
+
+      let aiResult;
       try {
-        aiResponse = await fetch(
-          "https://openrouter.ai/api/v1/chat/completions",
-          {
-            method: "POST",
-            headers: {
-              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-              "Content-Type": "application/json",
-              "HTTP-Referer": SUPABASE_URL,
-              "X-Title": "AstroRank Free Audit",
-            },
-            body: JSON.stringify(requestBody),
-          }
-        );
-      } catch {
-        return jsonResponse({ error: "Failed to reach the AI service." }, 502);
-      }
-
-      if (aiResponse.status === 429) {
-        return jsonResponse({ error: "AI service is busy. Please try again in a moment." }, 429);
-      }
-
-      if (!aiResponse.ok) {
-        const errText = await aiResponse.text().catch(() => "");
-        const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody };
-        const rawOutput = { http_status: aiResponse.status, error_body: errText.slice(0, 5000) };
+        aiResult = await callAI({
+          provider,
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessageContent },
+          ],
+          temperature: 0.3,
+          maxTokens,
+          responseFormat: { type: "json_object" },
+          title: "AstroRank Free Audit",
+        });
+      } catch (apiErr: any) {
+        const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent };
+        const rawOutput = { http_status: apiErr?.status || 500, error_body: String(apiErr?.message || apiErr).slice(0, 5000) };
         await supabase
           .from("free_audits")
           .update({
@@ -1386,14 +1279,13 @@ Deno.serve(async (req: Request) => {
             updated_at: new Date().toISOString(),
           })
           .eq("id", audit_id);
-        return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
+        return jsonResponse({ error: `AI service returned an error.` }, 502);
       }
 
-      const aiData = await aiResponse.json();
-      const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+      const rawContent: string = aiResult.content || "";
 
-      const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody };
-      const rawOutput = aiData;
+      const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent };
+      const rawOutput = aiResult.raw;
 
       if (!rawContent) {
         await supabase

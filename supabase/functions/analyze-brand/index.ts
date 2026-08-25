@@ -2,6 +2,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
 import { Readability } from "npm:@mozilla/readability@0.5.0";
 import { parseHTML } from "npm:linkedom@0.16.11";
+import { callAI, getProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -70,14 +71,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
-    if (!OPENROUTER_API_KEY) {
-      return errorResponse({
-        step: "server_config",
-        message: "OpenRouter API key is not configured on the server.",
-      }, 500);
-    }
-
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
     const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -121,6 +114,7 @@ Deno.serve(async (req: Request) => {
         "ai_request_count_brand_analyzer",
         "ai_max_tokens_brand_analyzer_prompt",
         "ai_log_enabled_brand_analyzer_prompt",
+        "ai_provider_brand_analyzer_prompt",
       ]);
 
     const settingsMap: Record<string, string> = {};
@@ -252,72 +246,49 @@ Deno.serve(async (req: Request) => {
       }, 400);
     }
 
-    // Step 5: OpenRouter API request
-    let aiResponse: Response;
+    const provider = getProvider(settingsMap, "brand_analyzer_prompt");
+
+    // Step 5: AI API request
+    let aiResult;
     try {
-      aiResponse = await fetch(
-        "https://openrouter.ai/api/v1/chat/completions",
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": SUPABASE_URL,
-            "X-Title": "AstroGTM Brand Analyzer",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              {
-                role: "user",
-                content: `Analyze the following website/document content and extract brand intelligence:\n\n${contentToAnalyze}`,
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: maxTokens,
-            response_format: { type: "json_object" },
-          }),
-        }
-      );
-    } catch (apiErr) {
+      aiResult = await callAI({
+        provider,
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: `Analyze the following website/document content and extract brand intelligence:\n\n${contentToAnalyze}` },
+        ],
+        temperature: 0.7,
+        maxTokens,
+        responseFormat: { type: "json_object" },
+        title: "AstroGTM Brand Analyzer",
+      });
+    } catch (apiErr: any) {
+      const errMsg = apiErr?.message || String(apiErr);
+      if (errMsg.includes("429") || apiErr?.status === 429) {
+        return errorResponse({
+          step: "ai_request",
+          message: "Rate limited by AI service. Please retry after 30s.",
+          httpStatus: 429,
+        }, 429);
+      }
       return errorResponse({
-        step: "openrouter_request",
-        message: "Failed to reach the AI service (OpenRouter).",
-        detail: String(apiErr),
+        step: "ai_request",
+        message: "Failed to reach the AI service.",
+        detail: errMsg,
       }, 502);
     }
 
-    if (aiResponse.status === 429) {
-      const retryAfter = aiResponse.headers.get("retry-after") || "30";
-      return errorResponse({
-        step: "openrouter_request",
-        message: `Rate limited by AI service. Please retry after ${retryAfter}s.`,
-        httpStatus: 429,
-      }, 429);
-    }
-
-    if (!aiResponse.ok) {
-      const errText = await aiResponse.text().catch(() => "");
-      return errorResponse({
-        step: "openrouter_request",
-        message: `AI service returned an error (HTTP ${aiResponse.status}).`,
-        httpStatus: aiResponse.status,
-        detail: errText.slice(0, 500) || undefined,
-      }, 502);
-    }
-
-    const aiData = await aiResponse.json();
-    const rawContent: string = aiData.choices?.[0]?.message?.content || "";
-    const finishReason: string | null = aiData.choices?.[0]?.finish_reason || null;
-    const inputTokens: number = aiData.usage?.prompt_tokens || 0;
-    const outputTokens: number = aiData.usage?.completion_tokens || 0;
+    const rawContent: string = aiResult.content || "";
+    const finishReason: string | null = aiResult.finishReason;
+    const inputTokens: number = aiResult.inputTokens;
+    const outputTokens: number = aiResult.outputTokens;
 
     if (!rawContent) {
       return errorResponse({
         step: "ai_response_parsing",
         message: "AI returned an empty response. The model may have failed to generate output.",
-        detail: JSON.stringify(aiData).slice(0, 500),
+        detail: JSON.stringify(aiResult.raw).slice(0, 500),
       }, 502);
     }
 

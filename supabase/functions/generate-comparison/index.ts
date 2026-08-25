@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { callAI, getProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -75,7 +76,7 @@ Deno.serve(async (req: Request) => {
     const { data: settingsRows } = await supabase
       .from("admin_settings")
       .select("key, value")
-      .in("key", ["comparison_slug_system_prompt", "comparison_content_system_prompt", "ai_model_generate_comparison", "ai_request_count_generate_comparison"]);
+      .in("key", ["comparison_slug_system_prompt", "comparison_content_system_prompt", "ai_model_generate_comparison", "ai_request_count_generate_comparison", "ai_provider_comparison_slug_system_prompt", "ai_provider_comparison_content_system_prompt"]);
 
     const settings: Record<string, string> = {};
     for (const row of (settingsRows || []) as { key: string; value: string }[]) {
@@ -211,44 +212,36 @@ IMPORTANT:
 - All content must be publication-ready and factual`;
     }
 
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "https://toolkit.app",
-        "X-Title": "ToolKit Admin",
-      },
-      body: JSON.stringify({
+    const provider = getProvider(settings, mode === "slug" ? "comparison_slug_system_prompt" : "comparison_content_system_prompt");
+
+    let aiResult;
+    try {
+      aiResult = await callAI({
+        provider,
         model: aiModel,
-        max_tokens: mode === "slug" ? 300 : 4000,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        response_format: { type: "json_object" },
-      }),
-    });
-
-    if (response.status === 429) {
-      return new Response(JSON.stringify({ error: "Rate limited. Please wait a moment and try again." }), {
-        status: 429,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        maxTokens: mode === "slug" ? 300 : 4000,
+        responseFormat: { type: "json_object" },
+        title: "ToolKit Admin",
       });
-    }
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return new Response(JSON.stringify({ error: `AI API error: ${response.status}`, detail: errText }), {
+    } catch (err: any) {
+      const errMsg = err?.message || `AI error`;
+      if (errMsg.includes("429") || err?.status === 429) {
+        return new Response(JSON.stringify({ error: "Rate limited. Please wait a moment and try again." }), {
+          status: 429,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        });
+      }
+      return new Response(JSON.stringify({ error: errMsg }), {
         status: 502,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const json = await response.json();
-    let raw = json.choices?.[0]?.message?.content || "{}";
-    raw = raw.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
-
+    const raw = aiResult.content || "{}";
     const result = JSON.parse(raw);
 
     return new Response(JSON.stringify(result), {

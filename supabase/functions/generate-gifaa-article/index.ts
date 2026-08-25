@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2.49.1";
+import { callAI, getProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -43,8 +44,8 @@ Deno.serve(async (req: Request) => {
         "gifaa_article_generation_prompt",
         "ai_model_generate_gifaa_article",
         "ai_request_count_generate_gifaa_article",
+        "ai_provider_gifaa_article_generation_prompt",
       ]);
-
     const settingsMap: Record<string, string> = {};
     for (const row of (settingsRows || []) as { key: string; value: string }[]) {
       settingsMap[row.key] = row.value;
@@ -78,49 +79,37 @@ Deno.serve(async (req: Request) => {
     }
     userMessage += `Generate the complete article now. Output strict JSON only, no markdown fences.`;
 
-    // Call OpenRouter
-    const response = await fetch(
-      "https://openrouter.ai/api/v1/chat/completions",
-      {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${openrouterKey}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": supabaseUrl,
-          "X-Title": "Gifaa Article Writer",
-        },
-        body: JSON.stringify({
-          model: aiModel,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage },
-          ],
-          temperature: 0.75,
-          max_tokens: 8000,
-          response_format: { type: "json_object" },
-        }),
+    const provider = getProvider(settingsMap, "gifaa_article_generation_prompt");
+
+    let aiResult;
+    try {
+      aiResult = await callAI({
+        provider,
+        model: aiModel,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessage },
+        ],
+        temperature: 0.75,
+        maxTokens: 8000,
+        responseFormat: { type: "json_object" },
+        title: "Gifaa Article Writer",
+      });
+    } catch (err: any) {
+      const errMsg = err?.message || `AI error`;
+      if (errMsg.includes("429") || err?.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "rate_limit", retry_after: 60 }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
       }
-    );
-
-    if (response.status === 429) {
-      const retryAfter = response.headers.get("retry-after") || "60";
       return new Response(
-        JSON.stringify({ error: "rate_limit", retry_after: parseInt(retryAfter) }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!response.ok) {
-      const errText = await response.text();
-      return new Response(
-        JSON.stringify({ error: `AI API error: ${response.status}`, details: errText }),
+        JSON.stringify({ error: errMsg }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const json = await response.json();
-    let raw = json.choices?.[0]?.message?.content || "{}";
-    raw = raw.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
+    const raw = aiResult.content || "{}";
 
     let result;
     try {

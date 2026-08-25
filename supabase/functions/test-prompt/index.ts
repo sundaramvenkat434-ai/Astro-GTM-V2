@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { callAI, getProvider, type AIProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -12,6 +13,7 @@ interface TestRequest {
   model: string;
   user_input: string;
   max_tokens?: number;
+  provider?: AIProvider;
 }
 
 Deno.serve(async (req: Request) => {
@@ -20,14 +22,6 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const openrouterKey = Deno.env.get("OPENROUTER_API_KEY");
-    if (!openrouterKey) {
-      return new Response(
-        JSON.stringify({ error: "OpenRouter API key not configured" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const db = createClient(supabaseUrl, supabaseServiceKey);
@@ -35,6 +29,17 @@ Deno.serve(async (req: Request) => {
     const body: TestRequest = await req.json();
     const { prompt_key, model, user_input } = body;
     const max_tokens = body.max_tokens ?? 4000;
+
+    // Resolve provider: explicit from request, or from admin_settings, default openrouter
+    let provider: AIProvider = body.provider || "openrouter";
+    if (!body.provider) {
+      const { data: providerRow } = await db
+        .from("admin_settings")
+        .select("value")
+        .eq("key", `ai_provider_${prompt_key}`)
+        .maybeSingle();
+      if (providerRow?.value === "poolside") provider = "poolside";
+    }
 
     if (!prompt_key || !model || !user_input) {
       return new Response(
@@ -61,52 +66,35 @@ Deno.serve(async (req: Request) => {
 
     const startTime = Date.now();
 
-    const requestBody = {
-      model,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: user_input },
-      ],
-      temperature: 0.7,
-      max_tokens,
-      provider: { allow_fallbacks: true },
-    };
-    const requestOptions = {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${openrouterKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": supabaseUrl,
-        "X-Title": "Prompt Test",
-      },
-      body: JSON.stringify(requestBody),
-    };
-
-    let openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
-    let data = await openrouterRes.json();
-
-    if (!openrouterRes.ok && openrouterRes.status >= 500) {
-      openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
-      data = await openrouterRes.json();
-    }
-
-    const elapsed = Date.now() - startTime;
-
-    if (!openrouterRes.ok) {
+    let result;
+    try {
+      result = await callAI({
+        provider,
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: user_input },
+        ],
+        maxTokens: max_tokens,
+        temperature: 0.7,
+        allowFallbacks: provider === "openrouter",
+        title: "Prompt Test",
+      });
+    } catch (err: any) {
       return new Response(
         JSON.stringify({
-          error: data?.error?.message || data?.message || `OpenRouter error ${openrouterRes.status}`,
-          status: openrouterRes.status,
-          raw: data,
+          error: err?.message || String(err),
+          status: err?.status || 500,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const output = data?.choices?.[0]?.message?.content || "";
-    const finishReason = data?.choices?.[0]?.finish_reason || null;
-    const inputTokens = data?.usage?.prompt_tokens || 0;
-    const outputTokens = data?.usage?.completion_tokens || 0;
+    const elapsed = Date.now() - startTime;
+    const output = result.content;
+    const finishReason = result.finishReason;
+    const inputTokens = result.inputTokens;
+    const outputTokens = result.outputTokens;
 
     // Log if enabled
     if (logEnabled) {

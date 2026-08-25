@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.49.1";
+import { callAI, getProvider, type AIProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -60,47 +61,26 @@ async function callLLM(
   supabaseUrl: string,
   systemPrompt: string,
   userMessage: string,
-  opts: { temperature?: number; maxTokens?: number; title?: string } = {}
+  opts: { temperature?: number; maxTokens?: number; title?: string; provider?: AIProvider } = {}
 ): Promise<{ content: string; error?: string }> {
-  const requestBody = {
+  try {
+    const result = await callAI({
+      provider: opts.provider || "openrouter",
       model,
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userMessage },
       ],
       temperature: opts.temperature ?? 0.7,
-      max_tokens: opts.maxTokens ?? 8000,
-      response_format: { type: "json_object" },
-      provider: { allow_fallbacks: true },
-    };
-    const requestOptions = {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": supabaseUrl,
-        "X-Title": opts.title || "AstroGTM Keyword Pipeline",
-      },
-      body: JSON.stringify(requestBody),
-    };
-
-    let res = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
-    if (!res.ok && res.status >= 500) {
-      res = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
-    }
-    if (!res.ok && res.status === 429) {
-      await new Promise((r) => setTimeout(r, 5000));
-      res = await fetch("https://openrouter.ai/api/v1/chat/completions", requestOptions);
-    }
-
-  if (!res.ok) {
-    const errText = await res.text();
-    return { content: "", error: `AI API error (${res.status}): ${errText}` };
+      maxTokens: opts.maxTokens ?? 8000,
+      responseFormat: { type: "json_object" },
+      allowFallbacks: (opts.provider || "openrouter") === "openrouter",
+      title: opts.title || "AstroGTM Keyword Pipeline",
+    });
+    return { content: result.content };
+  } catch (err: any) {
+    return { content: "", error: err?.message || String(err) };
   }
-
-  const data = await res.json();
-  const raw = data.choices?.[0]?.message?.content || "";
-  return { content: cleanAiJson(raw) };
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -251,16 +231,12 @@ Deno.serve(async (req: Request) => {
 
     // ─── ACTION: generate (keyword strategy) ────────────────────
     if (action === "generate") {
-      if (!OPENROUTER_API_KEY) {
-        return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
-      }
-
       const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
-        .in("key", ["ai_model_keyword_research"]);
+        .in("key", ["ai_model_keyword_research", "ai_provider_ai_keyword_research_prompt"]);
 
       const settingsMap: Record<string, string> = {};
       for (const row of settingsRows || []) {
@@ -342,59 +318,17 @@ CRITICAL REQUIREMENTS:
         userMessage += `\n## User Instructions\n${additional_instructions}\n`;
       }
 
-      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": SUPABASE_URL,
-          "X-Title": "AstroGTM Keyword Research",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage },
-          ],
-          temperature: 0.7,
-          max_tokens: Math.max(8000, pagesCount * 200 + keywordsCount * 50 + themesCount * 500),
-          response_format: { type: "json_object" },
-          provider: { allow_fallbacks: true },
-        }),
+      const provider = getProvider(settingsMap, "ai_keyword_research_prompt");
+      const llmResult = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, systemPrompt, userMessage, {
+        temperature: 0.7,
+        maxTokens: Math.max(8000, pagesCount * 200 + keywordsCount * 50 + themesCount * 500),
+        title: "AstroGTM Keyword Research",
+        provider,
       });
-
-      if (!aiRes.ok && aiRes.status === 429) {
-        await new Promise((r) => setTimeout(r, 5000));
-        aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": SUPABASE_URL,
-            "X-Title": "AstroGTM Keyword Research",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userMessage },
-            ],
-            temperature: 0.7,
-            max_tokens: Math.max(8000, pagesCount * 200 + keywordsCount * 50 + themesCount * 500),
-            response_format: { type: "json_object" },
-            provider: { allow_fallbacks: true },
-          }),
-        });
+      if (llmResult.error) {
+        return jsonResponse({ error: `AI API error`, details: llmResult.error }, 502);
       }
-
-      if (!aiRes.ok) {
-        const errText = await aiRes.text();
-        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
-      }
-
-      const aiData = await aiRes.json();
-      let rawContent = aiData.choices?.[0]?.message?.content || "";
-      rawContent = cleanAiJson(rawContent);
+      let rawContent = llmResult.content;
 
       let parsed;
       try {
@@ -432,10 +366,6 @@ CRITICAL REQUIREMENTS:
 
     // ─── ACTION: enrich-volume ──────────────────────────────────
     if (action === "enrich-volume") {
-      if (!OPENROUTER_API_KEY) {
-        return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
-      }
-
       const { strategy_id, pages, country, industry } = body as {
         strategy_id: string;
         pages: { title: string; slug: string; existing_keyword: string }[];
@@ -451,7 +381,7 @@ CRITICAL REQUIREMENTS:
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
-        .in("key", ["ai_model_keyword_research", "ai_keyword_volume_prompt"]);
+        .in("key", ["ai_model_keyword_research", "ai_keyword_volume_prompt", "ai_provider_ai_keyword_research_prompt"]);
 
       const settingsMap: Record<string, string> = {};
       for (const row of settingsRows || []) {
@@ -494,59 +424,17 @@ Return ONLY valid JSON:
 
       const userMessage = `Country: ${countryVal}\nIndustry: ${industryVal}\n\nPages:\n${JSON.stringify(pages, null, 2)}`;
 
-      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": SUPABASE_URL,
-          "X-Title": "AstroGTM Volume Enrichment",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage },
-          ],
-          temperature: 0,
-          max_tokens: pages.length * 100 + 500,
-          response_format: { type: "json_object" },
-          provider: { allow_fallbacks: true },
-        }),
+      const provider = getProvider(settingsMap, "ai_keyword_research_prompt");
+      const llmResult = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, systemPrompt, userMessage, {
+        temperature: 0,
+        maxTokens: pages.length * 100 + 500,
+        title: "AstroGTM Volume Enrichment",
+        provider,
       });
-
-      if (!aiRes.ok && aiRes.status === 429) {
-        await new Promise((r) => setTimeout(r, 5000));
-        aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": SUPABASE_URL,
-            "X-Title": "AstroGTM Volume Enrichment",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userMessage },
-            ],
-            temperature: 0,
-            max_tokens: pages.length * 100 + 500,
-            response_format: { type: "json_object" },
-            provider: { allow_fallbacks: true },
-          }),
-        });
+      if (llmResult.error) {
+        return jsonResponse({ error: `AI API error`, details: llmResult.error }, 502);
       }
-
-      if (!aiRes.ok) {
-        const errText = await aiRes.text();
-        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
-      }
-
-      const aiData = await aiRes.json();
-      let rawContent = aiData.choices?.[0]?.message?.content || "";
-      rawContent = cleanAiJson(rawContent);
+      let rawContent = llmResult.content;
 
       let parsed: { results: { slug: string; primary_keyword: string; monthly_search_volume: number; confidence: number }[] };
       try {
@@ -610,7 +498,7 @@ Return ONLY valid JSON:
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
-        .in("key", ["ai_model_keyword_research"]);
+        .in("key", ["ai_model_keyword_research", "ai_provider_ai_keyword_research_prompt"]);
 
       const settingsMap: Record<string, string> = {};
       for (const row of settingsRows || []) {
@@ -619,6 +507,7 @@ Return ONLY valid JSON:
       const model = settingsMap["ai_model_keyword_research"] || "openai/gpt-oss-120b";
       const countryVal = country_code || "us";
       const industry = brand_intelligence.primary_business_segment || "general";
+      const opportunitiesProvider = getProvider(settingsMap, "ai_keyword_research_prompt");
 
       // ──────────────────────────────────────────────────────────
       // STEP 1: KEYWORD DISCOVERY AGENT
@@ -668,6 +557,7 @@ Return ONLY valid JSON:
         temperature: 0.8,
         maxTokens: 10000,
         title: "AstroGTM Step1 Discovery",
+        provider: opportunitiesProvider,
       });
 
       if (step1Res.error) return jsonResponse({ error: step1Res.error, step: 1 }, 502);
@@ -732,6 +622,7 @@ Return ONLY valid JSON:
         temperature: 0.2,
         maxTokens: 10000,
         title: "AstroGTM Step2 Normalizer",
+        provider: opportunitiesProvider,
       });
 
       if (step2Res.error) return jsonResponse({ error: step2Res.error, step: 2 }, 502);
@@ -863,6 +754,7 @@ Return ONLY valid JSON:
           temperature: 0.1,
           maxTokens: 6000,
           title: "AstroGTM Step3 Volume",
+          provider: opportunitiesProvider,
         });
 
         if (step3Res.error) return jsonResponse({ error: step3Res.error, step: 3 }, 502);
@@ -953,6 +845,7 @@ Return ONLY valid JSON:
         temperature: 0.2,
         maxTokens: 5000,
         title: "AstroGTM Step4 Difficulty",
+        provider: opportunitiesProvider,
       });
 
       if (step4Res.error) return jsonResponse({ error: step4Res.error, step: 4 }, 502);
@@ -1004,6 +897,7 @@ Return ONLY valid JSON:
         temperature: 0.3,
         maxTokens: 6000,
         title: "AstroGTM Step5 Relevance",
+        provider: opportunitiesProvider,
       });
 
       if (step5Res.error) return jsonResponse({ error: step5Res.error, step: 5 }, 502);
@@ -1134,10 +1028,6 @@ Return ONLY valid JSON:
 
     // ─── ACTION: generate-pages-for-keyword ─────────────────────
     if (action === "generate-pages-for-keyword") {
-      if (!OPENROUTER_API_KEY) {
-        return jsonResponse({ error: "OPENROUTER_API_KEY not configured" }, 500);
-      }
-
       const { keyword_data } = body as {
         keyword_data: {
           keyword: string;
@@ -1161,7 +1051,7 @@ Return ONLY valid JSON:
       const { data: settingsRows } = await supabase
         .from("admin_settings")
         .select("key, value")
-        .in("key", ["ai_model_keyword_research"]);
+        .in("key", ["ai_model_keyword_research", "ai_provider_ai_keyword_research_prompt"]);
 
       const settingsMap: Record<string, string> = {};
       for (const row of settingsRows || []) {
@@ -1202,59 +1092,17 @@ Return ONLY valid JSON:
       userMessage += `\nIntent: ${keyword_data.intent}`;
       userMessage += `\nFunnel stage: ${keyword_data.funnel}`;
 
-      const aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-          "Content-Type": "application/json",
-          "HTTP-Referer": SUPABASE_URL,
-          "X-Title": "AstroGTM Page Ideas",
-        },
-        body: JSON.stringify({
-          model,
-          messages: [
-            { role: "system", content: systemPrompt },
-            { role: "user", content: userMessage },
-          ],
-          temperature: 0.7,
-          max_tokens: 2000,
-          response_format: { type: "json_object" },
-          provider: { allow_fallbacks: true },
-        }),
+      const provider = getProvider(settingsMap, "ai_keyword_research_prompt");
+      const llmResult = await callLLM(OPENROUTER_API_KEY, model, SUPABASE_URL, systemPrompt, userMessage, {
+        temperature: 0.7,
+        maxTokens: 2000,
+        title: "AstroGTM Page Ideas",
+        provider,
       });
-
-      if (!aiRes.ok && aiRes.status === 429) {
-        await new Promise((r) => setTimeout(r, 5000));
-        aiRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${OPENROUTER_API_KEY}`,
-            "Content-Type": "application/json",
-            "HTTP-Referer": SUPABASE_URL,
-            "X-Title": "AstroGTM Page Ideas",
-          },
-          body: JSON.stringify({
-            model,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userMessage },
-            ],
-            temperature: 0.7,
-            max_tokens: 2000,
-            response_format: { type: "json_object" },
-            provider: { allow_fallbacks: true },
-          }),
-        });
+      if (llmResult.error) {
+        return jsonResponse({ error: `AI API error`, details: llmResult.error }, 502);
       }
-
-      if (!aiRes.ok) {
-        const errText = await aiRes.text();
-        return jsonResponse({ error: `AI API error (${aiRes.status})`, details: errText }, 502);
-      }
-
-      const aiData = await aiRes.json();
-      let rawContent = aiData.choices?.[0]?.message?.content || "";
-      rawContent = cleanAiJson(rawContent);
+      let rawContent = llmResult.content;
 
       let parsed;
       try {

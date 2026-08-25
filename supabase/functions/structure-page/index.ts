@@ -1,5 +1,6 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
+import { callAI, getProvider } from "../_shared/ai-router.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -38,7 +39,7 @@ Deno.serve(async (req: Request) => {
     const { data: settingsRows } = await supabase
       .from("admin_settings")
       .select("key, value")
-      .in("key", [promptKey, "ai_model_structure_page", "ai_model_backup", "ai_request_count_structure_page"]);
+      .in("key", [promptKey, "ai_model_structure_page", "ai_model_backup", "ai_request_count_structure_page", `ai_provider_${promptKey}`]);
 
     const settingsMap: Record<string, string> = {};
     for (const row of (settingsRows || []) as { key: string; value: string }[]) {
@@ -116,50 +117,36 @@ ${raw_text.slice(0, 20000)}
 
 Transform this into a complete, production-ready tool listing JSON with every field fully populated. Remember: generate 6 features, 4 use cases, 3 pricing tiers, 3 FAQs, and 3 stats. Every field must be thorough and detailed.`;
 
-    const openrouterRes = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${openrouterKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": supabaseUrl,
-        "X-Title": "AI Content Clean-Up",
-      },
-      body: JSON.stringify({
+    const provider = getProvider(settingsMap, promptKey);
+
+    let aiResult;
+    try {
+      aiResult = await callAI({
+        provider,
         model: aiModel,
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userMessage },
         ],
         temperature: 0.7,
-        max_tokens: 6000,
-      }),
-    });
-
-    if (openrouterRes.status === 429) {
-      const retryAfter = openrouterRes.headers.get("retry-after");
-      return new Response(
-        JSON.stringify({
-          error: "rate_limit",
-          message: `The AI model is currently rate-limited. Please wait${retryAfter ? ` ${retryAfter} seconds` : " a moment"} and try again.`,
-          retry_after: retryAfter ? parseInt(retryAfter) : 60,
-        }),
-        { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    if (!openrouterRes.ok) {
-      const errData = await openrouterRes.json().catch(() => ({}));
-      const errMsg = (errData as { error?: { message?: string } })?.error?.message || `OpenRouter error ${openrouterRes.status}`;
+        maxTokens: 6000,
+        title: "AI Content Clean-Up",
+      });
+    } catch (err: any) {
+      const errMsg = err?.message || `AI error`;
+      if (errMsg.includes("429") || err?.status === 429) {
+        return new Response(
+          JSON.stringify({ error: "rate_limit", message: "The AI model is currently rate-limited. Please try again in a moment.", retry_after: 60 }),
+          { status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
       return new Response(
         JSON.stringify({ error: errMsg }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const aiData = await openrouterRes.json();
-    const rawResponseText: string = aiData?.choices?.[0]?.message?.content || "";
-
-    const cleaned = rawResponseText.replace(/^```(?:json)?\n?/i, "").replace(/\n?```$/i, "").trim();
+    const cleaned = aiResult.content;
 
     let result: Record<string, unknown>;
     try {
@@ -168,7 +155,7 @@ Transform this into a complete, production-ready tool listing JSON with every fi
       return new Response(
         JSON.stringify({
           error: "The AI returned an unexpected format. Please try again.",
-          raw: rawResponseText.slice(0, 500),
+          raw: aiResult.content.slice(0, 500),
         }),
         { status: 422, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
