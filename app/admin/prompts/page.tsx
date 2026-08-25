@@ -199,7 +199,7 @@ const PROMPT_KEYS = [
     countKey: 'ai_request_count_brand_analyzer',
     defaultModel: 'openai/gpt-oss-120b:free',
     label: 'Free Audit — Understander',
-    description: 'Reads the scraped website text and returns a structured understanding of the business: what it does, primary offering, category, target customer, problems solved, likely search intent, and reasoning.',
+    description: 'Reads the scraped website text and returns a single concise paragraph (80-120 words) that explains what the business is, what it offers, who it serves, the main problem it solves, and how potential customers would search for it.',
     icon: Brain,
     usedBy: 'free-audit',
     testable: true,

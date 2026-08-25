@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, FileText, Brain, Lightbulb } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, FileText, Brain } from "lucide-react";
 import SpaceBg from "../../space-bg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -32,13 +32,7 @@ interface ScrapedCompetitor {
 }
 
 interface UnderstanderAnalysis {
-  what_it_does?: string;
-  primary_offering?: string;
-  business_category?: string;
-  target_customer?: string;
-  problems_solved?: string;
-  likely_search_intent?: string;
-  reasoning?: string;
+  business_understanding?: string;
 }
 
 interface AuditData {
@@ -543,23 +537,14 @@ function UnderstanderSubTab({ audit, onRun, running, runError, runTime }: {
   runTime: number | null;
 }) {
   const analysis = (audit.understander_analysis || {}) as UnderstanderAnalysis;
-  const hasAnalysis = Boolean(analysis.what_it_does);
-
-  const fields: { label: string; value: string | undefined; icon: typeof Lightbulb }[] = [
-    { label: "What the Business Does", value: analysis.what_it_does, icon: Lightbulb },
-    { label: "Primary Offering", value: analysis.primary_offering, icon: Zap },
-    { label: "Business Category", value: analysis.business_category, icon: Globe },
-    { label: "Target Customer", value: analysis.target_customer, icon: Search },
-    { label: "Problems Solved", value: analysis.problems_solved, icon: AlertCircle },
-    { label: "Likely Search Intent", value: analysis.likely_search_intent, icon: Search },
-  ];
+  const hasAnalysis = Boolean(analysis.business_understanding);
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-[17px] font-bold text-slate-900">AI Understanding</h3>
-          <p className="text-[12.5px] text-slate-400 mt-0.5">The AI's structured analysis of the business based on the scraped website text</p>
+          <h3 className="text-[17px] font-bold text-slate-900">Business Understanding</h3>
+          <p className="text-[12.5px] text-slate-400 mt-0.5">A concise AI-generated summary of what this business is and how customers would find it</p>
         </div>
           <span className="text-[11px] text-slate-400">{runTime ? `${runTime.toFixed(1)}s` : ""}</span>
           <button
@@ -601,41 +586,20 @@ function UnderstanderSubTab({ audit, onRun, running, runError, runTime }: {
       )}
 
       {hasAnalysis && !running && (
-        <div className="space-y-3">
-          {fields.map((field, i) => {
-            const Icon = field.icon;
-            return (
-              <motion.div
-                key={field.label}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm"
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Icon size={14} className="text-slate-400" />
-                  <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">{field.label}</p>
-                </div>
-                <p className="text-[14px] text-slate-700 leading-relaxed">{field.value || "—"}</p>
-              </motion.div>
-            );
-          })}
-
-          {analysis.reasoning && (
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
-              className="bg-amber-50/60 rounded-xl border border-amber-100 p-4"
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Lightbulb size={14} className="text-amber-500" />
-                <p className="text-[11px] font-bold text-amber-600 uppercase tracking-wider">Reasoning & Evidence</p>
-              </div>
-              <p className="text-[13px] text-amber-900 leading-relaxed">{analysis.reasoning}</p>
-            </motion.div>
-          )}
-        </div>
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-white rounded-xl border border-slate-200/80 p-5 shadow-sm"
+        >
+          <div className="flex items-center gap-2 mb-3 pb-3 border-b border-slate-100">
+            <Brain size={15} className="text-slate-400" />
+            <span className="text-[12px] font-bold text-slate-500 uppercase tracking-wider">Business Understanding</span>
+            <span className="text-[11px] text-slate-400 ml-auto">
+              {analysis.business_understanding!.split(/\s+/).filter(Boolean).length} words
+            </span>
+          </div>
+          <p className="text-[14px] text-slate-700 leading-relaxed">{analysis.business_understanding}</p>
+        </motion.div>
       )}
 
       {!hasAnalysis && !running && !runError && (

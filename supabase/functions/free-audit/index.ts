@@ -151,6 +151,27 @@ interface SerpResult {
   description: string;
 }
 
+const FALLBACK_UNDERSTANDER_PROMPT = `You are an expert business analyst. You are given the cleaned, visible text content extracted from a company website. Your job is to understand what this business is.
+
+Write a single concise paragraph (80-120 words, hard maximum 150 words) that explains:
+- What the business is
+- What it offers
+- Who it serves
+- The main problem it solves
+- The most relevant way potential customers would think about or search for it
+
+Rules:
+- Write only ONE paragraph of plain prose. No bullet points, no headings, no separate fields, no step-by-step reasoning.
+- Do not repeat information or pad with filler.
+- Stay under 150 words.
+
+Return ONLY valid JSON with this shape:
+{
+  "business_understanding": "<your single paragraph here>"
+}
+
+No markdown, no code fences.`;
+
 const FALLBACK_SEARCH_QUERIES_PROMPT = `You are an expert SEO strategist and search behavior researcher.
 
 Analyze the provided company website content and identify how real potential customers would search to find this business, its products, services, or solutions.
@@ -729,7 +750,15 @@ Deno.serve(async (req: Request) => {
       if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
 
       const understanderAnalysis = audit.understander_analysis;
-      if (!understanderAnalysis || typeof understanderAnalysis !== "object" || Object.keys(understanderAnalysis).length <= 1) {
+      const businessUnderstanding =
+        understanderAnalysis &&
+        typeof understanderAnalysis === "object" &&
+        typeof (understanderAnalysis as Record<string, unknown>).business_understanding === "string"
+          ? (understanderAnalysis as Record<string, unknown>).business_understanding as string
+          : typeof understanderAnalysis === "string"
+            ? understanderAnalysis
+            : "";
+      if (!businessUnderstanding || businessUnderstanding.trim().length < 20) {
         return jsonResponse({ error: "No understander analysis found. Run the understander first." }, 400);
       }
 
@@ -754,7 +783,7 @@ Deno.serve(async (req: Request) => {
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_search_queries_prompt"]) || 4000;
 
-      const userMessageContent = `Based on the following structured business understanding, generate 10 realistic search queries that potential customers would use to find this business:\n\n${JSON.stringify(understanderAnalysis, null, 2)}`;
+      const userMessageContent = `Based on the following business understanding, generate 10 realistic search queries that potential customers would use to find this business:\n\n${businessUnderstanding}`;
       const requestBody = {
         model,
         messages: [
@@ -1122,12 +1151,12 @@ Deno.serve(async (req: Request) => {
       }
 
       const systemPrompt =
-        settingsMap["free_audit_understander_prompt"] || "Analyze this business and return JSON.";
+        settingsMap["free_audit_understander_prompt"] || FALLBACK_UNDERSTANDER_PROMPT;
       const model =
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_understander_prompt"]) || 4000;
 
-      const userMessageContent = `Analyze the following website content and provide a structured understanding of this business:\n\n${scrapedContent}`;
+      const userMessageContent = `Analyze the following website content and write a single concise paragraph (80-120 words, max 150) that explains what the business is, what it offers, who it serves, the main problem it solves, and how potential customers would search for it:\n\n${scrapedContent}`;
 
       let aiResponse: Response;
       try {
