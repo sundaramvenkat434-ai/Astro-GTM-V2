@@ -31,6 +31,8 @@ const SETTING_KEYS = [
   'free_audit_analyze_limit',
   'free_audit_serp_limit',
   'free_audit_scrape_limit',
+  'free_audit_understander_limit',
+  'free_audit_search_queries_limit',
   'free_audit_ip_whitelist',
 ] as const;
 
@@ -49,6 +51,8 @@ export default function SiteSettingsAdmin() {
     free_audit_analyze_limit: '',
     free_audit_serp_limit: '',
     free_audit_scrape_limit: '',
+    free_audit_understander_limit: '',
+    free_audit_search_queries_limit: '',
     free_audit_ip_whitelist: '',
   });
   const [originals, setOriginals] = useState<Record<SettingKey, string>>({ ...values });
@@ -197,6 +201,16 @@ export default function SiteSettingsAdmin() {
               <div className="space-y-2">
                 <label className="text-xs font-semibold text-slate-700">Competitor Scraping Limit / hour</label>
                 <Input type="number" min={0} value={values.free_audit_scrape_limit} onChange={(e) => update('free_audit_scrape_limit', e.target.value)} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400" />
+                <p className="text-[11px] text-slate-400">Default: 10</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">Understander Limit / hour</label>
+                <Input type="number" min={0} value={values.free_audit_understander_limit} onChange={(e) => update('free_audit_understander_limit', e.target.value)} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400" />
+                <p className="text-[11px] text-slate-400">Default: 10</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold text-slate-700">Search Queries Limit / hour</label>
+                <Input type="number" min={0} value={values.free_audit_search_queries_limit} onChange={(e) => update('free_audit_search_queries_limit', e.target.value)} className="text-sm border-slate-200 focus-visible:ring-emerald-500/20 focus-visible:border-emerald-400" />
                 <p className="text-[11px] text-slate-400">Default: 10</p>
               </div>
             </div>
