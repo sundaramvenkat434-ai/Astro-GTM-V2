@@ -222,10 +222,13 @@ const FALLBACK_KEYWORD_VOLUME_PROMPT = `You are an expert SEO keyword volume ana
 
 Rules:
 - Return ONLY valid JSON. No markdown, no code fences, no reasoning, no explanations, no step-by-step analysis.
+- Do not return estimated_volume, cluster_volume, or any calculated volume. Do not return calculations or formulas.
 - Classify each query into exactly one cluster. A cluster is a group of semantically related queries that share the same search demand profile.
+- Every input query must appear exactly once in the keywords array. Do not omit any query and do not duplicate any query.
 - Assign a base_demand value to each CLUSTER (not each keyword). All keywords in the same cluster share the same base_demand. Use exactly one of: 20000, 10000, 5000, 1000, 300.
-- For each keyword, assign: search_adoption (0.01–1.0), intent (0.1–1.0), competition (0.1–1.0), trend (0.5–2.0).
-- For each keyword that is NOT a cluster head, also assign: semantic_similarity (0.1–1.0), specificity (0.1–1.0), child_intent (0.1–1.0), modifier (0.1–1.0).
+- Assign cluster-level factors to each CLUSTER only: search_adoption (0.01–1.0), intent (0.1–1.0), competition (0.1–1.0), trend (0.5–2.0). Do NOT repeat these factors on individual keywords.
+- For each keyword that is NOT a cluster head, assign ONLY these four factors: semantic_similarity (0.1–1.0), specificity (0.1–1.0), child_intent (0.1–1.0), modifier (0.1–1.0).
+- For each keyword that IS a cluster head, assign an empty factors object {}.
 - For each keyword, assign a confidence score: "High", "Medium", or "Low".
 
 Return ONLY this JSON shape:
@@ -247,12 +250,7 @@ Return ONLY this JSON shape:
       "cluster_id": 1,
       "is_cluster_head": true,
       "confidence": "High",
-      "factors": {
-        "search_adoption": 0.8,
-        "intent": 0.9,
-        "competition": 0.7,
-        "trend": 1.2
-      }
+      "factors": {}
     },
     {
       "query": "<another search query>",
@@ -260,10 +258,6 @@ Return ONLY this JSON shape:
       "is_cluster_head": false,
       "confidence": "Medium",
       "factors": {
-        "search_adoption": 0.8,
-        "intent": 0.9,
-        "competition": 0.7,
-        "trend": 1.2,
         "semantic_similarity": 0.85,
         "specificity": 0.6,
         "child_intent": 0.8,
@@ -1428,14 +1422,33 @@ Deno.serve(async (req: Request) => {
 
       const parsed = extractionResult.data as Record<string, unknown>;
 
-      // ── Validate and clamp AI output ──────────────────────────
+      // ── Strict validation of AI output before any calculation ──
       const VALID_BASE_DEMANDS = [20000, 10000, 5000, 1000, 300];
       const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
-      const clustersRaw = Array.isArray(parsed.clusters) ? parsed.clusters : [];
-      const keywordsRaw = Array.isArray(parsed.keywords) ? parsed.keywords : [];
+      const clustersRaw = Array.isArray(parsed.clusters) ? parsed.clusters as unknown[] : [];
+      const keywordsRaw = Array.isArray(parsed.keywords) ? parsed.keywords as unknown[] : [];
 
-      // Build cluster map with validated values
+      const validationError = async (msg: string): Promise<Response> => {
+        await supabase
+          .from("free_audits")
+          .update({
+            keyword_volume_raw_input: rawInput,
+            keyword_volume_raw_output: rawOutput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", audit_id);
+        return jsonResponse({ error: `AI response validation failed: ${msg}` }, 422);
+      };
+
+      if (clustersRaw.length === 0) {
+        return validationError("No clusters returned.");
+      }
+      if (keywordsRaw.length === 0) {
+        return validationError("No keywords returned.");
+      }
+
+      // Build cluster map with strict validation
       const clusterMap = new Map<number, {
         id: number;
         head_keyword: string;
@@ -1447,23 +1460,81 @@ Deno.serve(async (req: Request) => {
       }>();
 
       for (const c of clustersRaw) {
-        if (!c || typeof c !== "object") continue;
+        if (!c || typeof c !== "object") {
+          return validationError("Invalid cluster entry.");
+        }
         const co = c as Record<string, unknown>;
         const id = typeof co.id === "number" ? co.id : parseInt(String(co.id), 10);
-        if (!Number.isFinite(id)) continue;
+        if (!Number.isFinite(id)) {
+          return validationError("Cluster missing valid id.");
+        }
         const rawDemand = typeof co.base_demand === "number" ? co.base_demand : parseInt(String(co.base_demand), 10);
-        const base_demand = VALID_BASE_DEMANDS.includes(rawDemand) ? rawDemand : 1000;
+        if (!VALID_BASE_DEMANDS.includes(rawDemand)) {
+          return validationError(`Cluster ${id} has invalid base_demand: ${rawDemand}.`);
+        }
+        if (typeof co.search_adoption !== "number" || typeof co.intent !== "number" || typeof co.competition !== "number" || typeof co.trend !== "number") {
+          return validationError(`Cluster ${id} is missing one or more required factors (search_adoption, intent, competition, trend).`);
+        }
         clusterMap.set(id, {
           id,
           head_keyword: typeof co.head_keyword === "string" ? co.head_keyword : "",
-          base_demand,
-          search_adoption: clamp(typeof co.search_adoption === "number" ? co.search_adoption : 0.5, 0.01, 1.0),
-          intent: clamp(typeof co.intent === "number" ? co.intent : 0.5, 0.1, 1.0),
-          competition: clamp(typeof co.competition === "number" ? co.competition : 0.5, 0.1, 1.0),
-          trend: clamp(typeof co.trend === "number" ? co.trend : 1.0, 0.5, 2.0),
+          base_demand: rawDemand,
+          search_adoption: clamp(co.search_adoption, 0.01, 1.0),
+          intent: clamp(co.intent, 0.1, 1.0),
+          competition: clamp(co.competition, 0.1, 1.0),
+          trend: clamp(co.trend, 0.5, 2.0),
         });
       }
 
+      // Validate every input query appears exactly once
+      const returnedQueries: string[] = [];
+      for (let i = 0; i < keywordsRaw.length; i++) {
+        const kw = keywordsRaw[i];
+        if (!kw || typeof kw !== "object") {
+          return validationError(`Keyword entry ${i} is not an object.`);
+        }
+        const kwObj = kw as Record<string, unknown>;
+        const query = typeof kwObj.query === "string" ? kwObj.query : "";
+        if (!query) {
+          return validationError(`Keyword entry ${i} is missing a query string.`);
+        }
+        returnedQueries.push(query);
+      }
+
+      const querySet = new Set(returnedQueries);
+      const inputSet = new Set(queries);
+
+      if (returnedQueries.length !== querySet.size) {
+        return validationError("Duplicate queries found in AI response.");
+      }
+      for (const q of queries) {
+        if (!querySet.has(q)) {
+          return validationError(`Missing keyword in AI response: "${q}".`);
+        }
+      }
+      for (const q of returnedQueries) {
+        if (!inputSet.has(q)) {
+          return validationError(`Unexpected keyword in AI response: "${q}".`);
+        }
+      }
+
+      // Validate each keyword references a valid cluster and has required child factors
+      for (let i = 0; i < keywordsRaw.length; i++) {
+        const kwObj = keywordsRaw[i] as Record<string, unknown>;
+        const clusterId = typeof kwObj.cluster_id === "number" ? kwObj.cluster_id : parseInt(String(kwObj.cluster_id), 10);
+        if (!Number.isFinite(clusterId) || !clusterMap.has(clusterId)) {
+          return validationError(`Keyword "${kwObj.query}" references invalid cluster_id: ${kwObj.cluster_id}.`);
+        }
+        const isClusterHead = Boolean(kwObj.is_cluster_head);
+        const factors = (kwObj.factors && typeof kwObj.factors === "object") ? kwObj.factors as Record<string, unknown> : {};
+        if (!isClusterHead) {
+          if (typeof factors.semantic_similarity !== "number" || typeof factors.specificity !== "number" || typeof factors.child_intent !== "number" || typeof factors.modifier !== "number") {
+            return validationError(`Non-head keyword "${kwObj.query}" is missing required child factors (semantic_similarity, specificity, child_intent, modifier).`);
+          }
+        }
+      }
+
+      // ── All validation passed — calculate volumes ──────────────
       // Determine country factor deterministically from audit's existing geography field
       const brandAnalysis = audit.brand_analysis as Record<string, unknown> | null;
       const geography = brandAnalysis && typeof brandAnalysis === "object" && typeof (brandAnalysis as Record<string, unknown>).primary_geography === "string"
@@ -1471,18 +1542,14 @@ Deno.serve(async (req: Request) => {
         : "";
       const countryFactor = geography && geography.trim().length > 0 ? 1.0 : 1.0;
 
-      // Calculate volumes
       const estimates: Record<string, unknown>[] = [];
 
       for (const kw of keywordsRaw) {
-        if (!kw || typeof kw !== "object") continue;
         const kwObj = kw as Record<string, unknown>;
-        const query = typeof kwObj.query === "string" ? kwObj.query : "";
-        if (!query) continue;
+        const query = kwObj.query as string;
 
         const clusterId = typeof kwObj.cluster_id === "number" ? kwObj.cluster_id : parseInt(String(kwObj.cluster_id), 10);
-        const cluster = clusterMap.get(clusterId);
-        if (!cluster) continue;
+        const cluster = clusterMap.get(clusterId)!;
 
         const isClusterHead = Boolean(kwObj.is_cluster_head);
         const confidence = kwObj.confidence === "High" || kwObj.confidence === "Medium" || kwObj.confidence === "Low"
@@ -1507,10 +1574,10 @@ Deno.serve(async (req: Request) => {
           estimatedVolume = clusterVolume;
         } else {
           // Child Keyword Volume = Cluster Volume × Semantic Similarity × Specificity × Child Intent × Modifier
-          const semantic_similarity = clamp(typeof factors.semantic_similarity === "number" ? factors.semantic_similarity : 0.5, 0.1, 1.0);
-          const specificity = clamp(typeof factors.specificity === "number" ? factors.specificity : 0.5, 0.1, 1.0);
-          const child_intent = clamp(typeof factors.child_intent === "number" ? factors.child_intent : 0.5, 0.1, 1.0);
-          const modifier = clamp(typeof factors.modifier === "number" ? factors.modifier : 0.5, 0.1, 1.0);
+          const semantic_similarity = clamp(factors.semantic_similarity as number, 0.1, 1.0);
+          const specificity = clamp(factors.specificity as number, 0.1, 1.0);
+          const child_intent = clamp(factors.child_intent as number, 0.1, 1.0);
+          const modifier = clamp(factors.modifier as number, 0.1, 1.0);
 
           estimatedVolume = Math.round(
             clusterVolume * semantic_similarity * specificity * child_intent * modifier
@@ -1532,29 +1599,13 @@ Deno.serve(async (req: Request) => {
             trend,
             country_factor: countryFactor,
             ...(!isClusterHead ? {
-              semantic_similarity: typeof factors.semantic_similarity === "number" ? factors.semantic_similarity : 0.5,
-              specificity: typeof factors.specificity === "number" ? factors.specificity : 0.5,
-              child_intent: typeof factors.child_intent === "number" ? factors.child_intent : 0.5,
-              modifier: typeof factors.modifier === "number" ? factors.modifier : 0.5,
+              semantic_similarity: factors.semantic_similarity as number,
+              specificity: factors.specificity as number,
+              child_intent: factors.child_intent as number,
+              modifier: factors.modifier as number,
             } : {}),
           },
         });
-      }
-
-      // If AI didn't return per-keyword entries for all queries, fill gaps
-      const coveredQueries = new Set(estimates.map(e => (e as Record<string, unknown>).query as string));
-      for (const q of queries) {
-        if (!coveredQueries.has(q)) {
-          estimates.push({
-            query: q,
-            cluster_id: null,
-            cluster_head: "",
-            is_cluster_head: false,
-            estimated_monthly_volume: 0,
-            confidence: "Low",
-            factors: {},
-          });
-        }
       }
 
       const { data: updated, error: saveError } = await supabase
