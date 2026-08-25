@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, Brain, ChartBar as BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowLeft, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, Brain, ChartBar as BarChart3, ChevronLeft, ChevronRight, MapPin, Users, Package } from "lucide-react";
 import SpaceBg from "../../space-bg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -372,6 +372,33 @@ function generateWebsiteBrief(raw: string): string {
   return brief;
 }
 
+// ─── SEO Preview Helper ───────────────────────────────────────────────────────
+function extractSeoPreview(scrapedContent: string | null | undefined): { pageTitle: string; metaDescription: string } {
+  if (!scrapedContent) return { pageTitle: "", metaDescription: "" };
+  const lines = scrapedContent.split(/\n+/).map(l => l.trim()).filter(Boolean);
+  let pageTitle = "";
+  let metaDescription = "";
+
+  for (const line of lines.slice(0, 5)) {
+    const lower = line.toLowerCase();
+    if (!pageTitle && line.length < 200 && line.length >= 2) {
+      if (lower.startsWith("title") || lower.startsWith("h1") || (!lower.startsWith("meta") && line.split(" ").length <= 15)) {
+        pageTitle = line.replace(/^(title|h1)\s*:?\\s*/i, "").slice(0, 80);
+        continue;
+      }
+    }
+    if (!metaDescription && lower.includes("description")) {
+      metaDescription = line.replace(/^meta\s*(description)?\s*:?\\s*/i, "").slice(0, 150);
+      continue;
+    }
+  }
+
+  if (!pageTitle && lines.length > 0) pageTitle = lines[0].slice(0, 80);
+  if (!metaDescription && lines.length > 1) metaDescription = lines.slice(1, 3).join(" ").slice(0, 150);
+
+  return { pageTitle, metaDescription };
+}
+
 // ─── Browser Mockup ───────────────────────────────────────────────────────────
 function BrowserMockup({ url, children }: { url: string; children: React.ReactNode }) {
   return (
@@ -400,13 +427,16 @@ function BrowserMockup({ url, children }: { url: string; children: React.ReactNo
   );
 }
 
-interface SkeletonSectionProps {
+interface SkeletonBlockProps {
   label: string;
+  icon: React.ReactNode;
+  accentClass: string;
   lines: { width: string; height: string }[];
   delay: number;
+  className?: string;
 }
 
-function SkeletonSection({ label, lines, delay }: SkeletonSectionProps) {
+function SkeletonBlock({ label, icon, accentClass, lines, delay, className }: SkeletonBlockProps) {
   const [visible, setVisible] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
 
@@ -424,18 +454,18 @@ function SkeletonSection({ label, lines, delay }: SkeletonSectionProps) {
       initial={{ opacity: 0, y: 6 }}
       animate={visible ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.4, ease: "easeOut" }}
-      className={`rounded-lg border p-3 transition-colors duration-500 ${
+      className={`rounded-lg border p-2.5 transition-colors duration-500 ${className || ""} ${
         analyzing
-          ? "border-blue-200 bg-blue-50/40"
+          ? `${accentClass} border-blue-200`
           : "border-slate-200/60 bg-white/50"
       }`}
     >
       <div className="flex items-center gap-1.5 mb-2">
-        {analyzing ? (
-          <Loader2 size={11} className="text-blue-500 shrink-0 animate-spin" />
-        ) : (
-          <div className="w-2.5 h-2.5 rounded-full bg-slate-200 shrink-0" />
-        )}
+        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 transition-colors duration-300 ${
+          analyzing ? accentClass : "bg-slate-100"
+        }`}>
+          {icon}
+        </div>
         <span className={`text-[10px] font-bold uppercase tracking-wider transition-colors duration-300 ${
           analyzing ? "text-blue-500" : "text-slate-300"
         }`}>
@@ -457,59 +487,65 @@ function SkeletonSection({ label, lines, delay }: SkeletonSectionProps) {
 
 function ProgressiveSkeleton() {
   return (
-    <div className="bg-white min-h-[340px]">
-      {/* Hero area — static placeholder for brand name + URL */}
-      <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
+    <div className="bg-white p-4 sm:p-5">
+      {/* Header / website preview block — full width */}
+      <div className="rounded-lg border border-slate-200/60 p-3 mb-3">
         <div className="flex items-center gap-2 mb-2">
-          <div className="w-3.5 h-3.5 rounded-full bg-slate-100 animate-pulse" />
-          <div className="h-3 w-40 bg-slate-100 rounded animate-pulse" />
+          <div className="w-3.5 h-3.5 rounded-full bg-slate-100 animate-pulse shrink-0" />
+          <div className="h-3 w-36 bg-slate-100 rounded animate-pulse" />
         </div>
-        <div className="h-6 w-2/3 bg-slate-200/70 rounded animate-pulse mb-2" />
-        <div className="h-3 w-full bg-slate-100 rounded animate-pulse" />
-        <div className="h-3 w-4/5 bg-slate-100 rounded animate-pulse mt-1.5" />
+        <div className="h-5 w-2/3 bg-slate-200/70 rounded animate-pulse mb-2" />
+        <div className="h-2.5 w-full bg-slate-100 rounded animate-pulse" />
+        <div className="h-2.5 w-4/5 bg-slate-100 rounded animate-pulse mt-1.5" />
       </div>
 
-      {/* Brand profile skeleton header */}
-      <div className="px-5 sm:px-6 pt-5 pb-3">
-        <div className="flex items-center gap-2 mb-4">
-          <div className="w-7 h-7 rounded-lg bg-slate-100 animate-pulse" />
-          <div className="h-4 w-36 bg-slate-200/60 rounded animate-pulse" />
-        </div>
+      {/* About the Brand — full width */}
+      <SkeletonBlock
+        label="About the brand"
+        icon={<Brain size={11} className="text-slate-300" />}
+        accentClass="bg-blue-50/40"
+        delay={400}
+        className="mb-2.5"
+        lines={[
+          { width: "100%", height: "11px" },
+          { width: "85%", height: "11px" },
+        ]}
+      />
 
-        {/* Four progressive skeleton sections matching Understander fields */}
-        <div className="space-y-3">
-          <SkeletonSection
-            label="About the brand"
-            delay={400}
-            lines={[
-              { width: "100%", height: "12px" },
-              { width: "85%", height: "12px" },
-            ]}
-          />
-          <SkeletonSection
-            label="Primary product or service"
-            delay={1200}
-            lines={[
-              { width: "100%", height: "12px" },
-              { width: "70%", height: "12px" },
-            ]}
-          />
-          <SkeletonSection
-            label="Geographies"
-            delay={2000}
-            lines={[
-              { width: "60%", height: "12px" },
-            ]}
-          />
-          <SkeletonSection
-            label="Target audience"
-            delay={2800}
-            lines={[
-              { width: "80%", height: "12px" },
-              { width: "50%", height: "12px" },
-            ]}
-          />
-        </div>
+      {/* Primary Product or Service — full width, amber accent */}
+      <SkeletonBlock
+        label="Primary product or service"
+        icon={<Package size={11} className="text-slate-300" />}
+        accentClass="bg-amber-50/50"
+        delay={1200}
+        className="mb-2.5"
+        lines={[
+          { width: "100%", height: "11px" },
+          { width: "70%", height: "11px" },
+        ]}
+      />
+
+      {/* Bottom row: Geographies + Target Audience side by side */}
+      <div className="grid grid-cols-2 gap-2.5">
+        <SkeletonBlock
+          label="Geographies"
+          icon={<MapPin size={11} className="text-slate-300" />}
+          accentClass="bg-emerald-50/40"
+          delay={2000}
+          lines={[
+            { width: "80%", height: "11px" },
+          ]}
+        />
+        <SkeletonBlock
+          label="Target audience"
+          icon={<Users size={11} className="text-slate-300" />}
+          accentClass="bg-purple-50/40"
+          delay={2800}
+          lines={[
+            { width: "90%", height: "11px" },
+            { width: "60%", height: "11px" },
+          ]}
+        />
       </div>
     </div>
   );
@@ -860,20 +896,157 @@ function RateLimitMessage({ resetIn }: { resetIn?: number }) {
 type BrandPhase = "initial" | "scanning" | "populating" | "complete";
 type PipelineStep = "idle" | "scraping" | "understanding" | "done";
 
-function PopulatedField({ label, value, delay }: { label: string; value: string; delay: number }) {
+interface PopulatedBlockProps {
+  label: string;
+  icon: React.ReactNode;
+  iconBgClass: string;
+  value: string;
+  delay: number;
+  className?: string;
+  chipStyle?: boolean;
+}
+
+function PopulatedBlock({ label, icon, iconBgClass, value, delay, className, chipStyle }: PopulatedBlockProps) {
   return (
-    <div className="relative">
-      <AnimatePresence mode="wait">
+    <motion.div
+      initial={{ opacity: 0, filter: "blur(4px)" }}
+      animate={{ opacity: 1, filter: "blur(0px)" }}
+      transition={{ delay, duration: 0.5, ease: "easeOut" }}
+      className={`rounded-lg border border-slate-200/70 bg-white p-2.5 ${className || ""}`}
+    >
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 ${iconBgClass}`}>
+          {icon}
+        </div>
+        <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{label}</span>
+      </div>
+      {chipStyle ? (
+        <div className="flex flex-wrap gap-1.5">
+          {value.split(/[,;]/).map((chip, i) => (
+            <span key={i} className="inline-flex items-center px-2 py-0.5 rounded-full bg-slate-100 text-[11.5px] font-medium text-slate-600">
+              {chip.trim()}
+            </span>
+          ))}
+        </div>
+      ) : (
+        <p className="text-[12.5px] text-slate-700 leading-relaxed line-clamp-3">{value}</p>
+      )}
+    </motion.div>
+  );
+}
+
+function PopulatedBrowserContent({
+  understanderData,
+  brandName,
+  websiteUrl,
+  briefSummary,
+  seoPreview,
+  understanding,
+  animate,
+}: {
+  understanderData: UnderstanderAnalysis;
+  brandName: string;
+  websiteUrl: string;
+  briefSummary: string;
+  seoPreview: { pageTitle: string; metaDescription: string };
+  understanding?: string;
+  animate?: boolean;
+}) {
+  const headerTitle = seoPreview.pageTitle || brandName;
+  const headerDesc = seoPreview.metaDescription || (briefSummary ? briefSummary.slice(0, 150) : "");
+  const hasStructuredData = Boolean(understanderData.about_brand || understanderData.primary_product_or_service || understanderData.geographies || understanderData.target_audience);
+
+  const animProps = animate
+    ? { initial: { opacity: 0, filter: "blur(4px)" } as const, animate: { opacity: 1, filter: "blur(0px)" } as const, transition: { duration: 0.5, ease: "easeOut" as const } }
+    : { initial: { opacity: 1 } as const, animate: { opacity: 1 } as const, transition: { duration: 0 } as const };
+
+  return (
+    <div className="bg-white p-4 sm:p-5">
+      {/* Header / website preview block — full width */}
+      <motion.div
+        initial={animProps.initial}
+        animate={animProps.animate}
+        transition={animProps.transition}
+        className="rounded-lg border border-slate-200/70 bg-slate-50/50 p-3 mb-2.5"
+      >
+        <div className="flex items-center gap-2 mb-1.5">
+          <Globe size={12} className="text-slate-400 shrink-0" />
+          <span className="text-[11px] text-slate-400 font-mono truncate">{websiteUrl}</span>
+        </div>
+        <h2 className="text-[16px] font-bold text-slate-900 mb-1 line-clamp-1">{headerTitle}</h2>
+        {headerDesc && (
+          <p className="text-[12px] text-slate-500 leading-relaxed line-clamp-2">
+            {headerDesc}
+          </p>
+        )}
+      </motion.div>
+
+      {/* About the Brand — full width */}
+      {understanderData.about_brand && (
+        <PopulatedBlock
+          label="About the brand"
+          icon={<Brain size={11} className="text-blue-600" />}
+          iconBgClass="bg-blue-50"
+          value={understanderData.about_brand}
+          delay={0.1}
+          className="mb-2.5"
+        />
+      )}
+
+      {/* Primary Product or Service — full width, amber accent */}
+      {understanderData.primary_product_or_service && (
+        <PopulatedBlock
+          label="Primary product or service"
+          icon={<Package size={11} className="text-amber-600" />}
+          iconBgClass="bg-amber-50"
+          value={understanderData.primary_product_or_service}
+          delay={0.25}
+          className="mb-2.5"
+        />
+      )}
+
+      {/* Bottom row: Geographies + Target Audience side by side */}
+      {(understanderData.geographies || understanderData.target_audience) && (
+        <div className="grid grid-cols-2 gap-2.5">
+          {understanderData.geographies && (
+            <PopulatedBlock
+              label="Geographies"
+              icon={<MapPin size={11} className="text-emerald-600" />}
+              iconBgClass="bg-emerald-50"
+              value={understanderData.geographies}
+              delay={0.4}
+              chipStyle
+            />
+          )}
+          {understanderData.target_audience && (
+            <PopulatedBlock
+              label="Target audience"
+              icon={<Users size={11} className="text-purple-600" />}
+              iconBgClass="bg-purple-50"
+              value={understanderData.target_audience}
+              delay={0.55}
+              chipStyle
+            />
+          )}
+        </div>
+      )}
+
+      {/* Fallback: business_understanding if no structured fields */}
+      {!hasStructuredData && understanding && (
         <motion.div
-          key="data"
-          initial={{ opacity: 0, filter: "blur(4px)" }}
-          animate={{ opacity: 1, filter: "blur(0px)" }}
-          transition={{ delay, duration: 0.5, ease: "easeOut" }}
+          initial={animProps.initial}
+          animate={animProps.animate}
+          transition={animProps.transition}
+          className="rounded-lg border border-slate-200/70 p-2.5"
         >
-          <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">{label}</p>
-          <p className="text-[13.5px] text-slate-700 leading-relaxed">{value}</p>
+          <p className="text-[12.5px] text-slate-700 leading-relaxed">{understanding}</p>
         </motion.div>
-      </AnimatePresence>
+      )}
+
+      {/* Fallback: no data at all */}
+      {!hasStructuredData && !understanding && (
+        <p className="text-[13px] text-slate-400 p-2.5">No understanding available yet.</p>
+      )}
     </div>
   );
 }
@@ -1073,61 +1246,19 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
     const understanderData = (audit.understander_analysis as UnderstanderAnalysis) || {};
     const briefSummary = summary || "";
     const brandName = brand.about_brand?.split(/[.,;:]/)[0]?.trim() || audit.website_url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+    const seoPreview = extractSeoPreview(audit.scraped_content);
 
     return (
       <div className="space-y-5">
         <BrowserMockup url={audit.website_url}>
-          <div className="bg-white min-h-[340px] relative">
-            {/* Hero section — cross-fades from skeleton hero */}
-            <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
-              <motion.div
-                initial={{ opacity: 0, filter: "blur(4px)" }}
-                animate={{ opacity: 1, filter: "blur(0px)" }}
-                transition={{ duration: 0.5, ease: "easeOut" }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Globe size={14} className="text-slate-400" />
-                  <span className="text-[12px] text-slate-400 font-mono">{audit.website_url}</span>
-                </div>
-                <h2 className="text-[20px] font-bold text-slate-900 mb-1">{brandName}</h2>
-                {briefSummary && (
-                  <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 max-w-[600px]">
-                    {briefSummary.slice(0, 200)}{briefSummary.length > 200 ? "..." : ""}
-                  </p>
-                )}
-              </motion.div>
-            </div>
-
-            {/* Brand profile — staggered cross-fade per field */}
-            <div className="px-5 sm:px-6 py-5">
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.4 }}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <Brain size={14} className="text-blue-600" />
-                  </div>
-                  <h3 className="text-[15px] font-bold text-slate-900">Your brand profile</h3>
-                </div>
-                <div className="space-y-3">
-                  {understanderData.about_brand && (
-                    <PopulatedField label="About the brand" value={understanderData.about_brand} delay={0.1} />
-                  )}
-                  {understanderData.primary_product_or_service && (
-                    <PopulatedField label="Primary product or service" value={understanderData.primary_product_or_service} delay={0.25} />
-                  )}
-                  {understanderData.geographies && (
-                    <PopulatedField label="Geographies" value={understanderData.geographies} delay={0.4} />
-                  )}
-                  {understanderData.target_audience && (
-                    <PopulatedField label="Target audience" value={understanderData.target_audience} delay={0.55} />
-                  )}
-                </div>
-              </motion.div>
-            </div>
-          </div>
+          <PopulatedBrowserContent
+            understanderData={understanderData}
+            brandName={brandName}
+            websiteUrl={audit.website_url}
+            briefSummary={briefSummary}
+            seoPreview={seoPreview}
+            animate
+          />
         </BrowserMockup>
 
         <div className="flex flex-col items-center gap-3">
@@ -1142,81 +1273,20 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   const understanding = understanderData.business_understanding || "";
   const briefSummary = summary || "";
   const brandName = brand.about_brand?.split(/[.,;:]/)[0]?.trim() || audit.website_url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
+  const seoPreview = extractSeoPreview(audit.scraped_content);
 
   return (
     <div className="space-y-5">
       {/* Browser mockup with completed brand profile — full width */}
       <BrowserMockup url={audit.website_url}>
-        <div className="bg-white min-h-[340px]">
-            {/* Hero section */}
-            <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4 }}
-              >
-                <div className="flex items-center gap-2 mb-2">
-                  <Globe size={14} className="text-slate-400" />
-                  <span className="text-[12px] text-slate-400 font-mono">{audit.website_url}</span>
-                </div>
-                <h2 className="text-[20px] font-bold text-slate-900 mb-1">{brandName}</h2>
-                {briefSummary && (
-                  <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 max-w-[600px]">
-                    {briefSummary.slice(0, 200)}{briefSummary.length > 200 ? "..." : ""}
-                  </p>
-                )}
-              </motion.div>
-            </div>
-
-            {/* Brand profile */}
-            <div className="px-5 sm:px-6 py-5">
-              <motion.div
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1, duration: 0.4 }}
-              >
-                <div className="flex items-center gap-2 mb-4">
-                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                    <Brain size={14} className="text-blue-600" />
-                  </div>
-                  <h3 className="text-[15px] font-bold text-slate-900">Your brand profile</h3>
-                </div>
-                {understanderData.about_brand || understanderData.primary_product_or_service || understanderData.geographies || understanderData.target_audience ? (
-                  <div className="space-y-3">
-                    {understanderData.about_brand && (
-                      <div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">About the brand</p>
-                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.about_brand}</p>
-                      </div>
-                    )}
-                    {understanderData.primary_product_or_service && (
-                      <div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Primary product or service</p>
-                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.primary_product_or_service}</p>
-                      </div>
-                    )}
-                    {understanderData.geographies && (
-                      <div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Geographies</p>
-                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.geographies}</p>
-                      </div>
-                    )}
-                    {understanderData.target_audience && (
-                      <div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Target audience</p>
-                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.target_audience}</p>
-                      </div>
-                    )}
-                  </div>
-                ) : understanding ? (
-                  <p className="text-[14px] text-slate-700 leading-relaxed">{understanding}</p>
-                ) : (
-                  <p className="text-[13px] text-slate-400">No understanding available yet.</p>
-                )}
-              </motion.div>
-            </div>
-
-        </div>
+        <PopulatedBrowserContent
+          understanderData={understanderData}
+          brandName={brandName}
+          websiteUrl={audit.website_url}
+          briefSummary={briefSummary}
+          seoPreview={seoPreview}
+          understanding={understanding}
+        />
       </BrowserMockup>
 
       {/* Keywords section — full width, directly below the brand profile */}
