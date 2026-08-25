@@ -168,7 +168,6 @@ Return concise information for:
 - primary_product_or_service: the main product or service it offers
 - geographies: the countries, regions, or markets it appears to serve
 - target_audience: the main people, customers, or businesses it serves
-- search_intent: the most relevant way potential customers would think about or search for this business on Google
 
 Rules:
 - Base every answer only on the provided website content.
@@ -181,8 +180,7 @@ Return exactly this JSON shape:
   "about_brand": "<concise description of what the brand does>",
   "primary_product_or_service": "<main product or service>",
   "geographies": "<main geography or market, or Unknown if not clear>",
-  "target_audience": "<main target audience>",
-  "search_intent": "<how potential customers would most naturally search for it on Google>"
+  "target_audience": "<main target audience>"
 }`;
 
 const FALLBACK_SEARCH_QUERIES_PROMPT = `You are an expert SEO strategist and search behavior researcher.
@@ -784,7 +782,6 @@ Deno.serve(async (req: Request) => {
           ua.primary_product_or_service ? `Primary product or service: ${ua.primary_product_or_service}` : "",
           ua.geographies ? `Geographies: ${ua.geographies}` : "",
           ua.target_audience ? `Target audience: ${ua.target_audience}` : "",
-          ua.search_intent ? `Search intent: ${ua.search_intent}` : "",
         ].filter(Boolean);
         brandContext = fields.join("\n");
       } else if (typeof understanderAnalysis === "string") {
@@ -1171,7 +1168,7 @@ Deno.serve(async (req: Request) => {
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_understander_prompt"]) || 4000;
 
-      const userMessageContent = `Analyse the following website content and return a concise brand profile with these fields: about_brand, primary_product_or_service, geographies, target_audience, search_intent.\n\n${scrapedContent}`;
+      const userMessageContent = `Analyse the following website content and return a concise brand profile with these fields: about_brand, primary_product_or_service, geographies, target_audience.\n\n${scrapedContent}`;
 
       const provider = getProvider(settingsMap, "free_audit_understander_prompt");
 

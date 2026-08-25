@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, Brain, ChartBar as BarChart3, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
+import { ArrowLeft, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, Brain, ChartBar as BarChart3, ChevronLeft, ChevronRight } from "lucide-react";
 import SpaceBg from "../../space-bg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -36,7 +36,6 @@ interface UnderstanderAnalysis {
   primary_product_or_service?: string;
   geographies?: string;
   target_audience?: string;
-  search_intent?: string;
   business_understanding?: string;
 }
 
@@ -371,39 +370,6 @@ function generateWebsiteBrief(raw: string): string {
     brief = words.slice(0, 500).join(" ");
   }
   return brief;
-}
-
-function extractScrapedKeywords(raw: string): string[] {
-  const blocks = formatScrapedContent(raw);
-  const keywords: string[] = [];
-  const seen = new Set<string>();
-  const businessRe = /\b(product|solution|feature|pricing|customer|service|platform|benefit|use case|testimonial|integrat|api|demo|trial|enterprise|capabilit|technology|software|saas|industries?|market|help|support|resource|blog|case stud|success stor)/i;
-
-  for (const block of blocks) {
-    if (block.kind === "title" || block.kind === "heading") {
-      const text = block.text.trim();
-      if (text.length >= 3 && text.length <= 60) {
-        const key = text.toLowerCase();
-        if (!seen.has(key)) {
-          seen.add(key);
-          keywords.push(text);
-        }
-      }
-    }
-    if (block.kind === "body" && keywords.length < 25) {
-      const sentences = block.text.split(/[.;,]/).map(s => s.trim()).filter(s => s.length >= 10 && s.length <= 80);
-      for (const sentence of sentences) {
-        if (businessRe.test(sentence)) {
-          const key = sentence.toLowerCase();
-          if (!seen.has(key)) {
-            seen.add(key);
-            keywords.push(sentence);
-          }
-        }
-      }
-    }
-  }
-  return keywords.slice(0, 20);
 }
 
 // ─── Browser Mockup ───────────────────────────────────────────────────────────
@@ -846,16 +812,9 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   const hasUnderstanding = (() => {
     const ua = audit.understander_analysis as UnderstanderAnalysis | undefined;
     if (!ua) return false;
-    return Boolean(ua.about_brand || ua.primary_product_or_service || ua.geographies || ua.target_audience || ua.search_intent || ua.business_understanding);
+    return Boolean(ua.about_brand || ua.primary_product_or_service || ua.geographies || ua.target_audience || ua.business_understanding);
   })();
   const brand = (audit.brand_analysis || {}) as BrandAnalysis;
-
-  const keywords = useMemo(() => {
-    if (audit.scraped_content) {
-      return extractScrapedKeywords(audit.scraped_content);
-    }
-    return [];
-  }, [audit.scraped_content]);
 
   const allQueries = audit.search_queries || [];
   const sortedQueries = useMemo(() => {
@@ -1046,7 +1005,7 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
                   </div>
                   <h3 className="text-[15px] font-bold text-slate-900">Your brand profile</h3>
                 </div>
-                {understanderData.about_brand || understanderData.primary_product_or_service || understanderData.geographies || understanderData.target_audience || understanderData.search_intent ? (
+                {understanderData.about_brand || understanderData.primary_product_or_service || understanderData.geographies || understanderData.target_audience ? (
                   <div className="space-y-3">
                     {understanderData.about_brand && (
                       <div>
@@ -1072,12 +1031,6 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
                         <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.target_audience}</p>
                       </div>
                     )}
-                    {understanderData.search_intent && (
-                      <div>
-                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">How people might search for it</p>
-                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.search_intent}</p>
-                      </div>
-                    )}
                   </div>
                 ) : understanding ? (
                   <p className="text-[14px] text-slate-700 leading-relaxed">{understanding}</p>
@@ -1087,36 +1040,6 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
               </motion.div>
             </div>
 
-            {/* Key themes from scraped content */}
-            {keywords.length > 0 && (
-              <div className="px-5 sm:px-6 pb-5">
-                <motion.div
-                  initial={{ opacity: 0, y: 8 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2, duration: 0.4 }}
-                >
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                      <Sparkles size={14} className="text-emerald-600" />
-                    </div>
-                    <h3 className="text-[15px] font-bold text-slate-900">Key themes discovered</h3>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {keywords.slice(0, 8).map((kw, i) => (
-                      <motion.span
-                        key={i}
-                        initial={{ opacity: 0, scale: 0.85 }}
-                        animate={{ opacity: 1, scale: 1 }}
-                        transition={{ delay: 0.25 + i * 0.04 }}
-                        className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[12px] font-medium text-slate-600"
-                      >
-                        {kw}
-                      </motion.span>
-                    ))}
-                  </div>
-                </motion.div>
-              </div>
-            )}
         </div>
       </BrowserMockup>
 
