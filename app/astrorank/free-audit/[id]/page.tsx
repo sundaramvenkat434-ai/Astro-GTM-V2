@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, Brain, ChartBar as BarChart3, ChevronLeft, ChevronRight, FileText, Sparkles } from "lucide-react";
+import { ArrowLeft, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, Brain, ChartBar as BarChart3, ChevronLeft, ChevronRight, Sparkles } from "lucide-react";
 import SpaceBg from "../../space-bg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -722,37 +722,10 @@ function RateLimitMessage({ resetIn }: { resetIn?: number }) {
   );
 }
 
-function BrandFieldCard({ label, value, delay }: { label: string; value: string; delay: number }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay, duration: 0.4 }}
-      className="bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-    >
-      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">{label}</p>
-      <p className="text-[14px] text-slate-700 leading-relaxed">{value || "—"}</p>
-    </motion.div>
-  );
-}
-
-function KeywordChip({ text, delay }: { text: string; delay: number }) {
-  return (
-    <motion.span
-      initial={{ opacity: 0, scale: 0.85 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay, duration: 0.25 }}
-      className="inline-flex items-center px-3 py-1.5 rounded-full bg-blue-50 border border-blue-100 text-[12.5px] font-medium text-blue-700"
-    >
-      {text}
-    </motion.span>
-  );
-}
-
 type BrandPhase = "initial" | "scanning" | "complete";
 type PipelineStep = "idle" | "scraping" | "understanding" | "done";
 
-function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, onAnalyze, analyzing, analyzeError, rateLimited, resetIn, scrapeTime, understanderTime, analyzeTime, summary, onSummarize }: {
+function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, onGenerateQueries, generatingQueries, generateQueriesError, generateQueriesRateLimited, generateQueriesResetIn, queryTime, scrapeTime, understanderTime, summary, onSummarize }: {
   audit: AuditData;
   onScrape: () => void;
   scraping: boolean;
@@ -760,27 +733,27 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   onRunUnderstander: () => void;
   runningUnderstander: boolean;
   understanderError: string | null;
-  onAnalyze: () => void;
-  analyzing: boolean;
-  analyzeError: string | null;
-  rateLimited: boolean;
-  resetIn?: number;
+  onGenerateQueries: () => void;
+  generatingQueries: boolean;
+  generateQueriesError: string | null;
+  generateQueriesRateLimited: boolean;
+  generateQueriesResetIn?: number;
+  queryTime: number | null;
   scrapeTime: number | null;
   understanderTime: number | null;
-  analyzeTime: number | null;
   summary: string | null;
   onSummarize: () => void;
 }) {
   const [phase, setPhase] = useState<BrandPhase>("initial");
   const [pipelineStep, setPipelineStep] = useState<PipelineStep>("idle");
   const [minTimeElapsed, setMinTimeElapsed] = useState(false);
-  const [showRawContent, setShowRawContent] = useState(false);
+  const [selectedKeywords, setSelectedKeywords] = useState<Set<string>>(new Set());
+  const queriesTriggeredRef = useRef(false);
   const understanderStartedRef = useRef(false);
 
   const hasScraped = Boolean(audit.scraped_content && audit.scraped_content.length > 0);
   const hasUnderstanding = Boolean((audit.understander_analysis as UnderstanderAnalysis)?.business_understanding);
   const brand = (audit.brand_analysis || {}) as BrandAnalysis;
-  const hasBrandIntel = audit.status === "complete" && Boolean(brand.about_brand);
 
   const keywords = useMemo(() => {
     if (audit.scraped_content) {
@@ -788,6 +761,12 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
     }
     return [];
   }, [audit.scraped_content]);
+
+  const allQueries = audit.search_queries || [];
+  const topKeywords = allQueries.slice(0, 6);
+  const rankedKeywords = topKeywords.slice(0, 2);
+  const optionalKeywords = topKeywords.slice(2, 6);
+  const hasQueries = allQueries.length > 0;
 
   // Auto-detect existing data on mount
   useEffect(() => {
@@ -831,6 +810,21 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
       setPhase("complete");
     }
   }, [phase, hasUnderstanding, minTimeElapsed]);
+
+  // Auto-generate search queries once the brand profile is complete
+  useEffect(() => {
+    if (phase === "complete" && !hasQueries && !generatingQueries && !queriesTriggeredRef.current) {
+      queriesTriggeredRef.current = true;
+      onGenerateQueries();
+    }
+  }, [phase, hasQueries, generatingQueries, onGenerateQueries]);
+
+  // Auto-select the top 2 ranked keywords when queries arrive
+  useEffect(() => {
+    if (hasQueries && selectedKeywords.size === 0) {
+      setSelectedKeywords(new Set(allQueries.slice(0, 2)));
+    }
+  }, [hasQueries, selectedKeywords.size, allQueries]);
 
   // Error during scanning
   const scanError = scrapeError || understanderError;
@@ -889,7 +883,6 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
               </button>
             </div>
           )}
-          {rateLimited && <RateLimitMessage resetIn={resetIn} />}
         </div>
       </div>
     );
@@ -976,34 +969,103 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
             </div>
           )}
 
-          {/* Raw content disclosure */}
-          {audit.scraped_content && (
-            <div className="px-5 sm:px-6 pb-5">
-              <button
-                onClick={() => setShowRawContent(!showRawContent)}
-                className="flex items-center gap-1.5 text-[12px] font-medium text-slate-400 hover:text-slate-600 transition-colors"
-              >
-                <ChevronDown size={13} className={`transition-transform ${showRawContent ? "rotate-180" : ""}`} />
-                View raw scraped content
-              </button>
-              <AnimatePresence>
-                {showRawContent && (
-                  <motion.div
-                    initial={{ height: 0, opacity: 0 }}
-                    animate={{ height: "auto", opacity: 1 }}
-                    exit={{ height: 0, opacity: 0 }}
-                    className="overflow-hidden"
+          {/* Main keywords - how people find your brand */}
+          <div className="px-5 sm:px-6 pb-6 border-t border-slate-100 pt-5">
+            <motion.div
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.4 }}
+            >
+              <div className="flex items-center gap-2 mb-1">
+                <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Search size={14} className="text-blue-600" />
+                </div>
+                <h3 className="text-[15px] font-bold text-slate-900">Here&apos;s what we&apos;ve identified as the main keywords</h3>
+              </div>
+              <p className="text-[12.5px] text-slate-400 mb-4 ml-9">How people find your brand on search</p>
+
+              {generatingQueries && (
+                <div className="flex items-center gap-2 py-6">
+                  <Loader2 size={14} className="text-blue-500 animate-spin shrink-0" />
+                  <span className="text-[13px] text-slate-500">Identifying your main keywords...</span>
+                </div>
+              )}
+
+              {generateQueriesRateLimited && !generatingQueries && (
+                <RateLimitMessage resetIn={generateQueriesResetIn} />
+              )}
+
+              {generateQueriesError && !generatingQueries && !hasQueries && (
+                <div className="flex flex-col items-start gap-2 py-4">
+                  <p className="text-[13px] text-red-500 font-medium">{generateQueriesError}</p>
+                  <button
+                    onClick={onGenerateQueries}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[12.5px] font-semibold hover:bg-blue-700 transition-colors"
                   >
-                    <div className="mt-2 max-h-[300px] overflow-y-auto bg-slate-50 rounded-lg border border-slate-200 p-3">
-                      <pre className="text-[11.5px] text-slate-600 whitespace-pre-wrap leading-relaxed">
-{audit.scraped_content.slice(0, 3000)}{audit.scraped_content.length > 3000 ? "..." : ""}
-                      </pre>
+                    <RefreshCw size={13} /> Try Again
+                  </button>
+                </div>
+              )}
+
+              {hasQueries && !generatingQueries && (
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    {rankedKeywords.map((kw, i) => (
+                      <motion.div
+                        key={kw}
+                        initial={{ opacity: 0, x: -8 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.06 }}
+                        className="flex items-center gap-3 p-3 rounded-xl border border-blue-200 bg-blue-50/40"
+                      >
+                        <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                          <span className="text-[12px] font-bold text-white tabular-nums">{i + 1}</span>
+                        </div>
+                        <span className="text-[14px] font-semibold text-slate-800 flex-1">{kw}</span>
+                        <CheckCircle2 size={16} className="text-blue-600 shrink-0" />
+                      </motion.div>
+                    ))}
+                  </div>
+
+                  {optionalKeywords.length > 0 && (
+                    <div>
+                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Select a few more that fit</p>
+                      <div className="flex flex-wrap gap-2">
+                        {optionalKeywords.map((kw) => {
+                          const isSelected = selectedKeywords.has(kw);
+                          return (
+                            <button
+                              key={kw}
+                              onClick={() => {
+                                setSelectedKeywords(prev => {
+                                  const next = new Set(prev);
+                                  if (next.has(kw)) next.delete(kw);
+                                  else next.add(kw);
+                                  return next;
+                                });
+                              }}
+                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all ${
+                                isSelected
+                                  ? "bg-blue-600 border-blue-600 text-white"
+                                  : "bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
+                              }`}
+                            >
+                              {isSelected && <CheckCircle2 size={12} />}
+                              {kw}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
-            </div>
-          )}
+                  )}
+
+                  {queryTime && (
+                    <p className="text-[11px] text-slate-400">Keywords identified in {queryTime.toFixed(1)}s</p>
+                  )}
+                </div>
+              )}
+            </motion.div>
+          </div>
         </div>
       </BrowserMockup>
 
@@ -1020,145 +1082,6 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
         >
           <RefreshCw size={13} /> Re-run Analysis
         </button>
-      </div>
-
-      {/* Brand Intelligence section */}
-      <div className="pt-4 border-t border-slate-200">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-[17px] font-bold text-slate-900">Brand Intelligence</h3>
-            <p className="text-[12.5px] text-slate-400 mt-0.5">Deeper AI analysis of your brand identity and keywords</p>
-          </div>
-          <div className="flex items-center gap-2">
-            {analyzeTime && <span className="text-[11px] text-slate-400">{analyzeTime.toFixed(1)}s</span>}
-            <button
-              onClick={onAnalyze}
-              disabled={analyzing}
-              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-slate-100 text-slate-600 text-[12.5px] font-semibold hover:bg-slate-200 transition-colors disabled:opacity-60"
-            >
-              {analyzing ? <Loader2 size={13} className="animate-spin" /> : <RefreshCw size={13} />}
-              {hasBrandIntel ? "Re-analyze" : "Run Brand Intelligence"}
-            </button>
-          </div>
-        </div>
-
-        {analyzing && (
-          <div className="flex flex-col items-center justify-center py-12">
-            <motion.div
-              animate={{ rotate: 360 }}
-              transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
-              className="w-10 h-10 border-3 border-blue-100 border-t-blue-500 rounded-full mb-4"
-              style={{ borderWidth: "3px" }}
-            />
-            <p className="text-[14px] font-medium text-slate-500">Analyzing brand intelligence...</p>
-          </div>
-        )}
-
-        {rateLimited && !analyzing && <RateLimitMessage resetIn={resetIn} />}
-
-        {analyzeError && !analyzing && !hasBrandIntel && (
-          <div className="flex flex-col items-center justify-center py-10">
-            <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
-              <AlertCircle size={22} className="text-red-500" />
-            </div>
-            <p className="text-[14px] font-bold text-slate-700 mb-1">Analysis Failed</p>
-            <p className="text-[12.5px] text-slate-500 mb-4 text-center max-w-[400px]">{analyzeError}</p>
-            <button
-              onClick={onAnalyze}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors"
-            >
-              <RefreshCw size={13} /> Try Again
-            </button>
-          </div>
-        )}
-
-        {hasBrandIntel && !analyzing && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <BrandFieldCard label="About the Brand" value={brand.about_brand || ""} delay={0} />
-              <BrandFieldCard label="Primary Business Segment" value={brand.primary_business_segment || ""} delay={0.05} />
-              <BrandFieldCard label="Primary Geography" value={brand.primary_geography || ""} delay={0.1} />
-              <BrandFieldCard label="Target Audience" value={brand.target_audience || ""} delay={0.15} />
-            </div>
-
-            {brand.primary_search_keyword && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-                className="bg-gradient-to-r from-blue-600 to-blue-700 rounded-xl p-5 text-white shadow-md shadow-blue-600/20"
-              >
-                <p className="text-[11px] font-bold text-blue-100 uppercase tracking-wider mb-2">Primary Search Keyword</p>
-                <p className="text-[22px] font-extrabold">{brand.primary_search_keyword}</p>
-              </motion.div>
-            )}
-
-            {brand.secondary_search_keywords && brand.secondary_search_keywords.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.25, duration: 0.4 }}
-              >
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Secondary Keywords</p>
-                <div className="flex flex-wrap gap-2">
-                  {brand.secondary_search_keywords.map((kw, i) => (
-                    <KeywordChip key={i} text={kw} delay={0.3 + i * 0.04} />
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {brand.long_tail_keyword_examples && brand.long_tail_keyword_examples.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.35, duration: 0.4 }}
-              >
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Long-tail Keywords</p>
-                <div className="flex flex-wrap gap-2">
-                  {brand.long_tail_keyword_examples.map((kw, i) => (
-                    <KeywordChip key={i} text={kw} delay={0.4 + i * 0.04} />
-                  ))}
-                </div>
-              </motion.div>
-            )}
-
-            {brand.content_opportunities && brand.content_opportunities.length > 0 && (
-              <motion.div
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.45, duration: 0.4 }}
-              >
-                <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-3">Content Opportunities</p>
-                <div className="space-y-2">
-                  {brand.content_opportunities.map((opp, i) => (
-                    <motion.div
-                      key={i}
-                      initial={{ opacity: 0, x: -8 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.5 + i * 0.06 }}
-                      className="flex items-start gap-2.5 bg-emerald-50/60 border border-emerald-100 rounded-xl p-3.5"
-                    >
-                      <Zap size={15} className="text-emerald-500 shrink-0 mt-0.5" />
-                      <p className="text-[13px] text-emerald-800 leading-relaxed">{opp}</p>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            )}
-          </div>
-        )}
-
-        {!hasBrandIntel && !analyzing && !analyzeError && !rateLimited && (
-          <div className="flex flex-col items-center justify-center py-10">
-            <div className="w-12 h-12 rounded-full bg-slate-100 flex items-center justify-center mb-3">
-              <Brain size={22} className="text-slate-300" />
-            </div>
-            <p className="text-[13px] text-slate-400 text-center max-w-[360px]">
-              Run Brand Intelligence for a deeper analysis of your brand identity, keywords, and content opportunities.
-            </p>
-          </div>
-        )}
       </div>
     </div>
   );
@@ -1459,10 +1382,6 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [activeTab, setActiveTab] = useState<TabId>("brand");
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [analyzing, setAnalyzing] = useState(false);
-  const [analyzeError, setAnalyzeError] = useState<string | null>(null);
-  const [analyzeRateLimited, setAnalyzeRateLimited] = useState(false);
-  const [analyzeResetIn, setAnalyzeResetIn] = useState<number | undefined>();
   const [generatingQueries, setGeneratingQueries] = useState(false);
   const [generateQueriesError, setGenerateQueriesError] = useState<string | null>(null);
   const [generateQueriesRateLimited, setGenerateQueriesRateLimited] = useState(false);
@@ -1474,7 +1393,6 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [scrapeTime, setScrapeTime] = useState<number | null>(null);
   const [understanderTime, setUnderstanderTime] = useState<number | null>(null);
   const [queryTime, setQueryTime] = useState<number | null>(null);
-  const [analyzeTime, setAnalyzeTime] = useState<number | null>(null);
   const [websiteBrief, setWebsiteBrief] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState(false);
   const [estimatingVolume, setEstimatingVolume] = useState(false);
@@ -1498,28 +1416,6 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   useEffect(() => {
     loadAudit();
   }, [loadAudit]);
-
-  const analyzeBrand = useCallback(async () => {
-    setAnalyzing(true);
-    setAnalyzeError(null);
-    setAnalyzeRateLimited(false);
-    setAnalyzeTime(null);
-    const start = performance.now();
-    try {
-      const data = await callFreeAudit("analyze-brand", { audit_id: params.id });
-      setAudit(data.data);
-      setAnalyzeTime((performance.now() - start) / 1000);
-    } catch (err: any) {
-      if (err.rateLimited) {
-        setAnalyzeRateLimited(true);
-        setAnalyzeResetIn(err.resetIn);
-      } else {
-        setAnalyzeError(err.message || "Analysis failed");
-      }
-    } finally {
-      setAnalyzing(false);
-    }
-  }, [params.id]);
 
   const generateSearchQueries = useCallback(async () => {
     setGeneratingQueries(true);
@@ -1711,14 +1607,14 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 onRunUnderstander={runUnderstander}
                 runningUnderstander={runningUnderstander}
                 understanderError={understanderError}
-                onAnalyze={analyzeBrand}
-                analyzing={analyzing}
-                analyzeError={analyzeError}
-                rateLimited={analyzeRateLimited}
-                resetIn={analyzeResetIn}
+                onGenerateQueries={generateSearchQueries}
+                generatingQueries={generatingQueries}
+                generateQueriesError={generateQueriesError}
+                generateQueriesRateLimited={generateQueriesRateLimited}
+                generateQueriesResetIn={generateQueriesResetIn}
+                queryTime={queryTime}
                 scrapeTime={scrapeTime}
                 understanderTime={understanderTime}
-                analyzeTime={analyzeTime}
                 summary={websiteBrief}
                 onSummarize={summarizeContent}
               />
