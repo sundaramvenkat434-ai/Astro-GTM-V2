@@ -763,7 +763,15 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   }, [audit.scraped_content]);
 
   const allQueries = audit.search_queries || [];
-  const topKeywords = allQueries.slice(0, 6);
+  const sortedQueries = useMemo(() => {
+    return [...allQueries].sort((a, b) => {
+      const aWords = a.trim().split(/\s+/).length;
+      const bWords = b.trim().split(/\s+/).length;
+      if (aWords !== bWords) return aWords - bWords;
+      return a.length - b.length;
+    });
+  }, [allQueries]);
+  const topKeywords = sortedQueries.slice(0, 6);
   const rankedKeywords = topKeywords.slice(0, 2);
   const optionalKeywords = topKeywords.slice(2, 6);
   const hasQueries = allQueries.length > 0;
@@ -822,9 +830,9 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   // Auto-select the top 2 ranked keywords when queries arrive
   useEffect(() => {
     if (hasQueries && selectedKeywords.size === 0) {
-      setSelectedKeywords(new Set(allQueries.slice(0, 2)));
+      setSelectedKeywords(new Set(sortedQueries.slice(0, 2)));
     }
-  }, [hasQueries, selectedKeywords.size, allQueries]);
+  }, [hasQueries, selectedKeywords.size, sortedQueries]);
 
   // Error during scanning
   const scanError = scrapeError || understanderError;
@@ -895,82 +903,87 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
 
   return (
     <div className="space-y-5">
-      <BrowserMockup url={audit.website_url}>
-        <div className="bg-white min-h-[340px]">
-          {/* Hero section */}
-          <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.4 }}
-            >
-              <div className="flex items-center gap-2 mb-2">
-                <Globe size={14} className="text-slate-400" />
-                <span className="text-[12px] text-slate-400 font-mono">{audit.website_url}</span>
-              </div>
-              <h2 className="text-[20px] font-bold text-slate-900 mb-1">{brandName}</h2>
-              {briefSummary && (
-                <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 max-w-[600px]">
-                  {briefSummary.slice(0, 200)}{briefSummary.length > 200 ? "..." : ""}
-                </p>
-              )}
-            </motion.div>
-          </div>
-
-          {/* What we understand */}
-          <div className="px-5 sm:px-6 py-5">
-            <motion.div
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1, duration: 0.4 }}
-            >
-              <div className="flex items-center gap-2 mb-3">
-                <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Brain size={14} className="text-blue-600" />
-                </div>
-                <h3 className="text-[15px] font-bold text-slate-900">What we understand about your brand</h3>
-              </div>
-              {understanding ? (
-                <p className="text-[14px] text-slate-700 leading-relaxed">{understanding}</p>
-              ) : (
-                <p className="text-[13px] text-slate-400">No understanding available yet.</p>
-              )}
-            </motion.div>
-          </div>
-
-          {/* Key themes from scraped content */}
-          {keywords.length > 0 && (
-            <div className="px-5 sm:px-6 pb-5">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5 items-start">
+        {/* Left column: Browser preview */}
+        <BrowserMockup url={audit.website_url}>
+          <div className="bg-white min-h-[340px]">
+            {/* Hero section */}
+            <div className="px-5 sm:px-6 pt-6 pb-5 border-b border-slate-100">
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.2, duration: 0.4 }}
+                transition={{ duration: 0.4 }}
               >
-                <div className="flex items-center gap-2 mb-3">
-                  <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
-                    <Sparkles size={14} className="text-emerald-600" />
-                  </div>
-                  <h3 className="text-[15px] font-bold text-slate-900">Key themes discovered</h3>
+                <div className="flex items-center gap-2 mb-2">
+                  <Globe size={14} className="text-slate-400" />
+                  <span className="text-[12px] text-slate-400 font-mono">{audit.website_url}</span>
                 </div>
-                <div className="flex flex-wrap gap-2">
-                  {keywords.slice(0, 8).map((kw, i) => (
-                    <motion.span
-                      key={i}
-                      initial={{ opacity: 0, scale: 0.85 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: 0.25 + i * 0.04 }}
-                      className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[12px] font-medium text-slate-600"
-                    >
-                      {kw}
-                    </motion.span>
-                  ))}
-                </div>
+                <h2 className="text-[20px] font-bold text-slate-900 mb-1">{brandName}</h2>
+                {briefSummary && (
+                  <p className="text-[13px] text-slate-500 leading-relaxed line-clamp-2 max-w-[600px]">
+                    {briefSummary.slice(0, 200)}{briefSummary.length > 200 ? "..." : ""}
+                  </p>
+                )}
               </motion.div>
             </div>
-          )}
 
-          {/* Main keywords - how people find your brand */}
-          <div className="px-5 sm:px-6 pb-6 border-t border-slate-100 pt-5">
+            {/* What we understand */}
+            <div className="px-5 sm:px-6 py-5">
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1, duration: 0.4 }}
+              >
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
+                    <Brain size={14} className="text-blue-600" />
+                  </div>
+                  <h3 className="text-[15px] font-bold text-slate-900">What we understand about your brand</h3>
+                </div>
+                {understanding ? (
+                  <p className="text-[14px] text-slate-700 leading-relaxed">{understanding}</p>
+                ) : (
+                  <p className="text-[13px] text-slate-400">No understanding available yet.</p>
+                )}
+              </motion.div>
+            </div>
+
+            {/* Key themes from scraped content */}
+            {keywords.length > 0 && (
+              <div className="px-5 sm:px-6 pb-5">
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2, duration: 0.4 }}
+                >
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-7 h-7 rounded-lg bg-emerald-50 flex items-center justify-center">
+                      <Sparkles size={14} className="text-emerald-600" />
+                    </div>
+                    <h3 className="text-[15px] font-bold text-slate-900">Key themes discovered</h3>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {keywords.slice(0, 8).map((kw, i) => (
+                      <motion.span
+                        key={i}
+                        initial={{ opacity: 0, scale: 0.85 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: 0.25 + i * 0.04 }}
+                        className="inline-flex items-center px-2.5 py-1 rounded-full bg-slate-50 border border-slate-200 text-[12px] font-medium text-slate-600"
+                      >
+                        {kw}
+                      </motion.span>
+                    ))}
+                  </div>
+                </motion.div>
+              </div>
+            )}
+          </div>
+        </BrowserMockup>
+
+        {/* Right column: Main keywords */}
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden">
+          <div className="px-5 sm:px-6 pt-5 pb-4 border-b border-slate-100">
             <motion.div
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
@@ -982,92 +995,99 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
                 </div>
                 <h3 className="text-[15px] font-bold text-slate-900">Here&apos;s what we&apos;ve identified as the main keywords</h3>
               </div>
-              <p className="text-[12.5px] text-slate-400 mb-4 ml-9">How people find your brand on search</p>
-
-              {generatingQueries && (
-                <div className="flex items-center gap-2 py-6">
-                  <Loader2 size={14} className="text-blue-500 animate-spin shrink-0" />
-                  <span className="text-[13px] text-slate-500">Identifying your main keywords...</span>
-                </div>
-              )}
-
-              {generateQueriesRateLimited && !generatingQueries && (
-                <RateLimitMessage resetIn={generateQueriesResetIn} />
-              )}
-
-              {generateQueriesError && !generatingQueries && !hasQueries && (
-                <div className="flex flex-col items-start gap-2 py-4">
-                  <p className="text-[13px] text-red-500 font-medium">{generateQueriesError}</p>
-                  <button
-                    onClick={onGenerateQueries}
-                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[12.5px] font-semibold hover:bg-blue-700 transition-colors"
-                  >
-                    <RefreshCw size={13} /> Try Again
-                  </button>
-                </div>
-              )}
-
-              {hasQueries && !generatingQueries && (
-                <div className="space-y-4">
-                  <div className="space-y-2">
-                    {rankedKeywords.map((kw, i) => (
-                      <motion.div
-                        key={kw}
-                        initial={{ opacity: 0, x: -8 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.06 }}
-                        className="flex items-center gap-3 p-3 rounded-xl border border-blue-200 bg-blue-50/40"
-                      >
-                        <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
-                          <span className="text-[12px] font-bold text-white tabular-nums">{i + 1}</span>
-                        </div>
-                        <span className="text-[14px] font-semibold text-slate-800 flex-1">{kw}</span>
-                        <CheckCircle2 size={16} className="text-blue-600 shrink-0" />
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  {optionalKeywords.length > 0 && (
-                    <div>
-                      <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Select a few more that fit</p>
-                      <div className="flex flex-wrap gap-2">
-                        {optionalKeywords.map((kw) => {
-                          const isSelected = selectedKeywords.has(kw);
-                          return (
-                            <button
-                              key={kw}
-                              onClick={() => {
-                                setSelectedKeywords(prev => {
-                                  const next = new Set(prev);
-                                  if (next.has(kw)) next.delete(kw);
-                                  else next.add(kw);
-                                  return next;
-                                });
-                              }}
-                              className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all ${
-                                isSelected
-                                  ? "bg-blue-600 border-blue-600 text-white"
-                                  : "bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
-                              }`}
-                            >
-                              {isSelected && <CheckCircle2 size={12} />}
-                              {kw}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {queryTime && (
-                    <p className="text-[11px] text-slate-400">Keywords identified in {queryTime.toFixed(1)}s</p>
-                  )}
-                </div>
-              )}
+              <p className="text-[12.5px] text-slate-400 ml-9">How people find your brand on search</p>
             </motion.div>
           </div>
+
+          <div className="px-5 sm:px-6 py-5">
+            {generatingQueries && (
+              <div className="flex items-center gap-2 py-6">
+                <Loader2 size={14} className="text-blue-500 animate-spin shrink-0" />
+                <span className="text-[13px] text-slate-500">Identifying your main keywords...</span>
+              </div>
+            )}
+
+            {generateQueriesRateLimited && !generatingQueries && (
+              <RateLimitMessage resetIn={generateQueriesResetIn} />
+            )}
+
+            {generateQueriesError && !generatingQueries && !hasQueries && (
+              <div className="flex flex-col items-start gap-2 py-4">
+                <p className="text-[13px] text-red-500 font-medium">{generateQueriesError}</p>
+                <button
+                  onClick={onGenerateQueries}
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[12.5px] font-semibold hover:bg-blue-700 transition-colors"
+                >
+                  <RefreshCw size={13} /> Try Again
+                </button>
+              </div>
+            )}
+
+            {hasQueries && !generatingQueries && (
+              <motion.div
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3, duration: 0.4 }}
+                className="space-y-4"
+              >
+                <div className="space-y-2">
+                  {rankedKeywords.map((kw, i) => (
+                    <motion.div
+                      key={kw}
+                      initial={{ opacity: 0, x: -8 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.35 + i * 0.06 }}
+                      className="flex items-center gap-3 p-3 rounded-xl border border-blue-200 bg-blue-50/40"
+                    >
+                      <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center shrink-0">
+                        <span className="text-[12px] font-bold text-white tabular-nums">{i + 1}</span>
+                      </div>
+                      <span className="text-[14px] font-semibold text-slate-800 flex-1">{kw}</span>
+                      <CheckCircle2 size={16} className="text-blue-600 shrink-0" />
+                    </motion.div>
+                  ))}
+                </div>
+
+                {optionalKeywords.length > 0 && (
+                  <div>
+                    <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2.5">Select a few more that fit</p>
+                    <div className="flex flex-wrap gap-2">
+                      {optionalKeywords.map((kw) => {
+                        const isSelected = selectedKeywords.has(kw);
+                        return (
+                          <button
+                            key={kw}
+                            onClick={() => {
+                              setSelectedKeywords(prev => {
+                                const next = new Set(prev);
+                                if (next.has(kw)) next.delete(kw);
+                                else next.add(kw);
+                                return next;
+                              });
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border text-[12.5px] font-medium transition-all ${
+                              isSelected
+                                ? "bg-blue-600 border-blue-600 text-white"
+                                : "bg-white border-slate-200 text-slate-600 hover:border-blue-300 hover:text-blue-700"
+                            }`}
+                          >
+                            {isSelected && <CheckCircle2 size={12} />}
+                            {kw}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {queryTime && (
+                  <p className="text-[11px] text-slate-400">Keywords identified in {queryTime.toFixed(1)}s</p>
+                )}
+              </motion.div>
+            )}
+          </div>
         </div>
-      </BrowserMockup>
+      </div>
 
       {/* Action bar */}
       <div className="flex items-center justify-between">
