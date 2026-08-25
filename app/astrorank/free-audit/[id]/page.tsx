@@ -3,7 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, FileText, Brain } from "lucide-react";
+import { ArrowLeft, ArrowRight, Search, Globe, Zap, RefreshCw, CircleAlert as AlertCircle, CircleCheck as CheckCircle2, ExternalLink, Rocket, Lock, ChevronDown, Loader as Loader2, Bug, X, FileText, Brain, ChartBar as BarChart3 } from "lucide-react";
 import SpaceBg from "../../space-bg";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -50,6 +50,19 @@ interface AuditData {
   search_queries_raw_output?: Record<string, unknown> | null;
   scraped_content?: string | null;
   understander_analysis?: UnderstanderAnalysis | Record<string, unknown> | null;
+  keyword_volume_estimates?: KeywordVolumeEstimate[] | null;
+  keyword_volume_raw_input?: Record<string, unknown> | null;
+  keyword_volume_raw_output?: Record<string, unknown> | null;
+}
+
+interface KeywordVolumeEstimate {
+  query: string;
+  cluster_id: number | null;
+  cluster_head: string;
+  is_cluster_head: boolean;
+  estimated_monthly_volume: number;
+  confidence: string;
+  factors: Record<string, unknown>;
 }
 
 type TabId = "queries" | "brand" | "competition" | "opportunity";
@@ -614,7 +627,7 @@ function UnderstanderSubTab({ audit, onRun, running, runError, runTime }: {
   );
 }
 
-function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, scrapeTime, understanderTime, queryTime, summary, onSummarize, summarizing }: {
+function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLimited, resetIn, onScrape, scraping, scrapeError, onRunUnderstander, runningUnderstander, understanderError, scrapeTime, understanderTime, queryTime, summary, onSummarize, summarizing, onEstimateVolume, estimatingVolume, volumeError, volumeRateLimited, volumeResetIn, volumeTime }: {
   audit: AuditData;
   onGenerate: () => void;
   generating: boolean;
@@ -633,6 +646,12 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
   summary: string | null;
   onSummarize: () => void;
   summarizing: boolean;
+  onEstimateVolume: () => void;
+  estimatingVolume: boolean;
+  volumeError: string | null;
+  volumeRateLimited: boolean;
+  volumeResetIn?: number;
+  volumeTime: number | null;
 }) {
   const queries = audit.search_queries || [];
   const hasResults = queries.length > 0;
@@ -683,20 +702,95 @@ function SearchQueriesTab({ audit, onGenerate, generating, generateError, rateLi
               </div>
 
               <div className="space-y-3">
-                {queries.map((query, i) => (
-                  <motion.div
-                    key={i}
-                    initial={{ opacity: 0, y: 8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: i * 0.05 }}
-                    className="flex items-center gap-3 bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
-                  >
-                    <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
-                      <span className="text-[13px] font-bold text-blue-600 tabular-nums">{i + 1}</span>
+                {queries.map((query, i) => {
+                  const volumeEstimate = (audit.keyword_volume_estimates || []).find(e => e.query === query);
+                  return (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, y: 8 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex items-center gap-3 bg-white rounded-xl border border-slate-200/80 p-4 shadow-sm hover:shadow-md transition-shadow duration-200"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center shrink-0">
+                        <span className="text-[13px] font-bold text-blue-600 tabular-nums">{i + 1}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-[14px] text-slate-700 font-medium leading-relaxed">{query}</p>
+                        {volumeEstimate && volumeEstimate.estimated_monthly_volume > 0 && (
+                          <div className="flex items-center gap-2 mt-1.5">
+                            <span className="text-[12px] text-slate-500">
+                              ~{volumeEstimate.estimated_monthly_volume.toLocaleString()}/mo
+                            </span>
+                            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+                              volumeEstimate.confidence === "High"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : volumeEstimate.confidence === "Medium"
+                                ? "bg-amber-50 text-amber-600"
+                                : "bg-slate-100 text-slate-500"
+                            }`}>
+                              {volumeEstimate.confidence}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </motion.div>
+                  );
+                })}
+              </div>
+
+              {/* Estimate Volume section */}
+              <div className="pt-2">
+                {estimatingVolume && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-10 h-10 border-3 border-blue-100 border-t-blue-500 rounded-full mb-4"
+                      style={{ borderWidth: "3px" }}
+                    />
+                    <p className="text-[14px] font-medium text-slate-500">Estimating search volumes...</p>
+                  </div>
+                )}
+
+                {!estimatingVolume && volumeRateLimited && <RateLimitMessage resetIn={volumeResetIn} />}
+
+                {!estimatingVolume && !volumeRateLimited && volumeError && (
+                  <div className="flex flex-col items-center justify-center py-12">
+                    <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center mb-3">
+                      <AlertCircle size={22} className="text-red-500" />
                     </div>
-                    <p className="text-[14px] text-slate-700 font-medium leading-relaxed flex-1">{query}</p>
-                  </motion.div>
-                ))}
+                    <p className="text-[14px] font-bold text-slate-700 mb-1">Estimation Failed</p>
+                    <p className="text-[12.5px] text-slate-500 mb-4 text-center max-w-[400px]">{volumeError}</p>
+                    <button
+                      onClick={onEstimateVolume}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      <RefreshCw size={13} /> Try Again
+                    </button>
+                  </div>
+                )}
+
+                {!estimatingVolume && !volumeRateLimited && !volumeError && (
+                  <div className="flex items-center justify-between">
+                    <div>
+                      {audit.keyword_volume_estimates && audit.keyword_volume_estimates.length > 0 ? (
+                        <p className="text-[13px] text-slate-500">
+                          Volume estimates generated{volumeTime ? ` · ${volumeTime.toFixed(1)}s` : ""}
+                        </p>
+                      ) : (
+                        <p className="text-[13px] text-slate-400">Estimate monthly search volume for all queries</p>
+                      )}
+                    </div>
+                    <button
+                      onClick={onEstimateVolume}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-blue-600 text-white text-[12.5px] font-semibold hover:bg-blue-700 transition-colors"
+                    >
+                      <BarChart3 size={13} />
+                      {audit.keyword_volume_estimates && audit.keyword_volume_estimates.length > 0 ? "Re-estimate Volume" : "Estimate Volume"}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           )}
@@ -1250,6 +1344,11 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [analyzeTime, setAnalyzeTime] = useState<number | null>(null);
   const [websiteBrief, setWebsiteBrief] = useState<string | null>(null);
   const [summarizing, setSummarizing] = useState(false);
+  const [estimatingVolume, setEstimatingVolume] = useState(false);
+  const [volumeError, setVolumeError] = useState<string | null>(null);
+  const [volumeRateLimited, setVolumeRateLimited] = useState(false);
+  const [volumeResetIn, setVolumeResetIn] = useState<number | undefined>();
+  const [volumeTime, setVolumeTime] = useState<number | null>(null);
 
   // Load audit on mount
   const loadAudit = useCallback(async () => {
@@ -1360,6 +1459,28 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
       setSummarizing(false);
     }
   }, [audit?.scraped_content]);
+
+  const estimateVolume = useCallback(async () => {
+    setEstimatingVolume(true);
+    setVolumeError(null);
+    setVolumeRateLimited(false);
+    setVolumeTime(null);
+    const start = performance.now();
+    try {
+      const data = await callFreeAudit("estimate-volume", { audit_id: params.id });
+      setAudit(data.data);
+      setVolumeTime((performance.now() - start) / 1000);
+    } catch (err: any) {
+      if (err.rateLimited) {
+        setVolumeRateLimited(true);
+        setVolumeResetIn(err.resetIn);
+      } else {
+        setVolumeError(err.message || "Volume estimation failed");
+      }
+    } finally {
+      setEstimatingVolume(false);
+    }
+  }, [params.id]);
 
   // SERP search handler
   const handleSearch = useCallback(async (term: string): Promise<{ results?: SerpResult[] }> => {
@@ -1476,6 +1597,12 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
                 summary={websiteBrief}
                 onSummarize={summarizeContent}
                 summarizing={summarizing}
+                onEstimateVolume={estimateVolume}
+                estimatingVolume={estimatingVolume}
+                volumeError={volumeError}
+                volumeRateLimited={volumeRateLimited}
+                volumeResetIn={volumeResetIn}
+                volumeTime={volumeTime}
               />
             )}
             {activeTab === "brand" && (

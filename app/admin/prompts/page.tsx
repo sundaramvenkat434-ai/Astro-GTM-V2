@@ -16,33 +16,7 @@ import {
   CardTitle,
   CardDescription,
 } from '@/components/ui/card';
-import {
-  Loader as Loader2,
-  Save,
-  RotateCcw,
-  Sparkles,
-  Shield,
-  Zap,
-  CircleCheck as CheckCircle2,
-  TriangleAlert as AlertTriangle,
-  ChevronDown,
-  FlaskConical,
-  Play,
-  Copy,
-  CopyCheck,
-  Activity,
-  X,
-  Clock,
-  History,
-  FileText,
-  Brain,
-  Key,
-  Search,
-  Plus,
-  Trash2,
-  Pencil,
-  ScrollText,
-} from 'lucide-react';
+import { Loader as Loader2, Save, RotateCcw, Sparkles, Shield, Zap, CircleCheck as CheckCircle2, TriangleAlert as AlertTriangle, ChevronDown, FlaskConical, Play, Copy, CopyCheck, Activity, X, Clock, History, FileText, Brain, Key, Search, Plus, Trash2, Pencil, ScrollText, ChartBar as BarChart3 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -201,6 +175,17 @@ const PROMPT_KEYS = [
     label: 'Free Audit — Understander',
     description: 'Reads the scraped website text and returns a single concise paragraph (80-120 words) that explains what the business is, what it offers, who it serves, the main problem it solves, and how potential customers would search for it.',
     icon: Brain,
+    usedBy: 'free-audit',
+    testable: true,
+  },
+  {
+    key: 'free_audit_keyword_volume_prompt',
+    modelKey: 'ai_model_free_audit_keyword_volume',
+    countKey: 'ai_request_count_free_audit_keyword_volume',
+    defaultModel: 'openai/gpt-oss-120b:free',
+    label: 'Free Audit — Keyword Volume',
+    description: 'Classifies the 10 search queries into semantic clusters and assigns numeric factors (demand, adoption, intent, competition, trend, similarity, specificity, modifier, confidence). Returns JSON factors only — no reasoning or explanations. The edge function deterministically calculates final monthly volumes.',
+    icon: BarChart3,
     usedBy: 'free-audit',
     testable: true,
   },

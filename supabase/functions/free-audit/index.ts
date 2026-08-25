@@ -38,6 +38,7 @@ const FALLBACK_LIMITS: Record<string, RateLimitConfig> = {
   "scrape-competitors": { maxCount: 10, windowSeconds: 3600 },
   "generate-search-queries": { maxCount: 10, windowSeconds: 3600 },
   "run-understander": { maxCount: 10, windowSeconds: 3600 },
+  "estimate-volume": { maxCount: 10, windowSeconds: 3600 },
 };
 
 const SETTING_KEY_TO_ACTION: Record<string, string> = {
@@ -47,6 +48,7 @@ const SETTING_KEY_TO_ACTION: Record<string, string> = {
   free_audit_scrape_limit: "scrape-competitors",
   free_audit_search_queries_limit: "generate-search-queries",
   free_audit_understander_limit: "run-understander",
+  free_audit_volume_limit: "estimate-volume",
 };
 
 interface AuditSettings {
@@ -70,6 +72,7 @@ async function loadAuditSettings(
       "free_audit_scrape_limit",
       "free_audit_search_queries_limit",
       "free_audit_understander_limit",
+      "free_audit_volume_limit",
       "free_audit_ip_whitelist",
     ]);
 
@@ -212,6 +215,61 @@ Return ONLY valid JSON:
     "",
     "",
     ""
+  ]
+}`;
+
+const FALLBACK_KEYWORD_VOLUME_PROMPT = `You are an expert SEO keyword volume analyst. You receive a list of search queries. For each query, classify it into a semantic cluster and assign numeric factors that will be used to deterministically estimate monthly search volume.
+
+Rules:
+- Return ONLY valid JSON. No markdown, no code fences, no reasoning, no explanations, no step-by-step analysis.
+- Classify each query into exactly one cluster. A cluster is a group of semantically related queries that share the same search demand profile.
+- Assign a base_demand value to each CLUSTER (not each keyword). All keywords in the same cluster share the same base_demand. Use exactly one of: 20000, 10000, 5000, 1000, 300.
+- For each keyword, assign: search_adoption (0.01–1.0), intent (0.1–1.0), competition (0.1–1.0), trend (0.5–2.0).
+- For each keyword that is NOT a cluster head, also assign: semantic_similarity (0.1–1.0), specificity (0.1–1.0), child_intent (0.1–1.0), modifier (0.1–1.0).
+- For each keyword, assign a confidence score: "High", "Medium", or "Low".
+
+Return ONLY this JSON shape:
+{
+  "clusters": [
+    {
+      "id": 1,
+      "head_keyword": "<the query that best represents this cluster>",
+      "base_demand": 20000,
+      "search_adoption": 0.8,
+      "intent": 0.9,
+      "competition": 0.7,
+      "trend": 1.2
+    }
+  ],
+  "keywords": [
+    {
+      "query": "<the search query>",
+      "cluster_id": 1,
+      "is_cluster_head": true,
+      "confidence": "High",
+      "factors": {
+        "search_adoption": 0.8,
+        "intent": 0.9,
+        "competition": 0.7,
+        "trend": 1.2
+      }
+    },
+    {
+      "query": "<another search query>",
+      "cluster_id": 1,
+      "is_cluster_head": false,
+      "confidence": "Medium",
+      "factors": {
+        "search_adoption": 0.8,
+        "intent": 0.9,
+        "competition": 0.7,
+        "trend": 1.2,
+        "semantic_similarity": 0.85,
+        "specificity": 0.6,
+        "child_intent": 0.8,
+        "modifier": 0.9
+      }
+    }
   ]
 }`;
 
@@ -1226,6 +1284,293 @@ Deno.serve(async (req: Request) => {
 
       if (saveError) {
         return jsonResponse({ error: "Failed to save understanding", detail: saveError.message }, 500);
+      }
+
+      return jsonResponse({ success: true, data: updated });
+    }
+
+    // ═══════════════════════════════════════════════════════════
+    // ACTION: estimate-volume — read search_queries, call AI for factors, deterministically calculate volumes
+    // ═══════════════════════════════════════════════════════════
+    if (action === "estimate-volume") {
+      const rl = await checkRateLimit(supabase, clientIP, "estimate-volume", settings);
+      if (!rl.allowed) {
+        return jsonResponse({
+          error: "Too many volume estimation requests. Please try again later.",
+          rate_limited: true,
+          reset_in_seconds: rl.resetIn,
+        }, 429);
+      }
+
+      const OPENROUTER_API_KEY = Deno.env.get("OPENROUTER_API_KEY");
+      if (!OPENROUTER_API_KEY) {
+        return jsonResponse({ error: "OpenRouter API key is not configured." }, 500);
+      }
+
+      const { audit_id } = body;
+      if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
+
+      const { data: audit, error: fetchError } = await supabase
+        .from("free_audits")
+        .select("*")
+        .eq("id", audit_id)
+        .maybeSingle();
+
+      if (fetchError) return jsonResponse({ error: "Database error", detail: fetchError.message }, 500);
+      if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
+
+      const queries: string[] = Array.isArray(audit.search_queries) ? audit.search_queries.filter((q: unknown) => typeof q === "string" && q.trim()) : [];
+      if (queries.length === 0) {
+        return jsonResponse({ error: "No search queries found. Generate search queries first." }, 400);
+      }
+
+      // Load prompt and model settings
+      const { data: settingsRows } = await supabase
+        .from("admin_settings")
+        .select("key, value")
+        .in("key", [
+          "free_audit_keyword_volume_prompt",
+          "ai_model_free_audit_keyword_volume",
+          "ai_max_tokens_free_audit_keyword_volume_prompt",
+        ]);
+
+      const settingsMap: Record<string, string> = {};
+      for (const row of settingsRows || []) {
+        settingsMap[row.key] = row.value;
+      }
+
+      const systemPrompt =
+        settingsMap["free_audit_keyword_volume_prompt"] || FALLBACK_KEYWORD_VOLUME_PROMPT;
+      const model =
+        settingsMap["ai_model_free_audit_keyword_volume"] || "openai/gpt-oss-120b:free";
+      const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_keyword_volume_prompt"]) || 4000;
+
+      const userMessageContent = `Classify the following ${queries.length} search queries into semantic clusters and assign volume factors for each:\n\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
+      const requestBody = {
+        model,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userMessageContent },
+        ],
+        temperature: 0.3,
+        max_tokens: maxTokens,
+        response_format: { type: "json_object" },
+      };
+
+      let aiResponse: Response;
+      try {
+        aiResponse = await fetch(
+          "https://openrouter.ai/api/v1/chat/completions",
+          {
+            method: "POST",
+            headers: {
+              Authorization: `Bearer ${OPENROUTER_API_KEY}`,
+              "Content-Type": "application/json",
+              "HTTP-Referer": SUPABASE_URL,
+              "X-Title": "AstroRank Free Audit",
+            },
+            body: JSON.stringify(requestBody),
+          }
+        );
+      } catch {
+        return jsonResponse({ error: "Failed to reach the AI service." }, 502);
+      }
+
+      if (aiResponse.status === 429) {
+        return jsonResponse({ error: "AI service is busy. Please try again in a moment." }, 429);
+      }
+
+      if (!aiResponse.ok) {
+        const errText = await aiResponse.text().catch(() => "");
+        const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody };
+        const rawOutput = { http_status: aiResponse.status, error_body: errText.slice(0, 5000) };
+        await supabase
+          .from("free_audits")
+          .update({
+            keyword_volume_raw_input: rawInput,
+            keyword_volume_raw_output: rawOutput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", audit_id);
+        return jsonResponse({ error: `AI service returned an error (HTTP ${aiResponse.status}).` }, 502);
+      }
+
+      const aiData = await aiResponse.json();
+      const rawContent: string = aiData.choices?.[0]?.message?.content || "";
+
+      const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent, request_body: requestBody };
+      const rawOutput = aiData;
+
+      if (!rawContent) {
+        await supabase
+          .from("free_audits")
+          .update({
+            keyword_volume_raw_input: rawInput,
+            keyword_volume_raw_output: rawOutput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", audit_id);
+        return jsonResponse({ error: "AI returned an empty response." }, 502);
+      }
+
+      const extractionResult = extractJsonFromContent(rawContent);
+      if (!extractionResult.ok) {
+        await supabase
+          .from("free_audits")
+          .update({
+            keyword_volume_raw_input: rawInput,
+            keyword_volume_raw_output: rawOutput,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", audit_id);
+        return jsonResponse({ error: "Failed to parse AI response as JSON." }, 502);
+      }
+
+      const parsed = extractionResult.data as Record<string, unknown>;
+
+      // ── Validate and clamp AI output ──────────────────────────
+      const VALID_BASE_DEMANDS = [20000, 10000, 5000, 1000, 300];
+      const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
+
+      const clustersRaw = Array.isArray(parsed.clusters) ? parsed.clusters : [];
+      const keywordsRaw = Array.isArray(parsed.keywords) ? parsed.keywords : [];
+
+      // Build cluster map with validated values
+      const clusterMap = new Map<number, {
+        id: number;
+        head_keyword: string;
+        base_demand: number;
+        search_adoption: number;
+        intent: number;
+        competition: number;
+        trend: number;
+      }>();
+
+      for (const c of clustersRaw) {
+        if (!c || typeof c !== "object") continue;
+        const co = c as Record<string, unknown>;
+        const id = typeof co.id === "number" ? co.id : parseInt(String(co.id), 10);
+        if (!Number.isFinite(id)) continue;
+        const rawDemand = typeof co.base_demand === "number" ? co.base_demand : parseInt(String(co.base_demand), 10);
+        const base_demand = VALID_BASE_DEMANDS.includes(rawDemand) ? rawDemand : 1000;
+        clusterMap.set(id, {
+          id,
+          head_keyword: typeof co.head_keyword === "string" ? co.head_keyword : "",
+          base_demand,
+          search_adoption: clamp(typeof co.search_adoption === "number" ? co.search_adoption : 0.5, 0.01, 1.0),
+          intent: clamp(typeof co.intent === "number" ? co.intent : 0.5, 0.1, 1.0),
+          competition: clamp(typeof co.competition === "number" ? co.competition : 0.5, 0.1, 1.0),
+          trend: clamp(typeof co.trend === "number" ? co.trend : 1.0, 0.5, 2.0),
+        });
+      }
+
+      // Determine country factor deterministically from audit's existing geography field
+      const brandAnalysis = audit.brand_analysis as Record<string, unknown> | null;
+      const geography = brandAnalysis && typeof brandAnalysis === "object" && typeof (brandAnalysis as Record<string, unknown>).primary_geography === "string"
+        ? (brandAnalysis as Record<string, unknown>).primary_geography as string
+        : "";
+      const countryFactor = geography && geography.trim().length > 0 ? 1.0 : 1.0;
+
+      // Calculate volumes
+      const estimates: Record<string, unknown>[] = [];
+
+      for (const kw of keywordsRaw) {
+        if (!kw || typeof kw !== "object") continue;
+        const kwObj = kw as Record<string, unknown>;
+        const query = typeof kwObj.query === "string" ? kwObj.query : "";
+        if (!query) continue;
+
+        const clusterId = typeof kwObj.cluster_id === "number" ? kwObj.cluster_id : parseInt(String(kwObj.cluster_id), 10);
+        const cluster = clusterMap.get(clusterId);
+        if (!cluster) continue;
+
+        const isClusterHead = Boolean(kwObj.is_cluster_head);
+        const confidence = kwObj.confidence === "High" || kwObj.confidence === "Medium" || kwObj.confidence === "Low"
+          ? kwObj.confidence
+          : "Medium";
+
+        const factors = (kwObj.factors && typeof kwObj.factors === "object") ? kwObj.factors as Record<string, unknown> : {};
+
+        const search_adoption = cluster.search_adoption;
+        const intent = cluster.intent;
+        const competition = cluster.competition;
+        const trend = cluster.trend;
+
+        // Cluster Volume = Base Demand × Search Adoption × Intent × Competition × Trend × Country Factor
+        const clusterVolume = Math.round(
+          cluster.base_demand * search_adoption * intent * competition * trend * countryFactor
+        );
+
+        let estimatedVolume: number;
+
+        if (isClusterHead) {
+          estimatedVolume = clusterVolume;
+        } else {
+          // Child Keyword Volume = Cluster Volume × Semantic Similarity × Specificity × Child Intent × Modifier
+          const semantic_similarity = clamp(typeof factors.semantic_similarity === "number" ? factors.semantic_similarity : 0.5, 0.1, 1.0);
+          const specificity = clamp(typeof factors.specificity === "number" ? factors.specificity : 0.5, 0.1, 1.0);
+          const child_intent = clamp(typeof factors.child_intent === "number" ? factors.child_intent : 0.5, 0.1, 1.0);
+          const modifier = clamp(typeof factors.modifier === "number" ? factors.modifier : 0.5, 0.1, 1.0);
+
+          estimatedVolume = Math.round(
+            clusterVolume * semantic_similarity * specificity * child_intent * modifier
+          );
+        }
+
+        estimates.push({
+          query,
+          cluster_id: clusterId,
+          cluster_head: cluster.head_keyword,
+          is_cluster_head: isClusterHead,
+          estimated_monthly_volume: estimatedVolume,
+          confidence,
+          factors: {
+            base_demand: cluster.base_demand,
+            search_adoption,
+            intent,
+            competition,
+            trend,
+            country_factor: countryFactor,
+            ...(!isClusterHead ? {
+              semantic_similarity: typeof factors.semantic_similarity === "number" ? factors.semantic_similarity : 0.5,
+              specificity: typeof factors.specificity === "number" ? factors.specificity : 0.5,
+              child_intent: typeof factors.child_intent === "number" ? factors.child_intent : 0.5,
+              modifier: typeof factors.modifier === "number" ? factors.modifier : 0.5,
+            } : {}),
+          },
+        });
+      }
+
+      // If AI didn't return per-keyword entries for all queries, fill gaps
+      const coveredQueries = new Set(estimates.map(e => (e as Record<string, unknown>).query as string));
+      for (const q of queries) {
+        if (!coveredQueries.has(q)) {
+          estimates.push({
+            query: q,
+            cluster_id: null,
+            cluster_head: "",
+            is_cluster_head: false,
+            estimated_monthly_volume: 0,
+            confidence: "Low",
+            factors: {},
+          });
+        }
+      }
+
+      const { data: updated, error: saveError } = await supabase
+        .from("free_audits")
+        .update({
+          keyword_volume_estimates: estimates,
+          keyword_volume_raw_input: rawInput,
+          keyword_volume_raw_output: rawOutput,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", audit_id)
+        .select()
+        .single();
+
+      if (saveError) {
+        return jsonResponse({ error: "Failed to save volume estimates", detail: saveError.message }, 500);
       }
 
       return jsonResponse({ success: true, data: updated });
