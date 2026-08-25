@@ -32,6 +32,11 @@ interface ScrapedCompetitor {
 }
 
 interface UnderstanderAnalysis {
+  about_brand?: string;
+  primary_product_or_service?: string;
+  geographies?: string;
+  target_audience?: string;
+  search_intent?: string;
   business_understanding?: string;
 }
 
@@ -753,7 +758,11 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   const understanderStartedRef = useRef(false);
 
   const hasScraped = Boolean(audit.scraped_content && audit.scraped_content.length > 0);
-  const hasUnderstanding = Boolean((audit.understander_analysis as UnderstanderAnalysis)?.business_understanding);
+  const hasUnderstanding = (() => {
+    const ua = audit.understander_analysis as UnderstanderAnalysis | undefined;
+    if (!ua) return false;
+    return Boolean(ua.about_brand || ua.primary_product_or_service || ua.geographies || ua.target_audience || ua.search_intent || ua.business_understanding);
+  })();
   const brand = (audit.brand_analysis || {}) as BrandAnalysis;
 
   const keywords = useMemo(() => {
@@ -898,7 +907,8 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
   }
 
   // ── Completion State ──
-  const understanding = (audit.understander_analysis as UnderstanderAnalysis)?.business_understanding || "";
+  const understanderData = (audit.understander_analysis as UnderstanderAnalysis) || {};
+  const understanding = understanderData.business_understanding || "";
   const briefSummary = summary || "";
   const brandName = brand.about_brand?.split(/[.,;:]/)[0]?.trim() || audit.website_url.replace(/^https?:\/\/(www\.)?/, "").split("/")[0];
 
@@ -928,20 +938,53 @@ function BrandTab({ audit, onScrape, scraping, scrapeError, onRunUnderstander, r
               </motion.div>
             </div>
 
-            {/* What we understand */}
+            {/* Brand profile */}
             <div className="px-5 sm:px-6 py-5">
               <motion.div
                 initial={{ opacity: 0, y: 8 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1, duration: 0.4 }}
               >
-                <div className="flex items-center gap-2 mb-3">
+                <div className="flex items-center gap-2 mb-4">
                   <div className="w-7 h-7 rounded-lg bg-blue-50 flex items-center justify-center">
                     <Brain size={14} className="text-blue-600" />
                   </div>
-                  <h3 className="text-[15px] font-bold text-slate-900">What we understand about your brand</h3>
+                  <h3 className="text-[15px] font-bold text-slate-900">Your brand profile</h3>
                 </div>
-                {understanding ? (
+                {understanderData.about_brand || understanderData.primary_product_or_service || understanderData.geographies || understanderData.target_audience || understanderData.search_intent ? (
+                  <div className="space-y-3">
+                    {understanderData.about_brand && (
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">About the brand</p>
+                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.about_brand}</p>
+                      </div>
+                    )}
+                    {understanderData.primary_product_or_service && (
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Primary product or service</p>
+                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.primary_product_or_service}</p>
+                      </div>
+                    )}
+                    {understanderData.geographies && (
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Geographies</p>
+                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.geographies}</p>
+                      </div>
+                    )}
+                    {understanderData.target_audience && (
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Target audience</p>
+                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.target_audience}</p>
+                      </div>
+                    )}
+                    {understanderData.search_intent && (
+                      <div>
+                        <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">How people might search for it</p>
+                        <p className="text-[13.5px] text-slate-700 leading-relaxed">{understanderData.search_intent}</p>
+                      </div>
+                    )}
+                  </div>
+                ) : understanding ? (
                   <p className="text-[14px] text-slate-700 leading-relaxed">{understanding}</p>
                 ) : (
                   <p className="text-[13px] text-slate-400">No understanding available yet.</p>

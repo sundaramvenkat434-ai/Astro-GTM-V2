@@ -161,26 +161,29 @@ interface SerpResult {
   description: string;
 }
 
-const FALLBACK_UNDERSTANDER_PROMPT = `You are an expert business analyst. You are given the cleaned, visible text content extracted from a company website. Your job is to understand what this business is.
+const FALLBACK_UNDERSTANDER_PROMPT = `You are an expert business analyst. Analyse the provided website content and identify the business as accurately as possible.
 
-Write a single concise paragraph (80-120 words, hard maximum 150 words) that explains:
-- What the business is
-- What it offers
-- Who it serves
-- The main problem it solves
-- The most relevant way potential customers would think about or search for it
+Return concise information for:
+- about_brand: what the brand or business does
+- primary_product_or_service: the main product or service it offers
+- geographies: the countries, regions, or markets it appears to serve
+- target_audience: the main people, customers, or businesses it serves
+- search_intent: the most relevant way potential customers would think about or search for this business on Google
 
 Rules:
-- Write only ONE paragraph of plain prose. No bullet points, no headings, no separate fields, no step-by-step reasoning.
-- Do not repeat information or pad with filler.
-- Stay under 150 words.
+- Base every answer only on the provided website content.
+- Do not invent information that is not supported by the content.
+- Keep each field concise and specific.
+- Return ONLY valid JSON. No markdown, explanations, reasoning, or code fences.
 
-Return ONLY valid JSON with this shape:
+Return exactly this JSON shape:
 {
-  "business_understanding": "<your single paragraph here>"
-}
-
-No markdown, no code fences.`;
+  "about_brand": "<concise description of what the brand does>",
+  "primary_product_or_service": "<main product or service>",
+  "geographies": "<main geography or market, or Unknown if not clear>",
+  "target_audience": "<main target audience>",
+  "search_intent": "<how potential customers would most naturally search for it on Google>"
+}`;
 
 const FALLBACK_SEARCH_QUERIES_PROMPT = `You are an expert SEO strategist and search behavior researcher.
 
@@ -771,15 +774,37 @@ Deno.serve(async (req: Request) => {
       if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
 
       const understanderAnalysis = audit.understander_analysis;
-      const businessUnderstanding =
-        understanderAnalysis &&
-        typeof understanderAnalysis === "object" &&
-        typeof (understanderAnalysis as Record<string, unknown>).business_understanding === "string"
-          ? (understanderAnalysis as Record<string, unknown>).business_understanding as string
-          : typeof understanderAnalysis === "string"
-            ? understanderAnalysis
+
+      // Build brand context from the new structured understander object
+      let brandContext = "";
+      if (understanderAnalysis && typeof understanderAnalysis === "object") {
+        const ua = understanderAnalysis as Record<string, unknown>;
+        const fields = [
+          ua.about_brand ? `About the brand: ${ua.about_brand}` : "",
+          ua.primary_product_or_service ? `Primary product or service: ${ua.primary_product_or_service}` : "",
+          ua.geographies ? `Geographies: ${ua.geographies}` : "",
+          ua.target_audience ? `Target audience: ${ua.target_audience}` : "",
+          ua.search_intent ? `Search intent: ${ua.search_intent}` : "",
+        ].filter(Boolean);
+        brandContext = fields.join("\n");
+      } else if (typeof understanderAnalysis === "string") {
+        brandContext = understanderAnalysis;
+      }
+
+      // Fallback: if no structured fields found, try old business_understanding
+      if (!brandContext) {
+        const oldUnderstanding =
+          understanderAnalysis &&
+          typeof understanderAnalysis === "object" &&
+          typeof (understanderAnalysis as Record<string, unknown>).business_understanding === "string"
+            ? (understanderAnalysis as Record<string, unknown>).business_understanding as string
             : "";
-      if (!businessUnderstanding || businessUnderstanding.trim().length < 20) {
+        if (oldUnderstanding && oldUnderstanding.trim().length >= 20) {
+          brandContext = oldUnderstanding;
+        }
+      }
+
+      if (!brandContext || brandContext.trim().length < 20) {
         return jsonResponse({ error: "No understander analysis found. Run the understander first." }, 400);
       }
 
@@ -805,7 +830,7 @@ Deno.serve(async (req: Request) => {
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_search_queries_prompt"]) || 4000;
 
-      const userMessageContent = `Based on the following business understanding, generate 10 realistic search queries that potential customers would use to find this business:\n\n${businessUnderstanding}`;
+      const userMessageContent = `Based on the following brand profile, generate 10 realistic search queries that potential customers would use to find this business:\n\n${brandContext}`;
 
       const provider = getProvider(settingsMap, "free_audit_search_queries_prompt");
 
@@ -1146,7 +1171,7 @@ Deno.serve(async (req: Request) => {
         settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_understander_prompt"]) || 4000;
 
-      const userMessageContent = `Analyze the following website content and write a single concise paragraph (80-120 words, max 150) that explains what the business is, what it offers, who it serves, the main problem it solves, and how potential customers would search for it:\n\n${scrapedContent}`;
+      const userMessageContent = `Analyse the following website content and return a concise brand profile with these fields: about_brand, primary_product_or_service, geographies, target_audience, search_intent.\n\n${scrapedContent}`;
 
       const provider = getProvider(settingsMap, "free_audit_understander_prompt");
 
