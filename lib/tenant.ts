@@ -28,6 +28,16 @@ export interface TenantRequestHeaders {
 
 const ASTROGTM_DOMAIN = 'astrogtm.com';
 
+function normalizeDomain(raw: string): string {
+  return raw
+    .replace(/^https?:\/\//i, '')
+    .replace(/^www\./i, '')
+    .replace(/\/+$/, '')
+    .replace(/:\d+$/, '')
+    .toLowerCase()
+    .trim();
+}
+
 export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<TenantResult | null> {
   const { xSite, xSecret, host } = h;
   const hostname = host || '';
@@ -52,14 +62,13 @@ export async function getTenantFromRequest(h: TenantRequestHeaders): Promise<Ten
   }
 
   if (!tenantConfig) {
-    const domain = hostname.replace(/:\d+$/, '');
+    const domain = normalizeDomain(hostname);
     const { data } = await supabaseServer
       .from('gifaa_tenants')
-      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity, ga_measurement_id, header_menu_items, footer_links')
-      .eq('public_domain', domain)
-      .maybeSingle();
-    tenantConfig = data;
-    console.log('[tenant] lookup by domain:', { domain, found: !!data });
+      .select('tenant_key, public_domain, site_name, proxy_secret, logo_url, header_logo_height, footer_logo_height, powered_by_enabled, powered_by_height, powered_by_opacity, ga_measurement_id, header_menu_items, footer_links');
+    const match = (data || []).find((t: { public_domain: string }) => normalizeDomain(t.public_domain) === domain);
+    if (match) tenantConfig = match as TenantConfig;
+    console.log('[tenant] lookup by domain:', { domain, found: !!match });
   }
 
   if (!tenantConfig) {

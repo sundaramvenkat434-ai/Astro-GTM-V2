@@ -3,6 +3,10 @@ import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
   const host = request.headers.get('host') || '';
+  const xSite = request.headers.get('x-site');
+  if (xSite) {
+    return NextResponse.next();
+  }
   if (host.includes('astrogtm.com')) {
     return NextResponse.redirect(new URL('/astrorank', request.url), 308);
   }
