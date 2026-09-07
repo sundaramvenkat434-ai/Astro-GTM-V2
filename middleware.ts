@@ -2,7 +2,11 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
 export function middleware(request: NextRequest) {
-  return NextResponse.redirect(new URL('/astrorank', request.url), 308);
+  const host = request.headers.get('host') || '';
+  if (host.includes('astrogtm.com')) {
+    return NextResponse.redirect(new URL('/astrorank', request.url), 308);
+  }
+  return NextResponse.next();
 }
 
 export const config = {
