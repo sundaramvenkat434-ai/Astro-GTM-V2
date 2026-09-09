@@ -1,0 +1,2 @@
+[functions.free-audit]
+verify_jwt = false

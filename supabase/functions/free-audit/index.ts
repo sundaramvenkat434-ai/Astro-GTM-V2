@@ -1269,7 +1269,7 @@ Deno.serve(async (req: Request) => {
       const systemPrompt =
         settingsMap["free_audit_keyword_volume_prompt"] || FALLBACK_KEYWORD_VOLUME_PROMPT;
       const model =
-        settingsMap["ai_model_free_audit_keyword_volume"] || "openai/gpt-oss-120b:free";
+        settingsMap["ai_model_free_audit_keyword_volume"] || "poolside/laguna-s-2.1";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_keyword_volume_prompt"]) || 4000;
 
       const userMessageContent = `Classify the following ${queries.length} search queries into semantic clusters and assign volume factors for each:\n\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
@@ -1291,17 +1291,44 @@ Deno.serve(async (req: Request) => {
           title: "AstroRank Free Audit",
         });
       } catch (apiErr: any) {
-        const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent };
-        const rawOutput = { http_status: apiErr?.status || 500, error_body: String(apiErr?.message || apiErr).slice(0, 5000) };
-        await supabase
-          .from("free_audits")
-          .update({
-            keyword_volume_raw_input: rawInput,
-            keyword_volume_raw_output: rawOutput,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", audit_id);
-        return jsonResponse({ error: `AI service returned an error.` }, 502);
+        // Fallback: retry with the brand analyzer model (known-working across other audit steps)
+        const { data: fallbackRows } = await supabase
+          .from("admin_settings")
+          .select("key, value")
+          .in("key", ["ai_model_brand_analyzer", "ai_provider_brand_analyzer_prompt"]);
+        const fallbackMap: Record<string, string> = {};
+        for (const row of fallbackRows || []) {
+          fallbackMap[row.key] = row.value;
+        }
+        const fallbackModel = fallbackMap["ai_model_brand_analyzer"] || "poolside/laguna-s-2.1";
+        const fallbackProvider = getProvider(fallbackMap, "brand_analyzer_prompt");
+
+        try {
+          aiResult = await callAI({
+            provider: fallbackProvider,
+            model: fallbackModel,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userMessageContent },
+            ],
+            temperature: 0.3,
+            maxTokens,
+            responseFormat: { type: "json_object" },
+            title: "AstroRank Free Audit",
+          });
+        } catch (retryErr: any) {
+          const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent, fallback_model: fallbackModel };
+          const rawOutput = { http_status: retryErr?.status || 500, error_body: String(retryErr?.message || retryErr).slice(0, 5000), first_error: String(apiErr?.message || apiErr).slice(0, 2000) };
+          await supabase
+            .from("free_audits")
+            .update({
+              keyword_volume_raw_input: rawInput,
+              keyword_volume_raw_output: rawOutput,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("id", audit_id);
+          return jsonResponse({ error: `AI service returned an error.` }, 502);
+        }
       }
 
       const rawContent: string = aiResult.content || "";
