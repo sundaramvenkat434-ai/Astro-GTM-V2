@@ -676,10 +676,10 @@ Deno.serve(async (req: Request) => {
       const systemPrompt =
         settingsMap["brand_analyzer_prompt"] || "Analyze this brand and return JSON.";
       const model =
-        settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
+        settingsMap["ai_model_brand_analyzer"] || "gpt-4o-mini";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
 
-      // Step 4: Call OpenRouter
+      // Step 4: Call AI
       const provider = getProvider(settingsMap, "brand_analyzer_prompt");
 
       let aiResult;
@@ -824,7 +824,7 @@ Deno.serve(async (req: Request) => {
       const systemPrompt =
         settingsMap["free_audit_search_queries_prompt"] || FALLBACK_SEARCH_QUERIES_PROMPT;
       const model =
-        settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
+        settingsMap["ai_model_brand_analyzer"] || "gpt-4o-mini";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_search_queries_prompt"]) || 4000;
 
       const userMessageContent = `Based on the following brand profile, generate 10 realistic search queries that potential customers would use to find this business:\n\n${brandContext}`;
@@ -1165,7 +1165,7 @@ Deno.serve(async (req: Request) => {
       const systemPrompt =
         settingsMap["free_audit_understander_prompt"] || FALLBACK_UNDERSTANDER_PROMPT;
       const model =
-        settingsMap["ai_model_brand_analyzer"] || "openai/gpt-oss-120b:free";
+        settingsMap["ai_model_brand_analyzer"] || "gpt-4o-mini";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_understander_prompt"]) || 4000;
 
       const userMessageContent = `Analyse the following website content and return a concise brand profile with these fields: about_brand, primary_product_or_service, geographies, target_audience.\n\n${scrapedContent}`;
@@ -1269,7 +1269,7 @@ Deno.serve(async (req: Request) => {
       const systemPrompt =
         settingsMap["free_audit_keyword_volume_prompt"] || FALLBACK_KEYWORD_VOLUME_PROMPT;
       const model =
-        settingsMap["ai_model_free_audit_keyword_volume"] || "poolside/laguna-s-2.1";
+        settingsMap["ai_model_free_audit_keyword_volume"] || "gpt-4o-mini";
       const maxTokens = parseInt(settingsMap["ai_max_tokens_free_audit_keyword_volume_prompt"]) || 4000;
 
       const userMessageContent = `Classify the following ${queries.length} search queries into semantic clusters and assign volume factors for each:\n\n${queries.map((q, i) => `${i + 1}. ${q}`).join("\n")}`;
@@ -1300,7 +1300,7 @@ Deno.serve(async (req: Request) => {
         for (const row of fallbackRows || []) {
           fallbackMap[row.key] = row.value;
         }
-        const fallbackModel = fallbackMap["ai_model_brand_analyzer"] || "poolside/laguna-s-2.1";
+        const fallbackModel = fallbackMap["ai_model_brand_analyzer"] || "gpt-4o-mini";
         const fallbackProvider = getProvider(fallbackMap, "brand_analyzer_prompt");
 
         try {

@@ -1,7 +1,7 @@
 // Shared AI router: centralizes provider routing (OpenRouter + Poolside) across all edge functions.
 // Each edge function imports callAI() instead of duplicating fetch logic.
 
-export type AIProvider = "openrouter" | "poolside";
+export type AIProvider = "openrouter" | "poolside" | "openai";
 
 export interface ChatMessage {
   role: "system" | "user" | "assistant";
@@ -40,6 +40,8 @@ export async function callAI(opts: CallAIOptions): Promise<CallAIResult> {
     return callOpenRouter(opts, start);
   } else if (provider === "poolside") {
     return callPoolside(opts, start);
+  } else if (provider === "openai") {
+    return callOpenAI(opts, start);
   }
   throw new Error(`Unknown AI provider: ${provider}`);
 }
@@ -166,10 +168,66 @@ async function callPoolside(opts: CallAIOptions, start: number): Promise<CallAIR
   };
 }
 
+async function callOpenAI(opts: CallAIOptions, start: number): Promise<CallAIResult> {
+  const apiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!apiKey) throw new Error("OPENAI_API_KEY not set");
+
+  const body: Record<string, unknown> = {
+    model: opts.model,
+    messages: opts.messages,
+    max_tokens: opts.maxTokens ?? 4000,
+    temperature: opts.temperature ?? 0.7,
+  };
+  if (opts.responseFormat) {
+    body.response_format = opts.responseFormat;
+  }
+
+  const requestOpts: RequestInit = {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify(body),
+  };
+
+  let res = await fetch("https://api.openai.com/v1/chat/completions", requestOpts);
+  if (!res.ok && res.status >= 500) {
+    res = await fetch("https://api.openai.com/v1/chat/completions", requestOpts);
+  }
+  if (!res.ok && res.status === 429) {
+    await new Promise((r) => setTimeout(r, 5000));
+    res = await fetch("https://api.openai.com/v1/chat/completions", requestOpts);
+  }
+
+  if (!res.ok) {
+    const errText = await res.text();
+    const err = new Error(`OpenAI API error (${res.status}): ${errText}`);
+    (err as any).status = res.status;
+    throw err;
+  }
+
+  const data = await res.json();
+  const rawContent: string = data?.choices?.[0]?.message?.content || "";
+  const finishReason = data?.choices?.[0]?.finish_reason ?? null;
+  const inputTokens = data?.usage?.prompt_tokens ?? 0;
+  const outputTokens = data?.usage?.completion_tokens ?? 0;
+
+  return {
+    content: cleanCodeFences(rawContent),
+    finishReason,
+    inputTokens,
+    outputTokens,
+    elapsedMs: Date.now() - start,
+    raw: data,
+  };
+}
+
 // Helper to resolve provider from settings map
 export function getProvider(settings: Record<string, string>, promptKey: string): AIProvider {
   const key = `ai_provider_${promptKey}`;
   const val = settings[key];
   if (val === "poolside") return "poolside";
+  if (val === "openai") return "openai";
   return "openrouter";
 }

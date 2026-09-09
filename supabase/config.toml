@@ -1,2 +1,29 @@
 [functions.free-audit]
 verify_jwt = false
+
+[functions.analyze-brand]
+verify_jwt = false
+
+[functions.format-seo]
+verify_jwt = false
+
+[functions.generate-comparison]
+verify_jwt = false
+
+[functions.generate-gifaa-article]
+verify_jwt = false
+
+[functions.generate-top-x]
+verify_jwt = false
+
+[functions.keyword-research]
+verify_jwt = false
+
+[functions.run-eeat]
+verify_jwt = false
+
+[functions.structure-page]
+verify_jwt = false
+
+[functions.test-prompt]
+verify_jwt = false
