@@ -39,6 +39,15 @@ interface UnderstanderAnalysis {
   business_understanding?: string;
 }
 
+interface PageIdea {
+  page_title: string;
+  target_keyword: string;
+  estimated_monthly_volume: number;
+  tail_type: "short" | "long";
+  brand_alignment: "on-brand" | "off-brand";
+  search_intent: "informational" | "commercial" | "transactional" | "navigational";
+}
+
 interface AuditData {
   id: string;
   website_url: string;
@@ -57,6 +66,9 @@ interface AuditData {
   keyword_volume_estimates?: KeywordVolumeEstimate[] | null;
   keyword_volume_raw_input?: Record<string, unknown> | null;
   keyword_volume_raw_output?: Record<string, unknown> | null;
+  page_ideas?: PageIdea[] | null;
+  page_ideas_raw_input?: Record<string, unknown> | null;
+  page_ideas_raw_output?: Record<string, unknown> | null;
 }
 
 interface KeywordVolumeEstimate {
@@ -69,7 +81,7 @@ interface KeywordVolumeEstimate {
   factors: Record<string, unknown>;
 }
 
-type TabId = "queries" | "brand" | "competition" | "opportunity";
+type TabId = "queries" | "brand" | "competition" | "opportunity" | "page-ideas";
 
 // ─── API Helper ───────────────────────────────────────────────────────────────
 async function callFreeAudit(action: string, payload: Record<string, unknown> = {}) {
@@ -127,6 +139,7 @@ function AstroLogo() {
 
 // ─── Tab Bar ──────────────────────────────────────────────────────────────────
 const TABS: { id: TabId; label: string }[] = [
+  { id: "page-ideas", label: "Page Ideas" },
   { id: "brand", label: "Your Brand" },
   { id: "queries", label: "Search Queries" },
   { id: "competition", label: "Your Competition" },
@@ -139,6 +152,7 @@ function TabBar({ active, onChange }: { active: TabId; onChange: (t: TabId) => v
       {TABS.map((tab) => {
         const isActive = active === tab.id;
         const isDisabled = tab.id === "opportunity";
+        // Page Ideas is the default tab, no special gating
         return (
           <button
             key={tab.id}
@@ -1887,6 +1901,364 @@ function CompetitionTab({ audit, onSearch, onScrape, autoSearchKeywords }: {
 }
 
 // ─── Opportunity Tab ─────────────────────────────────────────────────────────
+// ─── Page Ideas Tab ───────────────────────────────────────────────────────────
+function PageIdeasLoadingState() {
+  const steps = ["Fetching website content", "Analyzing business", "Generating 40 SEO page ideas", "Estimating search volumes"];
+  const [currentStep, setCurrentStep] = useState(0);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentStep((s) => (s + 1) % steps.length);
+    }, 1800);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <motion.div
+        animate={{ rotate: 360 }}
+        transition={{ duration: 1.2, repeat: Infinity, ease: "linear" }}
+        className="w-12 h-12 border-3 border-blue-100 border-t-blue-500 rounded-full mb-6"
+        style={{ borderWidth: "3px" }}
+      />
+      <p className="text-[16px] font-bold text-slate-700 mb-4">Generating page ideas...</p>
+      <div className="flex flex-col gap-2 w-full max-w-[320px]">
+        {steps.map((step, i) => (
+          <motion.div
+            key={step}
+            initial={{ opacity: 0.3 }}
+            animate={{ opacity: i <= currentStep ? 1 : 0.3 }}
+            className="flex items-center gap-2"
+          >
+            {i < currentStep ? (
+              <CheckCircle2 size={15} className="text-emerald-500 shrink-0" />
+            ) : i === currentStep ? (
+              <Loader2 size={15} className="text-blue-500 shrink-0 animate-spin" />
+            ) : (
+              <div className="w-[15px] h-[15px] rounded-full border-1.5 border-slate-200 shrink-0" />
+            )}
+            <span className={`text-[13px] ${i <= currentStep ? "text-slate-600 font-medium" : "text-slate-300"}`}>
+              {step}
+            </span>
+          </motion.div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function PageIdeasErrorState({ message, onRetry }: { message: string; onRetry: () => void }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-20">
+      <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
+        <AlertCircle size={26} className="text-red-500" />
+      </div>
+      <p className="text-[16px] font-bold text-slate-700 mb-2">Generation Failed</p>
+      <p className="text-[13px] text-slate-500 mb-6 text-center max-w-[400px]">{message}</p>
+      <button
+        onClick={onRetry}
+        className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 text-white text-[13px] font-semibold hover:bg-blue-700 transition-colors"
+      >
+        <RefreshCw size={14} /> Try Again
+      </button>
+    </div>
+  );
+}
+
+function PageIdeasEmptyState({ websiteUrl, onGenerate, generating }: { websiteUrl: string; onGenerate: () => void; generating: boolean }) {
+  return (
+    <div className="flex flex-col items-center justify-center py-16">
+      <motion.div
+        initial={{ scale: 0.8, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+        className="relative mb-6"
+      >
+        <div className="absolute inset-0 bg-blue-100/40 blur-2xl rounded-full" />
+        <div className="relative w-16 h-16 rounded-2xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30">
+          <BarChart3 size={30} className="text-white" />
+        </div>
+      </motion.div>
+      <motion.h3
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="text-[20px] font-bold text-slate-900 mb-2"
+      >
+        Get Your SEO Page Ideas
+      </motion.h3>
+      <motion.p
+        initial={{ opacity: 0, y: 8 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.22 }}
+        className="text-[14px] text-slate-500 text-center max-w-[440px] leading-relaxed mb-6"
+      >
+        We'll analyze <span className="font-semibold text-slate-700">{websiteUrl}</span> and generate 40 SEO page ideas with individual search volume estimates, categorized by tail type and brand alignment.
+      </motion.p>
+      <button
+        onClick={onGenerate}
+        disabled={generating}
+        className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 active:scale-[0.98] transition-all duration-150 disabled:opacity-70 disabled:cursor-not-allowed"
+      >
+        {generating ? (
+          <>
+            <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+              className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+            Generating...
+          </>
+        ) : (
+          <>
+            <Zap size={16} /> Generate Page Ideas
+          </>
+        )}
+      </button>
+    </div>
+  );
+}
+
+function PageIdeaStatCard({ label, value, color, icon }: { label: string; value: number; color: string; icon: React.ReactNode }) {
+  return (
+    <div className="flex items-center gap-2.5 bg-white rounded-xl border border-slate-200/70 px-3.5 py-2.5 shadow-sm">
+      <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${color}`}>
+        {icon}
+      </div>
+      <div className="flex flex-col">
+        <span className="text-[18px] font-extrabold text-slate-900 leading-none tabular-nums">{value}</span>
+        <span className="text-[11px] text-slate-400 leading-tight mt-0.5">{label}</span>
+      </div>
+    </div>
+  );
+}
+
+function VolumeChart({ ideas }: { ideas: PageIdea[] }) {
+  const sorted = [...ideas].sort((a, b) => b.estimated_monthly_volume - a.estimated_monthly_volume);
+  const maxVol = Math.max(...sorted.map(i => i.estimated_monthly_volume), 1);
+  const top20 = sorted.slice(0, 20);
+
+  return (
+    <div className="bg-white rounded-xl border border-slate-200/70 p-4 shadow-sm">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <BarChart3 size={15} className="text-blue-500" />
+          <p className="text-[13px] font-bold text-slate-700">Top 20 Page Ideas by Search Volume</p>
+        </div>
+        <span className="text-[11px] text-slate-400">Monthly searches</span>
+      </div>
+      <div className="flex items-end gap-[3px] h-[120px]">
+        {top20.map((idea, i) => {
+          const heightPct = (idea.estimated_monthly_volume / maxVol) * 100;
+          return (
+            <div key={i} className="flex-1 flex flex-col items-center justify-end group relative" style={{ minWidth: 0 }}>
+              <div className="absolute -top-7 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                <div className="bg-slate-900 text-white text-[10px] font-medium px-2 py-1 rounded-md whitespace-nowrap max-w-[180px] overflow-hidden text-ellipsis">
+                  {idea.target_keyword}: {idea.estimated_monthly_volume.toLocaleString()}/mo
+                </div>
+              </div>
+              <motion.div
+                initial={{ height: 0 }}
+                animate={{ height: `${heightPct}%` }}
+                transition={{ duration: 0.6, delay: i * 0.03, ease: [0.22, 1, 0.36, 1] }}
+                className={`w-full rounded-t-sm ${
+                  idea.tail_type === "short" ? "bg-blue-500" : "bg-emerald-500"
+                }`}
+                style={{ minHeight: 2 }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      <div className="flex items-center gap-4 mt-3 pt-3 border-t border-slate-100">
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-sm bg-blue-500" />
+          <span className="text-[11px] text-slate-500">Short tail</span>
+        </div>
+        <div className="flex items-center gap-1.5">
+          <div className="w-2.5 h-2.5 rounded-sm bg-emerald-500" />
+          <span className="text-[11px] text-slate-500">Long tail</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PageIdeasTab({ audit, onGenerate, generating, error, rateLimited, resetIn }: {
+  audit: AuditData;
+  onGenerate: () => void;
+  generating: boolean;
+  error: string | null;
+  rateLimited: boolean;
+  resetIn: number | undefined;
+}) {
+  const ideas: PageIdea[] = Array.isArray(audit.page_ideas) ? audit.page_ideas : [];
+  const [sortKey, setSortKey] = useState<"volume" | "tail" | "brand" | "intent">("volume");
+
+  const stats = useMemo(() => {
+    const shortTail = ideas.filter(i => i.tail_type === "short").length;
+    const longTail = ideas.filter(i => i.tail_type === "long").length;
+    const onBrand = ideas.filter(i => i.brand_alignment === "on-brand").length;
+    const offBrand = ideas.filter(i => i.brand_alignment === "off-brand").length;
+    const totalVolume = ideas.reduce((sum, i) => sum + (i.estimated_monthly_volume || 0), 0);
+    const capture10 = Math.round(totalVolume * 0.10);
+    return { shortTail, longTail, onBrand, offBrand, totalVolume, capture10, count: ideas.length };
+  }, [ideas]);
+
+  const sortedIdeas = useMemo(() => {
+    const sorted = [...ideas];
+    if (sortKey === "volume") sorted.sort((a, b) => b.estimated_monthly_volume - a.estimated_monthly_volume);
+    else if (sortKey === "tail") sorted.sort((a, b) => a.tail_type.localeCompare(b.tail_type) || b.estimated_monthly_volume - a.estimated_monthly_volume);
+    else if (sortKey === "brand") sorted.sort((a, b) => a.brand_alignment.localeCompare(b.brand_alignment) || b.estimated_monthly_volume - a.estimated_monthly_volume);
+    else if (sortKey === "intent") sorted.sort((a, b) => a.search_intent.localeCompare(b.search_intent) || b.estimated_monthly_volume - a.estimated_monthly_volume);
+    return sorted;
+  }, [ideas, sortKey]);
+
+  if (generating) return <PageIdeasLoadingState />;
+
+  if (rateLimited) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20">
+        <div className="w-14 h-14 rounded-full bg-amber-50 flex items-center justify-center mb-4">
+          <AlertCircle size={26} className="text-amber-500" />
+        </div>
+        <p className="text-[16px] font-bold text-slate-700 mb-2">Rate Limited</p>
+        <p className="text-[13px] text-slate-500 mb-6 text-center max-w-[400px]">
+          You've generated page ideas recently. Please try again in {resetIn ? `${Math.ceil(resetIn / 60)} minutes` : "a moment"}.
+        </p>
+      </div>
+    );
+  }
+
+  if (error) return <PageIdeasErrorState message={error} onRetry={onGenerate} />;
+
+  if (ideas.length === 0) {
+    return <PageIdeasEmptyState websiteUrl={audit.website_url} onGenerate={onGenerate} generating={generating} />;
+  }
+
+  const intentColors: Record<string, string> = {
+    informational: "bg-sky-100 text-sky-700",
+    commercial: "bg-amber-100 text-amber-700",
+    transactional: "bg-emerald-100 text-emerald-700",
+    navigational: "bg-slate-100 text-slate-600",
+  };
+
+  return (
+    <div className="flex flex-col gap-5">
+      {/* Stats row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <PageIdeaStatCard label="Short Tail" value={stats.shortTail} color="bg-blue-50"
+          icon={<Search size={16} className="text-blue-500" />} />
+        <PageIdeaStatCard label="Long Tail" value={stats.longTail} color="bg-emerald-50"
+          icon={<Search size={16} className="text-emerald-500" />} />
+        <PageIdeaStatCard label="On-Brand" value={stats.onBrand} color="bg-violet-50"
+          icon={<Zap size={16} className="text-violet-500" />} />
+        <PageIdeaStatCard label="Off-Brand" value={stats.offBrand} color="bg-orange-50"
+          icon={<Globe size={16} className="text-orange-500" />} />
+      </div>
+
+      {/* Volume summary cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3.5">
+          <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-wider mb-1">Total Potential Volume</p>
+          <p className="text-[24px] font-extrabold text-slate-900 tabular-nums leading-none">
+            {stats.totalVolume.toLocaleString()}<span className="text-[13px] text-slate-400 font-medium">/mo</span>
+          </p>
+        </div>
+        <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 px-4 py-3.5">
+          <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider mb-1">10% Capture / Quarter</p>
+          <p className="text-[24px] font-extrabold text-slate-900 tabular-nums leading-none">
+            {(stats.capture10 * 3).toLocaleString()}<span className="text-[13px] text-slate-400 font-medium">/qtr</span>
+          </p>
+        </div>
+        <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-100 px-4 py-3.5">
+          <p className="text-[11px] font-semibold text-violet-600 uppercase tracking-wider mb-1">Page Ideas Generated</p>
+          <p className="text-[24px] font-extrabold text-slate-900 tabular-nums leading-none">
+            {stats.count}
+          </p>
+        </div>
+      </div>
+
+      {/* Chart */}
+      <VolumeChart ideas={ideas} />
+
+      {/* Sort controls */}
+      <div className="flex items-center gap-2 flex-wrap">
+        <span className="text-[12px] font-semibold text-slate-400">Sort by:</span>
+        {([
+          { key: "volume", label: "Search Volume" },
+          { key: "tail", label: "Tail Type" },
+          { key: "brand", label: "Brand Alignment" },
+          { key: "intent", label: "Search Intent" },
+        ] as const).map(opt => (
+          <button
+            key={opt.key}
+            onClick={() => setSortKey(opt.key)}
+            className={`px-3 py-1.5 rounded-lg text-[12px] font-semibold transition-all duration-200 ${
+              sortKey === opt.key
+                ? "bg-blue-600 text-white shadow-sm shadow-blue-600/25"
+                : "bg-slate-100 text-slate-500 hover:bg-slate-200"
+            }`}
+          >
+            {opt.label}
+          </button>
+        ))}
+        <button
+          onClick={onGenerate}
+          className="ml-auto inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[12px] font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition-all duration-200"
+        >
+          <RefreshCw size={13} /> Regenerate
+        </button>
+      </div>
+
+      {/* Page ideas table */}
+      <div className="bg-white rounded-xl border border-slate-200/70 overflow-hidden shadow-sm">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead>
+              <tr className="border-b border-slate-100 bg-slate-50/50">
+                <th className="text-left px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">#</th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Page Title</th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Keyword</th>
+                <th className="text-right px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider">Volume/mo</th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden sm:table-cell">Tail</th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Brand</th>
+                <th className="text-left px-4 py-2.5 text-[11px] font-bold text-slate-400 uppercase tracking-wider hidden md:table-cell">Intent</th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedIdeas.map((idea, i) => (
+                <tr key={i} className="border-b border-slate-50 hover:bg-slate-50/50 transition-colors">
+                  <td className="px-4 py-2.5 text-[12px] text-slate-400 font-medium tabular-nums">{i + 1}</td>
+                  <td className="px-4 py-2.5 text-[13px] font-medium text-slate-800 max-w-[260px]">{idea.page_title}</td>
+                  <td className="px-4 py-2.5 text-[12px] text-slate-500 hidden sm:table-cell max-w-[180px] truncate">{idea.target_keyword}</td>
+                  <td className="px-4 py-2.5 text-right text-[13px] font-bold text-slate-700 tabular-nums whitespace-nowrap">{idea.estimated_monthly_volume.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 hidden sm:table-cell">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      idea.tail_type === "short" ? "bg-blue-100 text-blue-700" : "bg-emerald-100 text-emerald-700"
+                    }`}>
+                      {idea.tail_type === "short" ? "Short" : "Long"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 hidden md:table-cell">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                      idea.brand_alignment === "on-brand" ? "bg-violet-100 text-violet-700" : "bg-orange-100 text-orange-700"
+                    }`}>
+                      {idea.brand_alignment === "on-brand" ? "On-Brand" : "Off-Brand"}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2.5 hidden md:table-cell">
+                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${intentColors[idea.search_intent] || "bg-slate-100 text-slate-600"}`}>
+                      {idea.search_intent}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function OpportunityTab() {
   return (
     <div className="flex flex-col items-center justify-center py-20">
@@ -1924,7 +2296,7 @@ function OpportunityTab() {
 // ─── Main Page ───────────────────────────────────────────────────────────────
 export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<TabId>("brand");
+  const [activeTab, setActiveTab] = useState<TabId>("page-ideas");
   const [audit, setAudit] = useState<AuditData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generatingQueries, setGeneratingQueries] = useState(false);
@@ -1946,6 +2318,10 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
   const [volumeResetIn, setVolumeResetIn] = useState<number | undefined>();
   const [volumeTime, setVolumeTime] = useState<number | null>(null);
   const [competitionKeywords, setCompetitionKeywords] = useState<string[]>([]);
+  const [generatingPageIdeas, setGeneratingPageIdeas] = useState(false);
+  const [pageIdeasError, setPageIdeasError] = useState<string | null>(null);
+  const [pageIdeasRateLimited, setPageIdeasRateLimited] = useState(false);
+  const [pageIdeasResetIn, setPageIdeasResetIn] = useState<number | undefined>();
 
   const loadAudit = useCallback(async () => {
     try {
@@ -2056,6 +2432,25 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
     }
   }, [params.id]);
 
+  const generatePageIdeas = useCallback(async () => {
+    setGeneratingPageIdeas(true);
+    setPageIdeasError(null);
+    setPageIdeasRateLimited(false);
+    try {
+      const data = await callFreeAudit("generate-page-ideas", { audit_id: params.id });
+      setAudit(data.data);
+    } catch (err: any) {
+      if (err.rateLimited) {
+        setPageIdeasRateLimited(true);
+        setPageIdeasResetIn(err.resetIn);
+      } else {
+        setPageIdeasError(err.message || "Failed to generate page ideas");
+      }
+    } finally {
+      setGeneratingPageIdeas(false);
+    }
+  }, [params.id]);
+
   const handleSearch = useCallback(async (term: string): Promise<{ results?: SerpResult[] }> => {
     return await callFreeAudit("search-serp", {
       audit_id: params.id,
@@ -2144,6 +2539,16 @@ export default function FreeAuditPage({ params }: { params: { id: string } }) {
             exit={{ opacity: 0, y: -8 }}
             transition={{ duration: 0.25 }}
           >
+            {activeTab === "page-ideas" && (
+              <PageIdeasTab
+                audit={audit}
+                onGenerate={generatePageIdeas}
+                generating={generatingPageIdeas}
+                error={pageIdeasError}
+                rateLimited={pageIdeasRateLimited}
+                resetIn={pageIdeasResetIn}
+              />
+            )}
             {activeTab === "brand" && (
               <BrandTab
                 audit={audit}

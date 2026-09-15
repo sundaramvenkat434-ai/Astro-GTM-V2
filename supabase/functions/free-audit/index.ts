@@ -1568,6 +1568,153 @@ Deno.serve(async (req: Request) => {
       return jsonResponse({ success: true, data: updated });
     }
 
+    // ═══════════════════════════════════════════════════════════
+    // ACTION: generate-page-ideas — scrape website, call AI for 40 SEO page ideas with volumes
+    // ═══════════════════════════════════════════════════════════
+    if (action === "generate-page-ideas") {
+      const rl = await checkRateLimit(supabase, clientIP, "generate-search-queries", settings);
+      if (!rl.allowed) {
+        return jsonResponse({
+          error: "Too many requests. Please try again later.",
+          rate_limited: true,
+          reset_in_seconds: rl.resetIn,
+        }, 429);
+      }
+
+      const { audit_id } = body;
+      if (!audit_id) return jsonResponse({ error: "audit_id is required" }, 400);
+
+      const { data: audit, error: fetchError } = await supabase
+        .from("free_audits")
+        .select("*")
+        .eq("id", audit_id)
+        .maybeSingle();
+
+      if (fetchError) return jsonResponse({ error: "Database error", detail: fetchError.message }, 500);
+      if (!audit) return jsonResponse({ error: "Audit not found" }, 404);
+
+      const sourceUrl = audit.website_url;
+
+      // Step 1: Fetch website if no scraped content
+      let contentToAnalyze: string = audit.scraped_content || "";
+      if (!contentToAnalyze || contentToAnalyze.length < 50) {
+        const fetchResult = await fetchWebsiteContent(sourceUrl);
+        if (!fetchResult.ok) {
+          return jsonResponse({ error: fetchResult.error.includes("HTTP") ? `Website returned an error (${fetchResult.error}).` : "Failed to connect to the website. The URL may be unreachable." }, 400);
+        }
+        contentToAnalyze = extractTextFromHtml(fetchResult.html, sourceUrl);
+        if (!contentToAnalyze || contentToAnalyze.length < 50) {
+          return jsonResponse({ error: "Insufficient content extracted. The page may be empty or require JavaScript." }, 400);
+        }
+      }
+
+      // Step 2: Load prompt and model settings
+      const { data: settingsRows } = await supabase
+        .from("admin_settings")
+        .select("key, value")
+        .in("key", [
+          "ai_model_brand_analyzer",
+          "ai_max_tokens_brand_analyzer_prompt",
+          "ai_provider_brand_analyzer_prompt",
+        ]);
+
+      const settingsMap: Record<string, string> = {};
+      for (const row of settingsRows || []) {
+        settingsMap[row.key] = row.value;
+      }
+
+      const model = settingsMap["ai_model_brand_analyzer"] || "gpt-4o-mini";
+      const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
+      const provider = getProvider(settingsMap, "brand_analyzer_prompt");
+
+      const systemPrompt = `You are an expert SEO content strategist. Given website content, generate exactly 40 SEO page ideas that would help this business attract organic search traffic.
+
+For each page idea, provide:
+- page_title: a compelling, SEO-optimized page title (max 60 chars)
+- target_keyword: the primary search query this page would target
+- estimated_monthly_volume: your best estimate of monthly search volume for this keyword (integer)
+- tail_type: "short" (1-2 word queries) or "long" (3+ word queries)
+- brand_alignment: "on-brand" (directly related to the business's products/services) or "off-brand" (topically adjacent but builds audience/authority)
+- search_intent: one of "informational", "commercial", "transactional", "navigational"
+
+Rules:
+- Generate EXACTLY 40 page ideas, no more, no less.
+- Mix short tail and long tail keywords realistically.
+- Mix on-brand and off-brand topics for a well-rounded content strategy.
+- Vary search intents appropriately.
+- Base page ideas on the actual business described in the website content.
+- Do not use the company's brand name in target_keyword unless it's a branded search.
+- Make each page idea genuinely distinct.
+
+Return ONLY valid JSON, no markdown or code fences:
+{
+  "page_ideas": [
+    {
+      "page_title": "...",
+      "target_keyword": "...",
+      "estimated_monthly_volume": 1200,
+      "tail_type": "short",
+      "brand_alignment": "on-brand",
+      "search_intent": "informational"
+    }
+  ]
+}`;
+
+      const userMessageContent = `Analyze the following website content and generate 40 SEO page ideas:\n\n${contentToAnalyze.slice(0, 8000)}`;
+
+      let aiResult;
+      try {
+        aiResult = await callAI({
+          provider,
+          model,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userMessageContent },
+          ],
+          temperature: 0.7,
+          maxTokens,
+          responseFormat: { type: "json_object" },
+          title: "AstroRank Free Audit",
+        });
+      } catch (apiErr: any) {
+        return jsonResponse({ error: "Failed to reach the AI service." }, 502);
+      }
+
+      const rawContent: string = aiResult.content || "";
+      if (!rawContent) {
+        return jsonResponse({ error: "AI returned an empty response." }, 502);
+      }
+
+      const extractionResult = extractJsonFromContent(rawContent);
+      if (!extractionResult.ok) {
+        return jsonResponse({ error: "Failed to parse AI response as JSON." }, 502);
+      }
+
+      const parsed = extractionResult.data as Record<string, unknown>;
+      const pageIdeas = Array.isArray(parsed.page_ideas) ? parsed.page_ideas : [];
+
+      const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent };
+      const rawOutput = aiResult.raw;
+
+      const { data: updated, error: saveError } = await supabase
+        .from("free_audits")
+        .update({
+          page_ideas: pageIdeas,
+          page_ideas_raw_input: rawInput,
+          page_ideas_raw_output: rawOutput,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", audit_id)
+        .select()
+        .single();
+
+      if (saveError) {
+        return jsonResponse({ error: "Failed to save page ideas", detail: saveError.message }, 500);
+      }
+
+      return jsonResponse({ success: true, data: updated });
+    }
+
     return jsonResponse({ error: `Unknown action: ${action}` }, 400);
   } catch (err) {
     return jsonResponse({ error: (err as Error).message || "unknown error" }, 500);
