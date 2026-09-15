@@ -1627,24 +1627,26 @@ Deno.serve(async (req: Request) => {
       const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
       const provider = getProvider(settingsMap, "brand_analyzer_prompt");
 
-      const systemPrompt = `You are an expert SEO content strategist. Given website content, generate exactly 40 SEO page ideas that would help this business attract organic search traffic.
+      const systemPrompt = `You are an expert SEO content strategist and keyword researcher. Given website content, generate exactly 40 SEO page ideas that would help this business attract organic search traffic.
 
 For each page idea, provide:
 - page_title: a compelling, SEO-optimized page title (max 60 chars)
-- target_keyword: the primary search query this page would target
-- estimated_monthly_volume: your best estimate of monthly search volume for this keyword (integer)
+- target_keyword: the single most concise and accurate search query this page would target. This must be the exact phrase a real person would type into Google. Keep it tight — typically 2-6 words. Do not pad with unnecessary words. Do not use the company's brand name unless it is a genuinely branded search.
+- estimated_monthly_volume: a realistic, specific estimate of monthly search volume for this exact keyword phrase (integer). You MUST assign a DIFFERENT volume to each idea — no two ideas should share the same volume. Volumes must reflect real-world SEO data: head terms (1-2 words) typically have 5,000-50,000+ monthly searches; mid-tail (3-4 words) typically 500-5,000; long-tail (5+ words) typically 50-500. Consider competition and niche — narrower niches have lower volumes. Spread volumes across the full range so the data looks realistic, not uniform.
 - tail_type: "short" (1-2 word queries) or "long" (3+ word queries)
 - brand_alignment: "on-brand" (directly related to the business's products/services) or "off-brand" (topically adjacent but builds audience/authority)
 - search_intent: one of "informational", "commercial", "transactional", "navigational"
 
 Rules:
 - Generate EXACTLY 40 page ideas, no more, no less.
-- Mix short tail and long tail keywords realistically.
-- Mix on-brand and off-brand topics for a well-rounded content strategy.
-- Vary search intents appropriately.
-- Base page ideas on the actual business described in the website content.
-- Do not use the company's brand name in target_keyword unless it's a branded search.
-- Make each page idea genuinely distinct.
+- Every target_keyword must be unique — no duplicates or near-duplicates.
+- Every estimated_monthly_volume must be a DIFFERENT integer. No repeated values.
+- Distribute volumes realistically: roughly 20% should be high-volume (3,000+), 30% mid-volume (500-3,000), 30% low-volume (100-500), and 20% very low (under 100). This creates a realistic long-tail distribution.
+- Mix short tail (~30%) and long tail (~70%) keywords.
+- Mix on-brand (~60%) and off-brand (~40%) topics.
+- Vary search intents realistically: informational should be the largest group (~50%), commercial ~25%, transactional ~15%, navigational ~10%.
+- Base all page ideas on the actual business described in the website content.
+- Make each target_keyword the most concise, accurate phrase that captures the search intent — not a padded or generic version.
 
 Return ONLY valid JSON, no markdown or code fences:
 {
@@ -1660,7 +1662,7 @@ Return ONLY valid JSON, no markdown or code fences:
   ]
 }`;
 
-      const userMessageContent = `Analyze the following website content and generate 40 SEO page ideas:\n\n${contentToAnalyze.slice(0, 8000)}`;
+      const userMessageContent = `Analyze the following website content and generate 40 SEO page ideas with unique, realistic search volumes. Remember: every volume must be a different integer, and every target_keyword must be the most concise search phrase possible.\n\nWebsite content:\n${contentToAnalyze.slice(0, 8000)}`;
 
       let aiResult;
       try {

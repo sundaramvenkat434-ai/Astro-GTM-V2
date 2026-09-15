@@ -2097,9 +2097,27 @@ function PageIdeasTab({ audit, onGenerate, generating, error, rateLimited, reset
     const longTail = ideas.filter(i => i.tail_type === "long").length;
     const onBrand = ideas.filter(i => i.brand_alignment === "on-brand").length;
     const offBrand = ideas.filter(i => i.brand_alignment === "off-brand").length;
-    const totalVolume = ideas.reduce((sum, i) => sum + (i.estimated_monthly_volume || 0), 0);
+    const volumes = ideas.map(i => i.estimated_monthly_volume || 0).sort((a, b) => a - b);
+    const totalVolume = volumes.reduce((sum, v) => sum + v, 0);
+    const avgVolume = volumes.length > 0 ? Math.round(totalVolume / volumes.length) : 0;
+    const medianVolume = volumes.length > 0
+      ? (volumes.length % 2 === 0
+        ? Math.round((volumes[volumes.length / 2 - 1] + volumes[volumes.length / 2]) / 2)
+        : volumes[Math.floor(volumes.length / 2)])
+      : 0;
     const capture10 = Math.round(totalVolume * 0.10);
-    return { shortTail, longTail, onBrand, offBrand, totalVolume, capture10, count: ideas.length };
+    const quarterlyCapture = capture10 * 3;
+    const informational = ideas.filter(i => i.search_intent === "informational").length;
+    const commercial = ideas.filter(i => i.search_intent === "commercial").length;
+    const transactional = ideas.filter(i => i.search_intent === "transactional").length;
+    const navigational = ideas.filter(i => i.search_intent === "navigational").length;
+    const topIdea = [...ideas].sort((a, b) => b.estimated_monthly_volume - a.estimated_monthly_volume)[0];
+    return {
+      shortTail, longTail, onBrand, offBrand,
+      totalVolume, avgVolume, medianVolume, capture10, quarterlyCapture,
+      informational, commercial, transactional, navigational,
+      topIdea, count: ideas.length,
+    };
   }, [ideas]);
 
   const sortedIdeas = useMemo(() => {
@@ -2154,6 +2172,18 @@ function PageIdeasTab({ audit, onGenerate, generating, error, rateLimited, reset
           icon={<Globe size={16} className="text-orange-500" />} />
       </div>
 
+      {/* Intent breakdown row */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <PageIdeaStatCard label="Informational" value={stats.informational} color="bg-sky-50"
+          icon={<BarChart3 size={16} className="text-sky-500" />} />
+        <PageIdeaStatCard label="Commercial" value={stats.commercial} color="bg-amber-50"
+          icon={<BarChart3 size={16} className="text-amber-500" />} />
+        <PageIdeaStatCard label="Transactional" value={stats.transactional} color="bg-emerald-50"
+          icon={<BarChart3 size={16} className="text-emerald-500" />} />
+        <PageIdeaStatCard label="Navigational" value={stats.navigational} color="bg-slate-100"
+          icon={<BarChart3 size={16} className="text-slate-500" />} />
+      </div>
+
       {/* Volume summary cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
         <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-100 px-4 py-3.5">
@@ -2161,18 +2191,24 @@ function PageIdeasTab({ audit, onGenerate, generating, error, rateLimited, reset
           <p className="text-[24px] font-extrabold text-slate-900 tabular-nums leading-none">
             {stats.totalVolume.toLocaleString()}<span className="text-[13px] text-slate-400 font-medium">/mo</span>
           </p>
+          <div className="flex items-center gap-3 mt-1.5">
+            <span className="text-[10px] text-slate-400">Avg {stats.avgVolume.toLocaleString()}/mo</span>
+            <span className="text-[10px] text-slate-400">Median {stats.medianVolume.toLocaleString()}/mo</span>
+          </div>
         </div>
         <div className="bg-gradient-to-br from-emerald-50 to-teal-50 rounded-xl border border-emerald-100 px-4 py-3.5">
           <p className="text-[11px] font-semibold text-emerald-600 uppercase tracking-wider mb-1">10% Capture / Quarter</p>
           <p className="text-[24px] font-extrabold text-slate-900 tabular-nums leading-none">
-            {(stats.capture10 * 3).toLocaleString()}<span className="text-[13px] text-slate-400 font-medium">/qtr</span>
+            {stats.quarterlyCapture.toLocaleString()}<span className="text-[13px] text-slate-400 font-medium">/qtr</span>
           </p>
+          <span className="text-[10px] text-slate-400 mt-1.5 inline-block">{stats.capture10.toLocaleString()} visits/mo at 10% capture</span>
         </div>
         <div className="bg-gradient-to-br from-violet-50 to-purple-50 rounded-xl border border-violet-100 px-4 py-3.5">
-          <p className="text-[11px] font-semibold text-violet-600 uppercase tracking-wider mb-1">Page Ideas Generated</p>
-          <p className="text-[24px] font-extrabold text-slate-900 tabular-nums leading-none">
-            {stats.count}
+          <p className="text-[11px] font-semibold text-violet-600 uppercase tracking-wider mb-1">Top Opportunity</p>
+          <p className="text-[14px] font-bold text-slate-900 leading-tight mt-0.5 max-w-[200px] truncate" title={stats.topIdea?.target_keyword}>
+            {stats.topIdea?.target_keyword || "—"}
           </p>
+          <span className="text-[11px] text-slate-500 mt-0.5 inline-block">{stats.topIdea?.estimated_monthly_volume.toLocaleString() || 0} searches/mo</span>
         </div>
       </div>
 
