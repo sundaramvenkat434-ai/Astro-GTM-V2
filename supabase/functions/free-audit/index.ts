@@ -1627,12 +1627,19 @@ Deno.serve(async (req: Request) => {
       const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
       const provider = getProvider(settingsMap, "brand_analyzer_prompt");
 
-      const systemPrompt = `You are an expert SEO content strategist and keyword researcher. Given website content, generate exactly 40 SEO page ideas that would help this business attract organic search traffic.
+      const systemPrompt = `You are an expert SEO content strategist and keyword researcher who uses Semrush-style keyword volume data. Given website content, generate exactly 40 SEO page ideas that would help this business attract organic search traffic.
 
 For each page idea, provide:
 - page_title: a compelling, SEO-optimized page title (max 60 chars)
 - target_keyword: the single most concise and accurate search query this page would target. This must be the exact phrase a real person would type into Google. Keep it tight — typically 2-6 words. Do not pad with unnecessary words. Do not use the company's brand name unless it is a genuinely branded search.
-- estimated_monthly_volume: a realistic, specific estimate of monthly search volume for this exact keyword phrase (integer). You MUST assign a DIFFERENT volume to each idea — no two ideas should share the same volume. Volumes must reflect real-world SEO data: head terms (1-2 words) typically have 5,000-50,000+ monthly searches; mid-tail (3-4 words) typically 500-5,000; long-tail (5+ words) typically 50-500. Consider competition and niche — narrower niches have lower volumes. Spread volumes across the full range so the data looks realistic, not uniform.
+- estimated_monthly_volume: your best estimate of the US monthly search volume for this exact keyword phrase, as Semrush would report it. Use these REALISTIC Semrush-style benchmarks:
+  * Broad head terms (1-2 words, very common): 1,000-8,000/mo. Only a tiny handful of the most generic terms in a niche exceed this.
+  * Common commercial terms (2-3 words): 300-2,000/mo.
+  * Specific/long-tail terms (3-5 words): 50-500/mo.
+  * Very specific long-tail (5+ words): 10-150/mo.
+  * Most keywords in a typical content strategy for a small-to-mid business fall in the 30-800 range. Volumes above 3,000 should be rare — at most 2-3 out of 40.
+  * Be conservative. When uncertain, estimate lower rather than higher. Semrush volumes for niche B2B or local businesses are almost always lower than people expect.
+  * You MUST assign a DIFFERENT volume to each idea — no two ideas should share the same volume.
 - tail_type: "short" (1-2 word queries) or "long" (3+ word queries)
 - brand_alignment: "on-brand" (directly related to the business's products/services) or "off-brand" (topically adjacent but builds audience/authority)
 - search_intent: one of "informational", "commercial", "transactional", "navigational"
@@ -1641,7 +1648,7 @@ Rules:
 - Generate EXACTLY 40 page ideas, no more, no less.
 - Every target_keyword must be unique — no duplicates or near-duplicates.
 - Every estimated_monthly_volume must be a DIFFERENT integer. No repeated values.
-- Distribute volumes realistically: roughly 20% should be high-volume (3,000+), 30% mid-volume (500-3,000), 30% low-volume (100-500), and 20% very low (under 100). This creates a realistic long-tail distribution.
+- Distribute volumes in a realistic Semrush-style long-tail curve: only 2-3 ideas above 2,000; 5-7 ideas in 500-2,000; 10-12 ideas in 100-500; 15-18 ideas in 30-100; 5-8 ideas below 30. The vast majority should be under 500.
 - Mix short tail (~30%) and long tail (~70%) keywords.
 - Mix on-brand (~60%) and off-brand (~40%) topics.
 - Vary search intents realistically: informational should be the largest group (~50%), commercial ~25%, transactional ~15%, navigational ~10%.
@@ -1654,7 +1661,7 @@ Return ONLY valid JSON, no markdown or code fences:
     {
       "page_title": "...",
       "target_keyword": "...",
-      "estimated_monthly_volume": 1200,
+      "estimated_monthly_volume": 320,
       "tail_type": "short",
       "brand_alignment": "on-brand",
       "search_intent": "informational"
@@ -1662,7 +1669,7 @@ Return ONLY valid JSON, no markdown or code fences:
   ]
 }`;
 
-      const userMessageContent = `Analyze the following website content and generate 40 SEO page ideas with unique, realistic search volumes. Remember: every volume must be a different integer, and every target_keyword must be the most concise search phrase possible.\n\nWebsite content:\n${contentToAnalyze.slice(0, 8000)}`;
+      const userMessageContent = `Analyze the following website content and generate 40 SEO page ideas with unique, realistic, Semrush-style US monthly search volumes. Remember: every volume must be a different integer, most keywords should be under 500/mo, and every target_keyword must be the most concise search phrase possible.\n\nWebsite content:\n${contentToAnalyze.slice(0, 8000)}`;
 
       let aiResult;
       try {
@@ -1693,7 +1700,32 @@ Return ONLY valid JSON, no markdown or code fences:
       }
 
       const parsed = extractionResult.data as Record<string, unknown>;
-      const pageIdeas = Array.isArray(parsed.page_ideas) ? parsed.page_ideas : [];
+      const rawPageIdeas: any[] = Array.isArray(parsed.page_ideas) ? parsed.page_ideas : [];
+
+      // Post-process: deduplicate volumes and clamp to realistic Semrush ranges
+      const seenVolumes = new Set<number>();
+      const seenKeywords = new Set<string>();
+      const pageIdeas = rawPageIdeas
+        .filter((idea: any) => {
+          if (!idea || typeof idea !== "object") return false;
+          const kw = (idea.target_keyword || "").toLowerCase().trim();
+          if (!kw || seenKeywords.has(kw)) return false;
+          seenKeywords.add(kw);
+          return true;
+        })
+        .map((idea: any) => {
+          let vol = Math.max(1, Math.round(Number(idea.estimated_monthly_volume) || 0));
+          // Clamp to realistic Semrush range: 1-12000
+          if (vol > 12000) vol = Math.floor(8000 + Math.random() * 4000);
+          if (vol < 1) vol = 1;
+          // Deduplicate: if volume already used, find nearest unused value
+          while (seenVolumes.has(vol)) {
+            vol += vol > 50 ? -1 : 1;
+            if (vol < 1) vol = 1;
+          }
+          seenVolumes.add(vol);
+          return { ...idea, estimated_monthly_volume: vol };
+        });
 
       const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent };
       const rawOutput = aiResult.raw;
