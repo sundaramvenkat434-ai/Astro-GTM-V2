@@ -46,12 +46,14 @@ interface PageIdea {
   tail_type: "short" | "long";
   brand_alignment: "on-brand" | "off-brand";
   search_intent: "informational" | "commercial" | "transactional" | "navigational";
+  target_country?: string;
 }
 
 interface AuditData {
   id: string;
   website_url: string;
   status: string;
+  target_country?: string;
   brand_analysis: BrandAnalysis | Record<string, unknown>;
   search_queries: string[];
   serp_results: SerpResult[];
@@ -2042,7 +2044,7 @@ function VolumeChart({ ideas }: { ideas: PageIdea[] }) {
           <BarChart3 size={15} className="text-blue-500" />
           <p className="text-[13px] font-bold text-slate-700">Top 20 Page Ideas by Search Volume</p>
         </div>
-        <span className="text-[11px] text-slate-400">Monthly searches</span>
+        <span className="text-[11px] text-slate-400">Monthly searches (est.)</span>
       </div>
       <div className="flex items-end gap-[3px] h-[120px]">
         {top20.map((idea, i) => {
@@ -2158,8 +2160,21 @@ function PageIdeasTab({ audit, onGenerate, generating, error, rateLimited, reset
     navigational: "bg-slate-100 text-slate-600",
   };
 
+  const COUNTRY_NAMES: Record<string, string> = {
+    us: "United States", gb: "United Kingdom", ca: "Canada", au: "Australia", in: "India",
+    de: "Germany", fr: "France", es: "Spain", it: "Italy", br: "Brazil", mx: "Mexico",
+    jp: "Japan", nl: "Netherlands", sg: "Singapore", ae: "UAE", za: "South Africa",
+  };
+  const countryName = COUNTRY_NAMES[audit.target_country || "us"] || "United States";
+
   return (
     <div className="flex flex-col gap-5">
+      {/* Country badge */}
+      <div className="flex items-center gap-2 text-[12px] text-slate-500">
+        <Globe size={14} className="text-slate-400" />
+        <span>Search volumes are estimated for <span className="font-semibold text-slate-700">{countryName}</span></span>
+      </div>
+
       {/* Stats row */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
         <PageIdeaStatCard label="Short Tail" value={stats.shortTail} color="bg-blue-50"

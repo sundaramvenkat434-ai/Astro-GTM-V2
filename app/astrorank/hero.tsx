@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
-import { ArrowRight, TrendingUp, Search, MousePointer, Zap } from "lucide-react";
+import { ArrowRight, TrendingUp, Search, MousePointer, Zap, Globe } from "lucide-react";
 import SpaceBg from "./space-bg";
 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
@@ -1008,7 +1008,19 @@ export default function AstroRankHero() {
   const [email, setEmail] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [targetCountry, setTargetCountry] = useState("us");
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const COUNTRIES = [
+    { code: "us", label: "United States" }, { code: "gb", label: "United Kingdom" },
+    { code: "ca", label: "Canada" }, { code: "au", label: "Australia" },
+    { code: "in", label: "India" }, { code: "de", label: "Germany" },
+    { code: "fr", label: "France" }, { code: "es", label: "Spain" },
+    { code: "it", label: "Italy" }, { code: "br", label: "Brazil" },
+    { code: "mx", label: "Mexico" }, { code: "jp", label: "Japan" },
+    { code: "nl", label: "Netherlands" }, { code: "sg", label: "Singapore" },
+    { code: "ae", label: "UAE" }, { code: "za", label: "South Africa" },
+  ];
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -1029,7 +1041,7 @@ export default function AstroRankHero() {
           "Content-Type": "application/json",
           Authorization: `Bearer ${supabaseAnonKey}`,
         },
-        body: JSON.stringify({ action: "create", website_url: email }),
+        body: JSON.stringify({ action: "create", website_url: email, target_country: targetCountry }),
       });
 
       const data = await res.json();
@@ -1094,24 +1106,38 @@ export default function AstroRankHero() {
 
             <motion.form onSubmit={handleSubmit} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3, duration: 0.5 }}
-              className="w-full max-w-[460px] flex flex-col sm:flex-row gap-2.5 mb-2">
-              <input ref={inputRef} type="text" value={email} onChange={e => { setEmail(e.target.value); setSubmitError(null); }}
-                placeholder="yourwebsite.com" disabled={submitting}
-                className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-[14px] placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm transition-all duration-200 disabled:opacity-60" />
-              <button type="submit" disabled={submitting}
-                className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 active:scale-[0.98] transition-all duration-150 whitespace-nowrap ring-1 ring-blue-700/20 disabled:opacity-70 disabled:cursor-not-allowed">
-                {submitting ? (
-                  <>
-                    <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
-                      className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    Get FREE Audit <ArrowRight size={14} strokeWidth={2.5} />
-                  </>
-                )}
-              </button>
+              className="w-full max-w-[460px] flex flex-col gap-2.5 mb-2">
+              <div className="flex flex-col sm:flex-row gap-2.5">
+                <input ref={inputRef} type="text" value={email} onChange={e => { setEmail(e.target.value); setSubmitError(null); }}
+                  placeholder="yourwebsite.com" disabled={submitting}
+                  className="flex-1 px-4 py-3 rounded-xl border border-slate-200 text-slate-800 text-[14px] placeholder:text-slate-400 bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 shadow-sm transition-all duration-200 disabled:opacity-60" />
+                <button type="submit" disabled={submitting}
+                  className="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white text-[14px] font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 active:scale-[0.98] transition-all duration-150 whitespace-nowrap ring-1 ring-blue-700/20 disabled:opacity-70 disabled:cursor-not-allowed">
+                  {submitting ? (
+                    <>
+                      <motion.div animate={{ rotate: 360 }} transition={{ duration: 0.8, repeat: Infinity, ease: "linear" }}
+                        className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full" />
+                      Starting...
+                    </>
+                  ) : (
+                    <>
+                      Get FREE Audit <ArrowRight size={14} strokeWidth={2.5} />
+                    </>
+                  )}
+                </button>
+              </div>
+              <div className="flex items-center gap-2">
+                <Globe size={14} className="text-slate-400 shrink-0" />
+                <span className="text-[12px] text-slate-400 font-medium whitespace-nowrap">Target country:</span>
+                <select
+                  value={targetCountry}
+                  onChange={e => setTargetCountry(e.target.value)}
+                  disabled={submitting}
+                  className="flex-1 px-3 py-1.5 rounded-lg border border-slate-200 text-slate-700 text-[12px] bg-white focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400 transition-all duration-200 disabled:opacity-60 cursor-pointer"
+                >
+                  {COUNTRIES.map(c => <option key={c.code} value={c.code}>{c.label}</option>)}
+                </select>
+              </div>
             </motion.form>
             {submitError && (
               <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}

@@ -578,7 +578,7 @@ Deno.serve(async (req: Request) => {
         }, 429);
       }
 
-      let { website_url } = body;
+      let { website_url, target_country } = body;
       if (!website_url) return jsonResponse({ error: "website_url is required" }, 400);
 
       // Normalize URL
@@ -592,9 +592,12 @@ Deno.serve(async (req: Request) => {
         return jsonResponse({ error: `Invalid URL: "${website_url}"` }, 400);
       }
 
+      const VALID_COUNTRIES = ["us","gb","ca","au","in","de","fr","es","it","br","mx","jp","nl","sg","ae","za"];
+      const country = (typeof target_country === "string" && VALID_COUNTRIES.includes(target_country.toLowerCase())) ? target_country.toLowerCase() : "us";
+
       const { data: audit, error } = await supabase
         .from("free_audits")
-        .insert({ website_url, status: "pending" })
+        .insert({ website_url, status: "pending", target_country: country })
         .select()
         .single();
 
@@ -1476,12 +1479,13 @@ Deno.serve(async (req: Request) => {
       }
 
       // ── All validation passed — calculate volumes ──────────────
-      // Determine country factor deterministically from audit's existing geography field
-      const brandAnalysis = audit.brand_analysis as Record<string, unknown> | null;
-      const geography = brandAnalysis && typeof brandAnalysis === "object" && typeof (brandAnalysis as Record<string, unknown>).primary_geography === "string"
-        ? (brandAnalysis as Record<string, unknown>).primary_geography as string
-        : "";
-      const countryFactor = geography && geography.trim().length > 0 ? 1.0 : 1.0;
+      // Scale volumes based on the audit's target country
+      const COUNTRY_VOLUME_FACTORS: Record<string, number> = {
+        us: 1.0, gb: 0.28, ca: 0.12, au: 0.11, in: 0.65, de: 0.30, fr: 0.30,
+        es: 0.22, it: 0.25, br: 0.25, mx: 0.18, jp: 0.55, nl: 0.10, sg: 0.06, ae: 0.08, za: 0.07,
+      };
+      const targetCountry = typeof audit.target_country === "string" && audit.target_country ? audit.target_country : "us";
+      const countryFactor = COUNTRY_VOLUME_FACTORS[targetCountry] ?? 1.0;
 
       const estimates: Record<string, unknown>[] = [];
 
@@ -1627,6 +1631,22 @@ Deno.serve(async (req: Request) => {
       const maxTokens = parseInt(settingsMap["ai_max_tokens_brand_analyzer_prompt"]) || 8000;
       const provider = getProvider(settingsMap, "brand_analyzer_prompt");
 
+      const targetCountry = typeof audit.target_country === "string" && audit.target_country ? audit.target_country : "us";
+      const COUNTRY_VOLUME_FACTORS: Record<string, number> = {
+        us: 1.0, gb: 0.28, ca: 0.12, au: 0.11, in: 0.65, de: 0.30, fr: 0.30,
+        es: 0.22, it: 0.25, br: 0.25, mx: 0.18, jp: 0.55, nl: 0.10, sg: 0.06, ae: 0.08, za: 0.07,
+      };
+      const countryFactor = COUNTRY_VOLUME_FACTORS[targetCountry] ?? 1.0;
+      const COUNTRY_NAMES: Record<string, string> = {
+        us: "United States", gb: "United Kingdom", ca: "Canada", au: "Australia", in: "India",
+        de: "Germany", fr: "France", es: "Spain", it: "Italy", br: "Brazil", mx: "Mexico",
+        jp: "Japan", nl: "Netherlands", sg: "Singapore", ae: "UAE", za: "South Africa",
+      };
+      const countryName = COUNTRY_NAMES[targetCountry] || "United States";
+      const countryLabel = countryFactor < 1.0
+        ? `${countryName} (volumes are ~${Math.round(countryFactor * 100)}% of US volumes)`
+        : countryName;
+
       const systemPrompt = `You are an expert SEO content strategist and keyword researcher who uses Semrush-style keyword volume data. Given website content, generate exactly 40 SEO page ideas that would help this business attract organic search traffic.
 
 For each page idea, provide:
@@ -1702,7 +1722,7 @@ Return ONLY valid JSON, no markdown or code fences:
       const parsed = extractionResult.data as Record<string, unknown>;
       const rawPageIdeas: any[] = Array.isArray(parsed.page_ideas) ? parsed.page_ideas : [];
 
-      // Post-process: deduplicate volumes and clamp to realistic Semrush ranges
+      // Post-process: deduplicate volumes, clamp to realistic Semrush ranges, and scale by country factor
       const seenVolumes = new Set<number>();
       const seenKeywords = new Set<string>();
       const pageIdeas = rawPageIdeas
@@ -1718,13 +1738,15 @@ Return ONLY valid JSON, no markdown or code fences:
           // Clamp to realistic Semrush range: 1-12000
           if (vol > 12000) vol = Math.floor(8000 + Math.random() * 4000);
           if (vol < 1) vol = 1;
+          // Scale by country factor
+          vol = Math.max(1, Math.round(vol * countryFactor));
           // Deduplicate: if volume already used, find nearest unused value
           while (seenVolumes.has(vol)) {
             vol += vol > 50 ? -1 : 1;
             if (vol < 1) vol = 1;
           }
           seenVolumes.add(vol);
-          return { ...idea, estimated_monthly_volume: vol };
+          return { ...idea, estimated_monthly_volume: vol, target_country: targetCountry };
         });
 
       const rawInput = { model, system_prompt: systemPrompt, user_message: userMessageContent };
