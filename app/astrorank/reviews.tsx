@@ -101,7 +101,7 @@ export default function ReviewsSection() {
         >
           <p className="text-[11px] font-semibold text-blue-600 uppercase tracking-widest mb-4">Reviews</p>
           <h2 className="text-[2rem] sm:text-[2.4rem] font-extrabold text-slate-900 tracking-[-0.025em] leading-[1.1] mb-3">
-            Teams that switched tell us
+            Teams that switched to gifaa.in tell us
             <br className="hidden sm:block" /> what changed.
           </h2>
           <p className="text-[15px] text-slate-500 max-w-[400px] mx-auto leading-relaxed">
