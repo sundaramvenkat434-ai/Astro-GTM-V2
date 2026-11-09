@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X, ArrowRight } from "lucide-react";
+import { DemandPopup, useDemandPopup, type LeadSource } from "./demand-popup";
 
 const NAV_LINKS = [
   { label: "Features",     href: "#features"     },
@@ -45,6 +46,12 @@ function AstroLogo({ className = "" }: { className?: string }) {
 export default function AstroRankHeader() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const { open, source, initialUrl, openPopup, closePopup } = useDemandPopup();
+
+  const triggerPopup = (s: LeadSource) => {
+    setMenuOpen(false);
+    openPopup(s);
+  };
 
   useEffect(() => {
     function onScroll() { setScrolled(window.scrollY > 12); }
@@ -89,13 +96,13 @@ export default function AstroRankHeader() {
           {/* Desktop CTA */}
           <div className="hidden md:flex items-center gap-3.5 shrink-0">
             <button
-              onClick={() => scrollTo("#pricing")}
+              onClick={() => triggerPopup("signin")}
               className="text-[13.5px] font-medium text-slate-500 hover:text-slate-900 transition-colors duration-150"
             >
               Sign in
             </button>
             <motion.button
-              onClick={() => scrollTo("#pricing")}
+              onClick={() => triggerPopup("free-pages")}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.97 }}
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
@@ -165,13 +172,13 @@ export default function AstroRankHeader() {
 
               <div className="px-4 pb-8 flex flex-col gap-2.5">
                 <button
-                  onClick={() => { scrollTo("#pricing"); setMenuOpen(false); }}
+                  onClick={() => triggerPopup("free-pages")}
                   className="w-full py-2.5 text-center text-[13.5px] font-semibold text-white bg-blue-600 rounded-xl hover:bg-blue-500 transition-colors"
                 >
                   Get 10 Pages FREE
                 </button>
                 <button
-                  onClick={() => { scrollTo("#pricing"); setMenuOpen(false); }}
+                  onClick={() => triggerPopup("signin")}
                   className="w-full py-2 text-center text-[13px] font-medium text-slate-500 hover:text-slate-900 transition-colors"
                 >
                   Sign in
@@ -181,6 +188,7 @@ export default function AstroRankHeader() {
           </motion.div>
         )}
       </AnimatePresence>
+      <DemandPopup open={open} onClose={closePopup} source={source} initialUrl={initialUrl} />
     </>
   );
 }

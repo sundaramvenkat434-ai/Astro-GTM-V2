@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { ArrowRight, TrendingUp, Search, MousePointer, Zap, Globe } from "lucide-react";
 import SpaceBg from "./space-bg";
+import { DemandPopup, useDemandPopup } from "./demand-popup";
 
 // ─── Platform cycler ─────────────────────────────────────────────────────────
 const PLATFORMS = [
@@ -1010,6 +1011,7 @@ export default function AstroRankHero() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [targetCountry, setTargetCountry] = useState("us");
   const inputRef = useRef<HTMLInputElement>(null);
+  const { open, source, initialUrl, openPopup, closePopup } = useDemandPopup();
 
   const COUNTRIES = [
     { code: "us", label: "United States" }, { code: "gb", label: "United Kingdom" },
@@ -1022,50 +1024,10 @@ export default function AstroRankHero() {
     { code: "ae", label: "UAE" }, { code: "za", label: "South Africa" },
   ];
 
-  async function handleSubmit(e: React.FormEvent) {
+  function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!email) { inputRef.current?.focus(); return; }
-    if (submitting) return;
-
-    setSubmitting(true);
-    setSubmitError(null);
-
-    try {
-      const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-      const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-      const apiUrl = `${supabaseUrl}/functions/v1/free-audit`;
-
-      const res = await fetch(apiUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${supabaseAnonKey}`,
-        },
-        body: JSON.stringify({ action: "create", website_url: email, target_country: targetCountry }),
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        if (res.status === 429) {
-          setSubmitError("You've started a lot of audits recently. Please try again in a little while.");
-        } else {
-          setSubmitError(data?.error || "Failed to start audit. Please try again.");
-        }
-        setSubmitting(false);
-        return;
-      }
-
-      if (data?.data?.id) {
-        window.location.href = `/astrorank/free-audit/${data.data.id}`;
-      } else {
-        setSubmitError("Something went wrong. Please try again.");
-        setSubmitting(false);
-      }
-    } catch {
-      setSubmitError("Network error. Please check your connection and try again.");
-      setSubmitting(false);
-    }
+    openPopup("audit", email);
   }
   return (
     <section className="relative flex items-center overflow-hidden bg-slate-50 pt-[64px]">
@@ -1150,6 +1112,7 @@ export default function AstroRankHero() {
               <RatingWidget />
             </motion.div>
           </motion.div>
+          <DemandPopup open={open} onClose={closePopup} source={source} initialUrl={initialUrl} />
 
           {/* Right: animation panel — hidden on mobile (shown inline above) */}
           <motion.div initial={{ opacity: 0, y: 20, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }}

@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { Check, ChevronDown } from "lucide-react";
+import { DemandPopup, useDemandPopup } from "./demand-popup";
 
 type Cycle = "monthly" | "3months" | "6months";
 
@@ -126,6 +127,7 @@ export default function PricingSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const inView = useInView(sectionRef, { once: true, margin: "-60px" });
   const plan = STARTER_PRICING[cycle];
+  const { open, source, initialUrl, openPopup, closePopup } = useDemandPopup();
 
   return (
     <section ref={sectionRef} id="pricing" className="py-16 bg-slate-50 border-t border-slate-100">
@@ -165,7 +167,7 @@ export default function PricingSection() {
               <p className="text-[13.5px] text-slate-400 mb-6">Best for trying AstroRank before committing.</p>
             </div>
 
-            <button className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 text-[13.5px] font-semibold hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99] transition-all duration-150 mb-7">
+            <button onClick={() => openPopup("pricing")} className="w-full py-2.5 rounded-xl border border-slate-200 text-slate-700 text-[13.5px] font-semibold hover:border-slate-300 hover:bg-slate-50 active:scale-[0.99] transition-all duration-150 mb-7">
               Start for Free
             </button>
 
@@ -220,7 +222,7 @@ export default function PricingSection() {
               </AnimatePresence>
             </div>
 
-            <button className="w-full py-3 rounded-xl bg-blue-600 text-white text-[13.5px] font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 active:scale-[0.99] transition-all duration-150 mb-7 ring-1 ring-blue-700/20">
+            <button onClick={() => openPopup("pricing")} className="w-full py-3 rounded-xl bg-blue-600 text-white text-[13.5px] font-semibold shadow-md shadow-blue-600/25 hover:bg-blue-700 active:scale-[0.99] transition-all duration-150 mb-7 ring-1 ring-blue-700/20">
               Start Growing
             </button>
 
@@ -257,6 +259,7 @@ export default function PricingSection() {
         </motion.div>
 
       </div>
+      <DemandPopup open={open} onClose={closePopup} source={source} initialUrl={initialUrl} />
     </section>
   );
 }

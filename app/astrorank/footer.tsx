@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import { ArrowRight } from "lucide-react";
+import { DemandPopup, useDemandPopup } from "./demand-popup";
 
 const NAV = [
   {
@@ -55,6 +56,7 @@ function FooterCol({ title, links }: { title: string; links: { label: string; hr
 export default function AstroRankFooter() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-60px" });
+  const { open, source, initialUrl, openPopup, closePopup } = useDemandPopup();
 
   return (
     <footer ref={ref} className="relative bg-white border-t border-slate-100"
@@ -77,6 +79,7 @@ export default function AstroRankFooter() {
           <div className="flex items-center justify-center gap-4 flex-wrap">
             <motion.a
               href="#"
+              onClick={(e) => { e.preventDefault(); openPopup("free-pages"); }}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               transition={{ type: "spring", stiffness: 400, damping: 24 }}
@@ -86,6 +89,7 @@ export default function AstroRankFooter() {
             </motion.a>
             <a
               href="#"
+              onClick={(e) => { e.preventDefault(); openPopup("demo"); }}
               className="inline-flex items-center gap-1.5 text-[14px] font-medium text-slate-500 hover:text-slate-800 transition-colors duration-150"
             >
               Book a Demo
@@ -159,6 +163,7 @@ export default function AstroRankFooter() {
           </text>
         </svg>
       </div>
+      <DemandPopup open={open} onClose={closePopup} source={source} initialUrl={initialUrl} />
     </footer>
   );
 }
