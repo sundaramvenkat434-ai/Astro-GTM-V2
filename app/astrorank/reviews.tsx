@@ -8,7 +8,7 @@ const FEATURED = {
   tag: "Agency Case Study",
   name: "GrowthMint Agency",
   headline: "GrowthMint: 3× organic traffic in 90 days, 58% more leads.",
-  body: "This B2B marketing agency used AstroRank to scale from 4 articles/month to 50 without adding headcount. Search visibility tripled within 90 days, and inbound leads grew 58% quarter-over-quarter — all tracked through the built-in analytics dashboard.",
+  body: "This B2B marketing agency used gifaa.in to scale from 4 articles/month to 50 without adding headcount. Search visibility tripled within 90 days, and inbound leads grew 58% quarter-over-quarter — all tracked through the built-in analytics dashboard.",
   metrics: [
     { value: "+3×", label: "Organic Traffic" },
     { value: "+58%", label: "Inbound Leads" },
@@ -22,7 +22,7 @@ const REVIEWS = [
     company: "SaaS startup",
     stars: 5,
     source: "G2",
-    quote: "AstroRank replaced our entire content agency. We went from 2 articles a month to 40, and our organic search sessions doubled in 8 weeks. The brand voice feature is exceptional — I genuinely can't tell it wasn't written by our team.",
+    quote: "gifaa.in replaced our entire content agency. We went from 2 articles a month to 40, and our organic search sessions doubled in 8 weeks. The brand voice feature is exceptional — I genuinely can't tell it wasn't written by our team.",
   },
   {
     name: "Rahul Sharma",
@@ -30,7 +30,7 @@ const REVIEWS = [
     company: "E-commerce brand",
     stars: 5,
     source: "Capterra",
-    quote: "I was skeptical about AI content, but AstroRank's EEAT optimization is unlike anything I've seen. Google ranks our pages within days of publishing, not months. The ROI in the first month alone justified the subscription.",
+    quote: "I was skeptical about AI content, but gifaa.in's EEAT optimization is unlike anything I've seen. Google ranks our pages within days of publishing, not months. The ROI in the first month alone justified the subscription.",
   },
   {
     name: "Ananya Krishnan",
@@ -38,7 +38,7 @@ const REVIEWS = [
     company: "Digital agency",
     stars: 5,
     source: "G2",
-    quote: "Managing SEO content for 12 clients used to require a team of writers. Now one person handles it all through AstroRank. The internal linking, image optimization, and SEO scoring happen automatically. It's genuinely impressive.",
+    quote: "Managing SEO content for 12 clients used to require a team of writers. Now one person handles it all through gifaa.in. The internal linking, image optimization, and SEO scoring happen automatically. It's genuinely impressive.",
   },
   {
     name: "Vikram Nair",
@@ -62,7 +62,7 @@ const REVIEWS = [
     company: "B2B SaaS",
     stars: 5,
     source: "G2",
-    quote: "AstroRank's competitor analysis helped us find 60+ untapped topics our rivals weren't covering. The AI Opportunity Score is incredibly accurate. Three months in and we're outranking our main competitor on 20+ keywords.",
+    quote: "gifaa.in's competitor analysis helped us find 60+ untapped topics our rivals weren't covering. The AI Opportunity Score is incredibly accurate. Three months in and we're outranking our main competitor on 20+ keywords.",
   },
 ];
 
@@ -105,7 +105,7 @@ export default function ReviewsSection() {
             <br className="hidden sm:block" /> what changed.
           </h2>
           <p className="text-[15px] text-slate-500 max-w-[400px] mx-auto leading-relaxed">
-            Verified reviews from early customers who use AstroRank every day.
+            Verified reviews from early customers who use gifaa.in every day.
           </p>
         </motion.div>
 
