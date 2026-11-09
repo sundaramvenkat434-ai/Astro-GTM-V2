@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { createBrowserClient } from "@supabase/ssr";
+import { createClient } from "@supabase/supabase-js";
 import { X, Loader2, CheckCircle2 } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 
@@ -33,7 +33,7 @@ export function DemandPopup({
     }
     setSubmitting(true);
     setError(null);
-    const supabase = createBrowserClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     const { error: insertError } = await supabase
       .from("astrorank_leads")
       .insert({ website_url: url.trim(), source });
